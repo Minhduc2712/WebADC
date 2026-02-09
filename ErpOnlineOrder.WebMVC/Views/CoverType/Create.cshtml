@@ -1,0 +1,56 @@
+﻿@model ErpOnlineOrder.Domain.Models.Cover_type
+@{
+    ViewData["Title"] = "Thêm loại bìa";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="mb-4">
+        <h4 class="mb-0">Thêm loại bìa mới</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="@Url.Action("Dashboard", "Home")">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index")">Loại bìa</a></li>
+                <li class="breadcrumb-item active">Thêm mới</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h6 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Thông tin loại bìa</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        <div asp-validation-summary="All" class="alert alert-danger mb-3" role="alert"></div>
+                        <div class="mb-3">
+                            <label asp-for="Cover_type_code" class="form-label">Mã loại bìa <span class="text-danger">*</span></label>
+                            <input asp-for="Cover_type_code" class="form-control" placeholder="VD: BC, BM..." />
+                            <span asp-validation-for="Cover_type_code" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Cover_type_name" class="form-label">Tên loại bìa <span class="text-danger">*</span></label>
+                            <input asp-for="Cover_type_name" class="form-control" placeholder="VD: Bìa cứng, Bìa mềm..." />
+                            <span asp-validation-for="Cover_type_name" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Lưu
+                            </button>
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Hủy
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

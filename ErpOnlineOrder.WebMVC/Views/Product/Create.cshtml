@@ -1,0 +1,117 @@
+@model ErpOnlineOrder.Domain.Models.Product
+@{
+    ViewData["Title"] = "Thêm sản phẩm";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="mb-4">
+        <h4 class="mb-0">Thêm sản phẩm mới</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="@Url.Action("Dashboard", "Home")">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index")">Sản phẩm</a></li>
+                <li class="breadcrumb-item active">Thêm mới</li>
+            </ol>
+        </nav>
+    </div>
+
+    <form asp-action="Create" method="post">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white py-3">
+                        <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Thông tin cơ bản</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Product_code" class="form-label">Mã sản phẩm <span class="text-danger">*</span></label>
+                                <input asp-for="Product_code" class="form-control" placeholder="VD: SP001..." />
+                                <span asp-validation-for="Product_code" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Product_name" class="form-label">Tên sản phẩm <span class="text-danger">*</span></label>
+                                <input asp-for="Product_name" class="form-control" placeholder="Nhập tên sản phẩm..." />
+                                <span asp-validation-for="Product_name" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Product_price" class="form-label">Giá</label>
+                                <input asp-for="Product_price" class="form-control" placeholder="VD: 150000" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Tax_rate" class="form-label">Thuế suất (%)</label>
+                                <input asp-for="Tax_rate" class="form-control" value="10" />
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Product_description" class="form-label">Mô tả</label>
+                            <textarea asp-for="Product_description" class="form-control" rows="4" placeholder="Mô tả sản phẩm..."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Product_link" class="form-label">Link sản phẩm</label>
+                            <input asp-for="Product_link" class="form-control" placeholder="https://..." />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white py-3">
+                        <h6 class="mb-0"><i class="fas fa-cogs me-2"></i>Phân loại</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="Publisher_id" class="form-label">Nhà xuất bản</label>
+                            @Html.DropDownListFor(m => m.Publisher_id, ViewBag.Publishers as SelectList, "-- Chọn NXB --", new { @class = "form-select" })
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Cover_type_id" class="form-label">Loại bìa</label>
+                            @Html.DropDownListFor(m => m.Cover_type_id, ViewBag.CoverTypes as SelectList, "-- Chọn loại bìa --", new { @class = "form-select" })
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Distributor_id" class="form-label">Nhà phân phối</label>
+                            @Html.DropDownListFor(m => m.Distributor_id, ViewBag.Distributors as SelectList, "-- Chọn NPP --", new { @class = "form-select" })
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Danh mục</label>
+                            <select name="categoryIds" class="form-select" multiple size="4">
+                                @foreach (var cat in ViewBag.Categories as MultiSelectList)
+                                {
+                                    <option value="@cat.Value">@cat.Text</option>
+                                }
+                            </select>
+                            <small class="text-muted">Giữ Ctrl để chọn nhiều</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tác giả</label>
+                            <select name="authorIds" class="form-select" multiple size="4">
+                                @foreach (var auth in ViewBag.Authors as MultiSelectList)
+                                {
+                                    <option value="@auth.Value">@auth.Text</option>
+                                }
+                            </select>
+                            <small class="text-muted">Giữ Ctrl để chọn nhiều</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Lưu sản phẩm
+                    </button>
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="fas fa-times me-2"></i>Hủy
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

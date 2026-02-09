@@ -1,0 +1,176 @@
+@{
+    ViewData["Title"] = "Thêm quyền mới";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var inputCode = ViewBag.InputCode as string ?? "";
+}
+
+<div class="container-fluid">
+    <div class="mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-plus-circle me-2"></i>Thêm quyền mới
+        </h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Dashboard">Trang chủ</a></li>
+                <li class="breadcrumb-item"><a asp-action="Index">Quản lý quyền hạn</a></li>
+                <li class="breadcrumb-item active">Thêm mới</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-key me-1"></i> Thông tin quyền
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger">
+                            @Html.ValidationSummary(false, "", new { @class = "mb-0" })
+                        </div>
+                    }
+
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-th-large me-1"></i> Module <span class="text-danger">*</span>
+                            </label>
+                            <select id="moduleSelect" class="form-select">
+                                <option value="">-- Chọn module --</option>
+                                <option value="PRODUCT">Sản phẩm (PRODUCT)</option>
+                                <option value="CATEGORY">Danh mục (CATEGORY)</option>
+                                <option value="REGION">Vùng miền (REGION)</option>
+                                <option value="PROVINCE">Tỉnh/Thành (PROVINCE)</option>
+                                <option value="ORGANIZATION">Tổ chức (ORGANIZATION)</option>
+                                <option value="CUSTOMER">Khách hàng (CUSTOMER)</option>
+                                <option value="ORDER">Đơn hàng (ORDER)</option>
+                                <option value="INVOICE">Hóa đơn (INVOICE)</option>
+                                <option value="WAREHOUSE">Kho hàng (WAREHOUSE)</option>
+                                <option value="STAFF">Nhân sự (STAFF)</option>
+                                <option value="REPORT">Báo cáo (REPORT)</option>
+                                <option value="DISTRIBUTOR">Nhà phân phối (DISTRIBUTOR)</option>
+                                <option value="ROLE">Phân quyền (ROLE)</option>
+                                <option value="PERMISSION">Quyền hạn (PERMISSION)</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-bolt me-1"></i> Hành động <span class="text-danger">*</span>
+                            </label>
+                            <select id="actionSelect" class="form-select">
+                                <option value="">-- Chọn hành động --</option>
+                                <option value="VIEW">Xem (VIEW)</option>
+                                <option value="CREATE">Thêm mới (CREATE)</option>
+                                <option value="UPDATE">Cập nhật (UPDATE)</option>
+                                <option value="DELETE">Xóa (DELETE)</option>
+                                <option value="EXPORT">Xuất file (EXPORT)</option>
+                                <option value="IMPORT">Nhập file (IMPORT)</option>
+                                <option value="APPROVE">Duyệt (APPROVE)</option>
+                                <option value="REJECT">Từ chối (REJECT)</option>
+                                <option value="ASSIGN">Phân quyền (ASSIGN)</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="fas fa-code me-1"></i> Mã quyền <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="Permission_code" id="permissionCode" 
+                                   class="form-control form-control-lg text-uppercase fw-bold" 
+                                   placeholder="MODULE_ACTION" value="@inputCode" readonly />
+                            <small class="text-muted">Mã quyền tự động tạo từ Module + Hành động</small>
+                        </div>
+
+                        <hr />
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> Quay lại
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                                <i class="fas fa-save me-1"></i> Tạo quyền
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-lightbulb me-1"></i> Hướng dẫn
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="small">Mã quyền được tạo tự động theo định dạng: <code>MODULE_ACTION</code></p>
+                    <h6 class="fw-bold">Ví dụ:</h6>
+                    <ul class="small mb-0">
+                        <li><code>PRODUCT_VIEW</code> - Xem sản phẩm</li>
+                        <li><code>ORDER_CREATE</code> - Tạo đơn hàng</li>
+                        <li><code>STAFF_DELETE</code> - Xóa nhân sự</li>
+                        <li><code>ROLE_ASSIGN</code> - Phân quyền Role</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-warning">
+                        <i class="fas fa-exclamation-triangle me-1"></i> Lưu ý
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="small mb-0">
+                        <li>Mã quyền phải là duy nhất trong hệ thống</li>
+                        <li>Sau khi tạo, quyền cần được gán cho Role hoặc User mới có hiệu lực</li>
+                        <li>Sử dụng đúng tên Module và Action để dễ quản lý</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var moduleSelect = document.getElementById('moduleSelect');
+        var actionSelect = document.getElementById('actionSelect');
+        var codeInput = document.getElementById('permissionCode');
+        var submitBtn = document.getElementById('submitBtn');
+
+        function updateCode() {
+            var module = moduleSelect.value;
+            var action = actionSelect.value;
+            if (module && action) {
+                codeInput.value = module + '_' + action;
+                submitBtn.disabled = false;
+            } else {
+                codeInput.value = '';
+                submitBtn.disabled = true;
+            }
+        }
+
+        moduleSelect.addEventListener('change', updateCode);
+        actionSelect.addEventListener('change', updateCode);
+
+        // Pre-select if inputCode exists
+        var currentCode = '@inputCode';
+        if (currentCode) {
+            var parts = currentCode.split('_');
+            if (parts.length >= 2) {
+                moduleSelect.value = parts[0];
+                actionSelect.value = parts.slice(1).join('_');
+                updateCode();
+            }
+        }
+    </script>
+}

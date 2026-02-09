@@ -1,0 +1,228 @@
+﻿@{
+    ViewData["Title"] = "Gán vai trò cho nhân viên";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var staff = ViewBag.Staff as ErpOnlineOrder.Application.DTOs.AdminDTOs.StaffAccountDto;
+    var allRoles = ViewBag.AllRoles as List<ErpOnlineOrder.Application.DTOs.PermissionDTOs.RoleDto> 
+        ?? new List<ErpOnlineOrder.Application.DTOs.PermissionDTOs.RoleDto>();
+    var currentRoleIds = ViewBag.CurrentRoleIds as List<int> ?? new List<int>();
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-user-shield me-2"></i>Gán vai trò cho nhân viên
+        </h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Dashboard">Trang chủ</a></li>
+                <li class="breadcrumb-item"><a asp-action="Index">Quản lý nhân sự</a></li>
+                <li class="breadcrumb-item active">Gán vai trò</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-shield-alt me-1"></i> Phân quyền
+                    </h6>
+                    <span class="badge bg-info">@currentRoleIds.Count vai trò đã gán</span>
+                </div>
+                <div class="card-body">
+                    <form asp-action="AssignRoles" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@staff?.User_id" />
+
+                        <!-- Thông tin nhân viên -->
+                        <div class="alert alert-info mb-4">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width: 60px; height: 60px; font-size: 24px;">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <h5 class="mb-1">@staff?.Full_name</h5>
+                                    <p class="mb-0 small">
+                                        <span class="badge bg-secondary me-2">@staff?.Staff_code</span>
+                                        <span class="text-muted">@staff?.Username</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chọn Role -->
+                        <h6 class="text-muted mb-3">
+                            <i class="fas fa-key me-1"></i> Chọn các vai trò cho nhân viên
+                        </h6>
+
+                        <div class="row">
+                            @if (allRoles.Any())
+                            {
+                                @foreach (var role in allRoles)
+                                {
+                                    var isChecked = currentRoleIds.Contains(role.Id);
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card @(isChecked ? "border-primary" : "") h-100">
+                                            <div class="card-body">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" 
+                                                           name="Role_ids" value="@role.Id" 
+                                                           id="role_@role.Id"
+                                                           @(isChecked ? "checked" : "")>
+                                                    <label class="form-check-label fw-bold" for="role_@role.Id">
+                                                        <i class="fas fa-shield-alt me-1 text-primary"></i>
+                                                        @role.Role_name
+                                                    </label>
+                                                </div>
+                                                <div class="mt-2 ms-4">
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-key me-1"></i> @role.Permission_count quyền
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="col-12">
+                                    <div class="alert alert-warning text-center">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        Chưa có vai trò nào trong hệ thống. 
+                                        <a asp-controller="Role" asp-action="Create">Tạo vai trò mới</a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <hr />
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> Quay lại
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Lưu thay đổi
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Thông tin nhân viên -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-info-circle me-1"></i> Thông tin nhân viên
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr>
+                            <td class="text-muted">Mã NV:</td>
+                            <td><strong>@staff?.Staff_code</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Họ tên:</td>
+                            <td>@staff?.Full_name</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Username:</td>
+                            <td>@staff?.Username</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Email:</td>
+                            <td>@staff?.Email</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Trạng thái:</td>
+                            <td>
+                                @if (staff?.Is_active == true)
+                                {
+                                    <span class="badge bg-success">Hoạt động</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">Vô hiệu</span>
+                                }
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Vai trò hiện tại -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-success">
+                        <i class="fas fa-key me-1"></i> Vai trò hiện tại
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @if (staff?.Roles != null && staff.Roles.Any())
+                    {
+                        <ul class="list-unstyled mb-0">
+                            @foreach (var roleName in staff.Roles)
+                            {
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    @roleName
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0 text-center">
+                            <i class="fas fa-info-circle me-1"></i> Chưa có vai trò nào
+                        </p>
+                    }
+                </div>
+            </div>
+
+            <!-- Thao tác -->
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-warning">
+                        <i class="fas fa-cog me-1"></i> Thao tác khác
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a asp-action="Edit" asp-route-id="@staff?.User_id" class="btn btn-outline-warning">
+                            <i class="fas fa-edit me-1"></i> Chỉnh sửa thông tin
+                        </a>
+                        <a asp-action="Details" asp-route-id="@staff?.User_id" class="btn btn-outline-info">
+                            <i class="fas fa-eye me-1"></i> Xem chi tiết
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Highlight card when checkbox is checked
+        document.querySelectorAll('input[name="Role_ids"]').forEach(function(checkbox) {
+            checkbox.addEventListener('change', function() {
+                var card = this.closest('.card');
+                if (this.checked) {
+                    card.classList.add('border-primary');
+                } else {
+                    card.classList.remove('border-primary');
+                }
+            });
+        });
+    </script>
+}

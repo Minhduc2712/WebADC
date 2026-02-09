@@ -1,0 +1,296 @@
+@model ErpOnlineOrder.Application.DTOs.ProductDTO
+@{
+    ViewData["Title"] = Model.Product_name;
+    Layout = "~/Views/Shared/_ShopLayout.cshtml";
+    var relatedProducts = ViewData["RelatedProducts"] as List<ErpOnlineOrder.Application.DTOs.ProductDTO> ?? new();
+}
+
+<!-- Breadcrumb & Product Info -->
+<section class="product product-info">
+    <div class="container">
+        <div class="blog-bradcrum">
+            <span><a asp-action="Index">Trang chủ</a></span>
+            <span class="devider">/</span>
+            <span><a asp-action="Products">Sản phẩm</a></span>
+            <span class="devider">/</span>
+            <span><a href="#">@Model.Product_name</a></span>
+        </div>
+        <div class="product-info-section">
+            <div class="row">
+                <!-- Product Images -->
+                <div class="col-md-6">
+                    <div class="product-info-img" data-aos="fade-right">
+                        <div class="swiper product-top">
+                            <div class="swiper-wrapper">
+                                @if (Model.Images.Any())
+                                {
+                                    @foreach (var img in Model.Images)
+                                    {
+                                        <div class="swiper-slide slider-top-img">
+                                            <img src="@img" alt="@Model.Product_name">
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <div class="swiper-slide slider-top-img">
+                                        <img src="~/shop/images/homepage-one/product-img/product-img-1.webp" alt="@Model.Product_name">
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        @if (Model.Images.Count > 1)
+                        {
+                            <div class="swiper product-bottom">
+                                <div class="swiper-wrapper">
+                                    @foreach (var img in Model.Images)
+                                    {
+                                        <div class="swiper-slide slider-bottom-img">
+                                            <img src="@img" alt="@Model.Product_name">
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Product Info Content -->
+                <div class="col-md-6">
+                    <div class="product-info-content" data-aos="fade-left">
+                        @if (Model.Categories.Any())
+                        {
+                            <span class="wrapper-subtitle">@string.Join(" / ", Model.Categories)</span>
+                        }
+                        <h5>@Model.Product_name</h5>
+
+                        <div class="price">
+                            <span class="new-price">@Model.Product_price</span>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(Model.Product_description))
+                        {
+                            <p class="content-paragraph">@Model.Product_description</p>
+                        }
+
+                        <hr>
+
+                        @if (Model.Authors.Any())
+                        {
+                            <div class="product-details">
+                                <p class="category">Tác giả : <span class="inner-text">@string.Join(", ", Model.Authors)</span></p>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Model.Publisher_name))
+                        {
+                            <div class="product-details">
+                                <p class="tags">Nhà xuất bản : <span class="inner-text">@Model.Publisher_name</span></p>
+                            </div>
+                        }
+
+                        <div class="product-details">
+                            <p class="sku">Mã SP : <span class="inner-text">@Model.Product_code</span></p>
+                        </div>
+
+                        @if (Model.Categories.Any())
+                        {
+                            <div class="product-details">
+                                <p class="category">Danh mục :
+                                    @foreach (var cat in Model.Categories)
+                                    {
+                                        <a asp-action="Products" asp-route-category="@cat" class="inner-text" style="text-decoration: underline;">@cat</a>
+                                    }
+                                </p>
+                            </div>
+                        }
+
+                        <hr>
+
+                        <!-- Quantity + Add to Cart -->
+                        <div class="product-quantity" style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                            <div class="quantity" style="display: flex; align-items: center; border: 1px solid #ddd; border-radius: 4px; overflow: hidden;">
+                                <span class="minus" id="qty-minus" onclick="changeQty(-1)" style="cursor:pointer; padding: 8px 14px; font-size: 18px; user-select: none; background: #f8f8f8;">-</span>
+                                <input type="number" id="productQty" value="1" min="1" style="width: 50px; text-align: center; border: none; outline: none; font-size: 16px; -moz-appearance: textfield;" onchange="validateQty()">
+                                <span class="plus" id="qty-plus" onclick="changeQty(1)" style="cursor:pointer; padding: 8px 14px; font-size: 18px; user-select: none; background: #f8f8f8;">+</span>
+                            </div>
+                            <a href="javascript:void(0)" class="shop-btn" onclick="addProductToCart()" style="display: inline-flex; align-items: center; gap: 8px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
+                                </svg>
+                                Đặt hàng
+                            </a>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(Model.Product_link))
+                        {
+                            <div class="mt-3">
+                                <a href="@Model.Product_link" target="_blank" class="shop-btn" style="background: transparent; color: #1a7f37; border: 1px solid #1a7f37;">
+                                    <span>Xem thêm thông tin</span>
+                                </a>
+                            </div>
+                        }
+
+                        <hr>
+                        <div class="product-share" style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 200px;">
+                                <div class="d-flex gap-3" style="font-size: 14px;">
+                                    <div class="text-center">
+                                        <div style="width: 50px; height: 50px; background: #f8f8f8; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 5px;">
+                                            <i class="fas fa-shipping-fast" style="color: #1a7f37;"></i>
+                                        </div>
+                                        <small>Giao nhanh</small>
+                                    </div>
+                                    <div class="text-center">
+                                        <div style="width: 50px; height: 50px; background: #f8f8f8; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 5px;">
+                                            <i class="fas fa-shield-alt" style="color: #1a7f37;"></i>
+                                        </div>
+                                        <small>Chính hãng</small>
+                                    </div>
+                                    <div class="text-center">
+                                        <div style="width: 50px; height: 50px; background: #f8f8f8; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 5px;">
+                                            <i class="fas fa-undo" style="color: #1a7f37;"></i>
+                                        </div>
+                                        <small>Đổi trả</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Description Tabs -->
+@if (!string.IsNullOrEmpty(Model.Product_description))
+{
+    <section class="product product-description">
+        <div class="container">
+            <div class="product-detail-section">
+                <nav>
+                    <div class="nav nav-tabs nav-item" id="nav-tab" role="tablist">
+                        <button class="nav-link active" id="nav-home-tab" data-bs-toggle="tab" data-bs-target="#nav-home" type="button" role="tab" aria-controls="nav-home" aria-selected="true">Mô tả</button>
+                        <button class="nav-link" id="nav-info-tab" data-bs-toggle="tab" data-bs-target="#nav-info" type="button" role="tab" aria-controls="nav-info" aria-selected="false">Thông tin chi tiết</button>
+                    </div>
+                </nav>
+                <div class="tab-content tab-item" id="nav-tabContent">
+                    <div class="tab-pane fade show active" id="nav-home" role="tabpanel" aria-labelledby="nav-home-tab" tabindex="0" data-aos="fade-up">
+                        <div class="product-intro-section">
+                            <h5 class="intro-heading">Mô tả sản phẩm</h5>
+                            <p class="product-details">@Model.Product_description</p>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="nav-info" role="tabpanel" aria-labelledby="nav-info-tab" tabindex="0" data-aos="fade-up">
+                        <div class="product-intro-section">
+                            <h5 class="intro-heading">Thông tin chi tiết</h5>
+                            <table class="table">
+                                <tbody>
+                                    <tr><td>Mã sản phẩm</td><td>@Model.Product_code</td></tr>
+                                    @if (Model.Authors.Any())
+                                    {
+                                        <tr><td>Tác giả</td><td>@string.Join(", ", Model.Authors)</td></tr>
+                                    }
+                                    @if (!string.IsNullOrEmpty(Model.Publisher_name))
+                                    {
+                                        <tr><td>Nhà xuất bản</td><td>@Model.Publisher_name</td></tr>
+                                    }
+                                    @if (Model.Categories.Any())
+                                    {
+                                        <tr><td>Danh mục</td><td>@string.Join(", ", Model.Categories)</td></tr>
+                                    }
+                                    <tr><td>Giá</td><td>@Model.Product_price</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+}
+
+<!-- Related Products -->
+@if (relatedProducts.Any())
+{
+    <section class="product arrival" data-aos="fade-up">
+        <div class="container">
+            <div class="section-title">
+                <h5>SẢN PHẨM LIÊN QUAN</h5>
+                <a asp-action="Products" class="view">Xem tất cả</a>
+            </div>
+            <div class="arrival-section">
+                <div class="row g-5">
+                    @foreach (var product in relatedProducts)
+                    {
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="product-wrapper" data-aos="fade-up">
+                                <div class="product-img">
+                                    <a asp-action="ProductDetail" asp-route-id="@product.Id">
+                                        @if (product.Images.Any())
+                                        {
+                                            <img src="@product.Images.First()" alt="@product.Product_name">
+                                        }
+                                        else
+                                        {
+                                            <img src="~/shop/images/homepage-one/product-img/product-img-3.webp" alt="@product.Product_name">
+                                        }
+                                    </a>
+                                </div>
+                                <div class="product-info">
+                                    <div class="product-description">
+                                        <a asp-action="ProductDetail" asp-route-id="@product.Id" class="product-details">@product.Product_name</a>
+                                        <div class="price">
+                                            <span class="new-price">@product.Product_price</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="product-cart-btn">
+                                    <a href="javascript:void(0)" class="product-btn"
+                                       onclick="addToCart(@product.Id, '@Html.Raw(product.Product_name.Replace("'", "\\'"))', parsePrice('@product.Product_price'), '@product.Product_price', '@(product.Images.Any() ? product.Images.First() : "")', 1)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right:5px;">
+                                            <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
+                                        </svg>
+                                        Đặt hàng
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+}
+
+@section Scripts {
+<script>
+    function changeQty(delta) {
+        var input = document.getElementById('productQty');
+        var val = parseInt(input.value) || 1;
+        val += delta;
+        if (val < 1) val = 1;
+        input.value = val;
+    }
+
+    function validateQty() {
+        var input = document.getElementById('productQty');
+        var val = parseInt(input.value) || 1;
+        if (val < 1) val = 1;
+        input.value = val;
+    }
+
+    function addProductToCart() {
+        var qty = parseInt(document.getElementById('productQty').value) || 1;
+        addToCart(
+            @Model.Id,
+            '@Html.Raw(Model.Product_name.Replace("'", "\\'"))',
+            parsePrice('@Model.Product_price'),
+            '@Model.Product_price',
+            '@(Model.Images.Any() ? Model.Images.First() : "")',
+            qty
+        );
+    }
+</script>
+}

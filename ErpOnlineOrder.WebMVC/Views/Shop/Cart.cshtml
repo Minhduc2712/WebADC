@@ -1,0 +1,156 @@
+@{
+    ViewData["Title"] = "Giỏ hàng";
+    Layout = "~/Views/Shared/_ShopLayout.cshtml";
+}
+
+<!-- Breadcrumb -->
+<section class="blog about-blog">
+    <div class="container">
+        <div class="blog-bradcrum">
+            <span><a asp-action="Index">Trang chủ</a></span>
+            <span class="devider">/</span>
+            <span><a href="#">Giỏ hàng</a></span>
+        </div>
+        <div class="blog-heading about-heading">
+            <h1 class="heading">Giỏ hàng</h1>
+        </div>
+    </div>
+</section>
+
+<!-- Cart Section -->
+<section class="product-cart product footer-padding">
+    <div class="container">
+        <!-- Empty Cart -->
+        <div id="emptyCart" class="text-center py-5">
+            <div style="max-width: 200px; margin: 0 auto 20px;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="120" height="120" style="opacity: 0.3;">
+                    <circle cx="32" cy="32" r="30" fill="#f0f0f0"/>
+                    <path d="M20 20h24l-3 20H23L20 20z" stroke="#999" stroke-width="2" fill="none"/>
+                    <circle cx="26" cy="48" r="3" fill="#999"/>
+                    <circle cx="38" cy="48" r="3" fill="#999"/>
+                </svg>
+            </div>
+            <h5>Giỏ hàng của bạn đang trống</h5>
+            <p style="color: #888;">Hãy thêm sản phẩm vào giỏ hàng.</p>
+            <a asp-action="Products" class="shop-btn mt-2">Tiếp tục mua sắm</a>
+        </div>
+
+        <!-- Cart with Items -->
+        <div id="cartWithItems" style="display: none;">
+            <div class="cart-section">
+                <table>
+                    <tbody>
+                        <tr class="table-row table-top-row">
+                            <td class="table-wrapper wrapper-product">
+                                <h5 class="table-heading">SẢN PHẨM</h5>
+                            </td>
+                            <td class="table-wrapper">
+                                <div class="table-wrapper-center">
+                                    <h5 class="table-heading">GIÁ</h5>
+                                </div>
+                            </td>
+                            <td class="table-wrapper">
+                                <div class="table-wrapper-center">
+                                    <h5 class="table-heading">SỐ LƯỢNG</h5>
+                                </div>
+                            </td>
+                            <td class="table-wrapper wrapper-total">
+                                <div class="table-wrapper-center">
+                                    <h5 class="table-heading">TỔNG</h5>
+                                </div>
+                            </td>
+                            <td class="table-wrapper">
+                                <div class="table-wrapper-center">
+                                    <h5 class="table-heading">XÓA</h5>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tbody id="cartTableBody">
+                    </tbody>
+                </table>
+            </div>
+            <div class="wishlist-btn cart-btn">
+                <a href="javascript:void(0)" class="clean-btn" onclick="clearCart()">Xóa giỏ hàng</a>
+                <a asp-action="Products" class="shop-btn update-btn">Tiếp tục mua sắm</a>
+                <a asp-action="Checkout" class="shop-btn">Thanh toán</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+<script>
+    function getCart() {
+        return JSON.parse(localStorage.getItem('shopCart') || '[]');
+    }
+
+    function saveCart(cart) {
+        localStorage.setItem('shopCart', JSON.stringify(cart));
+    }
+
+    function renderCart() {
+        var cart = getCart();
+        if (cart.length === 0) {
+            document.getElementById('emptyCart').style.display = 'block';
+            document.getElementById('cartWithItems').style.display = 'none';
+            return;
+        }
+
+        document.getElementById('emptyCart').style.display = 'none';
+        document.getElementById('cartWithItems').style.display = 'block';
+
+        var tbody = document.getElementById('cartTableBody');
+        var html = '';
+        var total = 0;
+
+        cart.forEach(function(item, index) {
+            var itemTotal = item.price * item.quantity;
+            total += itemTotal;
+            html += '<tr class="table-row ticket-row">' +
+                '<td class="table-wrapper wrapper-product">' +
+                '<div class="wrapper">' +
+                '<div class="wrapper-img"><img src="' + (item.image || '/shop/images/homepage-one/product-img/product-img-1.webp') + '" alt="img"></div>' +
+                '<div class="wrapper-content"><h5 class="heading">' + item.name + '</h5></div>' +
+                '</div></td>' +
+                '<td class="table-wrapper"><div class="table-wrapper-center"><h5 class="heading">' + item.priceText + '</h5></div></td>' +
+                '<td class="table-wrapper"><div class="table-wrapper-center">' +
+                '<div class="quantity">' +
+                '<span class="minus" onclick="updateQuantity(' + index + ', ' + (item.quantity - 1) + ')">-</span>' +
+                '<span class="number">' + item.quantity + '</span>' +
+                '<span class="plus" onclick="updateQuantity(' + index + ', ' + (item.quantity + 1) + ')">+</span>' +
+                '</div></div></td>' +
+                '<td class="table-wrapper wrapper-total"><div class="table-wrapper-center"><h5 class="heading">' + itemTotal.toLocaleString() + '</h5></div></td>' +
+                '<td class="table-wrapper"><div class="table-wrapper-center">' +
+                '<span style="cursor:pointer;" onclick="removeFromCart(' + index + ')">' +
+                '<svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+                '<path d="M9.7 0.3C9.3 -0.1 8.7 -0.1 8.3 0.3L5 3.6L1.7 0.3C1.3 -0.1 0.7 -0.1 0.3 0.3C-0.1 0.7 -0.1 1.3 0.3 1.7L3.6 5L0.3 8.3C-0.1 8.7 -0.1 9.3 0.3 9.7C0.7 10.1 1.3 10.1 1.7 9.7L5 6.4L8.3 9.7C8.7 10.1 9.3 10.1 9.7 9.7C10.1 9.3 10.1 8.7 9.7 8.3L6.4 5L9.7 1.7C10.1 1.3 10.1 0.7 9.7 0.3Z" fill="#AAAAAA"></path>' +
+                '</svg></span></div></td></tr>';
+        });
+
+        tbody.innerHTML = html;
+    }
+
+    function updateQuantity(index, qty) {
+        if (qty < 1) return;
+        var cart = getCart();
+        cart[index].quantity = parseInt(qty) || 1;
+        saveCart(cart);
+        renderCart();
+    }
+
+    function removeFromCart(index) {
+        var cart = getCart();
+        cart.splice(index, 1);
+        saveCart(cart);
+        renderCart();
+    }
+
+    function clearCart() {
+        localStorage.removeItem('shopCart');
+        renderCart();
+    }
+
+    renderCart();
+</script>
+}

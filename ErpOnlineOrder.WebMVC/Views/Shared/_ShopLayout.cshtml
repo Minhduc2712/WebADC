@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="~/shop/images/homepage-one/icon.png">
+    <title>@ViewData["Title"] - ERP Online Order</title>
+
+    <link rel="stylesheet" href="~/shop/css/swiper10-bundle.min.css">
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="~/shop/css/nouislider.min.css">
+    <link rel="stylesheet" href="~/shop/css/aos-3.0.0.css">
+    <link rel="stylesheet" href="~/shop/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+
+    <!-- ============== HEADER ============== -->
+    <header id="header" class="header">
+        <div class="header-top-section">
+            <div class="container">
+                <div class="header-top">
+                    <div class="header-profile">
+                        <a asp-controller="Shop" asp-action="Account"><span>Tài khoản</span></a>
+                        <a asp-controller="Shop" asp-action="Orders"><span>Đơn hàng</span></a>
+                        <a href="tel:+84123456789"><span>Hỗ trợ</span></a>
+                    </div>
+                    <div class="header-contact d-none d-lg-block">
+                        <a href="tel:+84123456789">
+                            <span>Cần hỗ trợ? Gọi ngay:</span>
+                            <span class="contact-number">0123 456 789</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="header-center-section d-none d-lg-block">
+            <div class="container">
+                <div class="header-center">
+                    <div class="logo">
+                        <a asp-controller="Shop" asp-action="Index">
+                            <img src="~/shop/images/logos/logo.webp" alt="logo">
+                        </a>
+                    </div>
+                    <div class="header-cart-items">
+                        <div class="header-search">
+                            <button class="header-search-btn" onclick="modalAction('.search')">
+                                <span>
+                                    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M13.9708 16.4151C12.5227 17.4021 10.9758 17.9723 9.27353 18.0062C5.58462 18.0802 2.75802 16.483 1.05056 13.1945C-1.76315 7.77253 1.33485 1.37571 7.25086 0.167548C12.2281 -0.848249 17.2053 2.87895 17.7198 7.98579C17.9182 9.95558 17.5566 11.7939 16.5852 13.5061C16.4512 13.742 16.483 13.8725 16.6651 14.0553C18.2412 15.6386 19.8112 17.2272 21.3735 18.8244C22.1826 19.6513 22.2058 20.7559 21.456 21.4932C20.7697 22.1678 19.7047 22.1747 18.9764 21.4793C18.3623 20.8917 17.7774 20.2737 17.1796 19.6688C16.118 18.5929 15.0564 17.5153 13.9708 16.4151ZM2.89545 9.0364C2.91692 12.4172 5.59664 15.1164 8.91967 15.1042C12.2384 15.092 14.9138 12.3493 14.8889 8.98505C14.864 5.63213 12.1826 2.92508 8.89047 2.92857C5.58204 2.93118 2.87397 5.68958 2.89545 9.0364Z" fill="black"/>
+                                    </svg>
+                                </span>
+                            </button>
+                            <div class="modal-wrapper search">
+                                <div onclick="modalAction('.search')" class="anywhere-away"></div>
+                                <div class="modal-main">
+                                    <div class="wrapper-close-btn" onclick="modalAction('.search')">
+                                        <span>
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="red" class="w-6 h-6">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                                            </svg>
+                                        </span>
+                                    </div>
+                                    <div class="wrapper-main">
+                                        <form asp-controller="Shop" asp-action="Products" method="get" class="search-section">
+                                            <input type="text" name="search" placeholder="Tìm kiếm sản phẩm...">
+                                            <div class="divider"></div>
+                                            <button type="submit" class="shop-btn">Tìm kiếm</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="header-cart" style="position:relative;">
+                            <a asp-controller="Shop" asp-action="Cart" class="cart-item" style="position:relative;">
+                                <span>
+                                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M16.4444 21.897C14.8444 21.897 13.2441 21.8999 11.6441 21.8963C9.79233 21.892 8.65086 21.0273 8.12595 19.2489C7.04294 15.5794 5.95756 11.9107 4.87166 8.24203C4.6362 7.4468 4.37783 7.25412 3.55241 7.25175C2.7786 7.24964 2.00507 7.25754 1.23127 7.24911C0.512247 7.24148 0.0157813 6.79109 0.000242059 6.15064C-0.0160873 5.48281 0.475637 5.01689 1.23232 5.00873C2.11121 4.99952 2.99089 4.99214 3.86951 5.01268C5.36154 5.04769 6.52014 5.93215 6.96393 7.35415C7.14171 7.92378 7.34055 8.49026 7.46382 9.07201C7.54968 9.47713 7.77881 9.49661 8.10566 9.49582C11.8335 9.48897 15.5611 9.49134 19.2889 9.49134C21.0825 9.49134 22.8761 9.48108 24.6694 9.49503C26.0848 9.50608 27.0907 10.4906 27.0156 11.7778C27.0006 12.0363 26.925 12.2958 26.8473 12.5457C26.1317 14.8411 25.4124 17.1351 24.6879 19.4279C24.1851 21.0186 23.0223 21.8826 21.3504 21.8944C19.7151 21.906 18.0797 21.897 16.4444 21.897Z" fill="#6E6D79"/>
+                                        <path d="M12.4012 27.5161C11.167 27.5227 10.1488 26.524 10.1345 25.2928C10.1201 24.0419 11.1528 22.9982 12.3967 23.0066C13.6209 23.0151 14.6422 24.0404 14.6436 25.2623C14.6451 26.4855 13.6261 27.5095 12.4012 27.5161Z" fill="#6E6D79"/>
+                                        <path d="M22.509 25.2393C22.5193 26.4842 21.5393 27.4971 20.3064 27.5155C19.048 27.5342 18.0272 26.525 18.0277 25.2622C18.0279 24.0208 19.0214 23.0161 20.2572 23.0074C21.4877 22.9984 22.4988 24.0006 22.509 25.2393Z" fill="#6E6D79"/>
+                                    </svg>
+                                    <span class="cart-badge-count"></span>
+                                </span>
+                                <span class="cart-text">Giỏ hàng</span>
+                            </a>
+                        </div>
+
+                        <div class="header-user">
+                            <a asp-controller="Shop" asp-action="Account">
+                                <span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" class="fill-current">
+                                        <path fill="none" d="M0 0h24v24H0z"></path>
+                                        <path d="M20 22H4v-2a5 5 0 0 1 5-5h6a5 5 0 0 1 5 5v2zm-8-9a6 6 0 1 1 0-12 6 6 0 0 1 0 12z"></path>
+                                    </svg>
+                                </span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <nav class="mobile-menu d-block d-lg-none">
+            <div class="mobile-menu-header d-flex justify-content-between align-items-center">
+                <button class="btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasShopMenu" aria-controls="offcanvasShopMenu">
+                    <span>
+                        <svg width="14" height="9" viewBox="0 0 14 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="14" height="1" fill="#1D1D1D"/>
+                            <rect y="8" width="14" height="1" fill="#1D1D1D"/>
+                            <rect y="4" width="10" height="1" fill="#1D1D1D"/>
+                        </svg>
+                    </span>
+                </button>
+                <a asp-controller="Shop" asp-action="Index" class="mobile-header-logo">
+                    <img src="~/shop/images/logos/logo.webp" alt="logo">
+                </a>
+                <a asp-controller="Shop" asp-action="Cart" class="header-cart cart-item">
+                    <span>
+                        <svg width="28" height="22" viewBox="0 0 28 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16.4444 21.897C14.8444 21.897 13.2441 21.8999 11.6441 21.8963C9.79233 21.892 8.65086 21.0273 8.12595 19.2489C7.04294 15.5794 5.95756 11.9107 4.87166 8.24203C4.6362 7.4468 4.37783 7.25412 3.55241 7.25175C2.7786 7.24964 2.00507 7.25754 1.23127 7.24911C0.512247 7.24148 0.0157813 6.79109 0.000242059 6.15064C-0.0160873 5.48281 0.475637 5.01689 1.23232 5.00873C2.11121 4.99952 2.99089 4.99214 3.86951 5.01268C5.36154 5.04769 6.52014 5.93215 6.96393 7.35415C7.14171 7.92378 7.34055 8.49026 7.46382 9.07201C7.54968 9.47713 7.77881 9.49661 8.10566 9.49582C11.8335 9.48897 15.5611 9.49134 19.2889 9.49134C21.0825 9.49134 22.8761 9.48108 24.6694 9.49503C26.0848 9.50608 27.0907 10.4906 27.0156 11.7778C27.0006 12.0363 26.925 12.2958 26.8473 12.5457C26.1317 14.8411 25.4124 17.1351 24.6879 19.4279C24.1851 21.0186 23.0223 21.8826 21.3504 21.8944C19.7151 21.906 18.0797 21.897 16.4444 21.897Z" fill="#6E6D79"/>
+                            <path d="M12.4012 27.5161C11.167 27.5227 10.1488 26.524 10.1345 25.2928C10.1201 24.0419 11.1528 22.9982 12.3967 23.0066C13.6209 23.0151 14.6422 24.0404 14.6436 25.2623C14.6451 26.4855 13.6261 27.5095 12.4012 27.5161Z" fill="#6E6D79"/>
+                            <path d="M22.509 25.2393C22.5193 26.4842 21.5393 27.4971 20.3064 27.5155C19.048 27.5342 18.0272 26.525 18.0277 25.2622C18.0279 24.0208 19.0214 23.0161 20.2572 23.0074C21.4877 22.9984 22.4988 24.0006 22.509 25.2393Z" fill="#6E6D79"/>
+                        </svg>
+                    </span>
+                </a>
+            </div>
+            <div class="offcanvas offcanvas-start" data-bs-scroll="true" tabindex="-1" id="offcanvasShopMenu">
+                <div class="offcanvas-header">
+                    <a asp-controller="Shop" asp-action="Index">
+                        <img src="~/shop/images/logos/logo.webp" alt="logo" style="max-height: 40px;">
+                    </a>
+                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                </div>
+                <div class="offcanvas-body">
+                    <form asp-controller="Shop" asp-action="Products" method="get" class="mb-3">
+                        <div class="input-group">
+                            <input type="text" name="search" class="form-control" placeholder="Tìm kiếm...">
+                            <button type="submit" class="btn btn-dark"><i class="fas fa-search"></i></button>
+                        </div>
+                    </form>
+                    <ul class="header-menu" style="flex-direction: column;">
+                        <li><a asp-controller="Shop" asp-action="Index"><span class="list-text">Trang chủ</span></a></li>
+                        <li><a asp-controller="Shop" asp-action="Products"><span class="list-text">Sản phẩm</span></a></li>
+                        <li><a asp-controller="Shop" asp-action="Cart"><span class="list-text">Giỏ hàng</span></a></li>
+                        <li><a asp-controller="Shop" asp-action="Checkout"><span class="list-text">Thanh toán</span></a></li>
+                        <li><a asp-controller="Shop" asp-action="Orders"><span class="list-text">Đơn hàng</span></a></li>
+                        <li><a asp-controller="Shop" asp-action="Account"><span class="list-text">Tài khoản</span></a></li>
+                        @if (Context.Session.GetInt32("UserId") != null)
+                        {
+                            <li><a asp-controller="Auth" asp-action="Logout"><span class="list-text">Đăng xuất</span></a></li>
+                        }
+                        else
+                        {
+                            <li><a asp-controller="Auth" asp-action="Login"><span class="list-text">Đăng nhập</span></a></li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Desktop Navigation -->
+        <div class="header-bottom d-lg-block d-none">
+            <div class="container">
+                <div class="header-nav">
+                    <div class="category-menu-section position-relative">
+                        <div class="empty position-fixed" onclick="tooglmenu()"></div>
+                        <button class="dropdown-btn" onclick="tooglmenu()">
+                            <span class="dropdown-icon">
+                                <svg width="14" height="9" viewBox="0 0 14 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <rect width="14" height="1"/>
+                                    <rect y="8" width="14" height="1"/>
+                                    <rect y="4" width="10" height="1"/>
+                                </svg>
+                            </span>
+                            <span class="list-text">Danh mục sản phẩm</span>
+                        </button>
+                        <div class="category-dropdown position-absolute" id="subMenu">
+                            <ul class="category-list">
+                                @if (ViewData["ShopCategories"] is List<string> shopCats)
+                                {
+                                    @foreach (var cat in shopCats)
+                                    {
+                                        <li class="category-list-item">
+                                            <a asp-controller="Shop" asp-action="Products" asp-route-category="@cat">
+                                                <div class="dropdown-item d-flex justify-content-between align-items-center">
+                                                    <div class="dropdown-list-item d-flex">
+                                                        <span class="dropdown-text">@cat</span>
+                                                    </div>
+                                                    <div class="drop-down-list-icon">
+                                                        <span>
+                                                            <svg width="6" height="9" viewBox="0 0 6 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                <rect x="1.5" y="0.818359" width="5.78538" height="1.28564" transform="rotate(45 1.5 0.818359)"/>
+                                                                <rect x="5.58984" y="4.90918" width="5.78538" height="1.28564" transform="rotate(135 5.58984 4.90918)"/>
+                                                            </svg>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </a>
+                                        </li>
+                                    }
+                                }
+                                else
+                                {
+                                    <li class="category-list-item">
+                                        <a asp-controller="Shop" asp-action="Products">
+                                            <div class="dropdown-item">
+                                                <div class="dropdown-list-item">
+                                                    <span class="dropdown-text">Xem tất cả sản phẩm</span>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="header-nav-menu">
+                        <ul class="menu-list">
+                            <li>
+                                <a asp-controller="Shop" asp-action="Index">
+                                    <span class="list-text">Trang chủ</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a asp-controller="Shop" asp-action="Products">
+                                    <span class="list-text">Sản phẩm</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a asp-controller="Shop" asp-action="Cart">
+                                    <span class="list-text">Giỏ hàng</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a asp-controller="Shop" asp-action="Checkout">
+                                    <span class="list-text">Thanh toán</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a asp-controller="Shop" asp-action="Orders">
+                                    <span class="list-text">Đơn hàng</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a asp-controller="Shop" asp-action="Account">
+                                    <span class="list-text">Tài khoản</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="header-vendor-btn">
+                        @if (Context.Session.GetInt32("UserId") != null)
+                        {
+                            <a asp-controller="Auth" asp-action="Logout" class="shop-btn">
+                                <span class="list-text shop-text">Đăng xuất</span>
+                                <span class="icon">
+                                    <svg width="24" height="16" viewBox="0 0 24 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M20.257 7.07205C20.038 7.07205 19.8474 7.07205 19.6563 7.07205C17.4825 7.07205 15.3086 7.07205 13.1352 7.07205C10.1545 7.07205 7.17336 7.0725 4.19265 7.0725C3.30392 7.0725 2.41519 7.07024 1.52646 7.07295C1.12124 7.07431 0.809811 7.25265 0.625785 7.62651C0.43866 8.00623 0.488204 8.37556 0.737704 8.70426C0.932347 8.96027 1.20529 9.08173 1.52867 9.08037C2.20948 9.07766 2.8903 9.07902 3.57111 9.07902C5.95285 9.07902 8.33415 9.07902 10.7159 9.07902C13.782 9.07902 16.8485 9.07902 19.9146 9.07902C20.0274 9.07902 20.1398 9.07902 20.2822 9.07902C20.1871 9.18332 20.1141 9.26865 20.0358 9.34857C19.5656 9.82672 19.0922 10.3022 18.6229 10.7812C18.1363 11.2779 17.6541 11.7791 17.1675 12.2757C16.4942 12.9634 15.8116 13.6415 15.1476 14.3391C14.9096 14.5893 14.8455 14.9157 14.9406 15.2575C15.156 16.0305 16.0567 16.2499 16.6119 15.6769C17.4342 14.8286 18.2655 13.9892 19.0927 13.1458C19.6948 12.5317 20.2968 11.9172 20.8985 11.3023C21.5952 10.5902 22.2911 9.87729 22.9878 9.1648C23.1059 9.04425 23.2249 8.9246 23.3435 8.8045C23.6903 8.45367 23.7239 7.84278 23.3943 7.4766C22.998 7.03683 22.5852 6.61241 22.1756 6.18573C21.7965 5.79066 21.4134 5.39965 21.0303 5.00909C20.6733 4.64473 20.3132 4.28306 19.9553 3.91915C19.6147 3.57284 19.2754 3.22563 18.9356 2.87887C18.5154 2.44948 18.0951 2.01964 17.6744 1.5907C17.2511 1.15861 16.8198 0.734188 16.4057 0.29261C16.0363 -0.101559 15.3697 -0.0816927 15.0344 0.257392C14.6238 0.672782 14.5999 1.26381 14.995 1.68552C15.3378 2.0517 15.6957 2.40342 16.0465 2.76192C16.929 3.66449 17.8111 4.56797 18.6937 5.47054C19.1829 5.97081 19.6735 6.47018 20.1632 6.97046C20.1885 6.99574 20.2123 7.02329 20.257 7.07205Z"/>
+                                    </svg>
+                                </span>
+                            </a>
+                        }
+                        else
+                        {
+                            <a asp-controller="Auth" asp-action="Login" class="shop-btn">
+                                <span class="list-text shop-text">Đăng nhập</span>
+                                <span class="icon">
+                                    <svg width="24" height="16" viewBox="0 0 24 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M20.257 7.07205C20.038 7.07205 19.8474 7.07205 19.6563 7.07205C17.4825 7.07205 15.3086 7.07205 13.1352 7.07205C10.1545 7.07205 7.17336 7.0725 4.19265 7.0725C3.30392 7.0725 2.41519 7.07024 1.52646 7.07295C1.12124 7.07431 0.809811 7.25265 0.625785 7.62651C0.43866 8.00623 0.488204 8.37556 0.737704 8.70426C0.932347 8.96027 1.20529 9.08173 1.52867 9.08037C2.20948 9.07766 2.8903 9.07902 3.57111 9.07902C5.95285 9.07902 8.33415 9.07902 10.7159 9.07902C13.782 9.07902 16.8485 9.07902 19.9146 9.07902C20.0274 9.07902 20.1398 9.07902 20.2822 9.07902C20.1871 9.18332 20.1141 9.26865 20.0358 9.34857C19.5656 9.82672 19.0922 10.3022 18.6229 10.7812C18.1363 11.2779 17.6541 11.7791 17.1675 12.2757C16.4942 12.9634 15.8116 13.6415 15.1476 14.3391C14.9096 14.5893 14.8455 14.9157 14.9406 15.2575C15.156 16.0305 16.0567 16.2499 16.6119 15.6769C17.4342 14.8286 18.2655 13.9892 19.0927 13.1458C19.6948 12.5317 20.2968 11.9172 20.8985 11.3023C21.5952 10.5902 22.2911 9.87729 22.9878 9.1648C23.1059 9.04425 23.2249 8.9246 23.3435 8.8045C23.6903 8.45367 23.7239 7.84278 23.3943 7.4766C22.998 7.03683 22.5852 6.61241 22.1756 6.18573C21.7965 5.79066 21.4134 5.39965 21.0303 5.00909C20.6733 4.64473 20.3132 4.28306 19.9553 3.91915C19.6147 3.57284 19.2754 3.22563 18.9356 2.87887C18.5154 2.44948 18.0951 2.01964 17.6744 1.5907C17.2511 1.15861 16.8198 0.734188 16.4057 0.29261C16.0363 -0.101559 15.3697 -0.0816927 15.0344 0.257392C14.6238 0.672782 14.5999 1.26381 14.995 1.68552C15.3378 2.0517 15.6957 2.40342 16.0465 2.76192C16.929 3.66449 17.8111 4.56797 18.6937 5.47054C19.1829 5.97081 19.6735 6.47018 20.1632 6.97046C20.1885 6.99574 20.2123 7.02329 20.257 7.07205Z"/>
+                                    </svg>
+                                </span>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- ============== END HEADER ============== -->
+
+    <!-- ============== MAIN CONTENT ============== -->
+    @RenderBody()
+    <!-- ============== END MAIN CONTENT ============== -->
+
+    <!-- ============== FOOTER ============== -->
+    <section class="product footer">
+        <div class="container">
+            <div class="footer-service-section">
+                <div class="row gy-4">
+                    <div class="col-lg-3 col-sm-6">
+                        <div class="service-wrapper free-shipping">
+                            <div class="service-img">
+                                <span>
+                                    <svg width="32" height="37" viewBox="0 0 36 37" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M1 1H5.63636V24.1818H35" stroke="#F9FFFB" stroke-width="2" stroke-miterlimit="10" stroke-linecap="square"/>
+                                        <path d="M8.72763 35.0021C10.4347 35.0021 11.8185 33.6183 11.8185 31.9112C11.8185 30.2042 10.4347 28.8203 8.72763 28.8203C7.02057 28.8203 5.63672 30.2042 5.63672 31.9112C5.63672 33.6183 7.02057 35.0021 8.72763 35.0021Z" stroke="#F9FFFB" stroke-width="2" stroke-miterlimit="10" stroke-linecap="square"/>
+                                        <path d="M31.9073 35.0021C33.6144 35.0021 34.9982 33.6183 34.9982 31.9112C34.9982 30.2042 33.6144 28.8203 31.9073 28.8203C30.2003 28.8203 28.8164 30.2042 28.8164 31.9112C28.8164 33.6183 30.2003 35.0021 31.9073 35.0021Z" stroke="#F9FFFB" stroke-width="2" stroke-miterlimit="10" stroke-linecap="square"/>
+                                        <path d="M5.63672 6.18164H19.6003L23.6367 24.1816" stroke="#F9FFFB" stroke-width="2" stroke-miterlimit="10" stroke-linecap="square"/>
+                                        <path d="M19.6016 6.18164L33.4562 8.53164L31.9107 24.1816" stroke="#F9FFFB" stroke-width="2" stroke-miterlimit="10" stroke-linecap="square"/>
+                                    </svg>
+                                </span>
+                            </div>
+                            <div class="service-content">
+                                <h5 class="service-info service-title">Giao hàng nhanh</h5>
+                                <p class="service-info service-details">Giao hàng toàn quốc</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-sm-6">
+                        <div class="service-wrapper free-shipping">
+                            <div class="service-img">
+                                <span>
+                                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M4 2H28L26 22H6L4 2Z" stroke="#F9FFFB" stroke-width="2" stroke-miterlimit="10" stroke-linecap="square"/>
+                                        <path d="M12 28C12 29.1046 11.1046 30 10 30C8.89543 30 8 29.1046 8 28C8 26.8954 8.89543 26 10 26C11.1046 26 12 26.8954 12 28Z" stroke="#F9FFFB" stroke-width="2"/>
+                                        <path d="M24 28C24 29.1046 23.1046 30 22 30C20.8954 30 20 29.1046 20 28C20 26.8954 20.8954 26 22 26C23.1046 26 24 26.8954 24 28Z" stroke="#F9FFFB" stroke-width="2"/>
+                                    </svg>
+                                </span>
+                            </div>
+                            <div class="service-content">
+                                <h5 class="service-info service-title">Đổi trả dễ dàng</h5>
+                                <p class="service-info service-details">Đổi trả trong 30 ngày</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-sm-6">
+                        <div class="service-wrapper free-shipping">
+                            <div class="service-img">
+                                <span>
+                                    <svg width="32" height="37" viewBox="0 0 32 37" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M16 1L2 7V17C2 26 8 33 16 36C24 33 30 26 30 17V7L16 1Z" stroke="#F9FFFB" stroke-width="2" stroke-miterlimit="10" stroke-linecap="square"/>
+                                        <path d="M10 18L14 22L22 14" stroke="#F9FFFB" stroke-width="2" stroke-miterlimit="10" stroke-linecap="square"/>
+                                    </svg>
+                                </span>
+                            </div>
+                            <div class="service-content">
+                                <h5 class="service-info service-title">Thanh toán an toàn</h5>
+                                <p class="service-info service-details">Bảo mật 100%</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-sm-6">
+                        <div class="service-wrapper free-shipping">
+                            <div class="service-img">
+                                <span>
+                                    <svg width="32" height="37" viewBox="0 0 32 37" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M2 14H30V32H2V14Z" stroke="#F9FFFB" stroke-width="2" stroke-miterlimit="10" stroke-linecap="square"/>
+                                        <path d="M10 14V8C10 4.68629 12.6863 2 16 2C19.3137 2 22 4.68629 22 8V14" stroke="#F9FFFB" stroke-width="2" stroke-miterlimit="10" stroke-linecap="square"/>
+                                        <circle cx="16" cy="23" r="2" fill="#F9FFFB"/>
+                                    </svg>
+                                </span>
+                            </div>
+                            <div class="service-content">
+                                <h5 class="service-info service-title">Chất lượng cao</h5>
+                                <p class="service-info service-details">Sản phẩm chính hãng</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-section">
+                <div class="row gy-5">
+                    <div class="col-lg-3 col-sm-6">
+                        <div class="footer-order">
+                            <div class="logo">
+                                <img src="~/shop/images/logos/footer-logo.webp" alt="logo">
+                            </div>
+                            <div class="footer-link order-link">
+                                <ul>
+                                    <li><a asp-controller="Shop" asp-action="Orders">Theo dõi đơn hàng</a></li>
+                                    <li><a href="#">Chính sách giao hàng</a></li>
+                                    <li><a href="#">Chính sách bảo hành</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-sm-6">
+                        <div class="about-us">
+                            <h4 class="footer-heading footer-title">Về chúng tôi</h4>
+                            <div class="footer-link about-link">
+                                <ul>
+                                    <li><a href="#">Giới thiệu</a></li>
+                                    <li><a href="#">Tuyển dụng</a></li>
+                                    <li><a href="#">Tin tức</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-sm-6">
+                        <div class="links">
+                            <h4 class="footer-heading footer-title">Liên kết</h4>
+                            <div class="footer-link useful-link">
+                                <ul>
+                                    <li><a href="#">Chính sách bảo mật</a></li>
+                                    <li><a href="#">Điều khoản sử dụng</a></li>
+                                    <li><a asp-controller="Shop" asp-action="Products">Tat ca san pham</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-sm-6">
+                        <div class="contact-info">
+                            <h4 class="footer-heading footer-title">Liên hệ</h4>
+                            <div class="footer-link contact-link">
+                                <div class="address">
+                                    <div class="details">
+                                        <h4 class="footer-heading">Địa chỉ:</h4>
+                                        <p>123 ABC, Quận 1, TP.HCM</p>
+                                    </div>
+                                </div>
+                                <div class="phone address mt-3">
+                                    <div class="details">
+                                        <h4 class="footer-heading">Điện thoại:</h4>
+                                        <p>0123 456 789</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <div class="text-center py-3">
+                <p class="text-muted">&copy; @DateTime.Now.Year ERP Online Order. All rights reserved.</p>
+            </div>
+        </div>
+    </section>
+    <!-- ============== END FOOTER ============== -->
+
+    <!-- Toast Notification -->
+    <div id="shopToast" style="position:fixed;top:20px;right:20px;z-index:99999;display:none;">
+        <div style="background:#333;color:#fff;padding:14px 24px;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.3);font-size:14px;max-width:350px;display:flex;align-items:center;gap:10px;">
+            <span id="shopToastIcon" style="font-size:18px;"></span>
+            <span id="shopToastMsg"></span>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/shop/js/nouislider.min.js"></script>
+    <script src="~/shop/js/aos-3.0.0.js"></script>
+    <script src="~/shop/js/swiper10-bundle.min.js"></script>
+    <script src="~/shop/js/shopus.js"></script>
+
+    <script>
+        // ===== Shared Cart Functions =====
+        function getCart() {
+            return JSON.parse(localStorage.getItem('shopCart') || '[]');
+        }
+
+        function saveCart(cart) {
+            localStorage.setItem('shopCart', JSON.stringify(cart));
+            updateCartBadge();
+        }
+
+        function addToCart(productId, name, price, priceText, image, quantity) {
+            quantity = quantity || 1;
+            var cart = getCart();
+            var existing = cart.find(function(item) { return item.productId === productId; });
+            if (existing) {
+                existing.quantity += quantity;
+            } else {
+                cart.push({
+                    productId: productId,
+                    name: name,
+                    price: price,
+                    priceText: priceText,
+                    image: image || '',
+                    quantity: quantity
+                });
+            }
+            saveCart(cart);
+            showToast('Đã thêm "' + name + '" vào giỏ hàng!', 'success');
+        }
+
+        function updateCartBadge() {
+            var cart = getCart();
+            var totalItems = cart.reduce(function(sum, item) { return sum + item.quantity; }, 0);
+            var badges = document.querySelectorAll('.cart-badge-count');
+            badges.forEach(function(badge) {
+                if (totalItems > 0) {
+                    badge.textContent = totalItems;
+                    badge.style.display = 'inline-flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            });
+        }
+
+        function showToast(message, type) {
+            var toast = document.getElementById('shopToast');
+            var msg = document.getElementById('shopToastMsg');
+            var icon = document.getElementById('shopToastIcon');
+            msg.textContent = message;
+            if (type === 'success') {
+                icon.innerHTML = '&#10004;';
+                icon.style.color = '#4CAF50';
+            } else if (type === 'error') {
+                icon.innerHTML = '&#10008;';
+                icon.style.color = '#f44336';
+            } else {
+                icon.innerHTML = '&#9432;';
+                icon.style.color = '#2196F3';
+            }
+            toast.style.display = 'block';
+            toast.style.animation = 'none';
+            toast.offsetHeight; // trigger reflow
+            toast.style.animation = 'fadeInRight 0.3s ease';
+            clearTimeout(window._toastTimeout);
+            window._toastTimeout = setTimeout(function() {
+                toast.style.animation = 'fadeOutRight 0.3s ease';
+                setTimeout(function() { toast.style.display = 'none'; }, 300);
+            }, 3000);
+        }
+
+        function parsePrice(priceStr) {
+            if (!priceStr) return 0;
+            var cleaned = priceStr.toString().replace(/[^\d.,]/g, '').replace(/\./g, '').replace(',', '.');
+            return parseFloat(cleaned) || 0;
+        }
+
+        // Initialize cart badge on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCartBadge();
+        });
+    </script>
+
+    <style>
+        @@keyframes fadeInRight {
+            from { opacity: 0; transform: translateX(30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @@keyframes fadeOutRight {
+            from { opacity: 1; transform: translateX(0); }
+            to { opacity: 0; transform: translateX(30px); }
+        }
+        .cart-badge-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #1a7f37;
+            color: #fff;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 11px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+    </style>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,72 @@
+﻿@model ErpOnlineOrder.Domain.Models.Warehouse
+@{
+    ViewData["Title"] = "Sửa kho hàng";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="mb-4">
+        <h4 class="mb-0">Sửa kho hàng</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="@Url.Action("Dashboard", "Home")">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index")">Kho hàng</a></li>
+                <li class="breadcrumb-item active">Sửa</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h6 class="mb-0"><i class="fas fa-edit me-2"></i>Thông tin kho</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Edit" method="post">
+                        <input type="hidden" asp-for="Id" />
+                        <input type="hidden" asp-for="Created_by" />
+                        <input type="hidden" asp-for="Created_at" />
+                        <input type="hidden" asp-for="Is_deleted" />
+
+                        <div asp-validation-summary="All" class="alert alert-danger mb-3" role="alert"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Warehouse_code" class="form-label">Mã kho <span class="text-danger">*</span></label>
+                            <input asp-for="Warehouse_code" class="form-control" />
+                            <span asp-validation-for="Warehouse_code" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Warehouse_name" class="form-label">Tên kho <span class="text-danger">*</span></label>
+                            <input asp-for="Warehouse_name" class="form-control" />
+                            <span asp-validation-for="Warehouse_name" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Province_id" class="form-label">Tỉnh/Thành phố <span class="text-danger">*</span></label>
+                            @Html.DropDownListFor(m => m.Province_id, ViewBag.Provinces as SelectList, "-- Chọn tỉnh/thành --", new { @class = "form-select" })
+                            <span asp-validation-for="Province_id" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Warehouse_address" class="form-label">Địa chỉ chi tiết <span class="text-danger">*</span></label>
+                            <textarea asp-for="Warehouse_address" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="Warehouse_address" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Lưu
+                            </button>
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Hủy
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

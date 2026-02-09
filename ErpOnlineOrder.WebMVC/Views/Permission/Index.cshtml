@@ -1,0 +1,295 @@
+@model IEnumerable<ErpOnlineOrder.Application.DTOs.PermissionDTOs.PermissionDto>
+@{
+    ViewData["Title"] = "Quản lý quyền hạn";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var canCreate = ViewBag.CanCreate ?? false;
+    var canUpdate = ViewBag.CanUpdate ?? false;
+    var canDelete = ViewBag.CanDelete ?? false;
+    var canAssign = ViewBag.CanAssign ?? false;
+
+    var groupedPermissions = Model
+        .GroupBy(p => p.Module_name)
+        .OrderBy(g => g.Key)
+        .ToList();
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-key me-2"></i>Quản lý quyền hạn
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Dashboard">Trang chủ</a></li>
+                    <li class="breadcrumb-item active">Quản lý quyền hạn</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="d-flex gap-2">
+            @if (canAssign)
+            {
+                <a asp-action="UserPermissions" class="btn btn-info text-white">
+                    <i class="fas fa-user-tag me-1"></i> Gán quyền User
+                </a>
+            }
+            @if (canCreate)
+            {
+                <a asp-action="Create" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i> Thêm quyền
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- Thống kê -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col me-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Tổng quyền</div>
+                            <div class="h5 mb-0 font-weight-bold">@Model.Count()</div>
+                        </div>
+                        <div class="col-auto"><i class="fas fa-key fa-2x text-gray-300"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col me-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Số module</div>
+                            <div class="h5 mb-0 font-weight-bold">@groupedPermissions.Count</div>
+                        </div>
+                        <div class="col-auto"><i class="fas fa-th-large fa-2x text-gray-300"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search -->
+    <div class="card shadow mb-4">
+        <div class="card-body py-2">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm quyền...">
+                    </div>
+                </div>
+                <div class="col-md-6 text-end">
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="expandAll">
+                        <i class="fas fa-expand-alt me-1"></i>Mở tất cả
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="collapseAll">
+                        <i class="fas fa-compress-alt me-1"></i>Thu gọn
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Permission Groups -->
+    @if (groupedPermissions.Any())
+    {
+        <div class="accordion" id="permissionAccordion">
+            @{ var idx = 0; }
+            @foreach (var group in groupedPermissions)
+            {
+                var moduleCode = group.First().Permission_code.Split('_')[0];
+                <div class="card shadow mb-3 permission-group" data-module="@group.Key">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center" 
+                         style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#group_@idx">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-folder-open me-2"></i>@group.Key
+                            <span class="badge bg-secondary ms-2">@group.Count() quyền</span>
+                        </h6>
+                        <i class="fas fa-chevron-down text-muted"></i>
+                    </div>
+                    <div id="group_@idx" class="collapse @(idx == 0 ? "show" : "")" data-bs-parent="#permissionAccordion">
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width:5%">#</th>
+                                            <th style="width:30%">Mã quyền</th>
+                                            <th style="width:25%">Hành động</th>
+                                            <th style="width:20%">Module</th>
+                                            @if (canUpdate || canDelete)
+                                            {
+                                                <th style="width:20%" class="text-center">Thao tác</th>
+                                            }
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @{ var rowIdx = 1; }
+                                        @foreach (var perm in group)
+                                        {
+                                            <tr class="permission-row" data-code="@perm.Permission_code" data-action="@perm.Action_name">
+                                                <td class="text-muted">@rowIdx</td>
+                                                <td>
+                                                    <code class="text-primary fw-bold">@perm.Permission_code</code>
+                                                </td>
+                                                <td>
+                                                    <i class="fas fa-@GetActionIcon(perm.Permission_code) me-1 text-muted"></i>
+                                                    @perm.Action_name
+                                                </td>
+                                                <td>@perm.Module_name</td>
+                                                @if (canUpdate || canDelete)
+                                                {
+                                                    <td class="text-center">
+                                                        @if (canUpdate)
+                                                        {
+                                                            <a asp-action="Edit" asp-route-id="@perm.Id" 
+                                                               class="btn btn-sm btn-outline-warning me-1" title="Sửa">
+                                                                <i class="fas fa-edit"></i>
+                                                            </a>
+                                                        }
+                                                        @if (canDelete)
+                                                        {
+                                                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                                                    onclick="showDeleteModal('@perm.Permission_code', @perm.Id)" title="Xóa">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        }
+                                                    </td>
+                                                }
+                                            </tr>
+                                            rowIdx++;
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                idx++;
+            }
+        </div>
+    }
+    else
+    {
+        <div class="card shadow">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-key fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Chưa có quyền nào trong hệ thống</h5>
+                @if (canCreate)
+                {
+                    <a asp-action="Create" class="btn btn-primary mt-2">
+                        <i class="fas fa-plus me-1"></i> Thêm quyền mới
+                    </a>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Modal xóa -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Xóa quyền</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc muốn <strong class="text-danger">xóa</strong> quyền <code id="deletePermCode"></code>?</p>
+                <div class="alert alert-warning small mb-0">
+                    <i class="fas fa-exclamation-circle me-1"></i>
+                    Xóa quyền sẽ ảnh hưởng đến tất cả Role và User đang sử dụng quyền này!
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Hủy
+                </button>
+                <form id="deleteForm" asp-action="Delete" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="deletePermId" />
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>Xóa
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetActionIcon(string permissionCode)
+    {
+        var action = permissionCode.Contains("_")
+            ? permissionCode.Substring(permissionCode.LastIndexOf('_') + 1).ToUpper()
+            : permissionCode;
+        return action switch
+        {
+            "VIEW" => "eye",
+            "CREATE" => "plus",
+            "UPDATE" => "edit",
+            "DELETE" => "trash",
+            "EXPORT" => "file-export",
+            "IMPORT" => "file-import",
+            "APPROVE" => "check-circle",
+            "REJECT" => "times-circle",
+            "ASSIGN" => "user-tag",
+            _ => "key"
+        };
+    }
+}
+
+@section Scripts {
+    <script>
+        function showDeleteModal(code, id) {
+            document.getElementById('deletePermCode').textContent = code;
+            document.getElementById('deletePermId').value = id;
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+
+        // Search
+        document.getElementById('searchInput').addEventListener('input', function() {
+            var query = this.value.toLowerCase();
+            document.querySelectorAll('.permission-row').forEach(function(row) {
+                var code = row.dataset.code.toLowerCase();
+                var action = row.dataset.action.toLowerCase();
+                row.style.display = (code.includes(query) || action.includes(query)) ? '' : 'none';
+            });
+            // Show all groups, hide empty ones
+            document.querySelectorAll('.permission-group').forEach(function(group) {
+                var visibleRows = group.querySelectorAll('.permission-row[style=""], .permission-row:not([style])');
+                group.style.display = visibleRows.length > 0 ? '' : 'none';
+                // Auto expand when searching
+                if (query.length > 0) {
+                    var collapse = group.querySelector('.collapse');
+                    if (collapse && !collapse.classList.contains('show')) {
+                        new bootstrap.Collapse(collapse, { show: true });
+                    }
+                }
+            });
+        });
+
+        // Expand/Collapse all
+        document.getElementById('expandAll').addEventListener('click', function() {
+            document.querySelectorAll('.collapse').forEach(function(el) {
+                new bootstrap.Collapse(el, { show: true });
+            });
+        });
+        document.getElementById('collapseAll').addEventListener('click', function() {
+            document.querySelectorAll('.collapse.show').forEach(function(el) {
+                new bootstrap.Collapse(el, { hide: true });
+            });
+        });
+    </script>
+}
+
+<style>
+    .border-left-primary { border-left: .25rem solid #4e73df !important; }
+    .border-left-success { border-left: .25rem solid #1cc88a !important; }
+    .text-gray-300 { color: #dddfeb !important; }
+</style>

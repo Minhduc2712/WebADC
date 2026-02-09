@@ -1,0 +1,153 @@
+@model List<ErpOnlineOrder.Application.DTOs.ProductDTO>
+@{
+    ViewData["Title"] = "Trang chủ";
+    Layout = "~/Views/Shared/_ShopLayout.cshtml";
+    var featured = ViewData["FeaturedProducts"] as List<ErpOnlineOrder.Application.DTOs.ProductDTO> ?? new();
+    var newArrivals = ViewData["NewArrivals"] as List<ErpOnlineOrder.Application.DTOs.ProductDTO> ?? new();
+    var categories = ViewData["ShopCategories"] as List<string> ?? new();
+}
+
+<!-- ============== Category Section ============== -->
+@if (categories.Any())
+{
+    <section class="product-category">
+        <div class="container">
+            <div class="section-title">
+                <h5>Danh mục sản phẩm</h5>
+                <a asp-action="Products" class="view">Xem tất cả</a>
+            </div>
+            <div class="category-section">
+                @{ var catIndex = 0; }
+                @foreach (var cat in categories)
+                {
+                    catIndex++;
+                    <div class="product-wrapper" data-aos="fade-right" data-aos-duration="@(catIndex * 100)">
+                        <div class="wrapper-img">
+                            <img src="~/shop/images/homepage-one/category-img/dresses.webp" alt="@cat">
+                        </div>
+                        <div class="wrapper-info">
+                            <a asp-action="Products" asp-route-category="@cat" class="wrapper-details">@cat</a>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
+<!-- ============== Category Section End ============== -->
+
+<!-- ============== Featured Products ============== -->
+@if (featured.Any())
+{
+    <section class="product arrival">
+        <div class="container">
+            <div class="section-title">
+                <h5>SẢN PHẨM NỔI BẬT</h5>
+                <a asp-action="Products" class="view">Xem tất cả</a>
+            </div>
+            <div class="arrival-section">
+                <div class="row g-5">
+                    @foreach (var product in featured)
+                    {
+                        <div class="col-lg-3 col-sm-6">
+                            <div class="product-wrapper" data-aos="fade-up">
+                                <div class="product-img">
+                                    <a asp-action="ProductDetail" asp-route-id="@product.Id">
+                                        @if (product.Images.Any())
+                                        {
+                                            <img src="@product.Images.First()" alt="@product.Product_name">
+                                        }
+                                        else
+                                        {
+                                            <img src="~/shop/images/homepage-one/product-img/product-img-1.webp" alt="@product.Product_name">
+                                        }
+                                    </a>
+                                </div>
+                                <div class="product-info">
+                                    <div class="product-description">
+                                        <a asp-action="ProductDetail" asp-route-id="@product.Id" class="product-details">@product.Product_name</a>
+                                        @if (product.Authors.Any())
+                                        {
+                                            <p class="product-category" style="font-size: 13px; color: #888;">@string.Join(", ", product.Authors)</p>
+                                        }
+                                        <div class="price">
+                                            <span class="new-price">@product.Product_price</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="product-cart-btn">
+                                    <a href="javascript:void(0)" class="product-btn"
+                                       onclick="addToCart(@product.Id, '@Html.Raw(product.Product_name.Replace("'", "\\'"))', parsePrice('@product.Product_price'), '@product.Product_price', '@(product.Images.Any() ? product.Images.First() : "")', 1)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right:5px;">
+                                            <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
+                                        </svg>
+                                        Đặt hàng
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+}
+<!-- ============== Featured Products End ============== -->
+
+<!-- ============== New Arrivals ============== -->
+@if (newArrivals.Any())
+{
+    <section class="product arrival" data-aos="fade-up">
+        <div class="container">
+            <div class="section-title">
+                <h5>SẢN PHẨM MỚI NHẤT</h5>
+                <a asp-action="Products" asp-route-sort="newest" class="view">Xem tất cả</a>
+            </div>
+            <div class="arrival-section">
+                <div class="row g-5">
+                    @foreach (var product in newArrivals)
+                    {
+                        <div class="col-lg-3 col-sm-6">
+                            <div class="product-wrapper" data-aos="fade-up">
+                                <div class="product-img">
+                                    <a asp-action="ProductDetail" asp-route-id="@product.Id">
+                                        @if (product.Images.Any())
+                                        {
+                                            <img src="@product.Images.First()" alt="@product.Product_name">
+                                        }
+                                        else
+                                        {
+                                            <img src="~/shop/images/homepage-one/product-img/product-img-2.webp" alt="@product.Product_name">
+                                        }
+                                    </a>
+                                </div>
+                                <div class="product-info">
+                                    <div class="product-description">
+                                        <a asp-action="ProductDetail" asp-route-id="@product.Id" class="product-details">@product.Product_name</a>
+                                        @if (product.Authors.Any())
+                                        {
+                                            <p class="product-category" style="font-size: 13px; color: #888;">@string.Join(", ", product.Authors)</p>
+                                        }
+                                        <div class="price">
+                                            <span class="new-price">@product.Product_price</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="product-cart-btn">
+                                    <a href="javascript:void(0)" class="product-btn"
+                                       onclick="addToCart(@product.Id, '@Html.Raw(product.Product_name.Replace("'", "\\'"))', parsePrice('@product.Product_price'), '@product.Product_price', '@(product.Images.Any() ? product.Images.First() : "")', 1)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right:5px;">
+                                            <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
+                                        </svg>
+                                        Đặt hàng
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+}
+<!-- ============== New Arrivals End ============== -->

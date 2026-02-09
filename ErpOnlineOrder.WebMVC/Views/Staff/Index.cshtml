@@ -1,0 +1,470 @@
+@model IEnumerable<ErpOnlineOrder.Application.DTOs.AdminDTOs.StaffAccountDto>
+@{
+    ViewData["Title"] = "Quản lý nhân sự";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var canCreate = ViewBag.CanCreate ?? false;
+    var canUpdate = ViewBag.CanUpdate ?? false;
+    var canDelete = ViewBag.CanDelete ?? false;
+    var canAssign = ViewBag.CanAssign ?? false;
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-users-cog me-2"></i>Quản lý nhân sự
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Dashboard">Trang chủ</a></li>
+                    <li class="breadcrumb-item active">Quản lý nhân sự</li>
+                </ol>
+            </nav>
+        </div>
+        @if (canCreate)
+        {
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i> Thêm nhân viên
+            </a>
+        }
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Tổng nhân viên</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.Count()</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Đang hoạt động</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.Count(s => s.Is_active)</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Vô hiệu hóa</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.Count(s => !s.Is_active)</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-slash fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Staff Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-list me-1"></i> Danh sách nhân viên
+            </h6>
+            <div class="input-group" style="width: 300px;">
+                <input type="text" class="form-control" id="searchInput" placeholder="Tìm kiếm...">
+                <span class="input-group-text"><i class="fas fa-search"></i></span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="staffTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="4%">#</th>
+                            <th width="9%">Mã NV</th>
+                            <th width="12%">Tên đăng nhập</th>
+                            <th width="14%">Họ tên</th>
+                            <th width="14%">Email</th>
+                            <th width="12%">Vai trò</th>
+                            <th width="8%">Trạng thái</th>
+                            <th width="27%" class="text-center">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Any())
+                        {
+                            var index = 1;
+                            @foreach (var staff in Model)
+                            {
+                                <tr>
+                                    <td class="align-middle">@index</td>
+                                    <td class="align-middle"><span class="badge bg-secondary">@staff.Staff_code</span></td>
+                                    <td class="align-middle">@staff.Username</td>
+                                    <td class="align-middle">@staff.Full_name</td>
+                                    <td class="align-middle"><small>@staff.Email</small></td>
+                                    <td class="align-middle">
+                                        @if (staff.Roles != null && staff.Roles.Any())
+                                        {
+                                            @foreach (var role in staff.Roles.Take(2))
+                                            {
+                                                <span class="badge bg-primary me-1">@role</span>
+                                            }
+                                            @if (staff.Roles.Count > 2)
+                                            {
+                                                <span class="badge bg-info">+@(staff.Roles.Count - 2)</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-light text-muted">Chưa gán</span>
+                                        }
+                                    </td>
+                                    <td class="align-middle text-center">
+                                        @if (staff.Is_active)
+                                        {
+                                            <span class="badge bg-success"><i class="fas fa-check me-1"></i>Hoạt động</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger"><i class="fas fa-times me-1"></i>Vô hiệu</span>
+                                        }
+                                    </td>
+                                    <td class="align-middle text-center">
+                                        <div class="action-buttons">
+                                            <!-- Nút chính: Chi tiết, Sửa -->
+                                            <a asp-action="Details" asp-route-id="@staff.User_id" 
+                                               class="btn btn-sm btn-outline-info action-btn" title="Xem chi tiết"
+                                               data-bs-toggle="tooltip">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+
+                                            @if (canUpdate)
+                                            {
+                                                <a asp-action="Edit" asp-route-id="@staff.User_id" 
+                                                   class="btn btn-sm btn-outline-warning action-btn" title="Chỉnh sửa"
+                                                   data-bs-toggle="tooltip">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            }
+
+                                            @if (canAssign)
+                                            {
+                                                <a asp-action="AssignRoles" asp-route-id="@staff.User_id" 
+                                                   class="btn btn-sm btn-outline-primary action-btn" title="Gán vai trò"
+                                                   data-bs-toggle="tooltip">
+                                                    <i class="fas fa-user-tag"></i>
+                                                </a>
+                                                <a asp-action="AssignPermissions" asp-route-id="@staff.User_id" 
+                                                   class="btn btn-sm btn-outline-success action-btn" title="Gán quyền trực tiếp"
+                                                   data-bs-toggle="tooltip">
+                                                    <i class="fas fa-key"></i>
+                                                </a>
+                                            }
+
+                                            <!-- Dropdown cho thao tác phụ -->
+                                            @if (canUpdate || canDelete)
+                                            {
+                                                <div class="btn-group">
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary action-btn dropdown-toggle dropdown-toggle-split" 
+                                                            data-bs-toggle="dropdown" aria-expanded="false"
+                                                            title="Thêm thao tác">
+                                                        <i class="fas fa-ellipsis-v"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                                        @if (canUpdate)
+                                                        {
+                                                            <li>
+                                                                <a class="dropdown-item" asp-action="ResetPassword" asp-route-id="@staff.User_id">
+                                                                    <i class="fas fa-unlock-alt text-secondary me-2"></i>Đặt lại mật khẩu
+                                                                </a>
+                                                            </li>
+                                                            <li><hr class="dropdown-divider"></li>
+                                                            @if (staff.Is_active)
+                                                            {
+                                                                <li>
+                                                                    <button type="button" class="dropdown-item"
+                                                                            onclick="showConfirmModal('Vô hiệu hóa tài khoản', 'Bạn có chắc muốn vô hiệu hóa tài khoản <strong>@staff.Full_name</strong>? Nhân viên sẽ không thể đăng nhập sau khi bị vô hiệu hóa.', 'toggleForm_@staff.User_id', 'warning')">
+                                                                        <i class="fas fa-user-slash text-warning me-2"></i>Vô hiệu hóa
+                                                                    </button>
+                                                                    <form id="toggleForm_@staff.User_id" asp-action="ToggleStatus" method="post" class="d-none">
+                                                                        @Html.AntiForgeryToken()
+                                                                        <input type="hidden" name="id" value="@staff.User_id" />
+                                                                        <input type="hidden" name="isActive" value="false" />
+                                                                    </form>
+                                                                </li>
+                                                            }
+                                                            else
+                                                            {
+                                                                <li>
+                                                                    <button type="button" class="dropdown-item"
+                                                                            onclick="showConfirmModal('Kích hoạt tài khoản', 'Bạn có chắc muốn kích hoạt lại tài khoản <strong>@staff.Full_name</strong>?', 'toggleForm_@staff.User_id', 'success')">
+                                                                        <i class="fas fa-user-check text-success me-2"></i>Kích hoạt
+                                                                    </button>
+                                                                    <form id="toggleForm_@staff.User_id" asp-action="ToggleStatus" method="post" class="d-none">
+                                                                        @Html.AntiForgeryToken()
+                                                                        <input type="hidden" name="id" value="@staff.User_id" />
+                                                                        <input type="hidden" name="isActive" value="true" />
+                                                                    </form>
+                                                                </li>
+                                                            }
+                                                        }
+                                                        @if (canDelete)
+                                                        {
+                                                            <li><hr class="dropdown-divider"></li>
+                                                            <li>
+                                                                <button type="button" class="dropdown-item text-danger"
+                                                                        onclick="showConfirmModal('Xóa tài khoản', 'Bạn có chắc muốn <strong class=\'text-danger\'>xóa vĩnh viễn</strong> tài khoản <strong>@staff.Full_name</strong> (@staff.Username)?<br><small class=\'text-muted\'>Thao tác này không thể hoàn tác!</small>', 'deleteForm_@staff.User_id', 'danger')">
+                                                                    <i class="fas fa-trash me-2"></i>Xóa tài khoản
+                                                                </button>
+                                                                <form id="deleteForm_@staff.User_id" asp-action="Delete" method="post" class="d-none">
+                                                                    @Html.AntiForgeryToken()
+                                                                    <input type="hidden" name="id" value="@staff.User_id" />
+                                                                </form>
+                                                            </li>
+                                                        }
+                                                    </ul>
+                                                </div>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                                index++;
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4">
+                                    <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                    Chưa có nhân viên nào
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal xác nhận thao tác -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" id="confirmModalHeader">
+                <h5 class="modal-title" id="confirmModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2" id="confirmModalIcon"></i>
+                    <span id="confirmModalTitle">Xác nhận</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmModalBody" class="mb-0"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Hủy
+                </button>
+                <button type="button" class="btn" id="confirmModalBtn" onclick="submitConfirmedForm()">
+                    <i class="fas fa-check me-1"></i>Xác nhận
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // ===== Tìm kiếm trong bảng =====
+        document.getElementById('searchInput').addEventListener('keyup', function () {
+            var value = this.value.toLowerCase();
+            var rows = document.querySelectorAll('#staffTable tbody tr');
+
+            rows.forEach(function (row) {
+                var text = row.textContent.toLowerCase();
+                row.style.display = text.includes(value) ? '' : 'none';
+            });
+        });
+
+        // ===== Khởi tạo Bootstrap Tooltips =====
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.forEach(function (el) {
+            new bootstrap.Tooltip(el, { trigger: 'hover' });
+        });
+
+        // ===== Modal xác nhận =====
+        var pendingFormId = null;
+
+        function showConfirmModal(title, message, formId, type) {
+            pendingFormId = formId;
+            document.getElementById('confirmModalTitle').textContent = title;
+            document.getElementById('confirmModalBody').innerHTML = message;
+
+            var header = document.getElementById('confirmModalHeader');
+            var btn = document.getElementById('confirmModalBtn');
+            var icon = document.getElementById('confirmModalIcon');
+
+            // Reset classes
+            header.className = 'modal-header';
+            btn.className = 'btn';
+
+            switch (type) {
+                case 'danger':
+                    header.classList.add('bg-danger', 'text-white');
+                    btn.classList.add('btn-danger');
+                    icon.className = 'fas fa-exclamation-triangle me-2';
+                    break;
+                case 'warning':
+                    header.classList.add('bg-warning', 'text-dark');
+                    btn.classList.add('btn-warning');
+                    icon.className = 'fas fa-exclamation-circle me-2';
+                    break;
+                case 'success':
+                    header.classList.add('bg-success', 'text-white');
+                    btn.classList.add('btn-success');
+                    icon.className = 'fas fa-check-circle me-2';
+                    break;
+                default:
+                    header.classList.add('bg-primary', 'text-white');
+                    btn.classList.add('btn-primary');
+                    icon.className = 'fas fa-question-circle me-2';
+            }
+
+            var modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            modal.show();
+        }
+
+        function submitConfirmedForm() {
+            if (pendingFormId) {
+                var form = document.getElementById(pendingFormId);
+                if (form) {
+                    form.submit();
+                }
+            }
+        }
+    </script>
+}
+
+<style>
+    .border-left-primary { border-left: 4px solid #4e73df !important; }
+    .border-left-success { border-left: 4px solid #1cc88a !important; }
+    .border-left-warning { border-left: 4px solid #f6c23e !important; }
+    .text-gray-300 { color: #dddfeb !important; }
+    .text-gray-800 { color: #5a5c69 !important; }
+
+    /* Action buttons layout */
+    .action-buttons {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        flex-wrap: nowrap;
+    }
+
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+    }
+
+    .action-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    }
+
+    .action-btn i {
+        font-size: 0.8rem;
+    }
+
+    /* Dropdown menu */
+    .dropdown-menu {
+        min-width: 220px;
+        border-radius: 8px;
+        border: 1px solid rgba(0,0,0,.08);
+        z-index: 1050;
+    }
+
+    .dropdown-item {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        border-radius: 4px;
+        margin: 2px 4px;
+        width: calc(100% - 8px);
+        transition: all 0.15s ease;
+    }
+
+    .dropdown-item:hover {
+        background-color: #f0f2f5;
+    }
+
+    .dropdown-item.text-danger:hover {
+        background-color: #fde8e8;
+        color: #dc3545 !important;
+    }
+
+    /* Fix dropdown trong table-responsive */
+    .table-responsive {
+        overflow: visible !important;
+    }
+
+    .table td {
+        overflow: visible;
+    }
+
+    /* Modal styling */
+    #confirmModal .modal-content {
+        border: none;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    #confirmModal .modal-header {
+        border-bottom: none;
+        padding: 1.25rem 1.5rem;
+    }
+
+    #confirmModal .modal-body {
+        padding: 1.5rem;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    #confirmModal .modal-footer {
+        border-top: 1px solid #f0f0f0;
+        padding: 1rem 1.5rem;
+    }
+
+    #confirmModal .btn-close {
+        filter: brightness(0) invert(1);
+    }
+
+    #confirmModalHeader.bg-warning .btn-close {
+        filter: none;
+    }
+
+    /* Hover row highlight */
+    .table-hover tbody tr:hover {
+        background-color: #f8f9ff;
+    }
+</style>

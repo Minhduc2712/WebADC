@@ -1,0 +1,209 @@
+@model IEnumerable<ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs.WarehouseExportDto>
+@{
+    ViewData["Title"] = "Gộp phiếu xuất kho";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="mb-4">
+        <h4 class="mb-0">Gộp phiếu xuất kho</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="@Url.Action("Dashboard", "Home")">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index")">Xuất kho</a></li>
+                <li class="breadcrumb-item active">Gộp phiếu</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h6 class="mb-0"><i class="fas fa-compress-arrows-alt me-2"></i>Chọn phiếu xuất kho để gộp</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Merge" method="post" id="mergeForm">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Chọn ít nhất 2 phiếu xuất kho cùng khách hàng để gộp. Các phiếu phải ở trạng thái "Chờ xuất" hoặc "Đã xác nhận".
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <label class="form-label">Ghi chú</label>
+                                <textarea name="Note" class="form-control" rows="2" placeholder="Lý do gộp phiếu xuất kho..."></textarea>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">&nbsp;</label>
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" name="Auto_merge_invoices" value="true" checked id="autoMergeInvoices" />
+                                    <label class="form-check-label" for="autoMergeInvoices">
+                                        <i class="fas fa-file-invoice me-1"></i>Tự động gộp hóa đơn tương ứng
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (!Model.Any())
+                        {
+                            <div class="text-center py-5 text-muted">
+                                <i class="fas fa-inbox fa-3x mb-3"></i>
+                                <p>Không có phiếu xuất kho nào có thể gộp</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 50px;">
+                                                <input type="checkbox" class="form-check-input" id="selectAll" onclick="toggleAll(this)" />
+                                            </th>
+                                            <th>Mã phiếu</th>
+                                            <th>Khách hàng</th>
+                                            <th>Kho</th>
+                                            <th>Ngày xuất</th>
+                                            <th>Tổng tiền</th>
+                                            <th>Số SP</th>
+                                            <th>Trạng thái</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var export in Model)
+                                        {
+                                            var statusClass = export.Status switch
+                                            {
+                                                "Pending" => "bg-warning text-dark",
+                                                "Confirmed" => "bg-primary",
+                                                _ => "bg-secondary"
+                                            };
+                                            var statusText = export.Status switch
+                                            {
+                                                "Pending" => "Chờ xuất",
+                                                "Confirmed" => "Đã xác nhận",
+                                                _ => export.Status
+                                            };
+                                            <tr>
+                                                <td>
+                                                    <input type="checkbox" class="form-check-input export-checkbox" 
+                                                           name="Export_ids" value="@export.Id" 
+                                                           data-customer="@export.Customer_id"
+                                                           data-warehouse="@export.Warehouse_id"
+                                                           data-amount="@export.Total_amount"
+                                                           onchange="updateSelection()" />
+                                                </td>
+                                                <td><span class="badge bg-secondary">@export.Warehouse_export_code</span></td>
+                                                <td>@export.Customer_name</td>
+                                                <td>@export.Warehouse_name</td>
+                                                <td>@export.Export_date.ToString("dd/MM/yyyy")</td>
+                                                <td class="text-success fw-bold">@export.Total_amount.ToString("N0") VNĐ</td>
+                                                <td><span class="badge bg-info">@export.Total_quantity</span></td>
+                                                <td><span class="badge @statusClass">@statusText</span></td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <input type="hidden" name="Warehouse_id" id="warehouseId" value="0" />
+
+                            <div class="d-flex gap-2 mt-3">
+                                <button type="submit" class="btn btn-primary" id="mergeBtn" disabled>
+                                    <i class="fas fa-compress-arrows-alt me-2"></i>Gộp phiếu đã chọn
+                                </button>
+                                <a asp-action="Index" class="btn btn-secondary">
+                                    <i class="fas fa-times me-2"></i>Hủy
+                                </a>
+                            </div>
+                        }
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h6 class="mb-0"><i class="fas fa-calculator me-2"></i>Tổng kết</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <td class="text-muted">Số phiếu đã chọn:</td>
+                            <td><strong id="selectedCount">0</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Tổng tiền:</td>
+                            <td class="text-success fw-bold"><span id="totalAmount">0</span> VNĐ</td>
+                        </tr>
+                    </table>
+                    
+                    <div id="customerWarning" class="alert alert-danger d-none">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Các phiếu phải cùng một khách hàng!
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Hướng dẫn</h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning mb-0">
+                        <h6><i class="fas fa-exclamation-triangle me-2"></i>Lưu ý quan trọng:</h6>
+                        <ul class="mb-0 small">
+                            <li>Chỉ gộp được các phiếu <strong>cùng khách hàng</strong></li>
+                            <li>Phiếu đã hoàn thành hoặc đã hủy không thể gộp</li>
+                            <li>Sau khi gộp, các phiếu gốc sẽ bị hủy</li>
+                            <li>Nếu chọn "Tự động gộp hóa đơn", các hóa đơn tương ứng cũng sẽ được gộp</li>
+                            <li>Có thể hoàn tác gộp nếu cần</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function toggleAll(checkbox) {
+        document.querySelectorAll('.export-checkbox').forEach(cb => {
+            cb.checked = checkbox.checked;
+        });
+        updateSelection();
+    }
+
+    function updateSelection() {
+        const checked = document.querySelectorAll('.export-checkbox:checked');
+        const count = checked.length;
+        let total = 0;
+        const customers = new Set();
+        let warehouseId = 0;
+        
+        checked.forEach(cb => {
+            customers.add(cb.dataset.customer);
+            total += parseFloat(cb.dataset.amount) || 0;
+            warehouseId = cb.dataset.warehouse; // Lấy warehouse từ phiếu đầu tiên
+        });
+        
+        document.getElementById('selectedCount').textContent = count;
+        document.getElementById('totalAmount').textContent = total.toLocaleString();
+        document.getElementById('warehouseId').value = warehouseId;
+        
+        const customerWarning = document.getElementById('customerWarning');
+        const mergeBtn = document.getElementById('mergeBtn');
+        
+        if (customers.size > 1) {
+            customerWarning.classList.remove('d-none');
+            mergeBtn.disabled = true;
+        } else {
+            customerWarning.classList.add('d-none');
+            mergeBtn.disabled = count < 2;
+        }
+    }
+</script>
+}

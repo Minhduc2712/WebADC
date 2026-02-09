@@ -1,0 +1,101 @@
+@{
+    ViewData["Title"] = "Thêm gán cán bộ phụ trách";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var customers = ViewBag.Customers as List<ErpOnlineOrder.Domain.Models.Customer> ?? new List<ErpOnlineOrder.Domain.Models.Customer>();
+    var staffList = ViewBag.StaffList as List<ErpOnlineOrder.Domain.Models.Staff> ?? new List<ErpOnlineOrder.Domain.Models.Staff>();
+    var provinces = ViewBag.Provinces as List<ErpOnlineOrder.Domain.Models.Province> ?? new List<ErpOnlineOrder.Domain.Models.Province>();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1"><i class="fas fa-plus-circle me-2 text-success"></i>Thêm gán cán bộ phụ trách</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="@Url.Action("Dashboard", "Home")">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("StaffAssignment")">Gán cán bộ phụ trách</a></li>
+                <li class="breadcrumb-item active">Thêm mới</li>
+            </ol>
+        </nav>
+    </div>
+    <a href="@Url.Action("StaffAssignment")" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Quay lại
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="table-card">
+            <div class="card-header bg-success bg-opacity-10">
+                <i class="fas fa-user-tag me-2 text-success"></i>Thông tin gán cán bộ phụ trách
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="CreateAssignment" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-user me-1 text-primary"></i>Khách hàng <span class="text-danger">*</span>
+                        </label>
+                        <select name="Customer_id" class="form-select" required id="customerSelect">
+                            <option value="">-- Chọn khách hàng --</option>
+                            @foreach (var customer in customers)
+                            {
+                                <option value="@customer.Id">
+                                    @customer.Full_name (@customer.Customer_code) @(!string.IsNullOrEmpty(customer.Phone_number) ? $"- {customer.Phone_number}" : "")
+                                </option>
+                            }
+                        </select>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>Chọn khách hàng cần gán cán bộ phụ trách
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-user-tie me-1 text-success"></i>Cán bộ phụ trách <span class="text-danger">*</span>
+                        </label>
+                        <select name="Staff_id" class="form-select" required id="staffSelect">
+                            <option value="">-- Chọn cán bộ --</option>
+                            @foreach (var staff in staffList)
+                            {
+                                <option value="@staff.Id">
+                                    @staff.Full_name (@staff.Staff_code)
+                                </option>
+                            }
+                        </select>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>Chọn cán bộ sẽ phụ trách quản lý khách hàng
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-map-marker-alt me-1 text-danger"></i>Tỉnh/Thành phố <span class="text-danger">*</span>
+                        </label>
+                        <select name="Province_id" class="form-select" required id="provinceSelect">
+                            <option value="">-- Chọn tỉnh/thành phố --</option>
+                            @foreach (var province in provinces)
+                            {
+                                <option value="@province.Id">@province.Province_name</option>
+                            }
+                        </select>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>Tỉnh/thành phố quản lý
+                        </div>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="@Url.Action("StaffAssignment")" class="btn btn-secondary">
+                            <i class="fas fa-times me-1"></i>Hủy
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save me-1"></i>Lưu gán cán bộ
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

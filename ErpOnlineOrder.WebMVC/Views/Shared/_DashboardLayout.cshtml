@@ -1,0 +1,333 @@
+@{
+    var username = Context.Session.GetString("Username") ?? "Người dùng";
+    var fullName = Context.Session.GetString("FullName") ?? username;
+    var roles = Context.Session.GetString("Roles") ?? "";
+    var roleDisplay = roles.Contains("ROLE_ADMIN") ? "Quản trị viên" : 
+                      roles.Contains("ROLE_STAFF") ? "Nhân viên" : 
+                      roles.Contains("ROLE_CUSTOMER") ? "Khách hàng" : "Người dùng";
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - ERP Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet" />
+    <style>
+        :root {
+            --sidebar-width: 260px;
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+        }
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            z-index: 1000;
+            transition: all 0.3s;
+            overflow-y: auto;
+        }
+        .sidebar-header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .sidebar-header h4 {
+            color: white;
+            margin: 0;
+            font-weight: 700;
+        }
+        .sidebar-menu {
+            padding: 20px 0;
+            list-style: none;
+            margin: 0;
+        }
+        .sidebar-menu li {
+            margin-bottom: 5px;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        .sidebar-menu a:hover, .sidebar-menu a.active {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border-left: 4px solid white;
+        }
+        .sidebar-menu a i {
+            width: 25px;
+            margin-right: 10px;
+        }
+        .menu-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.5);
+            padding: 15px 20px 10px;
+            letter-spacing: 1px;
+        }
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+        }
+        /* Top Navbar */
+        .top-navbar {
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .search-box {
+            position: relative;
+            width: 300px;
+        }
+        .search-box input {
+            padding: 10px 15px 10px 40px;
+            border: 1px solid #e1e1e1;
+            border-radius: 25px;
+            width: 100%;
+        }
+        .search-box i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+        .user-dropdown {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+        }
+        /* Content Area */
+        .content-wrapper {
+            padding: 30px;
+        }
+        /* Cards */
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+        }
+        .stat-icon.blue { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .stat-icon.green { background: linear-gradient(135deg, #11998e, #38ef7d); }
+        .stat-icon.orange { background: linear-gradient(135deg, #f093fb, #f5576c); }
+        .stat-icon.red { background: linear-gradient(135deg, #eb3349, #f45c43); }
+        /* Tables */
+        .table-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        .table-card .card-header {
+            background: white;
+            border-bottom: 1px solid #eee;
+            padding: 20px;
+            font-weight: 600;
+        }
+    </style>
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h4><i class="fas fa-cube me-2"></i>ERP System</h4>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="menu-title">CHÍNH</li>
+            <li><a href="@Url.Action("Dashboard", "Home")" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Dashboard" ? "active" : "")"><i class="fas fa-home"></i> Dashboard</a></li>
+            
+            @* QUẢN LÝ - Hiển thị nếu có ít nhất 1 quyền VIEW *@
+            @if (Context.Session.HasAnyPermission("PRODUCT_VIEW", "ORDER_VIEW", "CUSTOMER_VIEW", "CUSTOMER_ASSIGN", "INVOICE_VIEW", "WAREHOUSE_VIEW"))
+            {
+                <li class="menu-title">QUẢN LÝ</li>
+                
+                @if (Context.Session.HasPermission("PRODUCT_VIEW"))
+                {
+                    <li><a href="@Url.Action("Index", "Product")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Product" ? "active" : "")"><i class="fas fa-box"></i> Sản phẩm</a></li>
+                }
+                
+                @if (Context.Session.HasPermission("ORDER_VIEW"))
+                {
+                    <li><a href="@Url.Action("Index", "Order")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Order" ? "active" : "")"><i class="fas fa-shopping-cart"></i> Đơn hàng</a></li>
+                }
+                
+                @if (Context.Session.HasPermission("CUSTOMER_VIEW"))
+                {
+                    <li><a href="@Url.Action("Index", "CustomerManagement")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "CustomerManagement" && ViewContext.RouteData.Values["action"]?.ToString() != "StaffAssignment" ? "active" : "")"><i class="fas fa-users"></i> Khách hàng</a></li>
+                }
+                @if (Context.Session.HasPermission("CUSTOMER_ASSIGN"))
+                {
+                    <li><a href="@Url.Action("StaffAssignment", "CustomerManagement")" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "StaffAssignment" ? "active" : "")"><i class="fas fa-user-tag"></i> Gán cán bộ phụ trách</a></li>
+                }
+                
+                @if (Context.Session.HasPermission("INVOICE_VIEW"))
+                {
+                    <li><a href="@Url.Action("Index", "Invoice")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Invoice" ? "active" : "")"><i class="fas fa-file-invoice"></i> Hóa đơn</a></li>
+                }
+                
+                @if (Context.Session.HasPermission("WAREHOUSE_VIEW"))
+                {
+                    <li><a href="@Url.Action("Index", "WarehouseExport")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "WarehouseExport" ? "active" : "")"><i class="fas fa-warehouse"></i> Xuất kho</a></li>
+                }
+            }
+            
+            @* NHÂN SỰ - Hiển thị nếu có quyền STAFF_VIEW *@
+            @if (Context.Session.HasPermission("STAFF_VIEW"))
+            {
+                <li class="menu-title">NHÂN SỰ</li>
+                <li><a href="@Url.Action("Index", "Staff")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Staff" ? "active" : "")"><i class="fas fa-users-cog"></i> Quản lý nhân sự</a></li>
+            }
+            
+            @* CẤU HÌNH - Hiển thị nếu có ít nhất 1 quyền *@
+            @if (Context.Session.HasAnyPermission("CATEGORY_VIEW", "DISTRIBUTOR_VIEW", "REGION_VIEW", "PROVINCE_VIEW", "WAREHOUSE_VIEW"))
+            {
+                <li class="menu-title">CẤU HÌNH</li>
+                
+                @if (Context.Session.HasPermission("CATEGORY_VIEW"))
+                {
+                    <li><a href="@Url.Action("Index", "Category")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Category" ? "active" : "")"><i class="fas fa-tags"></i> Danh mục</a></li>
+                    <li><a href="@Url.Action("Index", "Author")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Author" ? "active" : "")"><i class="fas fa-user-edit"></i> Tác giả</a></li>
+                    <li><a href="@Url.Action("Index", "Publisher")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Publisher" ? "active" : "")"><i class="fas fa-building"></i> Nhà xuất bản</a></li>
+                    <li><a href="@Url.Action("Index", "CoverType")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "CoverType" ? "active" : "")"><i class="fas fa-book"></i> Loại bìa</a></li>
+                }
+                @if (Context.Session.HasPermission("DISTRIBUTOR_VIEW"))
+                {
+                    <li><a href="@Url.Action("Index", "Distributor")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Distributor" ? "active" : "")"><i class="fas fa-truck"></i> Nhà phân phối</a></li>
+                }
+                
+                @if (Context.Session.HasPermission("REGION_VIEW"))
+                {
+                    <li><a href="@Url.Action("Index", "Region")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Region" ? "active" : "")"><i class="fas fa-map"></i> Khu vực</a></li>
+                }
+                
+                @if (Context.Session.HasPermission("PROVINCE_VIEW"))
+                {
+                    <li><a href="@Url.Action("Index", "Province")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Province" ? "active" : "")"><i class="fas fa-map-marker-alt"></i> Tỉnh thành</a></li>
+                }
+                
+                @if (Context.Session.HasPermission("WAREHOUSE_VIEW"))
+                {
+                    <li><a href="@Url.Action("Index", "Warehouse")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Warehouse" ? "active" : "")"><i class="fas fa-warehouse"></i> Kho hàng</a></li>
+                }
+            }
+            
+            @* HỆ THỐNG *@
+            @if (Context.Session.HasPermission("ROLE_VIEW") || Context.Session.HasPermission("PERMISSION_VIEW"))
+            {
+                <li class="menu-title">HỆ THỐNG</li>
+                @if (Context.Session.HasPermission("ROLE_VIEW"))
+                {
+                    <li><a href="@Url.Action("Index", "Role")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Role" ? "active" : "")"><i class="fas fa-user-shield"></i> Phân quyền Role</a></li>
+                }
+                @if (Context.Session.HasPermission("PERMISSION_VIEW"))
+                {
+                    <li><a href="@Url.Action("Index", "Permission")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Permission" ? "active" : "")"><i class="fas fa-key"></i> Quản lý quyền</a></li>
+                }
+            }
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Navbar -->
+        <div class="top-navbar">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Tìm kiếm..." />
+            </div>
+            <div class="d-flex align-items-center">
+                <div class="me-4">
+                    <a href="#" class="text-dark position-relative">
+                        <i class="fas fa-bell fa-lg"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">3</span>
+                    </a>
+                </div>
+                <div class="dropdown">
+                    <div class="user-dropdown" data-bs-toggle="dropdown">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <div class="fw-semibold">@fullName</div>
+                            <small class="text-muted">@roleDisplay</small>
+                        </div>
+                        <i class="fas fa-chevron-down ms-2"></i>
+                    </div>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm py-2">
+                        <li class="px-3 py-2 border-bottom">
+                            <div class="small text-muted">@username</div>
+                            <div class="fw-semibold">@fullName</div>
+                            <span class="badge bg-primary mt-1">@roleDisplay</span>
+                        </li>
+                        <li><a class="dropdown-item py-2" href="@Url.Action("ChangePassword", "Auth")"><i class="fas fa-key me-2 text-secondary"></i> Đổi mật khẩu</a></li>
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li>
+                            <form asp-controller="Auth" asp-action="Logout" method="post" class="mb-0">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="dropdown-item py-2 text-danger">
+                                    <i class="fas fa-sign-out-alt me-2"></i> Đăng xuất
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="content-wrapper">
+            <!-- Thông báo tự động từ TempData -->
+            <partial name="_NotificationPartial" />
+            @RenderBody()
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

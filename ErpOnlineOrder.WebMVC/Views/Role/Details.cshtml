@@ -1,0 +1,190 @@
+@model ErpOnlineOrder.Application.DTOs.PermissionDTOs.RolePermissionDto
+@{
+    ViewData["Title"] = "Chi tiết Role";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var groupedPermissions = ViewBag.GroupedPermissions as Dictionary<string, List<ErpOnlineOrder.Application.DTOs.PermissionDTOs.PermissionDto>> 
+        ?? new Dictionary<string, List<ErpOnlineOrder.Application.DTOs.PermissionDTOs.PermissionDto>>();
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-shield-alt me-2"></i>Chi tiết Role
+        </h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Dashboard">Trang chủ</a></li>
+                <li class="breadcrumb-item"><a asp-action="Index">Quản lý phân quyền</a></li>
+                <li class="breadcrumb-item active">Chi tiết</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Role Info -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info-circle me-1"></i> Thông tin Role
+                    </h6>
+                    <a asp-action="Edit" asp-route-id="@Model.Role_id" class="btn btn-sm btn-warning">
+                        <i class="fas fa-edit me-1"></i> Chỉnh sửa
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Tên Role:</strong> @Model.Role_name</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Tổng số quyền:</strong> 
+                                <span class="badge bg-primary fs-6">@Model.Permissions.Count</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Permissions List -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-success">
+                        <i class="fas fa-key me-1"></i> Danh sách quyền
+                    </h6>
+                    <a asp-action="AssignPermissions" asp-route-id="@Model.Role_id" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus me-1"></i> Gán quyền
+                    </a>
+                </div>
+                <div class="card-body">
+                    @if (groupedPermissions.Any())
+                    {
+                        <div class="accordion" id="permissionsAccordion">
+                            @{ var index = 0; }
+                            @foreach (var group in groupedPermissions)
+                            {
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button @(index > 0 ? "collapsed" : "")" type="button" 
+                                                data-bs-toggle="collapse" data-bs-target="#collapse_@index">
+                                            <i class="fas fa-folder-open me-2 text-primary"></i>
+                                            <strong>@group.Key</strong>
+                                            <span class="badge bg-secondary ms-2">@group.Value.Count quyền</span>
+                                        </button>
+                                    </h2>
+                                    <div id="collapse_@index" class="accordion-collapse collapse @(index == 0 ? "show" : "")" 
+                                         data-bs-parent="#permissionsAccordion">
+                                        <div class="accordion-body">
+                                            <div class="row">
+                                                @foreach (var permission in group.Value)
+                                                {
+                                                    <div class="col-md-6 mb-2">
+                                                        <div class="d-flex align-items-center p-2 border rounded">
+                                                            <i class="fas fa-check-circle text-success me-2"></i>
+                                                            <div>
+                                                                <div class="fw-semibold">@permission.Action_name</div>
+                                                                <small class="text-muted">@permission.Permission_code</small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                index++;
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="fas fa-key fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Chưa có quyền nào được gán</h5>
+                            <p class="text-muted">Bấm "Gán quyền" để thêm quyền cho role này</p>
+                            <a asp-action="AssignPermissions" asp-route-id="@Model.Role_id" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i> Gán quyền
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-cog me-1"></i> Thao tác
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a asp-action="Edit" asp-route-id="@Model.Role_id" class="btn btn-warning">
+                            <i class="fas fa-edit me-1"></i> Chỉnh sửa Role
+                        </a>
+                        <a asp-action="AssignPermissions" asp-route-id="@Model.Role_id" class="btn btn-primary">
+                            <i class="fas fa-key me-1"></i> Gán quyền
+                        </a>
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i> Quay lại
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            @if (groupedPermissions.Any())
+            {
+                <div class="card shadow">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-warning">
+                            <i class="fas fa-chart-pie me-1"></i> Thống kê
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="permissionChart" height="200"></canvas>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@if (groupedPermissions.Any())
+{
+    @section Scripts {
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            var ctx = document.getElementById('permissionChart').getContext('2d');
+            var labels = [@Html.Raw(string.Join(",", groupedPermissions.Keys.Select(k => $"'{k}'")))];
+            var data = [@Html.Raw(string.Join(",", groupedPermissions.Values.Select(v => v.Count)))];
+            
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: [
+                            '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b',
+                            '#858796', '#5a5c69', '#6f42c1', '#20c9a6', '#fd7e14'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12
+                            }
+                        }
+                    }
+                }
+            });
+        </script>
+    }
+}

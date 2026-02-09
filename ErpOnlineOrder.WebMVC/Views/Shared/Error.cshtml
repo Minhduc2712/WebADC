@@ -1,0 +1,414 @@
+@model ErpOnlineOrder.WebMVC.Models.ErrorViewModel
+@{
+    ViewData["Title"] = Model?.Title ?? "Đã xảy ra lỗi";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+
+    var statusCode = Model?.StatusCode ?? 500;
+    var title = Model?.Title ?? "Đã xảy ra lỗi";
+    var message = Model?.Message ?? "Đã xảy ra lỗi không mong muốn. Vui lòng thử lại sau.";
+    var iconClass = Model?.IconClass ?? "fas fa-exclamation-circle";
+    var colorClass = Model?.ColorClass ?? "danger";
+    var errorDetails = Model?.ErrorDetails ?? new List<string>();
+    var timestamp = Model?.Timestamp ?? DateTime.Now;
+    var path = Model?.Path;
+    var technicalDetails = Model?.TechnicalDetails;
+    var requestId = Model?.RequestId;
+    var showRequestId = Model?.ShowRequestId ?? false;
+}
+
+<div class="container-fluid">
+    <div class="row justify-content-center mt-3">
+        <div class="col-lg-8 col-xl-6">
+
+            <!-- Error Card chính -->
+            <div class="card error-card shadow-lg border-0 overflow-hidden">
+                <!-- Gradient Header -->
+                <div class="error-card-header error-header-@colorClass text-center py-5">
+                    <div class="error-icon-pulse">
+                        <i class="@iconClass fa-4x text-white"></i>
+                    </div>
+                    <h1 class="error-status-code text-white mt-3 mb-1">@statusCode</h1>
+                    <h4 class="text-white fw-normal opacity-90">@title</h4>
+                </div>
+
+                <!-- Body -->
+                <div class="card-body p-4 p-md-5">
+                    <!-- Thông báo chính -->
+                    <div class="text-center mb-4">
+                        <p class="lead text-muted mb-0">@message</p>
+                    </div>
+
+                    <!-- Danh sách lỗi chi tiết -->
+                    @if (errorDetails.Count > 0)
+                    {
+                        <div class="error-details-card mb-4">
+                            <div class="error-details-header" onclick="toggleErrorPanel(this)">
+                                <div class="d-flex align-items-center">
+                                    <div class="error-details-badge">
+                                        <span>@errorDetails.Count</span>
+                                    </div>
+                                    <span class="fw-semibold">Chi tiết lỗi</span>
+                                </div>
+                                <i class="fas fa-chevron-down error-details-chevron"></i>
+                            </div>
+                            <div class="error-details-body">
+                                @foreach (var (error, index) in errorDetails.Select((e, i) => (e, i)))
+                                {
+                                    <div class="error-detail-item">
+                                        <div class="error-detail-number">@(index + 1)</div>
+                                        <div class="error-detail-text">@error</div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Thông tin bổ sung -->
+                    <div class="error-meta-card mb-4">
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <div class="error-meta-item">
+                                    <i class="fas fa-clock text-muted me-2"></i>
+                                    <div>
+                                        <small class="text-muted d-block">Thời gian</small>
+                                        <span class="fw-medium">@timestamp.ToString("dd/MM/yyyy HH:mm:ss")</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="error-meta-item">
+                                    <i class="fas fa-hashtag text-muted me-2"></i>
+                                    <div>
+                                        <small class="text-muted d-block">Mã lỗi</small>
+                                        <span class="fw-medium">HTTP @statusCode</span>
+                                    </div>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(path))
+                            {
+                                <div class="col-12">
+                                    <div class="error-meta-item">
+                                        <i class="fas fa-link text-muted me-2"></i>
+                                        <div>
+                                            <small class="text-muted d-block">Đường dẫn</small>
+                                            <code class="small">@path</code>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            @if (showRequestId)
+                            {
+                                <div class="col-12">
+                                    <div class="error-meta-item">
+                                        <i class="fas fa-fingerprint text-muted me-2"></i>
+                                        <div>
+                                            <small class="text-muted d-block">Request ID</small>
+                                            <code class="small">@requestId</code>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Technical Details (Development only) -->
+                    @if (!string.IsNullOrEmpty(technicalDetails))
+                    {
+                        <div class="technical-details mb-4">
+                            <div class="technical-details-header" onclick="toggleTechnicalDetails(this)">
+                                <i class="fas fa-code me-2"></i>
+                                <span>Thông tin kỹ thuật (Development)</span>
+                                <i class="fas fa-chevron-down ms-auto technical-chevron"></i>
+                            </div>
+                            <div class="technical-details-body" style="display: none;">
+                                <pre class="mb-0"><code>@technicalDetails</code></pre>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Nút hành động -->
+                    <div class="d-flex flex-wrap justify-content-center gap-3">
+                        @if (statusCode == 401)
+                        {
+                            <a href="@Url.Action("Login", "Auth")" class="btn btn-primary btn-lg px-4">
+                                <i class="fas fa-sign-in-alt me-2"></i>Đăng nhập
+                            </a>
+                        }
+                        else
+                        {
+                            <a href="javascript:history.back()" class="btn btn-outline-secondary btn-lg px-4">
+                                <i class="fas fa-arrow-left me-2"></i>Quay lại
+                            </a>
+                        }
+                        <a href="@Url.Action("Dashboard", "Home")" class="btn btn-primary btn-lg px-4">
+                            <i class="fas fa-home me-2"></i>Về trang chủ
+                        </a>
+                        @if (statusCode >= 500)
+                        {
+                            <button class="btn btn-outline-primary btn-lg px-4" onclick="location.reload()">
+                                <i class="fas fa-redo me-2"></i>Thử lại
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card hỗ trợ -->
+            <div class="card shadow-sm border-0 mt-4 mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-start">
+                        <div class="support-icon me-3">
+                            <i class="fas fa-headset fa-lg text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1">Cần hỗ trợ?</h6>
+                            <p class="text-muted small mb-2">
+                                Nếu lỗi tiếp tục xảy ra, vui lòng liên hệ bộ phận IT hoặc quản trị viên hệ thống.
+                            </p>
+                            <div class="d-flex flex-wrap gap-2">
+                                <span class="badge bg-light text-dark border">
+                                    <i class="fas fa-envelope me-1"></i>support@erp-system.vn
+                                </span>
+                                <span class="badge bg-light text-dark border">
+                                    <i class="fas fa-phone me-1"></i>1900-xxxx
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+<style>
+    /* Error Card */
+    .error-card {
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+    /* Gradient Headers */
+    .error-header-danger {
+        background: linear-gradient(135deg, #dc3545 0%, #b02a37 50%, #842029 100%);
+    }
+    .error-header-warning {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 50%, #cc9a06 100%);
+    }
+    .error-header-primary {
+        background: linear-gradient(135deg, #667eea 0%, #5a67d8 50%, #764ba2 100%);
+    }
+    .error-header-info {
+        background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 50%, #0a58ca 100%);
+    }
+
+    /* Icon pulse animation */
+    .error-icon-pulse {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 90px;
+        height: 90px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        animation: iconPulse 2s ease-in-out infinite;
+    }
+
+    @@keyframes iconPulse {
+        0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,255,255,0.3); }
+        50% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(255,255,255,0); }
+    }
+
+    /* Status Code */
+    .error-status-code {
+        font-size: 4rem;
+        font-weight: 800;
+        letter-spacing: 3px;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    /* Error Details Card */
+    .error-details-card {
+        border: 1px solid #fee2e2;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #fef2f2;
+    }
+
+    .error-details-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 18px;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .error-details-header:hover {
+        background: rgba(220, 53, 69, 0.05);
+    }
+
+    .error-details-badge {
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        background: #dc3545;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 700;
+        margin-right: 10px;
+    }
+
+    .error-details-chevron {
+        transition: transform 0.3s;
+        color: #999;
+    }
+
+    .error-details-chevron.rotated {
+        transform: rotate(180deg);
+    }
+
+    .error-details-body {
+        padding: 0 18px 14px;
+    }
+
+    .error-detail-item {
+        display: flex;
+        align-items: flex-start;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(220, 53, 69, 0.08);
+    }
+
+    .error-detail-item:last-child {
+        border-bottom: none;
+    }
+
+    .error-detail-number {
+        flex-shrink: 0;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: 700;
+        margin-right: 10px;
+        margin-top: 1px;
+    }
+
+    .error-detail-text {
+        font-size: 0.88rem;
+        color: #7f1d1d;
+        line-height: 1.5;
+    }
+
+    /* Error Meta */
+    .error-meta-card {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 16px;
+    }
+
+    .error-meta-item {
+        display: flex;
+        align-items: flex-start;
+    }
+
+    .error-meta-item i {
+        margin-top: 2px;
+    }
+
+    /* Technical Details */
+    .technical-details {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .technical-details-header {
+        display: flex;
+        align-items: center;
+        padding: 12px 16px;
+        background: #f1f5f9;
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #475569;
+    }
+
+    .technical-details-header:hover {
+        background: #e2e8f0;
+    }
+
+    .technical-chevron {
+        transition: transform 0.3s;
+    }
+
+    .technical-chevron.rotated {
+        transform: rotate(180deg);
+    }
+
+    .technical-details-body {
+        padding: 16px;
+        background: #1e293b;
+        color: #94a3b8;
+    }
+
+    .technical-details-body pre {
+        white-space: pre-wrap;
+        word-break: break-all;
+        font-size: 0.82rem;
+    }
+
+    .technical-details-body code {
+        color: #94a3b8;
+    }
+
+    /* Support Icon */
+    .support-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: rgba(102, 126, 234, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+</style>
+}
+
+@section Scripts {
+<script>
+    function toggleErrorPanel(header) {
+        var body = header.nextElementSibling;
+        var chevron = header.querySelector('.error-details-chevron');
+        if (body.style.display === 'none' || body.style.display === '') {
+            body.style.display = 'block';
+            chevron.classList.add('rotated');
+        } else {
+            body.style.display = 'none';
+            chevron.classList.remove('rotated');
+        }
+    }
+
+    function toggleTechnicalDetails(header) {
+        var body = header.nextElementSibling;
+        var chevron = header.querySelector('.technical-chevron');
+        if (body.style.display === 'none') {
+            body.style.display = 'block';
+            chevron.classList.add('rotated');
+        } else {
+            body.style.display = 'none';
+            chevron.classList.remove('rotated');
+        }
+    }
+</script>
+}

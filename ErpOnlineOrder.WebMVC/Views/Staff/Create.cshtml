@@ -1,0 +1,176 @@
+﻿@model ErpOnlineOrder.Application.DTOs.AdminDTOs.CreateStaffAccountDto
+@{
+    ViewData["Title"] = "Thêm nhân viên mới";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var roles = ViewBag.Roles as List<ErpOnlineOrder.Application.DTOs.PermissionDTOs.RoleDto> ?? new List<ErpOnlineOrder.Application.DTOs.PermissionDTOs.RoleDto>();
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-user-plus me-2"></i>Thêm nhân viên mới
+        </h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Dashboard">Trang chủ</a></li>
+                <li class="breadcrumb-item"><a asp-action="Index">Quản lý nhân sự</a></li>
+                <li class="breadcrumb-item active">Thêm mới</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info-circle me-1"></i> Thông tin nhân viên
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger">
+                            @Html.ValidationSummary(false, "", new { @class = "mb-0" })
+                        </div>
+                    }
+
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="row">
+                            <!-- Thông tin tài khoản -->
+                            <div class="col-md-6">
+                                <h6 class="text-muted mb-3"><i class="fas fa-user-circle me-1"></i> Thông tin tài khoản</h6>
+                                
+                                <div class="mb-3">
+                                    <label asp-for="Username" class="form-label">
+                                        Tên đăng nhập <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="Username" class="form-control" placeholder="Nhập tên đăng nhập" />
+                                    <span asp-validation-for="Username" class="text-danger small"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Email" class="form-label">
+                                        Email <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="Email" type="email" class="form-control" placeholder="Nhập email" />
+                                    <span asp-validation-for="Email" class="text-danger small"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Password" class="form-label">
+                                        Mật khẩu <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <input asp-for="Password" type="password" class="form-control" id="passwordInput" placeholder="Nhập mật khẩu" />
+                                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <span asp-validation-for="Password" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <!-- Thông tin cá nhân -->
+                            <div class="col-md-6">
+                                <h6 class="text-muted mb-3"><i class="fas fa-id-card me-1"></i> Thông tin cá nhân</h6>
+                                
+                                <div class="mb-3">
+                                    <label asp-for="Full_name" class="form-label">
+                                        Họ và tên <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="Full_name" class="form-control" placeholder="Nhập họ và tên" />
+                                    <span asp-validation-for="Full_name" class="text-danger small"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Phone_number" class="form-label">
+                                        Số điện thoại
+                                    </label>
+                                    <input asp-for="Phone_number" class="form-control" placeholder="Nhập số điện thoại" />
+                                    <span asp-validation-for="Phone_number" class="text-danger small"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Phân quyền</label>
+                                    <div class="border rounded p-3" style="max-height: 150px; overflow-y: auto;">
+                                        @if (roles.Any())
+                                        {
+                                            @foreach (var role in roles)
+                                            {
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" 
+                                                           name="Role_ids" value="@role.Id" id="role_@role.Id">
+                                                    <label class="form-check-label" for="role_@role.Id">
+                                                        @role.Role_name
+                                                    </label>
+                                                </div>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <p class="text-muted mb-0">Chưa có vai trò nào</p>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr />
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> Quay lại
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Lưu
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-lightbulb me-1"></i> Hướng dẫn
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li>Tên đăng nhập phải là duy nhất trong hệ thống</li>
+                        <li>Email phải là duy nhất và đúng định dạng</li>
+                        <li>Mật khẩu nên có ít nhất 6 ký tự</li>
+                        <li>Có thể gán nhiều vai trò cho một nhân viên</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Toggle password visibility
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            var passwordInput = document.getElementById('passwordInput');
+            var icon = this.querySelector('i');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+    </script>
+}

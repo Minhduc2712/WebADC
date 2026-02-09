@@ -1,0 +1,296 @@
+@model ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs.WarehouseExportDto
+@{
+    ViewData["Title"] = "Chi tiết phiếu xuất kho";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    
+    var statusClass = Model.Status switch
+    {
+        "Draft" => "bg-secondary",
+        "Pending" => "bg-warning text-dark",
+        "Confirmed" => "bg-primary",
+        "Shipping" => "bg-info",
+        "Completed" => "bg-success",
+        "Cancelled" => "bg-danger",
+        _ => "bg-secondary"
+    };
+    var statusText = Model.Status switch
+    {
+        "Draft" => "Nháp",
+        "Pending" => "Chờ xuất",
+        "Confirmed" => "Đã xác nhận",
+        "Shipping" => "Đang giao",
+        "Completed" => "Hoàn thành",
+        "Cancelled" => "Đã hủy",
+        _ => Model.Status
+    };
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">Chi tiết phiếu xuất kho</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="@Url.Action("Dashboard", "Home")">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index")">Xuất kho</a></li>
+                <li class="breadcrumb-item active">@Model.Warehouse_export_code</li>
+            </ol>
+        </nav>
+    </div>
+    <div>
+        @if (Model.Status == "Pending")
+        {
+            <form asp-action="Confirm" asp-route-id="@Model.Id" method="post" style="display: inline;">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-success me-2">
+                    <i class="fas fa-check me-1"></i>Xác nhận
+                </button>
+            </form>
+            <form asp-action="Cancel" asp-route-id="@Model.Id" method="post" style="display: inline;">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-danger me-2">
+                    <i class="fas fa-times me-1"></i>Hủy
+                </button>
+            </form>
+        }
+        @if (Model.Status != "Completed" && Model.Status != "Cancelled" && Model.Details.Count > 1)
+        {
+            <a href="@Url.Action("Split", new { id = Model.Id })" class="btn btn-info me-2">
+                <i class="fas fa-expand-arrows-alt me-1"></i>Tách phiếu
+            </a>
+        }
+        <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Quay lại
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="table-card mb-4">
+            <div class="card-header">
+                <i class="fas fa-info-circle me-2"></i>Thông tin phiếu
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="text-muted small">Mã phiếu xuất</label>
+                    <p class="mb-0 fw-semibold">@Model.Warehouse_export_code</p>
+                </div>
+                <div class="mb-3">
+                    <label class="text-muted small">Trạng thái</label>
+                    <p class="mb-0"><span class="badge @statusClass">@statusText</span></p>
+                </div>
+                <div class="mb-3">
+                    <label class="text-muted small">Ngày xuất</label>
+                    <p class="mb-0">@Model.Export_date.ToString("dd/MM/yyyy")</p>
+                </div>
+                <div class="mb-3">
+                    <label class="text-muted small">Kho xuất</label>
+                    <p class="mb-0">@Model.Warehouse_name</p>
+                </div>
+                <div class="mb-3">
+                    <label class="text-muted small">Hóa đơn liên quan</label>
+                    <p class="mb-0">
+                        <a href="@Url.Action("Details", "Invoice", new { id = Model.Invoice_id })" class="badge bg-info text-decoration-none">
+                            @Model.Invoice_code
+                        </a>
+                    </p>
+                </div>
+                @if (Model.Parent_export_id.HasValue)
+                {
+                    <div class="mb-3">
+                        <label class="text-muted small">Phiếu gốc</label>
+                        <p class="mb-0">
+                            <a href="@Url.Action("Details", new { id = Model.Parent_export_id })">
+                                @Model.Parent_export_code
+                            </a>
+                        </p>
+                    </div>
+                }
+            </div>
+        </div>
+        
+        <div class="table-card mb-4">
+            <div class="card-header">
+                <i class="fas fa-user me-2"></i>Thông tin khách hàng
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="text-muted small">Tên khách hàng</label>
+                    <p class="mb-0 fw-semibold">@Model.Customer_name</p>
+                </div>
+                <div class="mb-0">
+                    <label class="text-muted small">Nhân viên xuất</label>
+                    <p class="mb-0">@Model.Staff_name</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="table-card mb-4">
+            <div class="card-header">
+                <i class="fas fa-truck me-2"></i>Thông tin giao hàng
+            </div>
+            <div class="card-body">
+                @{
+                    var deliveryClass = Model.Delivery_status switch
+                    {
+                        "Pending" => "bg-secondary",
+                        "Shipped" => "bg-info",
+                        "Delivered" => "bg-success",
+                        "Failed" => "bg-danger",
+                        _ => "bg-secondary"
+                    };
+                    var deliveryText = Model.Delivery_status switch
+                    {
+                        "Pending" => "Chờ giao",
+                        "Shipped" => "Đã giao",
+                        "Delivered" => "Đã nhận",
+                        "Failed" => "Thất bại",
+                        _ => Model.Delivery_status ?? "N/A"
+                    };
+                }
+                <div class="mb-3">
+                    <label class="text-muted small">Trạng thái giao hàng</label>
+                    <p class="mb-0"><span class="badge @deliveryClass">@deliveryText</span></p>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.Carrier_name))
+                {
+                    <div class="mb-3">
+                        <label class="text-muted small">Đơn vị vận chuyển</label>
+                        <p class="mb-0">@Model.Carrier_name</p>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.Tracking_number))
+                {
+                    <div class="mb-0">
+                        <label class="text-muted small">Mã vận đơn</label>
+                        <p class="mb-0"><code>@Model.Tracking_number</code></p>
+                    </div>
+                }
+                
+                @if (Model.Status == "Confirmed" || Model.Status == "Shipping")
+                {
+                    <hr />
+                    <form asp-action="UpdateDeliveryStatus" asp-route-id="@Model.Id" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="mb-2">
+                            <label class="form-label small">Cập nhật trạng thái</label>
+                            <select name="status" class="form-select form-select-sm">
+                                <option value="Shipped">Đã giao cho vận chuyển</option>
+                                <option value="Delivered">Đã giao thành công</option>
+                                <option value="Failed">Giao thất bại</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="fas fa-save me-1"></i>Cập nhật
+                        </button>
+                    </form>
+                }
+            </div>
+        </div>
+        
+        <div class="table-card">
+            <div class="card-header">
+                <i class="fas fa-calculator me-2"></i>Tổng kết
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Tổng số sản phẩm:</span>
+                    <span class="fw-semibold">@Model.Total_quantity</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Tổng giá trị:</span>
+                    <span class="text-success fw-bold">@Model.Total_amount.ToString("N0") VNĐ</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="table-card">
+            <div class="card-header">
+                <i class="fas fa-list me-2"></i>Chi tiết xuất kho (@Model.Details.Count sản phẩm)
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Mã SP</th>
+                                <th>Tên sản phẩm</th>
+                                <th class="text-center">SL xuất</th>
+                                <th class="text-end">Đơn giá</th>
+                                <th class="text-end">Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                var index = 1;
+                            }
+                            @foreach (var detail in Model.Details)
+                            {
+                                <tr>
+                                    <td>@index</td>
+                                    <td><span class="badge bg-secondary">@detail.Product_code</span></td>
+                                    <td>@detail.Product_name</td>
+                                    <td class="text-center">@detail.Quantity_shipped</td>
+                                    <td class="text-end">@detail.Unit_price.ToString("N0")</td>
+                                    <td class="text-end fw-semibold">@detail.Total_price.ToString("N0")</td>
+                                </tr>
+                                index++;
+                            }
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <td colspan="3" class="text-end fw-bold">Tổng cộng:</td>
+                                <td class="text-center fw-bold">@Model.Total_quantity</td>
+                                <td></td>
+                                <td class="text-end text-success fw-bold">@Model.Total_amount.ToString("N0") VNĐ</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        @if (Model.Child_exports.Any())
+        {
+            <div class="table-card mt-4">
+                <div class="card-header">
+                    <i class="fas fa-project-diagram me-2"></i>Phiếu con (đã tách)
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Mã phiếu</th>
+                                    <th>Ngày xuất</th>
+                                    <th class="text-center">Số SP</th>
+                                    <th>Trạng thái</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var child in Model.Child_exports)
+                                {
+                                    <tr>
+                                        <td><span class="badge bg-secondary">@child.Warehouse_export_code</span></td>
+                                        <td>@child.Export_date.ToString("dd/MM/yyyy")</td>
+                                        <td class="text-center">@child.Total_quantity</td>
+                                        <td><span class="badge bg-info">@child.Status</span></td>
+                                        <td>
+                                            <a asp-action="Details" asp-route-id="@child.Id" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

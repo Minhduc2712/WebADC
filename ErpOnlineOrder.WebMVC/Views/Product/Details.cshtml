@@ -1,0 +1,109 @@
+﻿@model ErpOnlineOrder.Application.DTOs.ProductDTO
+@{
+    ViewData["Title"] = "Chi tiết sản phẩm";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">Chi tiết sản phẩm</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="@Url.Action("Dashboard", "Home")">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index")">Sản phẩm</a></li>
+                <li class="breadcrumb-item active">@Model.Product_name</li>
+            </ol>
+        </nav>
+    </div>
+    <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Quay lại
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="table-card">
+            <div class="card-body text-center p-4">
+                @if (!string.IsNullOrEmpty(Model.Product_link))
+                {
+                    <img src="@Model.Product_link" alt="@Model.Product_name" 
+                         class="img-fluid rounded mb-3" style="max-height: 300px; object-fit: cover;" />
+                }
+                else
+                {
+                    <div class="bg-light rounded d-flex align-items-center justify-content-center mb-3" 
+                         style="height: 200px;">
+                        <i class="fas fa-image fa-4x text-muted"></i>
+                    </div>
+                }
+                <h5 class="mb-2">@Model.Product_name</h5>
+                <span class="badge bg-secondary">@Model.Product_code</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="table-card">
+            <div class="card-header">
+                <i class="fas fa-info-circle me-2"></i>Thông tin sản phẩm
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="text-muted small">Mã sản phẩm</label>
+                        <p class="mb-0 fw-semibold">@Model.Product_code</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Giá bán</label>
+                        <p class="mb-0 fw-semibold text-success">@Model.Product_price VNĐ</p>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="text-muted small">Nhà xuất bản</label>
+                        <p class="mb-0 fw-semibold">@Model.Publisher_name</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Tác giả</label>
+                        <p class="mb-0 fw-semibold">@string.Join(", ", Model.Authors)</p>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="text-muted small">Danh mục</label>
+                    <div>
+                        @foreach (var cat in Model.Categories)
+                        {
+                            <span class="badge bg-info me-1">@cat</span>
+                        }
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="text-muted small">Mô tả sản phẩm</label>
+                    <p class="mb-0">@(string.IsNullOrEmpty(Model.Product_description) ? "Chưa có mô tả" : Model.Product_description)</p>
+                </div>
+            </div>
+        </div>
+        
+        @if (Model.Images.Any())
+        {
+            <div class="table-card mt-4">
+                <div class="card-header">
+                    <i class="fas fa-images me-2"></i>Hình ảnh sản phẩm
+                </div>
+                <div class="card-body">
+                    <div class="row g-2">
+                        @foreach (var img in Model.Images)
+                        {
+                            <div class="col-3">
+                                <img src="@img" alt="Product Image" class="img-fluid rounded" />
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

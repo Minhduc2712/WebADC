@@ -1,0 +1,260 @@
+@model IEnumerable<ErpOnlineOrder.Application.DTOs.OrderDTO>
+@{
+    ViewData["Title"] = "Quản lý đơn hàng";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">Quản lý đơn hàng</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="@Url.Action("Dashboard", "Home")">Dashboard</a></li>
+                <li class="breadcrumb-item active">Đơn hàng</li>
+            </ol>
+        </nav>
+    </div>
+    <div>
+        @if (Context.Session.HasPermission("ORDER_CREATE"))
+        {
+            <a href="@Url.Action("Create")" class="btn btn-primary me-2">
+                <i class="fas fa-plus me-1"></i>Tạo đơn hàng
+            </a>
+        }
+        @if (Context.Session.HasPermission("ORDER_EXPORT"))
+        {
+            <a href="@Url.Action("ExportExcel")" class="btn btn-success">
+                <i class="fas fa-file-excel me-1"></i>Xuất Excel
+            </a>
+        }
+    </div>
+</div>
+
+<!-- Bộ lọc -->
+<div class="table-card mb-4">
+    <div class="card-header">
+        <i class="fas fa-filter me-2"></i>Bộ lọc
+    </div>
+    <div class="card-body p-4">
+        <form asp-action="Index" method="get">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Trạng thái</label>
+                    <select name="status" class="form-select">
+                        <option value="">-- Tất cả --</option>
+                        <option value="Pending" selected="@(ViewBag.Status == "Pending")">Chờ xử lý</option>
+                        <option value="Confirmed" selected="@(ViewBag.Status == "Confirmed")">Đã xác nhận</option>
+                        <option value="Cancelled" selected="@(ViewBag.Status == "Cancelled")">Đã hủy</option>
+                        <option value="Completed" selected="@(ViewBag.Status == "Completed")">Hoàn thành</option>
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-search me-1"></i>Lọc
+                    </button>
+                    <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                        <i class="fas fa-redo me-1"></i>Reset
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Thống kê nhanh -->
+<div class="row mb-4">
+    @{
+        var pending = Model.Count(o => o.Order_status == "Pending");
+        var confirmed = Model.Count(o => o.Order_status == "Confirmed");
+        var cancelled = Model.Count(o => o.Order_status == "Cancelled");
+        var completed = Model.Count(o => o.Order_status == "Completed");
+    }
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3 class="mb-1">@pending</h3>
+                    <span class="text-muted">Chờ xử lý</span>
+                </div>
+                <div class="stat-icon" style="background: linear-gradient(135deg, #ffc107, #ff9800);">
+                    <i class="fas fa-clock"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3 class="mb-1">@confirmed</h3>
+                    <span class="text-muted">Đã xác nhận</span>
+                </div>
+                <div class="stat-icon blue">
+                    <i class="fas fa-check"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3 class="mb-1">@completed</h3>
+                    <span class="text-muted">Hoàn thành</span>
+                </div>
+                <div class="stat-icon green">
+                    <i class="fas fa-check-double"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3 class="mb-1">@cancelled</h3>
+                    <span class="text-muted">Đã hủy</span>
+                </div>
+                <div class="stat-icon red">
+                    <i class="fas fa-times"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Danh sách đơn hàng -->
+<div class="table-card">
+    <div class="card-header">
+        <i class="fas fa-shopping-cart me-2"></i>Danh sách đơn hàng (@Model.Count() đơn hàng)
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Mã đơn hàng</th>
+                        <th>Khách hàng</th>
+                        <th>Ngày đặt</th>
+                        <th>Tổng tiền</th>
+                        <th>Số SP</th>
+                        <th>Trạng thái</th>
+                        <th style="width: 150px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                Không có đơn hàng nào
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var order in Model.OrderByDescending(o => o.Order_date))
+                        {
+                            var statusClass = order.Order_status switch
+                            {
+                                "Pending" => "bg-warning text-dark",
+                                "Confirmed" => "bg-primary",
+                                "Completed" => "bg-success",
+                                "Cancelled" => "bg-danger",
+                                _ => "bg-secondary"
+                            };
+                            var statusText = order.Order_status switch
+                            {
+                                "Pending" => "Chờ xử lý",
+                                "Confirmed" => "Đã xác nhận",
+                                "Completed" => "Hoàn thành",
+                                "Cancelled" => "Đã hủy",
+                                _ => order.Order_status
+                            };
+                            <tr>
+                                <td><span class="badge bg-secondary">@order.Order_code</span></td>
+                                <td>@order.Customer_name</td>
+                                <td>@order.Order_date.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td><span class="text-success fw-bold">@order.Total_price.ToString("N0") VNĐ</span></td>
+                                <td><span class="badge bg-info">@order.Order_details.Count</span></td>
+                                <td><span class="badge @statusClass">@statusText</span></td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-action="Details" asp-route-id="@order.Id" class="btn btn-outline-primary" title="Xem chi tiết">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        @if (order.Order_status == "Pending")
+                                        {
+                                            @if (Context.Session.HasPermission("ORDER_APPROVE"))
+                                            {
+                                                <button type="button" class="btn btn-outline-success" title="Xác nhận"
+                                                        onclick="confirmAction(@order.Id, 'confirm', '@order.Order_code')">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            }
+                                            @if (Context.Session.HasPermission("ORDER_REJECT"))
+                                            {
+                                                <button type="button" class="btn btn-outline-danger" title="Hủy"
+                                                        onclick="confirmAction(@order.Id, 'cancel', '@order.Order_code')">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            }
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal xác nhận -->
+<div class="modal fade" id="actionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="modalMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <form id="actionForm" method="post" style="display: inline;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn" id="modalSubmitBtn">Xác nhận</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function confirmAction(id, action, orderCode) {
+        var title, message, btnClass;
+        if (action === 'confirm') {
+            title = '<i class="fas fa-check-circle text-success me-2"></i>Xác nhận đơn hàng';
+            message = 'Bạn có chắc chắn muốn xác nhận đơn hàng <strong>' + orderCode + '</strong>?';
+            btnClass = 'btn-success';
+            document.getElementById('actionForm').action = '@Url.Action("Confirm")/' + id;
+        } else {
+            title = '<i class="fas fa-times-circle text-danger me-2"></i>Hủy đơn hàng';
+            message = 'Bạn có chắc chắn muốn hủy đơn hàng <strong>' + orderCode + '</strong>?';
+            btnClass = 'btn-danger';
+            document.getElementById('actionForm').action = '@Url.Action("Cancel")/' + id;
+        }
+        
+        document.getElementById('modalTitle').innerHTML = title;
+        document.getElementById('modalMessage').innerHTML = message;
+        document.getElementById('modalSubmitBtn').className = 'btn ' + btnClass;
+        
+        new bootstrap.Modal(document.getElementById('actionModal')).show();
+    }
+</script>
+}

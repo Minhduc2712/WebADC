@@ -1,0 +1,136 @@
+@model ErpOnlineOrder.Domain.Models.Customer_management
+@{
+    ViewData["Title"] = "Sửa gán cán bộ phụ trách";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var staffList = ViewBag.StaffList as List<ErpOnlineOrder.Domain.Models.Staff> ?? new List<ErpOnlineOrder.Domain.Models.Staff>();
+    var provinces = ViewBag.Provinces as List<ErpOnlineOrder.Domain.Models.Province> ?? new List<ErpOnlineOrder.Domain.Models.Province>();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1"><i class="fas fa-edit me-2 text-warning"></i>Sửa gán cán bộ phụ trách</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="@Url.Action("Dashboard", "Home")">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("StaffAssignment")">Gán cán bộ phụ trách</a></li>
+                <li class="breadcrumb-item active">Sửa</li>
+            </ol>
+        </nav>
+    </div>
+    <a href="@Url.Action("StaffAssignment")" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Quay lại
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Thông tin khách hàng (chỉ đọc) -->
+        <div class="table-card mb-4">
+            <div class="card-header">
+                <i class="fas fa-user me-2 text-primary"></i>Khách hàng
+            </div>
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
+                         style="width: 50px; height: 50px; font-size: 20px;">
+                        @(Model.Customer?.Full_name?.Length > 0 ? Model.Customer.Full_name.Substring(0, 1).ToUpper() : "?")
+                    </div>
+                    <div>
+                        <h5 class="mb-0">@(Model.Customer?.Full_name ?? "N/A")</h5>
+                        <span class="badge bg-secondary me-2">@(Model.Customer?.Customer_code ?? "")</span>
+                        @if (!string.IsNullOrEmpty(Model.Customer?.Phone_number))
+                        {
+                            <span class="text-muted"><i class="fas fa-phone me-1"></i>@Model.Customer.Phone_number</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form sửa -->
+        <div class="table-card">
+            <div class="card-header bg-warning bg-opacity-10">
+                <i class="fas fa-edit me-2 text-warning"></i>Thay đổi thông tin gán
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="EditAssignment" asp-route-id="@Model.Id" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-user-tie me-1 text-success"></i>Cán bộ phụ trách <span class="text-danger">*</span>
+                        </label>
+                        <select name="Staff_id" class="form-select" required>
+                            <option value="">-- Chọn cán bộ --</option>
+                            @foreach (var staff in staffList)
+                            {
+                                if (staff.Id == Model.Staff_id)
+                                {
+                                    <option value="@staff.Id" selected>
+                                        @staff.Full_name (@staff.Staff_code)
+                                    </option>
+                                }
+                                else
+                                {
+                                    <option value="@staff.Id">
+                                        @staff.Full_name (@staff.Staff_code)
+                                    </option>
+                                }
+                            }
+                        </select>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>Thay đổi cán bộ phụ trách khách hàng này
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-map-marker-alt me-1 text-danger"></i>Tỉnh/Thành phố <span class="text-danger">*</span>
+                        </label>
+                        <select name="Province_id" class="form-select" required>
+                            <option value="">-- Chọn tỉnh/thành phố --</option>
+                            @foreach (var province in provinces)
+                            {
+                                if (province.Id == Model.Province_id)
+                                {
+                                    <option value="@province.Id" selected>@province.Province_name</option>
+                                }
+                                else
+                                {
+                                    <option value="@province.Id">@province.Province_name</option>
+                                }
+                            }
+                        </select>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>Tỉnh/thành phố quản lý
+                        </div>
+                    </div>
+
+                    <div class="mb-3 p-3 bg-light rounded">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small class="text-muted d-block">Ngày tạo</small>
+                                <strong>@Model.Created_at.ToString("dd/MM/yyyy HH:mm")</strong>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted d-block">Cập nhật lần cuối</small>
+                                <strong>@Model.Updated_at.ToString("dd/MM/yyyy HH:mm")</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="@Url.Action("StaffAssignment")" class="btn btn-secondary">
+                            <i class="fas fa-times me-1"></i>Hủy
+                        </a>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-save me-1"></i>Lưu thay đổi
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

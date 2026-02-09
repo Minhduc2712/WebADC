@@ -1,0 +1,145 @@
+@model List<ErpOnlineOrder.Application.DTOs.OrderDTO>
+@{
+    ViewData["Title"] = "Đơn hàng của tôi";
+    Layout = "~/Views/Shared/_ShopLayout.cshtml";
+}
+
+<!-- Breadcrumb -->
+<section class="blog about-blog">
+    <div class="container">
+        <div class="blog-bradcrum">
+            <span><a asp-action="Index">Trang chủ</a></span>
+            <span class="devider">/</span>
+            <span><a href="#">Đơn hàng của tôi</a></span>
+        </div>
+        <div class="blog-heading about-heading">
+            <h1 class="heading">Đơn hàng của tôi</h1>
+        </div>
+    </div>
+</section>
+
+<section class="product footer-padding">
+    <div class="container">
+        @if (ViewData["ErrorMessage"] is string errorMsg)
+        {
+            <div class="alert alert-warning text-center">@errorMsg</div>
+        }
+
+        @if (Model == null || !Model.Any())
+        {
+            <div class="text-center py-5">
+                <div style="max-width: 150px; margin: 0 auto 20px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="120" height="120" style="opacity: 0.3;">
+                        <circle cx="32" cy="32" r="30" fill="#f0f0f0"/>
+                        <rect x="16" y="14" width="32" height="40" rx="3" stroke="#999" stroke-width="2" fill="none"/>
+                        <line x1="22" y1="24" x2="42" y2="24" stroke="#ccc" stroke-width="2"/>
+                        <line x1="22" y1="30" x2="38" y2="30" stroke="#ccc" stroke-width="2"/>
+                        <line x1="22" y1="36" x2="35" y2="36" stroke="#ccc" stroke-width="2"/>
+                        <line x1="22" y1="42" x2="32" y2="42" stroke="#ccc" stroke-width="2"/>
+                    </svg>
+                </div>
+                <h5>Chưa có đơn hàng nào</h5>
+                <p style="color: #888;">Bạn chưa đặt đơn hàng nào. Hãy bắt đầu mua sắm!</p>
+                <a asp-action="Products" class="shop-btn">Mua sắm ngay</a>
+            </div>
+        }
+        else
+        {
+            <div class="row g-4">
+                @foreach (var order in Model)
+                {
+                    <div class="col-12">
+                        <div style="border: 1px solid #eee; border-radius: 8px; overflow: hidden; background: #fff;">
+                            <!-- Order Header -->
+                            <div style="background: #f8f8f8; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                                <div>
+                                    <span style="font-weight: 600; font-size: 15px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#1a7f37" viewBox="0 0 16 16" style="margin-right: 5px;">
+                                            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                            <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1z"/>
+                                        </svg>
+                                        Đơn hàng: @order.Order_code
+                                    </span>
+                                    <span style="color: #888; font-size: 13px; margin-left: 15px;">@order.Order_date.ToString("dd/MM/yyyy HH:mm")</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    @{
+                                        var statusColor = order.Order_status switch
+                                        {
+                                            "Pending" => "#ff9800",
+                                            "Confirmed" => "#4CAF50",
+                                            "Cancelled" => "#f44336",
+                                            _ => "#888"
+                                        };
+                                        var statusText = order.Order_status switch
+                                        {
+                                            "Pending" => "Chờ xác nhận",
+                                            "Confirmed" => "Đã xác nhận",
+                                            "Cancelled" => "Đã hủy",
+                                            _ => order.Order_status
+                                        };
+                                    }
+                                    <span style="padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 500; background: @(statusColor)20; color: @statusColor;">@statusText</span>
+                                    @if (order.Order_status == "Pending")
+                                    {
+                                        <a href="javascript:void(0)" onclick="cancelOrder(@order.Id)" style="color: #f44336; font-size: 13px; text-decoration: underline;">Hủy đơn</a>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Order Items -->
+                            <div style="padding: 15px 20px;">
+                                @if (order.Order_details != null && order.Order_details.Any())
+                                {
+                                    @foreach (var detail in order.Order_details)
+                                    {
+                                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f0f0f0;">
+                                            <div>
+                                                <span style="font-weight: 500;">@detail.Product_name</span>
+                                                <span style="color: #888; font-size: 13px; margin-left: 10px;">x@detail.Quantity</span>
+                                            </div>
+                                            <div style="font-weight: 500;">
+                                                @detail.Total_price.ToString("N0")
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+
+                            <!-- Order Footer -->
+                            <div style="padding: 12px 20px; background: #fafafa; display: flex; justify-content: flex-end; align-items: center; gap: 10px;">
+                                <span style="color: #888;">Tổng tiền:</span>
+                                <span style="font-size: 18px; font-weight: 600; color: #1a7f37;">@order.Total_price.ToString("N0")</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</section>
+
+@section Scripts {
+<script>
+    function cancelOrder(orderId) {
+        if (!confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) return;
+
+        fetch('@Url.Action("CancelOrder", "Shop")?id=' + orderId, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(result) {
+            if (result.success) {
+                showToast('Hủy đơn hàng thành công!', 'success');
+                setTimeout(function() { location.reload(); }, 1500);
+            } else {
+                showToast(result.message || 'Không thể hủy đơn hàng.', 'error');
+            }
+        })
+        .catch(function() {
+            showToast('Có lỗi xảy ra.', 'error');
+        });
+    }
+</script>
+}

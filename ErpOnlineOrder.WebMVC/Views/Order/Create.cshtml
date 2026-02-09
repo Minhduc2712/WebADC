@@ -1,0 +1,166 @@
+@model ErpOnlineOrder.Application.DTOs.OrderDTOs.CreateOrderDto
+@{
+    ViewData["Title"] = "Tạo đơn hàng";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var products = ViewBag.Products as IEnumerable<ErpOnlineOrder.Application.DTOs.ProductDTO> ?? Enumerable.Empty<ErpOnlineOrder.Application.DTOs.ProductDTO>();
+}
+
+<div class="container-fluid">
+    <div class="mb-4">
+        <h4 class="mb-0">Tạo đơn hàng mới</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="@Url.Action("Dashboard", "Home")">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index")">Đơn hàng</a></li>
+                <li class="breadcrumb-item active">Tạo mới</li>
+            </ol>
+        </nav>
+    </div>
+
+    <form asp-action="Create" method="post" id="orderForm">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white py-3">
+                        <h6 class="mb-0"><i class="fas fa-box me-2"></i>Sản phẩm</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Chọn sản phẩm để thêm</label>
+                            <select id="productSelect" class="form-select">
+                                <option value="">-- Chọn sản phẩm --</option>
+                                @foreach (var p in products)
+                                {
+                                    <option value="@p.Id" data-name="@p.Product_name" data-price="@p.Product_price">
+                                        @p.Product_code - @p.Product_name (@p.Product_price VNĐ)
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary mb-3" onclick="addProduct()">
+                            <i class="fas fa-plus me-2"></i>Thêm sản phẩm
+                        </button>
+
+                        <table class="table table-bordered" id="orderItemsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Sản phẩm</th>
+                                    <th style="width: 120px;">Số lượng</th>
+                                    <th style="width: 150px;">Đơn giá</th>
+                                    <th style="width: 150px;">Thành tiền</th>
+                                    <th style="width: 60px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="orderItems">
+                                <!-- Dynamic rows -->
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-light">
+                                    <td colspan="3" class="text-end"><strong>Tổng cộng:</strong></td>
+                                    <td><strong id="totalAmount">0</strong> VNĐ</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white py-3">
+                        <h6 class="mb-0"><i class="fas fa-user me-2"></i>Thông tin khách hàng</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="Customer_id" class="form-label">Khách hàng <span class="text-danger">*</span></label>
+                            @Html.DropDownListFor(m => m.Customer_id, ViewBag.Customers as SelectList, "-- Chọn khách hàng --", new { @class = "form-select" })
+                            <span asp-validation-for="Customer_id" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Order_date" class="form-label">Ngày đặt hàng</label>
+                            <input asp-for="Order_date" class="form-control" type="date" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Shipping_address" class="form-label">Địa chỉ giao hàng</label>
+                            <textarea asp-for="Shipping_address" class="form-control" rows="2" placeholder="Có thể để trống"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="note" class="form-label">Ghi chú</label>
+                            <textarea asp-for="note" class="form-control" rows="2" placeholder="Có thể để trống"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-save me-2"></i>Tạo đơn hàng
+                    </button>
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="fas fa-times me-2"></i>Hủy
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        let itemIndex = 0;
+
+        function addProduct() {
+            const select = document.getElementById('productSelect');
+            const productId = select.value;
+            if (!productId) return;
+
+            const option = select.options[select.selectedIndex];
+            const name = option.dataset.name;
+            const price = parseFloat(option.dataset.price) || 0;
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    ${name}
+                    <input type="hidden" name="Order_details[${itemIndex}].Product_id" value="${productId}" />
+                </td>
+                <td>
+                    <input type="number" name="Order_details[${itemIndex}].Quantity" value="1" min="1" 
+                           class="form-control form-control-sm quantity-input" onchange="updateTotal()" />
+                </td>
+                <td>
+                    <input type="number" name="Order_details[${itemIndex}].Unit_price" value="${price}" step="0.01"
+                           class="form-control form-control-sm price-input" onchange="updateTotal()" />
+                </td>
+                <td class="item-total">${price.toLocaleString()} VNĐ</td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeRow(this)">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </td>
+            `;
+            document.getElementById('orderItems').appendChild(row);
+            itemIndex++;
+            select.value = '';
+            updateTotal();
+        }
+
+        function removeRow(btn) {
+            btn.closest('tr').remove();
+            updateTotal();
+        }
+
+        function updateTotal() {
+            let total = 0;
+            document.querySelectorAll('#orderItems tr').forEach(row => {
+                const qty = parseFloat(row.querySelector('.quantity-input')?.value) || 0;
+                const price = parseFloat(row.querySelector('.price-input')?.value) || 0;
+                const itemTotal = qty * price;
+                row.querySelector('.item-total').textContent = itemTotal.toLocaleString() + ' VNĐ';
+                total += itemTotal;
+            });
+            document.getElementById('totalAmount').textContent = total.toLocaleString();
+        }
+    </script>
+}

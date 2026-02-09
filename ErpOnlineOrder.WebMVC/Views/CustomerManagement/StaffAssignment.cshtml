@@ -1,0 +1,266 @@
+@model IEnumerable<ErpOnlineOrder.Domain.Models.Customer_management>
+@{
+    ViewData["Title"] = "Gán cán bộ phụ trách khách hàng";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var staffList = ViewBag.StaffList as List<ErpOnlineOrder.Domain.Models.Staff> ?? new List<ErpOnlineOrder.Domain.Models.Staff>();
+    var selectedStaffId = ViewBag.SelectedStaffId as int?;
+    var canAssign = (bool)(ViewBag.CanAssign ?? false);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1"><i class="fas fa-user-tag me-2 text-success"></i>Gán cán bộ phụ trách khách hàng</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="@Url.Action("Dashboard", "Home")">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index")">Khách hàng</a></li>
+                <li class="breadcrumb-item active">Gán cán bộ phụ trách</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        @if (canAssign)
+        {
+            <a href="@Url.Action("CreateAssignment")" class="btn btn-success">
+                <i class="fas fa-plus me-1"></i>Thêm gán mới
+            </a>
+        }
+        <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Quay lại
+        </a>
+    </div>
+</div>
+
+<!-- Thống kê -->
+@{
+    var totalAssignments = Model.Count();
+    var totalStaff = Model.Select(m => m.Staff_id).Distinct().Count();
+    var totalCustomers = Model.Select(m => m.Customer_id).Distinct().Count();
+}
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small">Tổng lượt gán</div>
+                    <div class="fs-3 fw-bold text-primary">@totalAssignments</div>
+                </div>
+                <div class="stat-icon blue"><i class="fas fa-link"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small">Cán bộ tham gia</div>
+                    <div class="fs-3 fw-bold text-success">@totalStaff</div>
+                </div>
+                <div class="stat-icon green"><i class="fas fa-user-tie"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-muted small">Khách hàng được gán</div>
+                    <div class="fs-3 fw-bold text-info">@totalCustomers</div>
+                </div>
+                <div class="stat-icon orange"><i class="fas fa-users"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bộ lọc -->
+<div class="table-card mb-4">
+    <div class="card-header">
+        <i class="fas fa-filter me-2"></i>Bộ lọc
+    </div>
+    <div class="card-body p-4">
+        <form asp-action="StaffAssignment" method="get">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Tìm kiếm</label>
+                    <input type="text" name="search" value="@ViewBag.Search" class="form-control" 
+                           placeholder="Tên khách hàng, mã KH, tên cán bộ..." />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Lọc theo cán bộ</label>
+                    <select name="staffId" class="form-select">
+                        <option value="">-- Tất cả cán bộ --</option>
+                        @foreach (var staff in staffList)
+                        {
+                            if (selectedStaffId == staff.Id)
+                            {
+                                <option value="@staff.Id" selected>@staff.Full_name (@staff.Staff_code)</option>
+                            }
+                            else
+                            {
+                                <option value="@staff.Id">@staff.Full_name (@staff.Staff_code)</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-search me-1"></i>Tìm kiếm
+                    </button>
+                    <a href="@Url.Action("StaffAssignment")" class="btn btn-outline-secondary">
+                        <i class="fas fa-redo me-1"></i>Reset
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Danh sách -->
+<div class="table-card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-list me-2"></i>Danh sách gán cán bộ phụ trách (@totalAssignments)</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>Khách hàng</th>
+                        <th>Cán bộ phụ trách</th>
+                        <th>Tỉnh/Thành phố</th>
+                        <th>Ngày gán</th>
+                        <th style="width: 150px;" class="text-center">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="fas fa-link fa-3x mb-3 d-block opacity-50"></i>
+                                <p class="mb-1">Chưa có gán cán bộ phụ trách nào</p>
+                                @if (canAssign)
+                                {
+                                    <a href="@Url.Action("CreateAssignment")" class="btn btn-sm btn-success mt-2">
+                                        <i class="fas fa-plus me-1"></i>Thêm gán mới
+                                    </a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        var index = 0;
+                        @foreach (var item in Model)
+                        {
+                            index++;
+                            <tr>
+                                <td class="text-muted">@index</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-info text-white d-flex align-items-center justify-content-center me-2"
+                                             style="width: 35px; height: 35px; font-size: 14px;">
+                                            @(item.Customer?.Full_name?.Length > 0 ? item.Customer.Full_name.Substring(0, 1).ToUpper() : "?")
+                                        </div>
+                                        <div>
+                                            <strong>@(item.Customer?.Full_name ?? "N/A")</strong>
+                                            <div class="small text-muted">@(item.Customer?.Customer_code ?? "")</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center me-2"
+                                             style="width: 35px; height: 35px; font-size: 14px;">
+                                            @(item.Staff?.Full_name?.Length > 0 ? item.Staff.Full_name.Substring(0, 1).ToUpper() : "?")
+                                        </div>
+                                        <div>
+                                            <strong>@(item.Staff?.Full_name ?? "N/A")</strong>
+                                            <div class="small text-muted">@(item.Staff?.Staff_code ?? "")</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (item.Province != null)
+                                    {
+                                        <span class="badge bg-light text-dark border">
+                                            <i class="fas fa-map-marker-alt me-1 text-danger"></i>@item.Province.Province_name
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="small">@item.Created_at.ToString("dd/MM/yyyy HH:mm")</span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        @if (canAssign)
+                                        {
+                                            <a asp-action="EditAssignment" asp-route-id="@item.Id"
+                                               class="btn btn-outline-warning" title="Sửa"
+                                               data-bs-toggle="tooltip">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-outline-danger" title="Xóa"
+                                                    data-bs-toggle="tooltip"
+                                                    onclick="confirmRemove(@item.Id, '@(item.Staff?.Full_name?.Replace("'", "\\'") ?? "N/A")', '@(item.Customer?.Full_name?.Replace("'", "\\'") ?? "N/A")')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal xác nhận xóa -->
+<div class="modal fade" id="removeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle text-danger me-2"></i>Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xóa gán cán bộ "<strong id="removeStaffName"></strong>" 
+                   khỏi khách hàng "<strong id="removeCustomerName"></strong>"?</p>
+                <p class="text-muted mb-0"><i class="fas fa-info-circle me-1"></i>Hành động này không thể hoàn tác.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <form id="removeForm" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="customerId" value="0" />
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>Xóa
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // Khởi tạo tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (el) { return new bootstrap.Tooltip(el); });
+
+    function confirmRemove(id, staffName, customerName) {
+        document.getElementById('removeStaffName').textContent = staffName;
+        document.getElementById('removeCustomerName').textContent = customerName;
+        document.getElementById('removeForm').action = '@Url.Action("RemoveAssignment")/' + id;
+        new bootstrap.Modal(document.getElementById('removeModal')).show();
+    }
+</script>
+}

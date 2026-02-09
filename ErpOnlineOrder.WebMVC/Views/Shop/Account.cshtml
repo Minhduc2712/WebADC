@@ -1,0 +1,110 @@
+@{
+    ViewData["Title"] = "Tài khoản";
+    Layout = "~/Views/Shared/_ShopLayout.cshtml";
+}
+
+<!-- Breadcrumb -->
+<section class="blog about-blog">
+    <div class="container">
+        <div class="blog-bradcrum">
+            <span><a asp-action="Index">Trang chủ</a></span>
+            <span class="devider">/</span>
+            <span><a href="#">Tài khoản</a></span>
+        </div>
+        <div class="blog-heading about-heading">
+            <h1 class="heading">Tài khoản</h1>
+        </div>
+    </div>
+</section>
+
+<section class="product footer-padding">
+    <div class="container">
+        @if (Context.Session.GetInt32("UserId") != null)
+        {
+            <div class="checkout-section">
+                <div class="row gy-5 justify-content-center">
+                    <div class="col-lg-4 col-md-6">
+                        <div class="account-section billing-section text-center" style="padding: 40px 20px;">
+                            <div style="width: 100px; height: 100px; background: #f0f0f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40" height="40" fill="#888">
+                                    <path d="M20 22H4v-2a5 5 0 0 1 5-5h6a5 5 0 0 1 5 5v2zm-8-9a6 6 0 1 1 0-12 6 6 0 0 1 0 12z"/>
+                                </svg>
+                            </div>
+                            <h4 style="font-weight: bold; margin-bottom: 5px;">@Context.Session.GetString("FullName")</h4>
+                            <p style="color: #888;">@Context.Session.GetString("Username")</p>
+                        </div>
+                    </div>
+                    <div class="col-lg-8 col-md-6">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <a asp-action="Orders" class="text-decoration-none d-block">
+                                    <div class="account-section billing-section text-center" style="padding: 30px 20px; transition: all 0.3s; border: 2px solid transparent;">
+                                        <div style="width: 60px; height: 60px; background: #f8f0f7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
+                                            <i class="fas fa-box fa-lg" style="color: #1a7f37;"></i>
+                                        </div>
+                                        <h6 style="font-weight: bold; color: #333;">Đơn hàng của tôi</h6>
+                                        <p style="color: #888; font-size: 13px; margin: 0;">Xem và theo dõi đơn hàng</p>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="col-md-6">
+                                <a asp-controller="Auth" asp-action="ChangePassword" class="text-decoration-none d-block">
+                                    <div class="account-section billing-section text-center" style="padding: 30px 20px; transition: all 0.3s; border: 2px solid transparent;">
+                                        <div style="width: 60px; height: 60px; background: #fff8e1; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
+                                            <i class="fas fa-key fa-lg" style="color: #f5a623;"></i>
+                                        </div>
+                                        <h6 style="font-weight: bold; color: #333;">Đổi mật khẩu</h6>
+                                        <p style="color: #888; font-size: 13px; margin: 0;">Thay đổi mật khẩu tài khoản</p>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="col-md-6">
+                                <a asp-action="Cart" class="text-decoration-none d-block">
+                                    <div class="account-section billing-section text-center" style="padding: 30px 20px; transition: all 0.3s; border: 2px solid transparent;">
+                                        <div style="width: 60px; height: 60px; background: #e8f5e9; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
+                                            <i class="fas fa-shopping-cart fa-lg" style="color: #4caf50;"></i>
+                                        </div>
+                                        <h6 style="font-weight: bold; color: #333;">Giỏ hàng</h6>
+                                        <p style="color: #888; font-size: 13px; margin: 0;">Xem giỏ hàng của bạn</p>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="col-md-6">
+                                <a asp-controller="Auth" asp-action="Logout" class="text-decoration-none d-block">
+                                    <div class="account-section billing-section text-center" style="padding: 30px 20px; transition: all 0.3s; border: 2px solid transparent;">
+                                        <div style="width: 60px; height: 60px; background: #ffebee; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
+                                            <i class="fas fa-sign-out-alt fa-lg" style="color: #e53935;"></i>
+                                        </div>
+                                        <h6 style="font-weight: bold; color: #333;">Đăng xuất</h6>
+                                        <p style="color: #888; font-size: 13px; margin: 0;">Thoát khỏi tài khoản</p>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="checkout-section">
+                <div class="row justify-content-center">
+                    <div class="col-lg-6">
+                        <div class="checkout-wrapper">
+                            <div class="account-section billing-section text-center" style="padding: 50px 30px;">
+                                <div style="width: 100px; height: 100px; background: #f0f0f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40" height="40" fill="#888">
+                                        <path d="M20 22H4v-2a5 5 0 0 1 5-5h6a5 5 0 0 1 5 5v2zm-8-9a6 6 0 1 1 0-12 6 6 0 0 1 0 12z"/>
+                                    </svg>
+                                </div>
+                                <h4 style="font-weight: bold; margin-bottom: 10px;">Đăng nhập tài khoản</h4>
+                                <p style="color: #888; margin-bottom: 25px;">Đăng nhập để theo dõi đơn hàng và quản lý tài khoản.</p>
+                                <a asp-controller="Auth" asp-action="Login" class="shop-btn">Đăng nhập</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</section>

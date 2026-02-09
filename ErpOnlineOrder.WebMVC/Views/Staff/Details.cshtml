@@ -1,0 +1,203 @@
+﻿@model ErpOnlineOrder.Application.DTOs.AdminDTOs.StaffAccountDto
+@{
+    ViewData["Title"] = "Chi tiết nhân viên";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-user me-2"></i>Chi tiết nhân viên
+        </h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Dashboard">Trang chủ</a></li>
+                <li class="breadcrumb-item"><a asp-action="Index">Quản lý nhân sự</a></li>
+                <li class="breadcrumb-item active">Chi tiết</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info-circle me-1"></i> Thông tin nhân viên
+                    </h6>
+                    <div>
+                        @if (Model.Is_active)
+                        {
+                            <span class="badge bg-success"><i class="fas fa-check me-1"></i>Đang hoạt động</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger"><i class="fas fa-times me-1"></i>Vô hiệu hóa</span>
+                        }
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Avatar và thông tin chính -->
+                        <div class="col-md-4 text-center mb-4">
+                            <div class="mb-3">
+                                <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" 
+                                     style="width: 120px; height: 120px; font-size: 48px;">
+                                    @(string.IsNullOrEmpty(Model.Full_name) ? "?" : Model.Full_name[0].ToString().ToUpper())
+                                </div>
+                            </div>
+                            <h4 class="mb-1">@Model.Full_name</h4>
+                            <p class="text-muted mb-2">@Model.Staff_code</p>
+                            <div class="mb-2">
+                                @foreach (var role in Model.Roles)
+                                {
+                                    <span class="badge bg-info me-1">@role</span>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Chi tiết thông tin -->
+                        <div class="col-md-8">
+                            <table class="table table-borderless">
+                                <tbody>
+                                    <tr>
+                                        <td width="35%" class="text-muted">
+                                            <i class="fas fa-user me-2"></i>Tên đăng nhập
+                                        </td>
+                                        <td><strong>@Model.Username</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">
+                                            <i class="fas fa-envelope me-2"></i>Email
+                                        </td>
+                                        <td>
+                                            <a href="mailto:@Model.Email">@Model.Email</a>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">
+                                            <i class="fas fa-phone me-2"></i>Số điện thoại
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(Model.Phone_number))
+                                            {
+                                                <a href="tel:@Model.Phone_number">@Model.Phone_number</a>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Chưa cập nhật</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">
+                                            <i class="fas fa-id-badge me-2"></i>Mã nhân viên
+                                        </td>
+                                        <td><span class="badge bg-secondary">@Model.Staff_code</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">
+                                            <i class="fas fa-calendar me-2"></i>Ngày tạo
+                                        </td>
+                                        <td>@Model.Created_at.ToString("dd/MM/yyyy HH:mm")</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">
+                                            <i class="fas fa-shield-alt me-2"></i>Vai trò
+                                        </td>
+                                        <td>
+                                            @if (Model.Roles.Any())
+                                            {
+                                                @foreach (var role in Model.Roles)
+                                                {
+                                                    <span class="badge bg-primary me-1">@role</span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Chưa phân quyền</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <hr />
+
+                    <div class="d-flex justify-content-between">
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i> Quay lại
+                        </a>
+                        <div>
+                            <a asp-action="Edit" asp-route-id="@Model.User_id" class="btn btn-warning">
+                                <i class="fas fa-edit me-1"></i> Chỉnh sửa
+                            </a>
+                            <a asp-action="ResetPassword" asp-route-id="@Model.User_id" class="btn btn-outline-secondary">
+                                <i class="fas fa-key me-1"></i> Đặt lại mật khẩu
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-cogs me-1"></i> Thao tác
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a asp-action="Edit" asp-route-id="@Model.User_id" class="btn btn-warning">
+                            <i class="fas fa-edit me-1"></i> Chỉnh sửa thông tin
+                        </a>
+                        <a asp-action="ResetPassword" asp-route-id="@Model.User_id" class="btn btn-outline-warning">
+                            <i class="fas fa-key me-1"></i> Đặt lại mật khẩu
+                        </a>
+                        
+                        @if (Model.Is_active)
+                        {
+                            <form asp-action="ToggleStatus" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@Model.User_id" />
+                                <input type="hidden" name="isActive" value="false" />
+                                <button type="submit" class="btn btn-outline-danger w-100"
+                                        onclick="return confirm('Bạn có chắc muốn vô hiệu hóa tài khoản này?');">
+                                    <i class="fas fa-user-slash me-1"></i> Vô hiệu hóa
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <form asp-action="ToggleStatus" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@Model.User_id" />
+                                <input type="hidden" name="isActive" value="true" />
+                                <button type="submit" class="btn btn-outline-success w-100">
+                                    <i class="fas fa-user-check me-1"></i> Kích hoạt
+                                </button>
+                            </form>
+                        }
+                        
+                        <hr />
+                        
+                        <form asp-action="Delete" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.User_id" />
+                            <button type="submit" class="btn btn-danger w-100"
+                                    onclick="return confirm('Bạn có chắc muốn xóa tài khoản này? Thao tác này không thể hoàn tác!');">
+                                <i class="fas fa-trash me-1"></i> Xóa tài khoản
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

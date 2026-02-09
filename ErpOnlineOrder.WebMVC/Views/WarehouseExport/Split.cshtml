@@ -1,0 +1,231 @@
+@model ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs.WarehouseExportDto
+@{
+    ViewData["Title"] = "Tách phiếu xuất kho";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="mb-4">
+        <h4 class="mb-0">Tách phiếu xuất kho</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="@Url.Action("Dashboard", "Home")">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index")">Xuất kho</a></li>
+                <li class="breadcrumb-item active">Tách phiếu</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h6 class="mb-0">
+                        <i class="fas fa-truck me-2"></i>Phiếu xuất: <strong>@Model.Warehouse_export_code</strong>
+                        <span class="badge bg-info ms-2">@Model.Customer_name</span>
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Split" method="post" id="splitForm">
+                        <input type="hidden" name="Source_export_id" value="@Model.Id" />
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Chọn các sản phẩm và số lượng để tách thành phiếu xuất kho mới. Các sản phẩm không được chọn sẽ giữ lại trong phiếu gốc.
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <label class="form-label">Ghi chú</label>
+                                <textarea name="Note" class="form-control" rows="2" placeholder="Lý do tách phiếu xuất kho..."></textarea>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">&nbsp;</label>
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" name="Auto_split_invoice" value="true" checked id="autoSplitInvoice" />
+                                    <label class="form-check-label" for="autoSplitInvoice">
+                                        <i class="fas fa-file-invoice me-1"></i>Tự động tách hóa đơn tương ứng
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h6 class="mb-3"><i class="fas fa-box me-2"></i>Chọn sản phẩm để tách (Phiếu mới #1)</h6>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 50px;">
+                                            <input type="checkbox" class="form-check-input" id="selectAll" onclick="toggleAll(this)" />
+                                        </th>
+                                        <th>Sản phẩm</th>
+                                        <th>Kho</th>
+                                        <th style="width: 100px;">SL gốc</th>
+                                        <th style="width: 120px;">SL tách</th>
+                                        <th>Đơn giá</th>
+                                        <th>Thành tiền</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (int i = 0; i < Model.Details.Count; i++)
+                                    {
+                                        var detail = Model.Details[i];
+                                        <tr>
+                                            <td>
+                                                <input type="checkbox" class="form-check-input item-checkbox" 
+                                                       data-index="@i" onchange="toggleItem(this, @i)" />
+                                            </td>
+                                            <td>
+                                                <strong>@detail.Product_code</strong><br/>
+                                                <small class="text-muted">@detail.Product_name</small>
+                                                <input type="hidden" id="detail_id_@i" name="Split_parts[0].Items[@i].Export_detail_id" 
+                                                       value="@detail.Id" disabled />
+                                            </td>
+                                            <td>@detail.Warehouse_name</td>
+                                            <td class="text-center">
+                                                <span class="badge bg-secondary">@detail.Quantity_shipped</span>
+                                            </td>
+                                            <td>
+                                                <input type="number" id="qty_@i" name="Split_parts[0].Items[@i].Quantity" 
+                                                       class="form-control form-control-sm quantity-input" 
+                                                       min="1" max="@detail.Quantity_shipped" value="@detail.Quantity_shipped" 
+                                                       disabled onchange="updateSplitTotal()" />
+                                            </td>
+                                            <td>@detail.Unit_price.ToString("N0") VNĐ</td>
+                                            <td class="item-total" data-price="@detail.Unit_price">
+                                                @detail.Total_price.ToString("N0") VNĐ
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot>
+                                    <tr class="table-warning">
+                                        <td colspan="6" class="text-end"><strong>Tổng tiền tách:</strong></td>
+                                        <td><strong id="splitTotal">0</strong> VNĐ</td>
+                                    </tr>
+                                    <tr class="table-info">
+                                        <td colspan="6" class="text-end"><strong>Còn lại phiếu gốc:</strong></td>
+                                        <td><strong id="remainTotal">@Model.Total_amount.ToString("N0")</strong> VNĐ</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        <div class="d-flex gap-2 mt-3">
+                            <button type="submit" class="btn btn-primary" id="splitBtn" disabled>
+                                <i class="fas fa-cut me-2"></i>Tách phiếu xuất kho
+                            </button>
+                            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Hủy
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Thông tin phiếu gốc</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <td class="text-muted">Mã phiếu:</td>
+                            <td><strong>@Model.Warehouse_export_code</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Kho:</td>
+                            <td>@Model.Warehouse_name</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Khách hàng:</td>
+                            <td>@Model.Customer_name</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Hóa đơn:</td>
+                            <td><span class="badge bg-secondary">@Model.Invoice_code</span></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Ngày xuất:</td>
+                            <td>@Model.Export_date.ToString("dd/MM/yyyy")</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Tổng tiền:</td>
+                            <td class="text-success fw-bold">@Model.Total_amount.ToString("N0") VNĐ</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Tổng SL:</td>
+                            <td><span class="badge bg-info">@Model.Total_quantity</span></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Hướng dẫn</h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning mb-0">
+                        <ul class="mb-0 small">
+                            <li>Chọn các sản phẩm muốn tách sang phiếu mới</li>
+                            <li>Có thể tách một phần số lượng của sản phẩm</li>
+                            <li>Nếu chọn "Tự động tách hóa đơn", hóa đơn tương ứng cũng sẽ được tách</li>
+                            <li>Phiếu gốc sẽ được cập nhật sau khi tách</li>
+                            <li>Có thể hoàn tác việc tách nếu cần</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const originalTotal = @Model.Total_amount;
+    
+    function toggleAll(checkbox) {
+        document.querySelectorAll('.item-checkbox').forEach((cb, index) => {
+            cb.checked = checkbox.checked;
+            toggleItem(cb, index);
+        });
+    }
+
+    function toggleItem(checkbox, index) {
+        const qtyInput = document.getElementById('qty_' + index);
+        const detailInput = document.getElementById('detail_id_' + index);
+        
+        if (checkbox.checked) {
+            qtyInput.disabled = false;
+            detailInput.disabled = false;
+        } else {
+            qtyInput.disabled = true;
+            detailInput.disabled = true;
+        }
+        
+        updateSplitTotal();
+    }
+
+    function updateSplitTotal() {
+        let splitTotal = 0;
+        let hasSelection = false;
+        
+        document.querySelectorAll('.item-checkbox').forEach((cb, index) => {
+            if (cb.checked) {
+                hasSelection = true;
+                const qty = parseFloat(document.getElementById('qty_' + index).value) || 0;
+                const price = parseFloat(cb.closest('tr').querySelector('.item-total').dataset.price) || 0;
+                splitTotal += qty * price;
+            }
+        });
+        
+        document.getElementById('splitTotal').textContent = splitTotal.toLocaleString();
+        document.getElementById('remainTotal').textContent = (originalTotal - splitTotal).toLocaleString();
+        document.getElementById('splitBtn').disabled = !hasSelection || splitTotal <= 0;
+    }
+</script>
+}

@@ -1,0 +1,165 @@
+@model ErpOnlineOrder.Application.DTOs.PermissionDTOs.PermissionDto
+@{
+    ViewData["Title"] = "Sửa quyền";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-edit me-2"></i>Sửa quyền
+        </h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Dashboard">Trang chủ</a></li>
+                <li class="breadcrumb-item"><a asp-action="Index">Quản lý quyền hạn</a></li>
+                <li class="breadcrumb-item active">Sửa</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-key me-1"></i> Chỉnh sửa quyền
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger">
+                            @Html.ValidationSummary(false, "", new { @class = "mb-0" })
+                        </div>
+                    }
+
+                    <form asp-action="Edit" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+
+                        <div class="mb-3">
+                            <label class="form-label text-muted">ID</label>
+                            <input type="text" class="form-control" value="@Model.Id" disabled />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-th-large me-1"></i> Module
+                            </label>
+                            <select id="moduleSelect" class="form-select">
+                                <option value="">-- Chọn module --</option>
+                                <option value="PRODUCT">Sản phẩm (PRODUCT)</option>
+                                <option value="CATEGORY">Danh mục (CATEGORY)</option>
+                                <option value="REGION">Vùng miền (REGION)</option>
+                                <option value="PROVINCE">Tỉnh/Thành (PROVINCE)</option>
+                                <option value="ORGANIZATION">Tổ chức (ORGANIZATION)</option>
+                                <option value="CUSTOMER">Khách hàng (CUSTOMER)</option>
+                                <option value="ORDER">Đơn hàng (ORDER)</option>
+                                <option value="INVOICE">Hóa đơn (INVOICE)</option>
+                                <option value="WAREHOUSE">Kho hàng (WAREHOUSE)</option>
+                                <option value="STAFF">Nhân sự (STAFF)</option>
+                                <option value="REPORT">Báo cáo (REPORT)</option>
+                                <option value="DISTRIBUTOR">Nhà phân phối (DISTRIBUTOR)</option>
+                                <option value="ROLE">Phân quyền (ROLE)</option>
+                                <option value="PERMISSION">Quyền hạn (PERMISSION)</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-bolt me-1"></i> Hành động
+                            </label>
+                            <select id="actionSelect" class="form-select">
+                                <option value="">-- Chọn hành động --</option>
+                                <option value="VIEW">Xem (VIEW)</option>
+                                <option value="CREATE">Thêm mới (CREATE)</option>
+                                <option value="UPDATE">Cập nhật (UPDATE)</option>
+                                <option value="DELETE">Xóa (DELETE)</option>
+                                <option value="EXPORT">Xuất file (EXPORT)</option>
+                                <option value="IMPORT">Nhập file (IMPORT)</option>
+                                <option value="APPROVE">Duyệt (APPROVE)</option>
+                                <option value="REJECT">Từ chối (REJECT)</option>
+                                <option value="ASSIGN">Phân quyền (ASSIGN)</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="fas fa-code me-1"></i> Mã quyền <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="Permission_code" id="permissionCode" 
+                                   class="form-control form-control-lg text-uppercase fw-bold" 
+                                   value="@Model.Permission_code" readonly />
+                        </div>
+
+                        <hr />
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> Quay lại
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Lưu thay đổi
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-info-circle me-1"></i> Thông tin hiện tại
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr>
+                            <td class="text-muted">Mã quyền:</td>
+                            <td><code>@Model.Permission_code</code></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Module:</td>
+                            <td>@Model.Module_name</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Hành động:</td>
+                            <td>@Model.Action_name</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var moduleSelect = document.getElementById('moduleSelect');
+        var actionSelect = document.getElementById('actionSelect');
+        var codeInput = document.getElementById('permissionCode');
+
+        function updateCode() {
+            var module = moduleSelect.value;
+            var action = actionSelect.value;
+            if (module && action) {
+                codeInput.value = module + '_' + action;
+            }
+        }
+
+        moduleSelect.addEventListener('change', updateCode);
+        actionSelect.addEventListener('change', updateCode);
+
+        // Pre-select from current code
+        var currentCode = '@Model.Permission_code';
+        if (currentCode) {
+            var parts = currentCode.split('_');
+            if (parts.length >= 2) {
+                moduleSelect.value = parts[0];
+                actionSelect.value = parts.slice(1).join('_');
+            }
+        }
+    </script>
+}

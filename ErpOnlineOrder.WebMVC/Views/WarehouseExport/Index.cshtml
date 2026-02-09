@@ -1,0 +1,274 @@
+@model IEnumerable<ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs.WarehouseExportDto>
+@{
+    ViewData["Title"] = "Quản lý xuất kho";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">Quản lý xuất kho</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="@Url.Action("Dashboard", "Home")">Dashboard</a></li>
+                <li class="breadcrumb-item active">Xuất kho</li>
+            </ol>
+        </nav>
+    </div>
+    <div>
+        @if (Context.Session.HasPermission("WAREHOUSE_CREATE"))
+        {
+            <a href="@Url.Action("Create")" class="btn btn-primary me-2">
+                <i class="fas fa-plus me-1"></i>Tạo phiếu xuất
+            </a>
+        }
+        @if (Context.Session.HasPermission("WAREHOUSE_UPDATE"))
+        {
+            <a href="@Url.Action("Merge")" class="btn btn-outline-primary">
+                <i class="fas fa-compress-arrows-alt me-1"></i>Gộp phiếu
+            </a>
+        }
+    </div>
+</div>
+
+<!-- Bộ lọc -->
+<div class="table-card mb-4">
+    <div class="card-header">
+        <i class="fas fa-filter me-2"></i>Bộ lọc
+    </div>
+    <div class="card-body p-4">
+        <form asp-action="Index" method="get">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Trạng thái</label>
+                    <select name="status" class="form-select">
+                        <option value="">-- Tất cả --</option>
+                        <option value="Draft" selected="@(ViewBag.Status == "Draft")">Nháp</option>
+                        <option value="Pending" selected="@(ViewBag.Status == "Pending")">Chờ xuất</option>
+                        <option value="Confirmed" selected="@(ViewBag.Status == "Confirmed")">Đã xác nhận</option>
+                        <option value="Shipping" selected="@(ViewBag.Status == "Shipping")">Đang giao</option>
+                        <option value="Completed" selected="@(ViewBag.Status == "Completed")">Hoàn thành</option>
+                        <option value="Cancelled" selected="@(ViewBag.Status == "Cancelled")">Đã hủy</option>
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-search me-1"></i>Lọc
+                    </button>
+                    <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                        <i class="fas fa-redo me-1"></i>Reset
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Thống kê nhanh -->
+<div class="row mb-4">
+    @{
+        var pending = Model.Count(e => e.Status == "Pending");
+        var shipping = Model.Count(e => e.Status == "Shipping");
+        var completed = Model.Count(e => e.Status == "Completed");
+        var totalQuantity = Model.Sum(e => e.Total_quantity);
+    }
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3 class="mb-1">@Model.Count()</h3>
+                    <span class="text-muted">Tổng phiếu</span>
+                </div>
+                <div class="stat-icon blue">
+                    <i class="fas fa-warehouse"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3 class="mb-1">@pending</h3>
+                    <span class="text-muted">Chờ xuất</span>
+                </div>
+                <div class="stat-icon" style="background: linear-gradient(135deg, #ffc107, #ff9800);">
+                    <i class="fas fa-clock"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3 class="mb-1">@shipping</h3>
+                    <span class="text-muted">Đang giao</span>
+                </div>
+                <div class="stat-icon orange">
+                    <i class="fas fa-truck"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3 class="mb-1">@completed</h3>
+                    <span class="text-muted">Hoàn thành</span>
+                </div>
+                <div class="stat-icon green">
+                    <i class="fas fa-check-double"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Danh sách phiếu xuất kho -->
+<div class="table-card">
+    <div class="card-header">
+        <i class="fas fa-warehouse me-2"></i>Danh sách phiếu xuất kho (@Model.Count() phiếu)
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Mã phiếu</th>
+                        <th>Hóa đơn</th>
+                        <th>Khách hàng</th>
+                        <th>Kho</th>
+                        <th>Ngày xuất</th>
+                        <th class="text-center">Số SP</th>
+                        <th>Trạng thái</th>
+                        <th>Giao hàng</th>
+                        <th style="width: 150px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center py-4 text-muted">
+                                <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                Không có phiếu xuất kho nào
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var export in Model.OrderByDescending(e => e.Export_date))
+                        {
+                            var statusClass = export.Status switch
+                            {
+                                "Draft" => "bg-secondary",
+                                "Pending" => "bg-warning text-dark",
+                                "Confirmed" => "bg-primary",
+                                "Shipping" => "bg-info",
+                                "Completed" => "bg-success",
+                                "Cancelled" => "bg-danger",
+                                _ => "bg-secondary"
+                            };
+                            var statusText = export.Status switch
+                            {
+                                "Draft" => "Nháp",
+                                "Pending" => "Chờ xuất",
+                                "Confirmed" => "Đã xác nhận",
+                                "Shipping" => "Đang giao",
+                                "Completed" => "Hoàn thành",
+                                "Cancelled" => "Đã hủy",
+                                _ => export.Status
+                            };
+                            var deliveryClass = export.Delivery_status switch
+                            {
+                                "Pending" => "bg-secondary",
+                                "Shipped" => "bg-info",
+                                "Delivered" => "bg-success",
+                                "Failed" => "bg-danger",
+                                _ => "bg-secondary"
+                            };
+                            var deliveryText = export.Delivery_status switch
+                            {
+                                "Pending" => "Chờ giao",
+                                "Shipped" => "Đã giao",
+                                "Delivered" => "Đã nhận",
+                                "Failed" => "Thất bại",
+                                _ => export.Delivery_status ?? "N/A"
+                            };
+                            <tr>
+                                <td>
+                                    <span class="badge bg-secondary">@export.Warehouse_export_code</span>
+                                    @if (export.Parent_export_id.HasValue)
+                                    {
+                                        <br /><small class="text-muted">Từ: @export.Parent_export_code</small>
+                                    }
+                                </td>
+                                <td><span class="badge bg-info">@export.Invoice_code</span></td>
+                                <td>@export.Customer_name</td>
+                                <td>@export.Warehouse_name</td>
+                                <td>@export.Export_date.ToString("dd/MM/yyyy")</td>
+                                <td class="text-center"><span class="badge bg-primary">@export.Total_quantity</span></td>
+                                <td><span class="badge @statusClass">@statusText</span></td>
+                                <td><span class="badge @deliveryClass">@deliveryText</span></td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-action="Details" asp-route-id="@export.Id" class="btn btn-outline-primary" title="Xem chi tiết">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        @if (export.Status == "Pending")
+                                        {
+                                            <button type="button" class="btn btn-outline-success" title="Xác nhận"
+                                                    onclick="confirmAction(@export.Id, 'confirm', '@export.Warehouse_export_code')">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        }
+                                        @if (export.Status != "Completed" && export.Status != "Cancelled" && export.Details.Count > 1)
+                                        {
+                                            <a asp-action="Split" asp-route-id="@export.Id" class="btn btn-outline-info" title="Tách phiếu">
+                                                <i class="fas fa-expand-arrows-alt"></i>
+                                            </a>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal xác nhận -->
+<div class="modal fade" id="actionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="modalMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <form id="actionForm" method="post" style="display: inline;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-success">Xác nhận</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function confirmAction(id, action, code) {
+        document.getElementById('modalTitle').innerHTML = '<i class="fas fa-check-circle text-success me-2"></i>Xác nhận xuất kho';
+        document.getElementById('modalMessage').innerHTML = 'Bạn có chắc chắn muốn xác nhận phiếu xuất kho <strong>' + code + '</strong>?';
+        document.getElementById('actionForm').action = '@Url.Action("Confirm")/' + id;
+        new bootstrap.Modal(document.getElementById('actionModal')).show();
+    }
+</script>
+}

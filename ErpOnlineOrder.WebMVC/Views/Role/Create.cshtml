@@ -1,0 +1,194 @@
+@model ErpOnlineOrder.Application.DTOs.PermissionDTOs.CreateRoleDto
+@{
+    ViewData["Title"] = "Thêm Role mới";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var groupedPermissions = ViewBag.GroupedPermissions as Dictionary<string, List<ErpOnlineOrder.Application.DTOs.PermissionDTOs.PermissionDto>> 
+        ?? new Dictionary<string, List<ErpOnlineOrder.Application.DTOs.PermissionDTOs.PermissionDto>>();
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-plus-circle me-2"></i>Thêm Role mới
+        </h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Dashboard">Trang chủ</a></li>
+                <li class="breadcrumb-item"><a asp-action="Index">Quản lý phân quyền</a></li>
+                <li class="breadcrumb-item active">Thêm mới</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info-circle me-1"></i> Thông tin Role
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger">
+                            @Html.ValidationSummary(false, "", new { @class = "mb-0" })
+                        </div>
+                    }
+
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-4">
+                            <label asp-for="Role_name" class="form-label">
+                                <i class="fas fa-tag me-1"></i> Tên Role <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="Role_name" class="form-control" placeholder="Nhập tên role (VD: Nhân viên bán hàng)" />
+                            <span asp-validation-for="Role_name" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="fas fa-key me-1"></i> Phân quyền
+                            </label>
+
+                            <!-- Quick Actions -->
+                            <div class="mb-2 d-flex gap-2">
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="selectAll">
+                                    <i class="fas fa-check-double me-1"></i> Chọn tất cả
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAll">
+                                    <i class="fas fa-times me-1"></i> Bỏ chọn tất cả
+                                </button>
+                            </div>
+
+                            <div class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
+                                @if (groupedPermissions.Any())
+                                {
+                                    @foreach (var group in groupedPermissions)
+                                    {
+                                        <div class="mb-3">
+                                            <div class="d-flex align-items-center mb-2 p-2 bg-light rounded">
+                                                <input type="checkbox" class="form-check-input me-2 module-checkbox" 
+                                                       id="module_@group.Key.Replace(" ", "_")" data-module="@group.Key">
+                                                <label class="form-check-label fw-bold text-primary" for="module_@group.Key.Replace(" ", "_")">
+                                                    <i class="fas fa-folder-open me-1"></i> @group.Key
+                                                </label>
+                                                <span class="badge bg-secondary ms-2">@group.Value.Count quyền</span>
+                                            </div>
+                                            <div class="ms-4 ps-3 border-start border-primary">
+                                                <div class="row">
+                                                    @foreach (var permission in group.Value)
+                                                    {
+                                                        <div class="col-md-6 mb-1">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input permission-checkbox" type="checkbox" 
+                                                                       name="Permission_ids" value="@permission.Id" 
+                                                                       id="perm_@permission.Id" data-module="@group.Key">
+                                                                <label class="form-check-label" for="perm_@permission.Id">
+                                                                    @permission.Action_name
+                                                                    <small class="text-muted">(@permission.Permission_code)</small>
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <p class="text-muted mb-0 text-center">
+                                        <i class="fas fa-info-circle me-1"></i> Chưa có quyền nào trong hệ thống
+                                    </p>
+                                }
+                            </div>
+                        </div>
+
+                        <hr />
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> Quay lại
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Tạo Role
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-lightbulb me-1"></i> Hướng dẫn
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li>Tên role phải là duy nhất</li>
+                        <li>Tick vào module để chọn tất cả quyền trong module đó</li>
+                        <li>Có thể chọn từng quyền riêng lẻ</li>
+                        <li>Role sẽ được áp dụng ngay cho các user được gán</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-warning">
+                        <i class="fas fa-exclamation-triangle me-1"></i> Lưu ý
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="small mb-0">
+                        Quyền sẽ ảnh hưởng đến khả năng truy cập các chức năng trong hệ thống. 
+                        Hãy cẩn thận khi phân quyền để đảm bảo bảo mật.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Select all
+        document.getElementById('selectAll').addEventListener('click', function() {
+            document.querySelectorAll('.permission-checkbox, .module-checkbox').forEach(function(cb) { cb.checked = true; });
+        });
+        document.getElementById('deselectAll').addEventListener('click', function() {
+            document.querySelectorAll('.permission-checkbox, .module-checkbox').forEach(function(cb) { cb.checked = false; });
+        });
+
+        // Select/Deselect all permissions in a module
+        document.querySelectorAll('.module-checkbox').forEach(function(moduleCheckbox) {
+            moduleCheckbox.addEventListener('change', function() {
+                var moduleName = this.dataset.module;
+                var isChecked = this.checked;
+                document.querySelectorAll('.permission-checkbox[data-module="' + moduleName + '"]').forEach(function(permCheckbox) {
+                    permCheckbox.checked = isChecked;
+                });
+            });
+        });
+
+        // Update module checkbox when individual permissions change
+        document.querySelectorAll('.permission-checkbox').forEach(function(permCheckbox) {
+            permCheckbox.addEventListener('change', function() {
+                var moduleName = this.dataset.module;
+                var moduleCheckbox = document.querySelector('.module-checkbox[data-module="' + moduleName + '"]');
+                var permissionsInModule = document.querySelectorAll('.permission-checkbox[data-module="' + moduleName + '"]');
+                var checkedPermissions = document.querySelectorAll('.permission-checkbox[data-module="' + moduleName + '"]:checked');
+                
+                moduleCheckbox.checked = permissionsInModule.length === checkedPermissions.length;
+                moduleCheckbox.indeterminate = checkedPermissions.length > 0 && checkedPermissions.length < permissionsInModule.length;
+            });
+        });
+    </script>
+}

@@ -1,0 +1,240 @@
+@{
+    ViewData["Title"] = "Thanh toán";
+    Layout = "~/Views/Shared/_ShopLayout.cshtml";
+}
+
+<!-- Breadcrumb -->
+<section class="blog about-blog">
+    <div class="container">
+        <div class="blog-bradcrum">
+            <span><a asp-action="Index">Trang chủ</a></span>
+            <span class="devider">/</span>
+            <span><a asp-action="Cart">Giỏ hàng</a></span>
+            <span class="devider">/</span>
+            <span><a href="#">Thanh toán</a></span>
+        </div>
+        <div class="blog-heading about-heading">
+            <h1 class="heading">Thanh toán</h1>
+        </div>
+    </div>
+</section>
+
+<!-- Checkout Section -->
+<section class="checkout product footer-padding">
+    <div class="container">
+        <div class="checkout-section">
+            <div class="row gy-5">
+                <!-- Billing Details -->
+                <div class="col-lg-6">
+                    <div class="checkout-wrapper">
+                        @if (Context.Session.GetInt32("UserId") == null)
+                        {
+                            <a asp-controller="Auth" asp-action="Login" class="shop-btn">Đăng nhập tài khoản</a>
+                        }
+                        <div class="account-section billing-section">
+                            <h5 class="wrapper-heading">Thông tin giao hàng</h5>
+                            <div class="review-form">
+                                <div class="account-inner-form">
+                                    <div class="review-form-name">
+                                        <label for="fname" class="form-label">Họ *</label>
+                                        <input type="text" id="fname" class="form-control" placeholder="Nhập họ">
+                                    </div>
+                                    <div class="review-form-name">
+                                        <label for="lname" class="form-label">Tên *</label>
+                                        <input type="text" id="lname" class="form-control" placeholder="Nhập tên">
+                                    </div>
+                                </div>
+                                <div class="account-inner-form">
+                                    <div class="review-form-name">
+                                        <label for="email" class="form-label">Email</label>
+                                        <input type="email" id="email" class="form-control" placeholder="email@gmail.com">
+                                    </div>
+                                    <div class="review-form-name">
+                                        <label for="phone" class="form-label">Số điện thoại *</label>
+                                        <input type="tel" id="phone" class="form-control" placeholder="0123 456 789">
+                                    </div>
+                                </div>
+                                <div class="review-form-name">
+                                    <label for="country" class="form-label">Tỉnh / Thành phố *</label>
+                                    <select id="country" class="form-select">
+                                        <option>Chọn tỉnh / thành phố</option>
+                                        <option>TP. Hồ Chí Minh</option>
+                                        <option>Hà Nội</option>
+                                        <option>Đà Nẵng</option>
+                                        <option>Cần Thơ</option>
+                                        <option>Hải Phòng</option>
+                                    </select>
+                                </div>
+                                <div class="review-form-name address-form">
+                                    <label for="address" class="form-label">Địa chỉ *</label>
+                                    <input type="text" id="address" class="form-control" placeholder="Nhập địa chỉ giao hàng">
+                                </div>
+                                <div class="account-inner-form city-inner-form">
+                                    <div class="review-form-name">
+                                        <label for="city" class="form-label">Quận / Huyện *</label>
+                                        <input type="text" id="city" class="form-control" placeholder="Nhập quận/huyện">
+                                    </div>
+                                    <div class="review-form-name">
+                                        <label for="ward" class="form-label">Phường / Xã</label>
+                                        <input type="text" id="ward" class="form-control" placeholder="Nhập phường/xã">
+                                    </div>
+                                </div>
+                                <div class="review-form-name address-form">
+                                    <label for="note" class="form-label">Ghi chú</label>
+                                    <textarea id="note" class="form-control" rows="3" placeholder="Ghi chú cho đơn hàng..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Summary -->
+                <div class="col-lg-6">
+                    <div class="checkout-wrapper">
+                        <div class="account-section billing-section">
+                            <h5 class="wrapper-heading">Đơn hàng của bạn</h5>
+                            <div class="order-summery">
+                                <div class="subtotal product-total">
+                                    <h5 class="wrapper-heading">SẢN PHẨM</h5>
+                                    <h5 class="wrapper-heading">THÀNH TIỀN</h5>
+                                </div>
+                                <hr>
+                                <div class="subtotal product-total">
+                                    <ul class="product-list" id="checkoutItems">
+                                    </ul>
+                                </div>
+                                <hr>
+                                <div class="subtotal product-total">
+                                    <h5 class="wrapper-heading">TẠM TÍNH</h5>
+                                    <h5 class="wrapper-heading" id="checkoutSubtotal">0</h5>
+                                </div>
+                                <div class="subtotal product-total">
+                                    <ul class="product-list">
+                                        <li>
+                                            <div class="product-info">
+                                                <p class="paragraph">VẬN CHUYỂN</p>
+                                                <h5 class="wrapper-heading">Miễn phí</h5>
+                                            </div>
+                                            <div class="price">
+                                                <h5 class="wrapper-heading">0</h5>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <hr>
+                                <div class="subtotal total">
+                                    <h5 class="wrapper-heading">TỔNG CỘNG</h5>
+                                    <h5 class="wrapper-heading price" id="checkoutTotal">0</h5>
+                                </div>
+                                <div class="subtotal payment-type">
+                                    <div class="checkbox-item">
+                                        <input type="radio" id="cod" name="payment" checked>
+                                        <div class="bank">
+                                            <h5 class="wrapper-heading">Thanh toán khi nhận hàng (COD)</h5>
+                                            <p class="paragraph">Thanh toán bằng tiền mặt khi nhận hàng.</p>
+                                        </div>
+                                    </div>
+                                    <div class="checkbox-item">
+                                        <input type="radio" id="bank" name="payment">
+                                        <div class="cash">
+                                            <h5 class="wrapper-heading">Chuyển khoản ngân hàng</h5>
+                                        </div>
+                                    </div>
+                                </div>
+                                <a href="javascript:void(0)" class="shop-btn" id="placeOrderBtn" onclick="placeOrder()">Đặt hàng ngay</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+<script>
+    function renderCheckout() {
+        var cart = getCart();
+        if (cart.length === 0) {
+            window.location.href = '@Url.Action("Cart")';
+            return;
+        }
+
+        var itemsHtml = '';
+        var total = 0;
+
+        cart.forEach(function(item) {
+            var itemTotal = item.price * item.quantity;
+            total += itemTotal;
+            itemsHtml += '<li>' +
+                '<div class="product-info">' +
+                '<h5 class="wrapper-heading">' + item.name + ' x' + item.quantity + '</h5>' +
+                '</div>' +
+                '<div class="price"><h5 class="wrapper-heading">' + itemTotal.toLocaleString() + '</h5></div>' +
+                '</li>';
+        });
+
+        document.getElementById('checkoutItems').innerHTML = itemsHtml;
+        document.getElementById('checkoutSubtotal').textContent = total.toLocaleString();
+        document.getElementById('checkoutTotal').textContent = total.toLocaleString();
+    }
+
+    function placeOrder() {
+        var cart = getCart();
+        if (cart.length === 0) {
+            showToast('Giỏ hàng trống!', 'error');
+            return;
+        }
+
+        var btn = document.getElementById('placeOrderBtn');
+        btn.textContent = 'Đang xử lý...';
+        btn.style.pointerEvents = 'none';
+        btn.style.opacity = '0.7';
+
+        var orderData = {
+            items: cart.map(function(item) {
+                return {
+                    productId: item.productId,
+                    quantity: item.quantity,
+                    price: item.price
+                };
+            }),
+            note: document.getElementById('note') ? document.getElementById('note').value : '',
+            shippingAddress: document.getElementById('address') ? document.getElementById('address').value : ''
+        };
+
+        fetch('@Url.Action("PlaceOrder", "Shop")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(orderData)
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(result) {
+            if (result.success) {
+                localStorage.removeItem('shopCart');
+                updateCartBadge();
+                showToast('Đặt hàng thành công! Mã đơn: ' + result.orderCode, 'success');
+                setTimeout(function() {
+                    window.location.href = '@Url.Action("Orders")';
+                }, 2000);
+            } else {
+                showToast(result.message || 'Có lỗi xảy ra khi đặt hàng.', 'error');
+                btn.textContent = 'Đặt hàng ngay';
+                btn.style.pointerEvents = 'auto';
+                btn.style.opacity = '1';
+            }
+        })
+        .catch(function(error) {
+            console.error('Error:', error);
+            showToast('Có lỗi xảy ra. Vui lòng thử lại.', 'error');
+            btn.textContent = 'Đặt hàng ngay';
+            btn.style.pointerEvents = 'auto';
+            btn.style.opacity = '1';
+        });
+    }
+
+    renderCheckout();
+</script>
+}
