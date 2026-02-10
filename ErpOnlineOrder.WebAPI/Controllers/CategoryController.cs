@@ -75,9 +75,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             }
         }
 
-        private static CategoryDTO MapToDto(Category c)
+        private static CategoryDto MapToDto(Category c)
         {
-            return new CategoryDTO
+            return new CategoryDto
             {
                 Id = c.Id,
                 Category_code = c.Category_code,
