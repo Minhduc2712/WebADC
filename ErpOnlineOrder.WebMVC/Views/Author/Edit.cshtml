@@ -1,4 +1,4 @@
-﻿@model ErpOnlineOrder.Domain.Models.Author
+@model ErpOnlineOrder.Application.DTOs.AuthorDTOs.UpdateAuthorDto
 @{
     ViewData["Title"] = "Sửa tác giả";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
@@ -9,7 +9,7 @@
         <h4 class="mb-0">Sửa tác giả</h4>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item"><a href="@Url.Action("Dashboard", "Home")">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "Order")">Trang chủ</a></li>
                 <li class="breadcrumb-item"><a href="@Url.Action("Index")">Tác giả</a></li>
                 <li class="breadcrumb-item active">Sửa</li>
             </ol>
@@ -25,9 +25,6 @@
                 <div class="card-body">
                     <form asp-action="Edit" method="post">
                         <input type="hidden" asp-for="Id" />
-                        <input type="hidden" asp-for="Created_by" />
-                        <input type="hidden" asp-for="Created_at" />
-                        <input type="hidden" asp-for="Is_deleted" />
 
                         <div asp-validation-summary="All" class="alert alert-danger mb-3" role="alert"></div>
 

@@ -1,32 +1,32 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs;
 using ErpOnlineOrder.WebMVC.Attributes;
+using ErpOnlineOrder.WebMVC.Services;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
     [RequirePermission(PermissionCodes.WarehouseView)]
     public class WarehouseExportController : BaseController
     {
-        private readonly IWarehouseExportService _warehouseExportService;
-        private readonly IInvoiceService _invoiceService;
-        private readonly IWarehouseService _warehouseService;
-        private readonly IPermissionService _permissionService;
+        private readonly IWarehouseExportApiClient _warehouseExportApiClient;
+        private readonly IInvoiceApiClient _invoiceApiClient;
+        private readonly IWarehouseApiClient _warehouseApiClient;
+        private readonly IPermissionApiClient _permissionApiClient;
         private readonly ILogger<WarehouseExportController> _logger;
 
         public WarehouseExportController(
-            IWarehouseExportService warehouseExportService,
-            IInvoiceService invoiceService,
-            IWarehouseService warehouseService,
-            IPermissionService permissionService,
+            IWarehouseExportApiClient warehouseExportApiClient,
+            IInvoiceApiClient invoiceApiClient,
+            IWarehouseApiClient warehouseApiClient,
+            IPermissionApiClient permissionApiClient,
             ILogger<WarehouseExportController> logger)
         {
-            _warehouseExportService = warehouseExportService;
-            _invoiceService = invoiceService;
-            _warehouseService = warehouseService;
-            _permissionService = permissionService;
+            _warehouseExportApiClient = warehouseExportApiClient;
+            _invoiceApiClient = invoiceApiClient;
+            _warehouseApiClient = warehouseApiClient;
+            _permissionApiClient = permissionApiClient;
             _logger = logger;
         }
 
@@ -39,7 +39,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var exports = await _warehouseExportService.GetAllAsync();
+                var exports = await _warehouseExportApiClient.GetAllAsync();
 
                 if (!string.IsNullOrEmpty(status))
                 {
@@ -62,7 +62,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var export = await _warehouseExportService.GetByIdAsync(id);
+                var export = await _warehouseExportApiClient.GetByIdAsync(id);
                 if (export == null)
                     return NotFound();
 
@@ -82,8 +82,8 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var invoices = await _invoiceService.GetAllAsync();
-                var warehouses = await _warehouseService.GetAllAsync();
+                var invoices = await _invoiceApiClient.GetAllAsync();
+                var warehouses = await _warehouseApiClient.GetAllAsync();
 
                 ViewBag.Invoices = new SelectList(
                     invoices.Where(i => i.Status != "Cancelled"),
@@ -108,8 +108,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var userId = GetCurrentUserId();
-                var result = await _warehouseExportService.CreateExportFromInvoiceAsync(model, userId);
+                var result = await _warehouseExportApiClient.CreateAsync(model);
 
                 if (result != null)
                 {
@@ -119,8 +118,8 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 else
                 {
                     SetErrorMessage("Không thể tạo phiếu xuất kho!");
-                    var invoices = await _invoiceService.GetAllAsync();
-                    var warehouses = await _warehouseService.GetAllAsync();
+                    var invoices = await _invoiceApiClient.GetAllAsync();
+                    var warehouses = await _warehouseApiClient.GetAllAsync();
                     ViewBag.Invoices = new SelectList(invoices, "Id", "Invoice_code");
                     ViewBag.Warehouses = new SelectList(warehouses, "Id", "Warehouse_name");
                     return View(model);
@@ -141,8 +140,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var userId = GetCurrentUserId();
-                var result = await _warehouseExportService.ConfirmExportAsync(id, userId);
+                var (result, _) = await _warehouseExportApiClient.ConfirmAsync(id);
 
                 if (result)
                     SetSuccessMessage("Đã xác nhận xuất kho thành công!");
@@ -165,8 +163,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var userId = GetCurrentUserId();
-                var result = await _warehouseExportService.CancelExportAsync(id, userId);
+                var (result, _) = await _warehouseExportApiClient.CancelAsync(id);
 
                 if (result)
                     SetSuccessMessage("Đã hủy xuất kho thành công!");
@@ -189,8 +186,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var userId = GetCurrentUserId();
-                var result = await _warehouseExportService.UpdateDeliveryStatusAsync(id, status, userId);
+                var (result, _) = await _warehouseExportApiClient.UpdateDeliveryStatusAsync(id, status);
 
                 if (result)
                     SetSuccessMessage("Đã cập nhật trạng thái giao hàng!");
@@ -213,7 +209,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var result = await _warehouseExportService.DeleteExportAsync(id);
+                var (result, _) = await _warehouseExportApiClient.DeleteAsync(id);
 
                 if (result)
                     SetSuccessMessage("Đã xóa phiếu xuất kho thành công!");
@@ -235,7 +231,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var export = await _warehouseExportService.GetByIdAsync(id);
+                var export = await _warehouseExportApiClient.GetByIdAsync(id);
                 if (export == null)
                     return NotFound();
 
@@ -256,13 +252,12 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var userId = GetCurrentUserId();
-                var result = await _warehouseExportService.SplitExportAsync(dto, userId);
+                var result = await _warehouseExportApiClient.SplitAsync(dto);
 
-                if (result.Success)
+                if (result?.Success == true)
                     SetSuccessMessage(result.Message ?? "Tách phiếu xuất kho thành công!");
                 else
-                    SetErrorMessage(result.Message ?? "Tách phiếu xuất kho thất bại!");
+                    SetErrorMessage(result?.Message ?? "Tách phiếu xuất kho thất bại!");
             }
             catch (Exception ex)
             {
@@ -279,7 +274,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var exports = await _warehouseExportService.GetAllAsync();
+                var exports = await _warehouseExportApiClient.GetAllAsync();
                 return View(exports.Where(e => e.Status != "Completed" && e.Status != "Cancelled"));
             }
             catch (Exception ex)
@@ -297,13 +292,12 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var userId = GetCurrentUserId();
-                var result = await _warehouseExportService.MergeExportsAsync(dto, userId);
+                var result = await _warehouseExportApiClient.MergeAsync(dto);
 
-                if (result.Success)
+                if (result?.Success == true)
                     SetSuccessMessage(result.Message ?? "Gộp phiếu xuất kho thành công!");
                 else
-                    SetErrorMessage(result.Message ?? "Gộp phiếu xuất kho thất bại!");
+                    SetErrorMessage(result?.Message ?? "Gộp phiếu xuất kho thất bại!");
             }
             catch (Exception ex)
             {
@@ -329,7 +323,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 }
 
                 var userId = GetCurrentUserId();
-                var permissions = await _permissionService.GetUserPermissionsAsync(userId);
+                var permissions = await _permissionApiClient.GetUserPermissionCodesAsync(userId);
                 ViewBag.CurrentUserPermissions = permissions?.ToList() ?? new List<string>();
 
                 ViewBag.CanCreate = permissions?.Contains(PermissionCodes.WarehouseCreate) ?? false;

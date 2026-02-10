@@ -41,9 +41,33 @@ builder.Services.AddSession(options =>
 builder.Services.AddHttpContextAccessor();
 
 // ============================================
-// KIẾN TRÚC HYBRID: WebMVC gọi trực tiếp Services
-// (Không cần HttpClient vì không gọi qua API)
+// API CLIENT: WebMVC gọi WebAPI cho Auth (và sau này có thể mở rộng)
 // ============================================
+var apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5051/api/";
+builder.Services.AddTransient<ErpOnlineOrder.WebMVC.Services.ErpApiUserIdHandler>();
+builder.Services.AddHttpClient("ErpApi", client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+})
+.AddHttpMessageHandler<ErpOnlineOrder.WebMVC.Services.ErpApiUserIdHandler>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IAuthApiClient, ErpOnlineOrder.WebMVC.Services.AuthApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.ICategoryApiClient, ErpOnlineOrder.WebMVC.Services.CategoryApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IAuthorApiClient, ErpOnlineOrder.WebMVC.Services.AuthorApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IPublisherApiClient, ErpOnlineOrder.WebMVC.Services.PublisherApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.ICoverTypeApiClient, ErpOnlineOrder.WebMVC.Services.CoverTypeApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IWarehouseApiClient, ErpOnlineOrder.WebMVC.Services.WarehouseApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IDistributorApiClient, ErpOnlineOrder.WebMVC.Services.DistributorApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IRegionApiClient, ErpOnlineOrder.WebMVC.Services.RegionApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IProvinceApiClient, ErpOnlineOrder.WebMVC.Services.ProvinceApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IProductApiClient, ErpOnlineOrder.WebMVC.Services.ProductApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.ICustomerApiClient, ErpOnlineOrder.WebMVC.Services.CustomerApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IOrderApiClient, ErpOnlineOrder.WebMVC.Services.OrderApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IPermissionApiClient, ErpOnlineOrder.WebMVC.Services.PermissionApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.ICustomerManagementApiClient, ErpOnlineOrder.WebMVC.Services.CustomerManagementApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IAdminApiClient, ErpOnlineOrder.WebMVC.Services.AdminApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IInvoiceApiClient, ErpOnlineOrder.WebMVC.Services.InvoiceApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IWarehouseExportApiClient, ErpOnlineOrder.WebMVC.Services.WarehouseExportApiClient>();
 
 // Add DbContext
 builder.Services.AddDbContext<ErpOnlineOrderDbContext>(options =>

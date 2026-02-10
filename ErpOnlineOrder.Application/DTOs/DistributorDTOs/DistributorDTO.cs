@@ -1,12 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace ErpOnlineOrder.Application.DTOs
+namespace ErpOnlineOrder.Application.DTOs.DistributorDTOs
 {
-    public class DistributorDTO
+    public class DistributorDto
     {
         public int Id { get; set; }
         public string Distributor_code { get; set; } = null!;
@@ -17,4 +12,6 @@ namespace ErpOnlineOrder.Application.DTOs
         public DateTime Created_at { get; set; }
         public DateTime Updated_at { get; set; }
     }
+
+    
 }

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Models;
 
@@ -19,7 +20,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         public async Task<IActionResult> GetCategories()
         {
             var categories = await _categoryService.GetAllAsync();
-            return Ok(categories);
+            return Ok(categories.Select(MapToDto));
         }
 
         [HttpGet("{id}")]
@@ -27,17 +28,23 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             var category = await _categoryService.GetByIdAsync(id);
             if (category == null) return NotFound();
-            return Ok(category);
+            return Ok(MapToDto(category));
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateCategory([FromBody] Category model)
+        public async Task<IActionResult> CreateCategory([FromBody] CreateCategoryDto dto)
         {
-            // Require permission: ADD_CATEGORY
             try
             {
-                var created = await _categoryService.CreateCategoryAsync(model);
-                return Ok(created);
+                var entity = new Category
+                {
+                    Category_code = dto.Category_code,
+                    Category_name = dto.Category_name,
+                    Created_by = 0,
+                    Updated_by = 0
+                };
+                var created = await _categoryService.CreateCategoryAsync(entity);
+                return Ok(MapToDto(created));
             }
             catch (Exception ex)
             {
@@ -46,20 +53,38 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateCategory(int id, [FromBody] Category model)
+        public async Task<IActionResult> UpdateCategory(int id, [FromBody] UpdateCategoryDto dto)
         {
-            // Require permission: EDIT_CATEGORY
-            if (id != model.Id) return BadRequest();
+            if (id != dto.Id) return BadRequest();
 
             try
             {
-                var result = await _categoryService.UpdateCategoryAsync(model);
+                var entity = new Category
+                {
+                    Id = dto.Id,
+                    Category_code = dto.Category_code,
+                    Category_name = dto.Category_name,
+                    Updated_by = 0
+                };
+                var result = await _categoryService.UpdateCategoryAsync(entity);
                 return Ok(new { success = result });
             }
             catch (Exception ex)
             {
                 return BadRequest(new { message = ex.Message });
             }
+        }
+
+        private static CategoryDTO MapToDto(Category c)
+        {
+            return new CategoryDTO
+            {
+                Id = c.Id,
+                Category_code = c.Category_code,
+                Category_name = c.Category_name,
+                Created_at = c.Created_at,
+                Updated_at = c.Updated_at
+            };
         }
 
         [HttpDelete("{id}")]

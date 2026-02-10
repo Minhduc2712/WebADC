@@ -16,12 +16,26 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             _invoiceService = invoiceService;
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            var list = await _invoiceService.GetAllAsync();
+            return Ok(list);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var invoice = await _invoiceService.GetByIdAsync(id);
+            if (invoice == null) return NotFound();
+            return Ok(invoice);
+        }
+
         [HttpPost("split")]
         public async Task<IActionResult> SplitInvoice([FromBody] SplitInvoiceDto dto)
         {
-            // TODO: L?y userId t? token
-            int userId = 1;
-
+            var userId = int.TryParse(User.FindFirst("UserId")?.Value, out int uid) ? uid : 0;
             var result = await _invoiceService.SplitInvoiceAsync(dto, userId);
             if (!result.Success)
             {
@@ -32,9 +46,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [HttpPost("merge")]
         public async Task<IActionResult> MergeInvoices([FromBody] MergeInvoicesDto dto)
         {
-            // TODO: L?y userId t? token
-            int userId = 1;
-
+            var userId = int.TryParse(User.FindFirst("UserId")?.Value, out int uid) ? uid : 0;
             var result = await _invoiceService.MergeInvoicesAsync(dto, userId);
             if (!result.Success)
             {
@@ -45,24 +57,24 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [HttpPost("{id}/undo-split")]
         public async Task<IActionResult> UndoSplit(int id)
         {
-            int userId = 1;
+            var userId = int.TryParse(User.FindFirst("UserId")?.Value, out int uid) ? uid : 0;
             var result = await _invoiceService.UndoSplitAsync(id, userId);
             if (!result)
             {
-                return BadRequest(new { message = "Không th? hoàn tác" });
+                return BadRequest(new { message = "Kh?ng th? ho?n t?c" });
             }
-            return Ok(new { success = true, message = "Ðã hoàn tác tách hóa don" });
+            return Ok(new { success = true, message = "?? ho?n t?c t?ch h?a don" });
         }
         [HttpPost("{id}/undo-merge")]
         public async Task<IActionResult> UndoMerge(int id)
         {
-            int userId = 1;
+            var userId = int.TryParse(User.FindFirst("UserId")?.Value, out int uid) ? uid : 0;
             var result = await _invoiceService.UndoMergeAsync(id, userId);
             if (!result)
             {
-                return BadRequest(new { message = "Không th? hoàn tác" });
+                return BadRequest(new { message = "Kh?ng th? ho?n t?c" });
             }
-            return Ok(new { success = true, message = "Ðã hoàn tác g?p hóa don" });
+            return Ok(new { success = true, message = "?? ho?n t?c g?p h?a don" });
         }
     }
 }

@@ -1,20 +1,21 @@
 using Microsoft.AspNetCore.Mvc;
 using ErpOnlineOrder.Application.Constants;
-using ErpOnlineOrder.Application.Interfaces.Services;
-using ErpOnlineOrder.Domain.Models;
+using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.WebMVC.Attributes;
+using ErpOnlineOrder.WebMVC.Extensions;
+using ErpOnlineOrder.WebMVC.Services;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
     [RequirePermission(PermissionCodes.CategoryView)]
     public class CategoryController : BaseController
     {
-        private readonly ICategoryService _categoryService;
+        private readonly ICategoryApiClient _categoryApiClient;
         private readonly ILogger<CategoryController> _logger;
 
-        public CategoryController(ICategoryService categoryService, ILogger<CategoryController> logger)
+        public CategoryController(ICategoryApiClient categoryApiClient, ILogger<CategoryController> logger)
         {
-            _categoryService = categoryService;
+            _categoryApiClient = categoryApiClient;
             _logger = logger;
         }
 
@@ -22,49 +23,47 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var categories = await _categoryService.GetAllAsync();
+                var categories = await _categoryApiClient.GetAllAsync();
                 return View(categories);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading categories");
                 TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
-                return View(Enumerable.Empty<Category>());
+                return View(Enumerable.Empty<CategoryDto>());
             }
         }
 
         [RequirePermission(PermissionCodes.CategoryCreate)]
         public IActionResult Create()
         {
-            return View();
+            return View(new CreateCategoryDto());
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequirePermission(PermissionCodes.CategoryCreate)]
-        public async Task<IActionResult> Create(Category model)
+        public async Task<IActionResult> Create(CreateCategoryDto model)
         {
             try
             {
                 if (!ModelState.IsValid)
                     return View(model);
 
-                var userId = int.Parse(User.FindFirst("UserId")?.Value ?? "0");
-                model.Created_by = userId;
-                model.Updated_by = userId;
-                model.Created_at = DateTime.Now;
-                model.Updated_at = DateTime.Now;
-
-                await _categoryService.CreateCategoryAsync(model);
-                TempData["SuccessMessage"] = "Thêm danh mục thành công!";
-                return RedirectToAction(nameof(Index));
+                var created = await _categoryApiClient.CreateAsync(model);
+                if (created != null)
+                {
+                    TempData["SuccessMessage"] = "Thêm danh mục thành công!";
+                    return RedirectToAction(nameof(Index));
+                }
+                ModelState.AddModelError("", "Thêm danh mục thất bại.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating category");
                 ModelState.AddModelError("", GetDetailedErrorMessage(ex));
-                return View(model);
             }
+            return View(model);
         }
 
         [RequirePermission(PermissionCodes.CategoryUpdate)]
@@ -72,11 +71,11 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var category = await _categoryService.GetByIdAsync(id);
+                var category = await _categoryApiClient.GetByIdAsync(id);
                 if (category == null)
                     return NotFound();
 
-                return View(category);
+                return View(new UpdateCategoryDto { Id = category.Id, Category_code = category.Category_code, Category_name = category.Category_name });
             }
             catch (Exception ex)
             {
@@ -89,7 +88,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequirePermission(PermissionCodes.CategoryUpdate)]
-        public async Task<IActionResult> Edit(int id, Category model)
+        public async Task<IActionResult> Edit(int id, UpdateCategoryDto model)
         {
             try
             {
@@ -99,20 +98,20 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (!ModelState.IsValid)
                     return View(model);
 
-                var userId = int.Parse(User.FindFirst("UserId")?.Value ?? "0");
-                model.Updated_by = userId;
-                model.Updated_at = DateTime.Now;
-
-                await _categoryService.UpdateCategoryAsync(model);
-                TempData["SuccessMessage"] = "Cập nhật danh mục thành công!";
-                return RedirectToAction(nameof(Index));
+                var (success, error) = await _categoryApiClient.UpdateAsync(id, model);
+                if (success)
+                {
+                    TempData["SuccessMessage"] = "Cập nhật danh mục thành công!";
+                    return RedirectToAction(nameof(Index));
+                }
+                ModelState.AddModelError("", error ?? "Cập nhật thất bại.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating category");
                 ModelState.AddModelError("", GetDetailedErrorMessage(ex));
-                return View(model);
             }
+            return View(model);
         }
 
         [HttpPost]
@@ -122,8 +121,11 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                await _categoryService.DeleteCategoryAsync(id);
-                TempData["SuccessMessage"] = "Xóa danh mục thành công!";
+                var (success, error) = await _categoryApiClient.DeleteAsync(id);
+                if (success)
+                    TempData["SuccessMessage"] = "Xóa danh mục thành công!";
+                else
+                    TempData["ErrorMessage"] = error ?? "Xóa thất bại.";
             }
             catch (Exception ex)
             {

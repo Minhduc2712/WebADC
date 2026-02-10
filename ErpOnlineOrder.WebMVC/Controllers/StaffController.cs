@@ -1,22 +1,22 @@
 using Microsoft.AspNetCore.Mvc;
-using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.DTOs.AdminDTOs;
 using ErpOnlineOrder.Application.DTOs.PermissionDTOs;
 using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.WebMVC.Attributes;
+using ErpOnlineOrder.WebMVC.Services;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
     public class StaffController : BaseController
     {
-        private readonly IAdminService _adminService;
-        private readonly IPermissionService _permissionService;
+        private readonly IAdminApiClient _adminApiClient;
+        private readonly IPermissionApiClient _permissionApiClient;
         private readonly ILogger<StaffController> _logger;
 
-        public StaffController(IAdminService adminService, IPermissionService permissionService, ILogger<StaffController> logger)
+        public StaffController(IAdminApiClient adminApiClient, IPermissionApiClient permissionApiClient, ILogger<StaffController> logger)
         {
-            _adminService = adminService;
-            _permissionService = permissionService;
+            _adminApiClient = adminApiClient;
+            _permissionApiClient = permissionApiClient;
             _logger = logger;
         }
         private int GetCurrentUserId()
@@ -31,7 +31,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var staffList = await _adminService.GetAllStaffAsync();
+                var staffList = await _adminApiClient.GetAllStaffAsync();
 
                 // Truyền quyền của user hiện tại để hiển thị/ẩn các nút
                 await LoadCurrentUserPermissions();
@@ -55,13 +55,11 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var staff = await _adminService.GetStaffByIdAsync(id);
-                
+                var staff = await _adminApiClient.GetStaffByIdAsync(id);
                 if (staff == null)
                     return NotFound();
 
-                // Lấy thông tin quyền đầy đủ của user (Role + Direct)
-                var userFullPermissions = await _permissionService.GetUserFullPermissionsAsync(id);
+                var userFullPermissions = await _permissionApiClient.GetUserFullPermissionsAsync(id);
                 ViewBag.UserFullPermissions = userFullPermissions;
                 await LoadCurrentUserPermissions();
 
@@ -100,7 +98,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
             try
             {
-                var result = await _adminService.CreateStaffAccountAsync(model, GetCurrentUserId());
+                var result = await _adminApiClient.CreateStaffAsync(model);
 
                 if (result != null)
                 {
@@ -129,12 +127,11 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var staff = await _adminService.GetStaffByIdAsync(id);
-                
+                var staff = await _adminApiClient.GetStaffByIdAsync(id);
                 if (staff == null)
                     return NotFound();
 
-                var allRoles = await _permissionService.GetAllRolesAsync();
+                var allRoles = await _permissionApiClient.GetAllRolesAsync();
                 var currentRoleIds = new List<int>();
                 
                 // Map tên role sang ID
@@ -191,7 +188,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
             try
             {
-                var success = await _adminService.UpdateStaffAccountAsync(model, GetCurrentUserId());
+                var (success, _) = await _adminApiClient.UpdateStaffAsync(id, model);
 
                 if (success)
                 {
@@ -221,7 +218,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var success = await _adminService.DeleteStaffAccountAsync(id, GetCurrentUserId());
+                var (success, _) = await _adminApiClient.DeleteStaffAsync(id);
 
                 if (success)
                 {
@@ -251,7 +248,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var success = await _adminService.ToggleStaffStatusAsync(id, isActive, GetCurrentUserId());
+                var (success, _) = await _adminApiClient.ToggleStaffStatusAsync(id, isActive);
 
                 if (success)
                 {
@@ -281,8 +278,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var staff = await _adminService.GetStaffByIdAsync(id);
-                
+                var staff = await _adminApiClient.GetStaffByIdAsync(id);
                 if (staff == null)
                     return NotFound();
 
@@ -316,7 +312,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
             try
             {
-                var success = await _adminService.ResetPasswordAsync(model, GetCurrentUserId());
+                var (success, _) = await _adminApiClient.ResetPasswordAsync(model);
 
                 if (success)
                 {
@@ -345,12 +341,11 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var staff = await _adminService.GetStaffByIdAsync(id);
-                
+                var staff = await _adminApiClient.GetStaffByIdAsync(id);
                 if (staff == null)
                     return NotFound();
 
-                var allRoles = await _permissionService.GetAllRolesAsync();
+                var allRoles = await _permissionApiClient.GetAllRolesAsync();
                 var currentRoleIds = new List<int>();
                 
                 // Map tên role sang ID
@@ -386,18 +381,17 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var staff = await _adminService.GetStaffByIdAsync(id);
+                var staff = await _adminApiClient.GetStaffByIdAsync(id);
                 if (staff == null)
                     return NotFound();
 
-                // Cập nhật roles cho nhân viên
                 var model = new UpdateStaffAccountDto
                 {
                     User_id = id,
                     Role_ids = Role_ids ?? new List<int>()
                 };
 
-                var success = await _adminService.UpdateStaffAccountAsync(model, GetCurrentUserId());
+                var (success, _) = await _adminApiClient.UpdateStaffAsync(id, model);
 
                 if (success)
                 {
@@ -425,13 +419,12 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var staff = await _adminService.GetStaffByIdAsync(id);
-                
+                var staff = await _adminApiClient.GetStaffByIdAsync(id);
                 if (staff == null)
                     return NotFound();
 
-                var allPermissions = await _permissionService.GetAllPermissionsAsync();
-                var userFullPermissions = await _permissionService.GetUserFullPermissionsAsync(id);
+                var allPermissions = await _permissionApiClient.GetAllPermissionsAsync();
+                var userFullPermissions = await _permissionApiClient.GetUserFullPermissionsAsync(id);
                 var currentDirectPermissionIds = userFullPermissions?.DirectPermissions
                     .Where(p => p.IsValid)
                     .Select(p => p.PermissionId)
@@ -464,7 +457,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var staff = await _adminService.GetStaffByIdAsync(id);
+                var staff = await _adminApiClient.GetStaffByIdAsync(id);
                 if (staff == null)
                     return NotFound();
 
@@ -476,7 +469,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     Note = Note
                 };
 
-                var success = await _permissionService.AssignPermissionsToUserAsync(dto, GetCurrentUserId());
+                var (success, _) = await _permissionApiClient.AssignPermissionsToUserAsync(dto);
 
                 if (success)
                 {
@@ -502,7 +495,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var staff = await _adminService.GetStaffByIdAsync(userId);
+                var staff = await _adminApiClient.GetStaffByIdAsync(userId);
                 ViewBag.StaffCode = staff?.Staff_code ?? "";
                 ViewBag.Username = staff?.Username ?? "";
                 ViewBag.CurrentRoles = staff?.Roles ?? new List<string>();
@@ -520,7 +513,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var staff = await _adminService.GetStaffByIdAsync(userId);
+                var staff = await _adminApiClient.GetStaffByIdAsync(userId);
                 ViewBag.StaffName = staff?.Full_name ?? "";
                 ViewBag.Username = staff?.Username ?? "";
             }
@@ -534,7 +527,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var roles = await _permissionService.GetAllRolesAsync();
+                var roles = await _permissionApiClient.GetAllRolesAsync();
                 ViewBag.Roles = roles?.ToList() ?? new List<RoleDto>();
             }
             catch
@@ -559,7 +552,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 }
 
                 var userId = GetCurrentUserId();
-                var permissions = await _permissionService.GetUserPermissionsAsync(userId);
+                var permissions = await _permissionApiClient.GetUserPermissionCodesAsync(userId);
                 ViewBag.CurrentUserPermissions = permissions?.ToList() ?? new List<string>();
                 
                 ViewBag.CanCreate = permissions?.Contains(PermissionCodes.StaffCreate) ?? false;

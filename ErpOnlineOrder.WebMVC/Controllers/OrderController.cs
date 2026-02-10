@@ -1,40 +1,39 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using ErpOnlineOrder.Application.Interfaces.Services;
-using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.DTOs.OrderDTOs;
 using ErpOnlineOrder.WebMVC.Attributes;
+using ErpOnlineOrder.WebMVC.Services;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
     [RequirePermission(PermissionCodes.OrderView)]
     public class OrderController : BaseController
     {
-        private readonly IOrderService _orderService;
-        private readonly ICustomerRepository _customerRepository;
-        private readonly IProductService _productService;
-        private readonly IPermissionService _permissionService;
+        private readonly IOrderApiClient _orderApiClient;
+        private readonly ICustomerApiClient _customerApiClient;
+        private readonly IProductApiClient _productApiClient;
+        private readonly IPermissionApiClient _permissionApiClient;
         private readonly ILogger<OrderController> _logger;
 
         public OrderController(
-            IOrderService orderService,
-            ICustomerRepository customerRepository,
-            IProductService productService,
-            IPermissionService permissionService,
+            IOrderApiClient orderApiClient,
+            ICustomerApiClient customerApiClient,
+            IProductApiClient productApiClient,
+            IPermissionApiClient permissionApiClient,
             ILogger<OrderController> logger)
         {
-            _orderService = orderService;
-            _customerRepository = customerRepository;
-            _productService = productService;
-            _permissionService = permissionService;
+            _orderApiClient = orderApiClient;
+            _customerApiClient = customerApiClient;
+            _productApiClient = productApiClient;
+            _permissionApiClient = permissionApiClient;
             _logger = logger;
         }
 
         private async Task<SelectList> GetCustomerSelectListAsync(int? selectedId = null)
         {
-            var customers = await _customerRepository.GetAllAsync();
+            var customers = await _customerApiClient.GetAllAsync();
             var items = customers
                 .Where(c => !c.Is_deleted)
                 .Select(c => new { c.Id, DisplayText = string.IsNullOrEmpty(c.Full_name) ? (c.Customer_code ?? $"Khách hàng #{c.Id}") : $"{c.Customer_code} - {c.Full_name}" })
@@ -54,13 +53,9 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 IEnumerable<OrderDTO> orders;
 
                 if (!string.IsNullOrEmpty(status))
-                {
-                    orders = await _orderService.GetOrdersByStatusAsync(status);
-                }
+                    orders = await _orderApiClient.GetByStatusAsync(status);
                 else
-                {
-                    orders = await _orderService.GetAllAsync();
-                }
+                    orders = await _orderApiClient.GetAllAsync();
 
                 ViewBag.Status = status;
                 await LoadCurrentUserPermissions();
@@ -78,7 +73,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var order = await _orderService.GetByIdAsync(id);
+                var order = await _orderApiClient.GetByIdAsync(id);
                 if (order == null)
                     return NotFound();
 
@@ -99,7 +94,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             try
             {
                 ViewBag.Customers = await GetCustomerSelectListAsync();
-                ViewBag.Products = await _productService.GetAllAsync();
+                ViewBag.Products = await _productApiClient.GetAllAsync();
                 return View();
             }
             catch (Exception ex)
@@ -123,7 +118,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (!ModelState.IsValid)
                 {
                     ViewBag.Customers = await GetCustomerSelectListAsync(model.Customer_id);
-                    ViewBag.Products = await _productService.GetAllAsync();
+                    ViewBag.Products = await _productApiClient.GetAllAsync();
                     return View(model);
                 }
 
@@ -135,20 +130,17 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     note = model.note,
                     Order_details = model.Order_details ?? new List<OrderDetailDto>()
                 };
-                var result = await _orderService.CreateOrderWithoutValidationAsync(dto);
+                var (success, message, orderId) = await _orderApiClient.CreateOrderAdminAsync(dto);
 
-                if (result.Success)
+                if (success && orderId.HasValue)
                 {
                     SetSuccessMessage("Tạo đơn hàng thành công!");
-                    return RedirectToAction(nameof(Details), new { id = result.Order_id });
+                    return RedirectToAction(nameof(Details), new { id = orderId });
                 }
-                else
-                {
-                    SetErrorMessage(result.Message ?? "Tạo đơn hàng thất bại!");
-                    ViewBag.Customers = await GetCustomerSelectListAsync(model.Customer_id);
-                    ViewBag.Products = await _productService.GetAllAsync();
-                    return View(model);
-                }
+                SetErrorMessage(message ?? "Tạo đơn hàng thất bại!");
+                ViewBag.Customers = await GetCustomerSelectListAsync(model.Customer_id);
+                ViewBag.Products = await _productApiClient.GetAllAsync();
+                return View(model);
             }
             catch (Exception ex)
             {
@@ -165,7 +157,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var result = await _orderService.ConfirmOrderAsync(id);
+                var result = await _orderApiClient.ConfirmOrderAsync(id);
                 if (result)
                     SetSuccessMessage("Đã xác nhận đơn hàng thành công!");
                 else
@@ -187,7 +179,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var result = await _orderService.CancelOrderAsync(id);
+                var result = await _orderApiClient.CancelOrderAsync(id);
                 if (result)
                     SetSuccessMessage("Đã hủy đơn hàng thành công!");
                 else
@@ -209,7 +201,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var result = await _orderService.DeletePendingOrderAsync(id);
+                var result = await _orderApiClient.DeletePendingOrderAsync(id);
                 if (result)
                     SetSuccessMessage("Đã xóa đơn hàng thành công!");
                 else
@@ -229,7 +221,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var bytes = await _orderService.ExportOrdersToExcelAsync();
+                var bytes = await _orderApiClient.ExportOrdersToExcelAsync();
                 return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     $"DonHang_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
             }
@@ -259,7 +251,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 }
 
                 var userId = GetCurrentUserId();
-                var permissions = await _permissionService.GetUserPermissionsAsync(userId);
+                var permissions = await _permissionApiClient.GetUserPermissionCodesAsync(userId);
                 ViewBag.CurrentUserPermissions = permissions?.ToList() ?? new List<string>();
 
                 ViewBag.CanCreate = permissions?.Contains(PermissionCodes.OrderCreate) ?? false;

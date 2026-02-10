@@ -256,7 +256,37 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var username = await _authService.LoginAsync(model);
-                return Ok(new { username });
+                if (string.IsNullOrEmpty(username))
+                    return BadRequest(new { message = "Tên đăng nhập hoặc mật khẩu không đúng." });
+
+                var user = await _userRepository.FindByIdentifierAsync(model.Identifier ?? "");
+                if (user == null || !user.Is_active || user.Is_deleted)
+                    return BadRequest(new { message = "Tài khoản không tồn tại hoặc đã bị vô hiệu hóa." });
+
+                var permissions = await _permissionService.GetUserPermissionsAsync(user.Id);
+                var roles = user.User_roles?
+                    .Where(ur => !ur.Is_deleted && ur.Role != null && !ur.Role.Is_deleted)
+                    .Select(ur => ur.Role!.Role_name)
+                    .ToList() ?? new List<string>();
+
+                var fullName = user.Staff?.Full_name ?? user.Customer?.Full_name ?? user.Username;
+                var userType = user.Staff != null ? "Staff" : (user.Customer != null ? "Customer" : "");
+                var staffCode = user.Staff?.Staff_code;
+                var customerCode = user.Customer?.Customer_code;
+
+                var response = new LoginResponseDto
+                {
+                    UserId = user.Id,
+                    Username = user.Username,
+                    Email = user.Email,
+                    FullName = fullName ?? user.Username,
+                    Roles = roles,
+                    Permissions = permissions.ToList(),
+                    StaffCode = staffCode,
+                    CustomerCode = customerCode,
+                    UserType = userType
+                };
+                return Ok(new { success = true, user = response });
             }
             catch (Exception ex)
             {

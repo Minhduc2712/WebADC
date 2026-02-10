@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Models;
-
+using ErpOnlineOrder.Application.DTOs.DistributorDTOs;
 namespace ErpOnlineOrder.WebAPI.Controllers
 {
     [ApiController]
@@ -18,10 +18,8 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetDistributors()
         {
-            IEnumerable<Distributor> distributors;
-            distributors = await _distributorService.GetAllAsync();
-            
-            return Ok(distributors);
+            var distributors = await _distributorService.GetAllAsync();
+            return Ok(distributors.Select(MapToDto));
         }
 
         [HttpGet("{id}")]
@@ -29,17 +27,26 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             var distributor = await _distributorService.GetByIdAsync(id);
             if (distributor == null) return NotFound();
-            return Ok(distributor);
+            return Ok(MapToDto(distributor));
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateDistributor([FromBody] Distributor model)
+        public async Task<IActionResult> CreateDistributor([FromBody] CreateDistributorDto dto)
         {
-            // Require permission: ADD_DISTRIBUTOR
             try
             {
-                var created = await _distributorService.CreateDistributorAsync(model);
-                return Ok(created);
+                var entity = new Distributor
+                {
+                    Distributor_code = dto.Distributor_code,
+                    Distributor_name = dto.Distributor_name,
+                    Distributor_address = dto.Distributor_address,
+                    Distributor_phone = dto.Distributor_phone,
+                    Distributor_email = dto.Distributor_email,
+                    Created_by = 0,
+                    Updated_by = 0
+                };
+                var created = await _distributorService.CreateDistributorAsync(entity);
+                return Ok(MapToDto(created));
             }
             catch (Exception ex)
             {
@@ -48,20 +55,44 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateDistributor(int id, [FromBody] Distributor model)
+        public async Task<IActionResult> UpdateDistributor(int id, [FromBody] UpdateDistributorDto dto)
         {
-            // Require permission: EDIT_DISTRIBUTOR
-            if (id != model.Id) return BadRequest();
+            if (id != dto.Id) return BadRequest();
 
             try
             {
-                var result = await _distributorService.UpdateDistributorAsync(model);
+                var entity = new Distributor
+                {
+                    Id = dto.Id,
+                    Distributor_code = dto.Distributor_code,
+                    Distributor_name = dto.Distributor_name,
+                    Distributor_address = dto.Distributor_address,
+                    Distributor_phone = dto.Distributor_phone,
+                    Distributor_email = dto.Distributor_email,
+                    Updated_by = 0
+                };
+                var result = await _distributorService.UpdateDistributorAsync(entity);
                 return Ok(new { success = result });
             }
             catch (Exception ex)
             {
                 return BadRequest(new { message = ex.Message });
             }
+        }
+
+        private static DistributorDto MapToDto(Distributor d)
+        {
+            return new DistributorDto
+            {
+                Id = d.Id,
+                Distributor_code = d.Distributor_code,
+                Distributor_name = d.Distributor_name,
+                Distributor_address = d.Distributor_address ?? "",
+                Distributor_phone = d.Distributor_phone ?? "",
+                Distributor_email = d.Distributor_email ?? "",
+                Created_at = d.Created_at,
+                Updated_at = d.Updated_at
+            };
         }
 
         [HttpDelete("{id}")]

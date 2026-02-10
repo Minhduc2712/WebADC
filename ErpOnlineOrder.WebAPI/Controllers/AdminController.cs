@@ -135,24 +135,6 @@ namespace ErpOnlineOrder.WebAPI.Controllers
 
         #endregion
 
-        #region Th?ng kê Dashboard
-        [HttpGet("dashboard")]
-        public async Task<IActionResult> GetDashboard()
-        {
-            var staffCount = await _adminService.GetActiveStaffCountAsync();
-            var customerCount = await _adminService.GetCustomerCountAsync();
-            var orderCount = await _adminService.GetOrderCountAsync();
-
-            return Ok(new
-            {
-                staff_count = staffCount,
-                customer_count = customerCount,
-                order_count = orderCount
-            });
-        }
-
-        #endregion
-
         #region Qu?n lý Roles
         [HttpGet("roles")]
         public async Task<IActionResult> GetAllRoles()

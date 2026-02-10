@@ -1,4 +1,4 @@
-﻿@model ErpOnlineOrder.Domain.Models.Category
+@model ErpOnlineOrder.Application.DTOs.CreateCategoryDto
 @{
     ViewData["Title"] = "Thêm danh mục";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
@@ -9,7 +9,7 @@
         <h4 class="mb-0">Thêm danh mục mới</h4>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item"><a href="@Url.Action("Dashboard", "Home")">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "Order")">Trang chủ</a></li>
                 <li class="breadcrumb-item"><a href="@Url.Action("Index")">Danh mục</a></li>
                 <li class="breadcrumb-item active">Thêm mới</li>
             </ol>

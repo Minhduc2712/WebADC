@@ -1,4 +1,4 @@
-@model IEnumerable<ErpOnlineOrder.Domain.Models.Customer>
+@model IEnumerable<ErpOnlineOrder.Application.DTOs.CustomerDTO>
 @{
     ViewData["Title"] = "Quản lý khách hàng";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
@@ -11,7 +11,7 @@
         <h4 class="mb-1"><i class="fas fa-users me-2 text-primary"></i>Quản lý khách hàng</h4>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item"><a href="@Url.Action("Dashboard", "Home")">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "Order")">Trang chủ</a></li>
                 <li class="breadcrumb-item active">Khách hàng</li>
             </ol>
         </nav>

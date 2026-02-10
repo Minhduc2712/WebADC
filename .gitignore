@@ -9,7 +9,6 @@ obj/
 *.user
 *.suo
 *.userosscache
-*.sln.docstates
 
 # OS
 Thumbs.db

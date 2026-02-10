@@ -3,12 +3,13 @@ using ErpOnlineOrder.Application.DTOs.AuthDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.WebMVC.Extensions;
+using ErpOnlineOrder.WebMVC.Services;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
     public class AuthController : Controller
     {
-        private readonly IAuthService _authService;
+        private readonly IAuthApiClient _authApiClient;
         private readonly IUserRepository _userRepository;
         private readonly IPermissionService _permissionService;
         private readonly IRememberMeService _rememberMeService;
@@ -17,13 +18,13 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         private const int RememberMeDays = 30;
 
         public AuthController(
-            IAuthService authService,
+            IAuthApiClient authApiClient,
             IUserRepository userRepository,
             IPermissionService permissionService,
             IRememberMeService rememberMeService,
             ILogger<AuthController> logger)
         {
-            _authService = authService;
+            _authApiClient = authApiClient;
             _userRepository = userRepository;
             _permissionService = permissionService;
             _rememberMeService = rememberMeService;
@@ -63,44 +64,33 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
             try
             {
-                var result = await _authService.LoginAsync(model);
+                // Gọi WebAPI để đăng nhập, nhận về user + permissions
+                var apiResult = await _authApiClient.LoginAsync(model);
 
-                if (!string.IsNullOrEmpty(result))
+                if (apiResult != null)
                 {
-                    var user = await _userRepository.FindByIdentifierAsync(model.Identifier ?? "");
+                    SetUserSessionFromApiResult(apiResult);
 
-                    if (user != null)
+                    if (model.RememberMe)
                     {
-                        // Ki?m tra t?i kho?n active
-                        if (!user.Is_active)
-                        {
-                            ModelState.AddModelError("", "T?i kho?n c?a b?n d? b? v? hi?u h?a. Vui l?ng li?n h? qu?n tr? vi?n.");
-                            return View(model);
-                        }
-
-                        // Luu v?o Session
-                        await SetUserSession(user);
-
-                        if (model.RememberMe)
-                        {
+                        var user = await _userRepository.GetByUsernameAsync(apiResult.Username);
+                        if (user != null)
                             SetRememberMeCookies(user.Username, _rememberMeService.GenerateToken(user));
-                        }
-                        else
-                        {
-                            ClearRememberMeCookies();
-                        }
-
-                        _logger.LogInformation("User {Username} logged in successfully", user.Username);
-
-                        return RedirectToReturnUrl(returnUrl);
                     }
+                    else
+                    {
+                        ClearRememberMeCookies();
+                    }
+
+                    _logger.LogInformation("User {Username} logged in successfully (via API)", apiResult.Username);
+                    return RedirectToReturnUrl(returnUrl);
                 }
 
-                ModelState.AddModelError("", "T?n dang nh?p ho?c m?t kh?u kh?ng d?ng.");
+                ModelState.AddModelError("", "Tên đăng nhập hoặc mật khẩu không đúng.");
             }
             catch (Exception ex)
             {
-                _logger.LogWarning("Login failed for {Identifier}: {Message}", model.Identifier, ex.Message);
+                _logger.LogWarning(ex, "Login failed for {Identifier}", model.Identifier);
                 ModelState.AddModelError("", ex.Message);
             }
 
@@ -116,7 +106,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             if (HttpContext.Session.IsAuthenticated())
             {
-                return RedirectToAction("Dashboard", "Home");
+                return RedirectToAction("Index", "Order");
             }
 
             return View(new RegisterCustomerDto());
@@ -131,20 +121,20 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
             try
             {
-                var success = await _authService.RegisterByCustomerAsync(model);
+                var (success, errorMessage) = await _authApiClient.RegisterCustomerAsync(model);
 
                 if (success)
                 {
-                    _logger.LogInformation("New customer registered: {Username}", model.Username);
-                    TempData["SuccessMessage"] = "?ang k? th?nh c?ng! Vui l?ng dang nh?p.";
+                    _logger.LogInformation("New customer registered via API: {Username}", model.Username);
+                    TempData["SuccessMessage"] = "Đăng ký thành công! Vui lòng đăng nhập.";
                     return RedirectToAction(nameof(Login));
                 }
 
-                ModelState.AddModelError("", "?ang k? th?t b?i. Vui l?ng th? l?i.");
+                ModelState.AddModelError("", errorMessage ?? "Đăng ký thất bại. Vui lòng thử lại.");
             }
             catch (Exception ex)
             {
-                _logger.LogWarning("Customer registration failed: {Message}", ex.Message);
+                _logger.LogWarning(ex, "Customer registration failed");
                 ModelState.AddModelError("", ex.Message);
             }
 
@@ -175,15 +165,15 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
             try
             {
-                var success = await _authService.RegisterByAdminAsync(model);
+                var (success, errorMessage) = await _authApiClient.RegisterStaffAsync(model);
 
                 if (success)
                 {
-                    TempData["SuccessMessage"] = "T?o t?i kho?n nh?n vi?n th?nh c?ng!";
+                    TempData["SuccessMessage"] = "Tạo tài khoản nhân viên thành công!";
                     return RedirectToAction("Index", "Staff");
                 }
 
-                ModelState.AddModelError("", "T?o t?i kho?n th?t b?i. Vui l?ng th? l?i.");
+                ModelState.AddModelError("", errorMessage ?? "Tạo tài khoản thất bại. Vui lòng thử lại.");
             }
             catch (Exception ex)
             {
@@ -224,18 +214,17 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 model.Identifier = HttpContext.Session.GetUsername();
 
-                var success = await _authService.ChangePasswordAsync(model);
+                var (success, errorMessage) = await _authApiClient.ChangePasswordAsync(model);
 
                 if (success)
                 {
                     ClearRememberMeCookies();
-
-                    _logger.LogInformation("User {Username} changed password", model.Identifier);
+                    _logger.LogInformation("User {Username} changed password (via API)", model.Identifier);
                     TempData["SuccessMessage"] = "Đổi mật khẩu thành công!";
-                    return RedirectToAction("Dashboard", "Home");
+                    return RedirectToAction("Index", "Order");
                 }
 
-                ModelState.AddModelError("", "Đổi mật khẩu thất bại.");
+                ModelState.AddModelError("", errorMessage ?? "Đổi mật khẩu thất bại.");
             }
             catch (Exception ex)
             {
@@ -368,6 +357,20 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 return false;
             }
         }
+        private void SetUserSessionFromApiResult(LoginResponseDto dto)
+        {
+            HttpContext.Session.SetInt32("UserId", dto.UserId);
+            HttpContext.Session.SetString("Username", dto.Username);
+            HttpContext.Session.SetString("Email", dto.Email ?? "");
+            HttpContext.Session.SetString("FullName", dto.FullName ?? dto.Username);
+            HttpContext.Session.SetString("Roles", string.Join(",", dto.Roles ?? new List<string>()));
+            HttpContext.Session.SetString("Permissions", string.Join(",", dto.Permissions ?? new List<string>()));
+            HttpContext.Session.SetString("UserType", dto.UserType ?? "");
+            HttpContext.Session.SetString("StaffCode", dto.StaffCode ?? "");
+            HttpContext.Session.SetString("CustomerCode", dto.CustomerCode ?? "");
+            HttpContext.Session.SetString("LoginTime", DateTime.Now.ToString("o"));
+        }
+
         private async Task SetUserSession(Domain.Models.User user)
         {
             HttpContext.Session.SetInt32("UserId", user.Id);
@@ -437,7 +440,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 return RedirectToAction("Index", "Shop");
             }
 
-            return RedirectToAction("Dashboard", "Home");
+            return RedirectToAction("Index", "Order");
         }
 
         #endregion

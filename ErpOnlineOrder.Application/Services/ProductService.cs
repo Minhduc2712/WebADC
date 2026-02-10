@@ -78,6 +78,47 @@ namespace ErpOnlineOrder.Application.Services
             existing.Distributor_id = product.Distributor_id;
             existing.Updated_by = product.Updated_by;
             existing.Updated_at = DateTime.UtcNow;
+
+            // Đồng bộ Product_Categories và Product_Authors
+            if (product.Product_Categories != null)
+            {
+                existing.Product_Categories ??= new List<Product_category>();
+                existing.Product_Categories.Clear();
+                var now = DateTime.UtcNow;
+                foreach (var pc in product.Product_Categories)
+                {
+                    existing.Product_Categories.Add(new Product_category
+                    {
+                        Product_id = existing.Id,
+                        Category_id = pc.Category_id,
+                        Created_by = pc.Created_by,
+                        Updated_by = product.Updated_by,
+                        Created_at = now,
+                        Updated_at = now,
+                        Is_deleted = false
+                    });
+                }
+            }
+            if (product.Product_Authors != null)
+            {
+                existing.Product_Authors ??= new List<Product_author>();
+                existing.Product_Authors.Clear();
+                var now = DateTime.UtcNow;
+                foreach (var pa in product.Product_Authors)
+                {
+                    existing.Product_Authors.Add(new Product_author
+                    {
+                        Product_id = existing.Id,
+                        Author_id = pa.Author_id,
+                        Created_by = pa.Created_by,
+                        Updated_by = product.Updated_by,
+                        Created_at = now,
+                        Updated_at = now,
+                        Is_deleted = false
+                    });
+                }
+            }
+
             await _productRepository.UpdateAsync(existing);
             return true;
         }

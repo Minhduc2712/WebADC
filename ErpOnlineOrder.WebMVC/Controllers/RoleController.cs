@@ -1,19 +1,19 @@
 using Microsoft.AspNetCore.Mvc;
-using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.DTOs.PermissionDTOs;
 using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.WebMVC.Attributes;
+using ErpOnlineOrder.WebMVC.Services;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
     public class RoleController : BaseController
     {
-        private readonly IPermissionService _permissionService;
+        private readonly IPermissionApiClient _permissionApiClient;
         private readonly ILogger<RoleController> _logger;
 
-        public RoleController(IPermissionService permissionService, ILogger<RoleController> logger)
+        public RoleController(IPermissionApiClient permissionApiClient, ILogger<RoleController> logger)
         {
-            _permissionService = permissionService;
+            _permissionApiClient = permissionApiClient;
             _logger = logger;
         }
         private int GetCurrentUserId()
@@ -28,7 +28,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var roles = await _permissionService.GetAllRolesAsync();
+                var roles = await _permissionApiClient.GetAllRolesAsync();
                 await LoadCurrentUserPermissions();
                 return View(roles);
             }
@@ -64,7 +64,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
             try
             {
-                var success = await _permissionService.CreateRoleAsync(model, GetCurrentUserId());
+                var (success, _) = await _permissionApiClient.CreateRoleAsync(model);
 
                 if (success)
                 {
@@ -93,8 +93,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var rolePermission = await _permissionService.GetRolePermissionsAsync(id);
-                
+                var rolePermission = await _permissionApiClient.GetRolePermissionsAsync(id);
                 if (rolePermission == null)
                     return NotFound();
 
@@ -133,7 +132,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
             try
             {
-                var success = await _permissionService.UpdateRoleAsync(model, GetCurrentUserId());
+                var (success, _) = await _permissionApiClient.UpdateRoleAsync(id, model);
 
                 if (success)
                 {
@@ -163,7 +162,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var success = await _permissionService.DeleteRoleAsync(id);
+                var (success, _) = await _permissionApiClient.DeleteRoleAsync(id);
 
                 if (success)
                 {
@@ -192,12 +191,11 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var rolePermission = await _permissionService.GetRolePermissionsAsync(id);
-                
+                var rolePermission = await _permissionApiClient.GetRolePermissionsAsync(id);
                 if (rolePermission == null)
                     return NotFound();
 
-                var allPermissions = await _permissionService.GetAllPermissionsAsync();
+                var allPermissions = await _permissionApiClient.GetAllPermissionsAsync();
                 var currentPermissionIds = rolePermission.Permissions.Select(p => p.Id).ToList();
 
                 ViewBag.RoleId = id;
@@ -234,7 +232,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     Permission_ids = Permission_ids ?? new List<int>()
                 };
 
-                var success = await _permissionService.AssignPermissionsToRoleAsync(dto);
+                var (success, _) = await _permissionApiClient.AssignPermissionsToRoleAsync(id, dto);
 
                 if (success)
                 {
@@ -262,8 +260,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var rolePermission = await _permissionService.GetRolePermissionsAsync(id);
-                
+                var rolePermission = await _permissionApiClient.GetRolePermissionsAsync(id);
                 if (rolePermission == null)
                     return NotFound();
 
@@ -292,7 +289,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var permissions = await _permissionService.GetAllPermissionsAsync();
+                var permissions = await _permissionApiClient.GetAllPermissionsAsync();
                 var groupedPermissions = permissions
                     .GroupBy(p => p.Module_name)
                     .OrderBy(g => g.Key)
@@ -323,7 +320,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 }
 
                 var userId = GetCurrentUserId();
-                var permissions = await _permissionService.GetUserPermissionsAsync(userId);
+                var permissions = await _permissionApiClient.GetUserPermissionCodesAsync(userId);
                 ViewBag.CurrentUserPermissions = permissions?.ToList() ?? new List<string>();
                 
                 ViewBag.CanCreate = permissions?.Contains(PermissionCodes.RoleCreate) ?? false;

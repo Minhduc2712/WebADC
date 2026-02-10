@@ -1,26 +1,26 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using ErpOnlineOrder.Application.Constants;
-using ErpOnlineOrder.Application.Interfaces.Services;
-using ErpOnlineOrder.Domain.Models;
+using ErpOnlineOrder.Application.DTOs.WarehouseDTOs;
 using ErpOnlineOrder.WebMVC.Attributes;
+using ErpOnlineOrder.WebMVC.Services;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
     [RequirePermission(PermissionCodes.WarehouseView)]
     public class WarehouseController : BaseController
     {
-        private readonly IWarehouseService _warehouseService;
-        private readonly IProvinceService _provinceService;
+        private readonly IWarehouseApiClient _warehouseApiClient;
+        private readonly IProvinceApiClient _provinceApiClient;
         private readonly ILogger<WarehouseController> _logger;
 
         public WarehouseController(
-            IWarehouseService warehouseService,
-            IProvinceService provinceService,
+            IWarehouseApiClient warehouseApiClient,
+            IProvinceApiClient provinceApiClient,
             ILogger<WarehouseController> logger)
         {
-            _warehouseService = warehouseService;
-            _provinceService = provinceService;
+            _warehouseApiClient = warehouseApiClient;
+            _provinceApiClient = provinceApiClient;
             _logger = logger;
         }
 
@@ -28,18 +28,14 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                IEnumerable<Warehouse> warehouses;
+                IEnumerable<WarehouseDto> warehouses;
 
                 if (provinceId.HasValue && provinceId.Value > 0)
-                {
-                    warehouses = await _warehouseService.GetByProvinceIdAsync(provinceId.Value);
-                }
+                    warehouses = await _warehouseApiClient.GetByProvinceIdAsync(provinceId.Value);
                 else
-                {
-                    warehouses = await _warehouseService.GetAllAsync();
-                }
+                    warehouses = await _warehouseApiClient.GetAllAsync();
 
-                var provinces = await _provinceService.GetAllAsync();
+                var provinces = await _provinceApiClient.GetAllAsync();
                 ViewBag.Provinces = new SelectList(provinces, "Id", "Province_name", provinceId);
                 ViewBag.SelectedProvinceId = provinceId;
 
@@ -49,7 +45,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 _logger.LogError(ex, "Error loading warehouses");
                 TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
-                return View(Enumerable.Empty<Warehouse>());
+                return View(Enumerable.Empty<WarehouseDto>());
             }
         }
 
@@ -58,9 +54,9 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var provinces = await _provinceService.GetAllAsync();
+                var provinces = await _provinceApiClient.GetAllAsync();
                 ViewBag.Provinces = new SelectList(provinces, "Id", "Province_name");
-                return View();
+                return View(new CreateWarehouseDto());
             }
             catch (Exception ex)
             {
@@ -73,33 +69,33 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequirePermission(PermissionCodes.WarehouseCreate)]
-        public async Task<IActionResult> Create(Warehouse model)
+        public async Task<IActionResult> Create(CreateWarehouseDto model)
         {
             try
             {
                 if (!ModelState.IsValid)
                 {
-                    var provinces = await _provinceService.GetAllAsync();
+                    var provinces = await _provinceApiClient.GetAllAsync();
                     ViewBag.Provinces = new SelectList(provinces, "Id", "Province_name", model.Province_id);
                     return View(model);
                 }
 
-                var userId = int.Parse(User.FindFirst("UserId")?.Value ?? "0");
-                model.Created_by = userId;
-                model.Updated_by = userId;
-
-                await _warehouseService.CreateAsync(model);
-                TempData["SuccessMessage"] = "Thêm kho hàng thành công!";
-                return RedirectToAction(nameof(Index));
+                var created = await _warehouseApiClient.CreateAsync(model);
+                if (created != null)
+                {
+                    TempData["SuccessMessage"] = "Thêm kho hàng thành công!";
+                    return RedirectToAction(nameof(Index));
+                }
+                ModelState.AddModelError("", "Thêm kho hàng thất bại.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating warehouse");
                 ModelState.AddModelError("", GetDetailedErrorMessage(ex));
-                var provinces = await _provinceService.GetAllAsync();
-                ViewBag.Provinces = new SelectList(provinces, "Id", "Province_name", model.Province_id);
-                return View(model);
             }
+            var provinceList = await _provinceApiClient.GetAllAsync();
+            ViewBag.Provinces = new SelectList(provinceList, "Id", "Province_name", model.Province_id);
+            return View(model);
         }
 
         [RequirePermission(PermissionCodes.WarehouseUpdate)]
@@ -107,14 +103,22 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var warehouse = await _warehouseService.GetByIdAsync(id);
+                var warehouse = await _warehouseApiClient.GetByIdAsync(id);
                 if (warehouse == null)
                     return NotFound();
 
-                var provinces = await _provinceService.GetAllAsync();
+                var provinces = await _provinceApiClient.GetAllAsync();
                 ViewBag.Provinces = new SelectList(provinces, "Id", "Province_name", warehouse.Province_id);
 
-                return View(warehouse);
+                var updateDto = new UpdateWarehouseDto
+                {
+                    Id = warehouse.Id,
+                    Warehouse_code = warehouse.Warehouse_code,
+                    Warehouse_name = warehouse.Warehouse_name,
+                    Warehouse_address = warehouse.Warehouse_address,
+                    Province_id = warehouse.Province_id
+                };
+                return View(updateDto);
             }
             catch (Exception ex)
             {
@@ -127,7 +131,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequirePermission(PermissionCodes.WarehouseUpdate)]
-        public async Task<IActionResult> Edit(int id, Warehouse model)
+        public async Task<IActionResult> Edit(int id, UpdateWarehouseDto model)
         {
             try
             {
@@ -136,26 +140,27 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
                 if (!ModelState.IsValid)
                 {
-                    var provinces = await _provinceService.GetAllAsync();
+                    var provinces = await _provinceApiClient.GetAllAsync();
                     ViewBag.Provinces = new SelectList(provinces, "Id", "Province_name", model.Province_id);
                     return View(model);
                 }
 
-                var userId = int.Parse(User.FindFirst("UserId")?.Value ?? "0");
-                model.Updated_by = userId;
-
-                await _warehouseService.UpdateAsync(model);
-                TempData["SuccessMessage"] = "Cập nhật kho hàng thành công!";
-                return RedirectToAction(nameof(Index));
+                var (success, error) = await _warehouseApiClient.UpdateAsync(id, model);
+                if (success)
+                {
+                    TempData["SuccessMessage"] = "Cập nhật kho hàng thành công!";
+                    return RedirectToAction(nameof(Index));
+                }
+                ModelState.AddModelError("", error ?? "Cập nhật thất bại.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating warehouse");
                 ModelState.AddModelError("", GetDetailedErrorMessage(ex));
-                var provinces = await _provinceService.GetAllAsync();
-                ViewBag.Provinces = new SelectList(provinces, "Id", "Province_name", model.Province_id);
-                return View(model);
             }
+            var provinceList = await _provinceApiClient.GetAllAsync();
+            ViewBag.Provinces = new SelectList(provinceList, "Id", "Province_name", model.Province_id);
+            return View(model);
         }
 
         [HttpPost]
@@ -165,8 +170,11 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                await _warehouseService.DeleteAsync(id);
-                TempData["SuccessMessage"] = "Xóa kho hàng thành công!";
+                var (success, error) = await _warehouseApiClient.DeleteAsync(id);
+                if (success)
+                    TempData["SuccessMessage"] = "Xóa kho hàng thành công!";
+                else
+                    TempData["ErrorMessage"] = error ?? "Xóa thất bại.";
             }
             catch (Exception ex)
             {

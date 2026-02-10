@@ -1,20 +1,22 @@
 using Microsoft.AspNetCore.Mvc;
 using ErpOnlineOrder.Application.Constants;
-using ErpOnlineOrder.Application.Interfaces.Services;
-using ErpOnlineOrder.Domain.Models;
+using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.WebMVC.Attributes;
+using ErpOnlineOrder.WebMVC.Extensions;
+using ErpOnlineOrder.WebMVC.Services;
+using ErpOnlineOrder.Application.DTOs.DistributorDTOs;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
     [RequirePermission(PermissionCodes.DistributorView)]
     public class DistributorController : BaseController
     {
-        private readonly IDistributorService _distributorService;
+        private readonly IDistributorApiClient _distributorApiClient;
         private readonly ILogger<DistributorController> _logger;
 
-        public DistributorController(IDistributorService distributorService, ILogger<DistributorController> logger)
+        public DistributorController(IDistributorApiClient distributorApiClient, ILogger<DistributorController> logger)
         {
-            _distributorService = distributorService;
+            _distributorApiClient = distributorApiClient;
             _logger = logger;
         }
 
@@ -22,49 +24,47 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var distributors = await _distributorService.GetAllAsync();
+                var distributors = await _distributorApiClient.GetAllAsync();
                 return View(distributors);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading distributors");
                 TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
-                return View(Enumerable.Empty<Distributor>());
+                return View(Enumerable.Empty<DistributorDto>());
             }
         }
 
         [RequirePermission(PermissionCodes.DistributorCreate)]
         public IActionResult Create()
         {
-            return View();
+            return View(new CreateDistributorDto());
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequirePermission(PermissionCodes.DistributorCreate)]
-        public async Task<IActionResult> Create(Distributor model)
+        public async Task<IActionResult> Create(CreateDistributorDto model)
         {
             try
             {
                 if (!ModelState.IsValid)
                     return View(model);
 
-                var userId = int.Parse(User.FindFirst("UserId")?.Value ?? "0");
-                model.Created_by = userId;
-                model.Updated_by = userId;
-                model.Created_at = DateTime.Now;
-                model.Updated_at = DateTime.Now;
-
-                await _distributorService.CreateDistributorAsync(model);
-                TempData["SuccessMessage"] = "Thêm nhà phân phối thành công!";
-                return RedirectToAction(nameof(Index));
+                var created = await _distributorApiClient.CreateAsync(model);
+                if (created != null)
+                {
+                    TempData["SuccessMessage"] = "Thêm nhà phân phối thành công!";
+                    return RedirectToAction(nameof(Index));
+                }
+                ModelState.AddModelError("", "Thêm nhà phân phối thất bại.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating distributor");
                 ModelState.AddModelError("", GetDetailedErrorMessage(ex));
-                return View(model);
             }
+            return View(model);
         }
 
         [RequirePermission(PermissionCodes.DistributorUpdate)]
@@ -72,11 +72,20 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var distributor = await _distributorService.GetByIdAsync(id);
+                var distributor = await _distributorApiClient.GetByIdAsync(id);
                 if (distributor == null)
                     return NotFound();
 
-                return View(distributor);
+                var updateDto = new UpdateDistributorDto
+                {
+                    Id = distributor.Id,
+                    Distributor_code = distributor.Distributor_code ?? "",
+                    Distributor_name = distributor.Distributor_name ?? "",
+                    Distributor_address = distributor.Distributor_address ?? "",
+                    Distributor_phone = distributor.Distributor_phone ?? "",
+                    Distributor_email = distributor.Distributor_email ?? ""
+                };
+                return View(updateDto);
             }
             catch (Exception ex)
             {
@@ -89,7 +98,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequirePermission(PermissionCodes.DistributorUpdate)]
-        public async Task<IActionResult> Edit(int id, Distributor model)
+        public async Task<IActionResult> Edit(int id, UpdateDistributorDto model)
         {
             try
             {
@@ -99,20 +108,20 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (!ModelState.IsValid)
                     return View(model);
 
-                var userId = int.Parse(User.FindFirst("UserId")?.Value ?? "0");
-                model.Updated_by = userId;
-                model.Updated_at = DateTime.Now;
-
-                await _distributorService.UpdateDistributorAsync(model);
-                TempData["SuccessMessage"] = "Cập nhật nhà phân phối thành công!";
-                return RedirectToAction(nameof(Index));
+                var (success, error) = await _distributorApiClient.UpdateAsync(id, model);
+                if (success)
+                {
+                    TempData["SuccessMessage"] = "Cập nhật nhà phân phối thành công!";
+                    return RedirectToAction(nameof(Index));
+                }
+                ModelState.AddModelError("", error ?? "Cập nhật thất bại.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating distributor");
                 ModelState.AddModelError("", GetDetailedErrorMessage(ex));
-                return View(model);
             }
+            return View(model);
         }
 
         [HttpPost]
@@ -122,8 +131,11 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                await _distributorService.DeleteDistributorAsync(id);
-                TempData["SuccessMessage"] = "Xóa nhà phân phối thành công!";
+                var (success, error) = await _distributorApiClient.DeleteAsync(id);
+                if (success)
+                    TempData["SuccessMessage"] = "Xóa nhà phân phối thành công!";
+                else
+                    TempData["ErrorMessage"] = error ?? "Xóa thất bại.";
             }
             catch (Exception ex)
             {

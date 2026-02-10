@@ -2,8 +2,8 @@
     ViewData["Title"] = "Gán cán bộ phụ trách";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
     var customer = ViewBag.Customer as ErpOnlineOrder.Domain.Models.Customer;
-    var staffList = ViewBag.StaffList as List<ErpOnlineOrder.Domain.Models.Staff> ?? new List<ErpOnlineOrder.Domain.Models.Staff>();
-    var provinces = ViewBag.Provinces as List<ErpOnlineOrder.Domain.Models.Province> ?? new List<ErpOnlineOrder.Domain.Models.Province>();
+    var staffList = ViewBag.StaffList as List<ErpOnlineOrder.Application.DTOs.AdminDTOs.StaffAccountDto> ?? new List<ErpOnlineOrder.Application.DTOs.AdminDTOs.StaffAccountDto>();
+    var provinces = ViewBag.Provinces as List<ErpOnlineOrder.Application.DTOs.ProvinceDTOs.ProvinceDTO> ?? new List<ErpOnlineOrder.Application.DTOs.ProvinceDTOs.ProvinceDTO>();
     var existingAssignments = ViewBag.ExistingAssignments as List<ErpOnlineOrder.Domain.Models.Customer_management> ?? new List<ErpOnlineOrder.Domain.Models.Customer_management>();
     var assignedStaffIds = existingAssignments.Select(a => a.Staff_id).ToHashSet();
 }
@@ -13,7 +13,7 @@
         <h4 class="mb-1"><i class="fas fa-user-tag me-2 text-success"></i>Gán cán bộ phụ trách</h4>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item"><a href="@Url.Action("Dashboard", "Home")">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "Order")">Trang chủ</a></li>
                 <li class="breadcrumb-item"><a href="@Url.Action("Index")">Khách hàng</a></li>
                 <li class="breadcrumb-item active">Gán cán bộ</li>
             </ol>
@@ -156,16 +156,16 @@
                             <option value="">-- Chọn cán bộ --</option>
                             @foreach (var staff in staffList)
                             {
-                                var isAssigned = assignedStaffIds.Contains(staff.Id);
+                                var isAssigned = assignedStaffIds.Contains(staff.Staff_id);
                                 if (isAssigned)
                                 {
-                                    <option value="@staff.Id" class="text-muted" disabled>
+                                    <option value="@staff.Staff_id" class="text-muted" disabled>
                                         @staff.Full_name (@staff.Staff_code) - Đã gán
                                     </option>
                                 }
                                 else
                                 {
-                                    <option value="@staff.Id">
+                                    <option value="@staff.Staff_id">
                                         @staff.Full_name (@staff.Staff_code)
                                     </option>
                                 }

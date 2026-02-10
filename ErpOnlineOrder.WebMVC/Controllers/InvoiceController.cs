@@ -1,25 +1,25 @@
 using Microsoft.AspNetCore.Mvc;
-using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.Application.DTOs.InvoiceDTOs;
 using ErpOnlineOrder.WebMVC.Attributes;
+using ErpOnlineOrder.WebMVC.Services;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
     [RequirePermission(PermissionCodes.InvoiceView)]
     public class InvoiceController : BaseController
     {
-        private readonly IInvoiceService _invoiceService;
-        private readonly IPermissionService _permissionService;
+        private readonly IInvoiceApiClient _invoiceApiClient;
+        private readonly IPermissionApiClient _permissionApiClient;
         private readonly ILogger<InvoiceController> _logger;
 
         public InvoiceController(
-            IInvoiceService invoiceService,
-            IPermissionService permissionService,
+            IInvoiceApiClient invoiceApiClient,
+            IPermissionApiClient permissionApiClient,
             ILogger<InvoiceController> logger)
         {
-            _invoiceService = invoiceService;
-            _permissionService = permissionService;
+            _invoiceApiClient = invoiceApiClient;
+            _permissionApiClient = permissionApiClient;
             _logger = logger;
         }
 
@@ -32,7 +32,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var invoices = await _invoiceService.GetAllAsync();
+                var invoices = await _invoiceApiClient.GetAllAsync();
 
                 if (!string.IsNullOrEmpty(status))
                 {
@@ -55,7 +55,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var invoice = await _invoiceService.GetByIdAsync(id);
+                var invoice = await _invoiceApiClient.GetByIdAsync(id);
 
                 if (invoice == null)
                     return NotFound();
@@ -77,7 +77,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var invoice = await _invoiceService.GetByIdAsync(id);
+                var invoice = await _invoiceApiClient.GetByIdAsync(id);
                 if (invoice == null)
                     return NotFound();
 
@@ -99,9 +99,9 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             try
             {
                 var userId = GetCurrentUserId();
-                var result = await _invoiceService.SplitInvoiceAsync(dto, userId);
+                var result = await _invoiceApiClient.SplitAsync(dto);
 
-                if (result.Success)
+                if (result?.Success == true)
                 {
                     SetSuccessMessage($"Tách hóa đơn thành công! {result.Message}");
                 }
@@ -125,7 +125,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var invoices = await _invoiceService.GetAllAsync();
+                var invoices = await _invoiceApiClient.GetAllAsync();
                 return View(invoices.Where(i => i.Status != "Completed" && i.Status != "Cancelled"));
             }
             catch (Exception ex)
@@ -144,9 +144,9 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             try
             {
                 var userId = GetCurrentUserId();
-                var result = await _invoiceService.MergeInvoicesAsync(dto, userId);
+                var result = await _invoiceApiClient.MergeAsync(dto);
 
-                if (result.Success)
+                if (result?.Success == true)
                 {
                     SetSuccessMessage($"Gộp hóa đơn thành công! {result.Message}");
                 }
@@ -172,7 +172,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             try
             {
                 var userId = GetCurrentUserId();
-                var result = await _invoiceService.UndoSplitAsync(parentInvoiceId, userId);
+                var result = await _invoiceApiClient.UndoSplitAsync(parentInvoiceId);
 
                 if (result)
                 {
@@ -200,7 +200,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             try
             {
                 var userId = GetCurrentUserId();
-                var result = await _invoiceService.UndoMergeAsync(mergedInvoiceId, userId);
+                var result = await _invoiceApiClient.UndoMergeAsync(mergedInvoiceId);
 
                 if (result)
                 {
@@ -235,7 +235,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 }
 
                 var userId = GetCurrentUserId();
-                var permissions = await _permissionService.GetUserPermissionsAsync(userId);
+                var permissions = await _permissionApiClient.GetUserPermissionCodesAsync(userId);
                 ViewBag.CurrentUserPermissions = permissions?.ToList() ?? new List<string>();
 
                 ViewBag.CanCreate = permissions?.Contains(PermissionCodes.InvoiceCreate) ?? false;

@@ -1,26 +1,26 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using ErpOnlineOrder.Application.Constants;
-using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.DTOs.ProvinceDTOs;
 using ErpOnlineOrder.WebMVC.Attributes;
+using ErpOnlineOrder.WebMVC.Services;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
     [RequirePermission(PermissionCodes.ProvinceView)]
     public class ProvinceController : BaseController
     {
-        private readonly IProvinceService _provinceService;
-        private readonly IRegionService _regionService;
+        private readonly IProvinceApiClient _provinceApiClient;
+        private readonly IRegionApiClient _regionApiClient;
         private readonly ILogger<ProvinceController> _logger;
 
         public ProvinceController(
-            IProvinceService provinceService, 
-            IRegionService regionService,
+            IProvinceApiClient provinceApiClient,
+            IRegionApiClient regionApiClient,
             ILogger<ProvinceController> logger)
         {
-            _provinceService = provinceService;
-            _regionService = regionService;
+            _provinceApiClient = provinceApiClient;
+            _regionApiClient = regionApiClient;
             _logger = logger;
         }
 
@@ -29,17 +29,12 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             try
             {
                 IEnumerable<ProvinceDTO> provinces;
-                
                 if (regionId.HasValue && regionId.Value > 0)
-                {
-                    provinces = await _provinceService.GetByRegionIdAsync(regionId.Value);
-                }
+                    provinces = await _provinceApiClient.GetByRegionIdAsync(regionId.Value);
                 else
-                {
-                    provinces = await _provinceService.GetAllAsync();
-                }
+                    provinces = await _provinceApiClient.GetAllAsync();
 
-                var regions = await _regionService.GetAllAsync();
+                var regions = await _regionApiClient.GetAllAsync();
                 ViewBag.Regions = new SelectList(regions, "Id", "Region_name", regionId);
                 ViewBag.SelectedRegionId = regionId;
 
@@ -58,7 +53,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var regions = await _regionService.GetAllAsync();
+                var regions = await _regionApiClient.GetAllAsync();
                 ViewBag.Regions = new SelectList(regions, "Id", "Region_name");
                 return View();
             }
@@ -79,24 +74,27 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 if (!ModelState.IsValid)
                 {
-                    var regions = await _regionService.GetAllAsync();
+                    var regions = await _regionApiClient.GetAllAsync();
                     ViewBag.Regions = new SelectList(regions, "Id", "Region_name", model.Region_id);
                     return View(model);
                 }
 
-                var userId = int.Parse(User.FindFirst("UserId")?.Value ?? "0");
-                await _provinceService.CreateProvinceAsync(model, userId);
-                TempData["SuccessMessage"] = "Thêm tỉnh/thành phố thành công!";
-                return RedirectToAction(nameof(Index));
+                var created = await _provinceApiClient.CreateAsync(model);
+                if (created != null)
+                {
+                    TempData["SuccessMessage"] = "Thêm tỉnh/thành phố thành công!";
+                    return RedirectToAction(nameof(Index));
+                }
+                ModelState.AddModelError("", "Thêm tỉnh/thành phố thất bại.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating province");
                 ModelState.AddModelError("", GetDetailedErrorMessage(ex));
-                var regions = await _regionService.GetAllAsync();
+                var regions = await _regionApiClient.GetAllAsync();
                 ViewBag.Regions = new SelectList(regions, "Id", "Region_name", model.Region_id);
-                return View(model);
             }
+            return View(model);
         }
 
         [RequirePermission(PermissionCodes.ProvinceUpdate)]
@@ -104,7 +102,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var province = await _provinceService.GetByIdAsync(id);
+                var province = await _provinceApiClient.GetByIdAsync(id);
                 if (province == null)
                     return NotFound();
 
@@ -116,7 +114,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     Region_id = province.Region_id
                 };
 
-                var regions = await _regionService.GetAllAsync();
+                var regions = await _regionApiClient.GetAllAsync();
                 ViewBag.Regions = new SelectList(regions, "Id", "Region_name", province.Region_id);
 
                 return View(model);
@@ -141,24 +139,27 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
                 if (!ModelState.IsValid)
                 {
-                    var regions = await _regionService.GetAllAsync();
+                    var regions = await _regionApiClient.GetAllAsync();
                     ViewBag.Regions = new SelectList(regions, "Id", "Region_name", model.Region_id);
                     return View(model);
                 }
 
-                var userId = int.Parse(User.FindFirst("UserId")?.Value ?? "0");
-                await _provinceService.UpdateProvinceAsync(model, userId);
-                TempData["SuccessMessage"] = "Cập nhật tỉnh/thành phố thành công!";
-                return RedirectToAction(nameof(Index));
+                var (success, error) = await _provinceApiClient.UpdateAsync(id, model);
+                if (success)
+                {
+                    TempData["SuccessMessage"] = "Cập nhật tỉnh/thành phố thành công!";
+                    return RedirectToAction(nameof(Index));
+                }
+                ModelState.AddModelError("", error ?? "Cập nhật thất bại.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating province");
                 ModelState.AddModelError("", GetDetailedErrorMessage(ex));
-                var regions = await _regionService.GetAllAsync();
+                var regions = await _regionApiClient.GetAllAsync();
                 ViewBag.Regions = new SelectList(regions, "Id", "Region_name", model.Region_id);
-                return View(model);
             }
+            return View(model);
         }
 
         [HttpPost]
@@ -168,8 +169,11 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                await _provinceService.DeleteProvinceAsync(id);
-                TempData["SuccessMessage"] = "Xóa tỉnh/thành phố thành công!";
+                var (success, error) = await _provinceApiClient.DeleteAsync(id);
+                if (success)
+                    TempData["SuccessMessage"] = "Xóa tỉnh/thành phố thành công!";
+                else
+                    TempData["ErrorMessage"] = error ?? "Xóa thất bại.";
             }
             catch (Exception ex)
             {

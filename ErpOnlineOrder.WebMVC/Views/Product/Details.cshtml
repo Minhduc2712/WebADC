@@ -1,4 +1,4 @@
-﻿@model ErpOnlineOrder.Application.DTOs.ProductDTO
+@model ErpOnlineOrder.Application.DTOs.ProductDTO
 @{
     ViewData["Title"] = "Chi tiết sản phẩm";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
@@ -9,7 +9,7 @@
         <h4 class="mb-1">Chi tiết sản phẩm</h4>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item"><a href="@Url.Action("Dashboard", "Home")">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "Order")">Trang chủ</a></li>
                 <li class="breadcrumb-item"><a href="@Url.Action("Index")">Sản phẩm</a></li>
                 <li class="breadcrumb-item active">@Model.Product_name</li>
             </ol>

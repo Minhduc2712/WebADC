@@ -2,7 +2,7 @@
 @{
     ViewData["Title"] = "Gán cán bộ phụ trách khách hàng";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
-    var staffList = ViewBag.StaffList as List<ErpOnlineOrder.Domain.Models.Staff> ?? new List<ErpOnlineOrder.Domain.Models.Staff>();
+    var staffList = ViewBag.StaffList as List<ErpOnlineOrder.Application.DTOs.AdminDTOs.StaffAccountDto> ?? new List<ErpOnlineOrder.Application.DTOs.AdminDTOs.StaffAccountDto>();
     var selectedStaffId = ViewBag.SelectedStaffId as int?;
     var canAssign = (bool)(ViewBag.CanAssign ?? false);
 }
@@ -12,7 +12,7 @@
         <h4 class="mb-1"><i class="fas fa-user-tag me-2 text-success"></i>Gán cán bộ phụ trách khách hàng</h4>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item"><a href="@Url.Action("Dashboard", "Home")">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "Order")">Trang chủ</a></li>
                 <li class="breadcrumb-item"><a href="@Url.Action("Index")">Khách hàng</a></li>
                 <li class="breadcrumb-item active">Gán cán bộ phụ trách</li>
             </ol>
@@ -92,13 +92,13 @@
                         <option value="">-- Tất cả cán bộ --</option>
                         @foreach (var staff in staffList)
                         {
-                            if (selectedStaffId == staff.Id)
+                            if (selectedStaffId == staff.Staff_id)
                             {
-                                <option value="@staff.Id" selected>@staff.Full_name (@staff.Staff_code)</option>
+                                <option value="@staff.Staff_id" selected>@staff.Full_name (@staff.Staff_code)</option>
                             }
                             else
                             {
-                                <option value="@staff.Id">@staff.Full_name (@staff.Staff_code)</option>
+                                <option value="@staff.Staff_id">@staff.Full_name (@staff.Staff_code)</option>
                             }
                         }
                     </select>

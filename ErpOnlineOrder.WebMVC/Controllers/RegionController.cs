@@ -1,20 +1,20 @@
 using Microsoft.AspNetCore.Mvc;
 using ErpOnlineOrder.Application.Constants;
-using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.DTOs.RegionDTOs;
 using ErpOnlineOrder.WebMVC.Attributes;
+using ErpOnlineOrder.WebMVC.Services;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
     [RequirePermission(PermissionCodes.RegionView)]
     public class RegionController : BaseController
     {
-        private readonly IRegionService _regionService;
+        private readonly IRegionApiClient _regionApiClient;
         private readonly ILogger<RegionController> _logger;
 
-        public RegionController(IRegionService regionService, ILogger<RegionController> logger)
+        public RegionController(IRegionApiClient regionApiClient, ILogger<RegionController> logger)
         {
-            _regionService = regionService;
+            _regionApiClient = regionApiClient;
             _logger = logger;
         }
 
@@ -22,7 +22,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var regions = await _regionService.GetAllAsync();
+                var regions = await _regionApiClient.GetAllAsync();
                 return View(regions);
             }
             catch (Exception ex)
@@ -49,17 +49,20 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (!ModelState.IsValid)
                     return View(model);
 
-                var userId = int.Parse(User.FindFirst("UserId")?.Value ?? "0");
-                await _regionService.CreateRegionAsync(model, userId);
-                TempData["SuccessMessage"] = "Thêm khu vực thành công!";
-                return RedirectToAction(nameof(Index));
+                var created = await _regionApiClient.CreateAsync(model);
+                if (created != null)
+                {
+                    TempData["SuccessMessage"] = "Thêm khu vực thành công!";
+                    return RedirectToAction(nameof(Index));
+                }
+                ModelState.AddModelError("", "Thêm khu vực thất bại.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating region");
                 ModelState.AddModelError("", GetDetailedErrorMessage(ex));
-                return View(model);
             }
+            return View(model);
         }
 
         [RequirePermission(PermissionCodes.RegionUpdate)]
@@ -67,7 +70,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var region = await _regionService.GetByIdAsync(id);
+                var region = await _regionApiClient.GetByIdAsync(id);
                 if (region == null)
                     return NotFound();
 
@@ -101,17 +104,20 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (!ModelState.IsValid)
                     return View(model);
 
-                var userId = int.Parse(User.FindFirst("UserId")?.Value ?? "0");
-                await _regionService.UpdateRegionAsync(model, userId);
-                TempData["SuccessMessage"] = "Cập nhật khu vực thành công!";
-                return RedirectToAction(nameof(Index));
+                var (success, error) = await _regionApiClient.UpdateAsync(id, model);
+                if (success)
+                {
+                    TempData["SuccessMessage"] = "Cập nhật khu vực thành công!";
+                    return RedirectToAction(nameof(Index));
+                }
+                ModelState.AddModelError("", error ?? "Cập nhật thất bại.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating region");
                 ModelState.AddModelError("", GetDetailedErrorMessage(ex));
-                return View(model);
             }
+            return View(model);
         }
 
         [HttpPost]
@@ -121,8 +127,11 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                await _regionService.DeleteRegionAsync(id);
-                TempData["SuccessMessage"] = "Xóa khu vực thành công!";
+                var (success, error) = await _regionApiClient.DeleteAsync(id);
+                if (success)
+                    TempData["SuccessMessage"] = "Xóa khu vực thành công!";
+                else
+                    TempData["ErrorMessage"] = error ?? "Xóa thất bại.";
             }
             catch (Exception ex)
             {

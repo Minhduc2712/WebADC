@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Gán quyền trực tiếp cho nhân viên";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
     var staff = ViewBag.Staff as ErpOnlineOrder.Application.DTOs.AdminDTOs.StaffAccountDto;
@@ -22,7 +22,7 @@
         </h1>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Dashboard">Trang chủ</a></li>
+                <li class="breadcrumb-item"><a asp-controller="Order" asp-action="Index">Trang chủ</a></li>
                 <li class="breadcrumb-item"><a asp-action="Index">Quản lý nhân sự</a></li>
                 <li class="breadcrumb-item active">Gán quyền trực tiếp</li>
             </ol>

@@ -6,6 +6,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ErpOnlineOrder.WebAPI.Controllers
 {
+    public class CreatePermissionRequest
+    {
+        public string Permission_code { get; set; } = string.Empty;
+    }
+
     [ApiController]
     [Route("api/[controller]")]
     public class PermissionController : ControllerBase
@@ -29,6 +34,42 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             var permissions = await _permissionService.GetPermissionsByModuleAsync(moduleCode);
             return Ok(permissions);
+        }
+        [HttpGet("permissions/{id}")]
+        public async Task<IActionResult> GetPermissionById(int id)
+        {
+            var permission = await _permissionService.GetPermissionByIdAsync(id);
+            if (permission == null) return NotFound();
+            return Ok(permission);
+        }
+        [HttpGet("permissions/check")]
+        public async Task<IActionResult> IsPermissionCodeExists([FromQuery] string code, [FromQuery] int? excludeId)
+        {
+            var exists = await _permissionService.IsPermissionCodeExistsAsync(code, excludeId);
+            return Ok(new { exists });
+        }
+        [HttpPost("permissions")]
+        public async Task<IActionResult> CreatePermission([FromBody] CreatePermissionRequest request)
+        {
+            var createdBy = int.TryParse(User.FindFirst("UserId")?.Value, out int uid) ? uid : 0;
+            var result = await _permissionService.CreatePermissionAsync(request.Permission_code, createdBy);
+            if (!result) return BadRequest(new { message = "Tạo quyền thất bại" });
+            return Ok(new { success = true });
+        }
+        [HttpPut("permissions/{id}")]
+        public async Task<IActionResult> UpdatePermission(int id, [FromBody] CreatePermissionRequest request)
+        {
+            var updatedBy = int.TryParse(User.FindFirst("UserId")?.Value, out int uid) ? uid : 0;
+            var result = await _permissionService.UpdatePermissionAsync(id, request.Permission_code, updatedBy);
+            if (!result) return NotFound(new { message = "Cập nhật thất bại" });
+            return Ok(new { success = true });
+        }
+        [HttpDelete("permissions/{id}")]
+        public async Task<IActionResult> DeletePermission(int id)
+        {
+            var result = await _permissionService.DeletePermissionAsync(id);
+            if (!result) return NotFound(new { message = "Xóa thất bại" });
+            return Ok(new { success = true });
         }
 
         #endregion
@@ -160,6 +201,28 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             var result = await _permissionService.RemoveRoleFromUserAsync(userId, roleId);
             return Ok(new { success = true, message = "X�a role th�nh c�ng" });
+        }
+        [HttpGet("user/{userId}/full")]
+        public async Task<IActionResult> GetUserFullPermissions(int userId)
+        {
+            var result = await _permissionService.GetUserFullPermissionsAsync(userId);
+            if (result == null) return NotFound(new { message = "User không tồn tại" });
+            return Ok(result);
+        }
+        [HttpPost("user/assign-permissions")]
+        public async Task<IActionResult> AssignPermissionsToUser([FromBody] AssignPermissionsToUserDto dto)
+        {
+            var grantedBy = int.TryParse(User.FindFirst("UserId")?.Value, out int uid) ? uid : 0;
+            var result = await _permissionService.AssignPermissionsToUserAsync(dto, grantedBy);
+            if (!result) return BadRequest(new { message = "Gán quyền thất bại" });
+            return Ok(new { success = true, message = "Gán quyền thành công" });
+        }
+        [HttpPost("user/{userId}/remove-all-direct")]
+        public async Task<IActionResult> RemoveAllDirectPermissionsFromUser(int userId)
+        {
+            var result = await _permissionService.RemoveAllDirectPermissionsFromUserAsync(userId);
+            if (!result) return BadRequest(new { message = "Xóa quyền thất bại" });
+            return Ok(new { success = true });
         }
 
         #endregion

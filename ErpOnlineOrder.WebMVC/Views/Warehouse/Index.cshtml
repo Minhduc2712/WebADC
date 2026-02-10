@@ -1,4 +1,4 @@
-@model IEnumerable<ErpOnlineOrder.Domain.Models.Warehouse>
+@model IEnumerable<ErpOnlineOrder.Application.DTOs.WarehouseDTOs.WarehouseDto>
 @{
     ViewData["Title"] = "Quản lý kho hàng";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
@@ -10,7 +10,7 @@
             <h4 class="mb-0">Quản lý kho hàng</h4>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-0">
-                    <li class="breadcrumb-item"><a href="@Url.Action("Dashboard", "Home")">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="@Url.Action("Index", "Order")">Trang chủ</a></li>
                     <li class="breadcrumb-item active">Kho hàng</li>
                 </ol>
             </nav>
@@ -78,7 +78,7 @@
                                     <td><strong>@item.Warehouse_name</strong></td>
                                     <td>@item.Warehouse_address</td>
                                     <td>
-                                        <span class="badge bg-info">@(item.Province?.Province_name ?? "-")</span>
+                                        <span class="badge bg-info">@(item.Province_name ?? "-")</span>
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm">

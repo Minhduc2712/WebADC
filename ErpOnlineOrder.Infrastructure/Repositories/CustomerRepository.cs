@@ -1,4 +1,4 @@
-﻿using ErpOnlineOrder.Application.Interfaces.Repositories;
+using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -21,7 +21,9 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<Customer?> GetByIdAsync(int id)
         {
-            return await _context.Customers.FindAsync(id);
+            return await _context.Customers
+                .Include(c => c.User)
+                .FirstOrDefaultAsync(c => c.Id == id);
         }
 
         public async Task<Customer?> GetByUserIdAsync(int userId)
@@ -31,7 +33,9 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<IEnumerable<Customer>> GetAllAsync()
         {
-            return await _context.Customers.ToListAsync();
+            return await _context.Customers
+                .Include(c => c.User)
+                .ToListAsync();
         }
 
         public async Task AddAsync(Customer customer)

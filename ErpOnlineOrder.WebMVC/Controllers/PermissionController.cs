@@ -1,24 +1,24 @@
 using Microsoft.AspNetCore.Mvc;
-using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.DTOs.PermissionDTOs;
 using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.WebMVC.Attributes;
+using ErpOnlineOrder.WebMVC.Services;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
     public class PermissionController : BaseController
     {
-        private readonly IPermissionService _permissionService;
-        private readonly IAdminService _adminService;
+        private readonly IPermissionApiClient _permissionApiClient;
+        private readonly IAdminApiClient _adminApiClient;
         private readonly ILogger<PermissionController> _logger;
 
         public PermissionController(
-            IPermissionService permissionService,
-            IAdminService adminService,
+            IPermissionApiClient permissionApiClient,
+            IAdminApiClient adminApiClient,
             ILogger<PermissionController> logger)
         {
-            _permissionService = permissionService;
-            _adminService = adminService;
+            _permissionApiClient = permissionApiClient;
+            _adminApiClient = adminApiClient;
             _logger = logger;
         }
 
@@ -31,7 +31,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var permissions = await _permissionService.GetAllPermissionsAsync();
+                var permissions = await _permissionApiClient.GetAllPermissionsAsync();
                 await LoadCurrentUserPermissions();
                 return View(permissions);
             }
@@ -76,14 +76,14 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             try
             {
                 // Kiểm tra trùng
-                if (await _permissionService.IsPermissionCodeExistsAsync(code))
+                if (await _permissionApiClient.IsPermissionCodeExistsAsync(code))
                 {
                     ModelState.AddModelError("Permission_code", $"Mã quyền '{code}' đã tồn tại");
                     ViewBag.InputCode = Permission_code;
                     return View();
                 }
 
-                var success = await _permissionService.CreatePermissionAsync(code, GetCurrentUserId());
+                var (success, _) = await _permissionApiClient.CreatePermissionAsync(code);
 
                 if (success)
                 {
@@ -112,7 +112,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var permission = await _permissionService.GetPermissionByIdAsync(id);
+                var permission = await _permissionApiClient.GetPermissionByIdAsync(id);
                 if (permission == null)
                     return NotFound();
 
@@ -133,7 +133,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             if (string.IsNullOrWhiteSpace(Permission_code))
             {
                 ModelState.AddModelError("Permission_code", "Mã quyền không được để trống");
-                var perm = await _permissionService.GetPermissionByIdAsync(id);
+                var perm = await _permissionApiClient.GetPermissionByIdAsync(id);
                 return View(perm);
             }
 
@@ -142,22 +142,22 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             if (!code.Contains('_'))
             {
                 ModelState.AddModelError("Permission_code", "Mã quyền phải theo định dạng MODULE_ACTION (VD: PRODUCT_VIEW)");
-                var perm = await _permissionService.GetPermissionByIdAsync(id);
+                var perm = await _permissionApiClient.GetPermissionByIdAsync(id);
                 if (perm != null) perm.Permission_code = Permission_code;
                 return View(perm);
             }
 
             try
             {
-                if (await _permissionService.IsPermissionCodeExistsAsync(code, id))
+                if (await _permissionApiClient.IsPermissionCodeExistsAsync(code, id))
                 {
                     ModelState.AddModelError("Permission_code", $"Mã quyền '{code}' đã tồn tại");
-                    var perm = await _permissionService.GetPermissionByIdAsync(id);
+                    var perm = await _permissionApiClient.GetPermissionByIdAsync(id);
                     if (perm != null) perm.Permission_code = Permission_code;
                     return View(perm);
                 }
 
-                var success = await _permissionService.UpdatePermissionAsync(id, code, GetCurrentUserId());
+                var (success, _) = await _permissionApiClient.UpdatePermissionAsync(id, code);
 
                 if (success)
                 {
@@ -173,7 +173,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 ModelState.AddModelError("", GetDetailedErrorMessage(ex));
             }
 
-            var permDto = await _permissionService.GetPermissionByIdAsync(id);
+            var permDto = await _permissionApiClient.GetPermissionByIdAsync(id);
             return View(permDto);
         }
 
@@ -187,7 +187,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var success = await _permissionService.DeletePermissionAsync(id);
+                var (success, _) = await _permissionApiClient.DeletePermissionAsync(id);
 
                 if (success)
                     SetSuccessMessage("Xóa quyền thành công!");
@@ -212,7 +212,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var staffList = await _adminService.GetAllStaffAsync();
+                var staffList = await _adminApiClient.GetAllStaffAsync();
                 return View(staffList);
             }
             catch (Exception ex)
@@ -228,11 +228,11 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var userFullPermissions = await _permissionService.GetUserFullPermissionsAsync(id);
+                var userFullPermissions = await _permissionApiClient.GetUserFullPermissionsAsync(id);
                 if (userFullPermissions == null)
                     return NotFound();
 
-                var allPermissions = await _permissionService.GetAllPermissionsAsync();
+                var allPermissions = await _permissionApiClient.GetAllPermissionsAsync();
 
                 ViewBag.AllPermissions = allPermissions.ToList();
                 ViewBag.GroupedPermissions = allPermissions
@@ -264,7 +264,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     Note = Note
                 };
 
-                var success = await _permissionService.AssignPermissionsToUserAsync(dto, GetCurrentUserId());
+                var (success, _) = await _permissionApiClient.AssignPermissionsToUserAsync(dto);
 
                 if (success)
                 {
@@ -290,7 +290,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                await _permissionService.RemoveAllDirectPermissionsFromUserAsync(userId);
+                await _permissionApiClient.RemoveAllDirectPermissionsFromUserAsync(userId);
                 SetSuccessMessage("Đã xóa tất cả quyền trực tiếp!");
             }
             catch (Exception ex)
@@ -322,7 +322,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 }
 
                 var userId = GetCurrentUserId();
-                var permissions = await _permissionService.GetUserPermissionsAsync(userId);
+                var permissions = await _permissionApiClient.GetUserPermissionCodesAsync(userId);
                 ViewBag.CanCreate = permissions?.Contains(PermissionCodes.PermissionCreate) ?? false;
                 ViewBag.CanUpdate = permissions?.Contains(PermissionCodes.PermissionUpdate) ?? false;
                 ViewBag.CanDelete = permissions?.Contains(PermissionCodes.PermissionDelete) ?? false;

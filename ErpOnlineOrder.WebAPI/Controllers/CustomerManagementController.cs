@@ -4,6 +4,13 @@ using ErpOnlineOrder.Domain.Models;
 
 namespace ErpOnlineOrder.WebAPI.Controllers
 {
+    public class AssignStaffRequest
+    {
+        public int Staff_id { get; set; }
+        public int Customer_id { get; set; }
+        public int Province_id { get; set; }
+    }
+
     [ApiController]
     [Route("api/[controller]")]
     public class CustomerManagementController : ControllerBase
@@ -34,6 +41,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             return Ok(customerManagements);
         }
 
+        [HttpGet("customer/{customerId}")]
+        public async Task<IActionResult> GetByCustomer(int customerId)
+        {
+            var list = await _customerManagementService.GetByCustomerAsync(customerId);
+            return Ok(list);
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetCustomerManagement(int id)
         {
@@ -42,10 +56,36 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             return Ok(customerManagement);
         }
 
+        [HttpPost("assign")]
+        public async Task<IActionResult> AssignStaff([FromBody] AssignStaffRequest request)
+        {
+            var createdBy = int.TryParse(User.FindFirst("UserId")?.Value, out int uid) ? uid : 0;
+            try
+            {
+                var created = await _customerManagementService.AssignStaffToCustomerAsync(
+                    request.Staff_id, request.Customer_id, request.Province_id, createdBy);
+                return Ok(created);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("check")]
+        public async Task<IActionResult> IsAlreadyAssigned([FromQuery] int staffId, [FromQuery] int customerId)
+        {
+            var result = await _customerManagementService.IsAlreadyAssignedAsync(staffId, customerId);
+            return Ok(new { already_assigned = result });
+        }
+
         [HttpPost]
         public async Task<IActionResult> CreateCustomerManagement([FromBody] Customer_management model)
         {
-            // Require permission: MANAGE_CUSTOMER_MANAGEMENT
             try
             {
                 var created = await _customerManagementService.CreateCustomerManagementAsync(model);
