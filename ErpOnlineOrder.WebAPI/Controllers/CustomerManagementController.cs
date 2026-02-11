@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using ErpOnlineOrder.Application.DTOs.CustomerManagementDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Models;
 
@@ -13,7 +14,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
 
     [ApiController]
     [Route("api/[controller]")]
-    public class CustomerManagementController : ControllerBase
+    public class CustomerManagementController : ApiController
     {
         private readonly ICustomerManagementService _customerManagementService;
 
@@ -59,7 +60,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [HttpPost("assign")]
         public async Task<IActionResult> AssignStaff([FromBody] AssignStaffRequest request)
         {
-            var createdBy = int.TryParse(User.FindFirst("UserId")?.Value, out int uid) ? uid : 0;
+            var createdBy = GetCurrentUserId();
             try
             {
                 var created = await _customerManagementService.AssignStaffToCustomerAsync(
@@ -84,11 +85,11 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateCustomerManagement([FromBody] Customer_management model)
+        public async Task<IActionResult> CreateCustomerManagement([FromBody] CreateCustomerManagementDto dto)
         {
             try
             {
-                var created = await _customerManagementService.CreateCustomerManagementAsync(model);
+                var created = await _customerManagementService.CreateCustomerManagementAsync(dto, GetCurrentUserId());
                 return Ok(created);
             }
             catch (Exception ex)
@@ -98,14 +99,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateCustomerManagement(int id, [FromBody] Customer_management model)
+        public async Task<IActionResult> UpdateCustomerManagement(int id, [FromBody] UpdateCustomerManagementDto dto)
         {
-            // Require permission: MANAGE_CUSTOMER_MANAGEMENT
-            if (id != model.Id) return BadRequest();
+            if (id != dto.Id) return BadRequest();
 
             try
             {
-                var result = await _customerManagementService.UpdateCustomerManagementAsync(model);
+                var result = await _customerManagementService.UpdateCustomerManagementAsync(id, dto, GetCurrentUserId());
                 return Ok(new { success = result });
             }
             catch (Exception ex)

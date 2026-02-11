@@ -8,7 +8,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class AdminController : ControllerBase
+    public class AdminController : ApiController
     {
         private readonly IAdminService _adminService;
         private readonly IPermissionService _permissionService;
@@ -44,10 +44,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             try
             {
-                // TODO: L?y userId t? token
-                int createdBy = 1;
-
-                var result = await _adminService.CreateStaffAccountAsync(dto, createdBy);
+                var result = await _adminService.CreateStaffAccountAsync(dto, GetCurrentUserId());
                 if (result == null)
                 {
                     return BadRequest(new { message = "Không th? t?o tài kho?n nhân viên" });
@@ -70,10 +67,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
 
             try
             {
-                // TODO: L?y userId t? token
-                int updatedBy = 1;
-
-                var result = await _adminService.UpdateStaffAccountAsync(dto, updatedBy);
+                var result = await _adminService.UpdateStaffAccountAsync(dto, GetCurrentUserId());
                 if (!result)
                 {
                     return NotFound(new { message = "Nhân viên không t?n t?i" });
@@ -89,10 +83,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [RequirePermission(PermissionCodes.StaffDelete)]
         public async Task<IActionResult> DeleteStaff(int userId)
         {
-            // TODO: L?y userId t? token
-            int deletedBy = 1;
-
-            var result = await _adminService.DeleteStaffAccountAsync(userId, deletedBy);
+            var result = await _adminService.DeleteStaffAccountAsync(userId, GetCurrentUserId());
             if (!result)
             {
                 return NotFound(new { message = "Nhân viên không t?n t?i" });
@@ -103,10 +94,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [RequirePermission(PermissionCodes.StaffUpdate)]
         public async Task<IActionResult> ToggleStaffStatus(int userId, [FromQuery] bool isActive)
         {
-            // TODO: L?y userId t? token
-            int updatedBy = 1;
-
-            var result = await _adminService.ToggleStaffStatusAsync(userId, isActive, updatedBy);
+            var result = await _adminService.ToggleStaffStatusAsync(userId, isActive, GetCurrentUserId());
             if (!result)
             {
                 return NotFound(new { message = "Nhân viên không t?n t?i" });
@@ -122,10 +110,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 return BadRequest(new { message = "User ID không kh?p" });
             }
 
-            // TODO: L?y userId t? token
-            int updatedBy = 1;
-
-            var result = await _adminService.ResetPasswordAsync(dto, updatedBy);
+            var result = await _adminService.ResetPasswordAsync(dto, GetCurrentUserId());
             if (!result)
             {
                 return NotFound(new { message = "Nhân viên không t?n t?i" });

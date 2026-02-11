@@ -1,3 +1,4 @@
+using ErpOnlineOrder.Application.DTOs.AuthorDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Models;
@@ -23,56 +24,59 @@ namespace ErpOnlineOrder.Application.Services
             return await _authorRepository.GetAllAsync();
         }
 
-        public async Task<Author> CreateAsync(Author author)
+        public async Task<Author> CreateAsync(CreateAuthorDto dto, int createdBy)
         {
-            // Kiểm tra trùng lặp Author_code
-            var existingByCode = await _authorRepository.GetByCodeAsync(author.Author_code);
+            var existingByCode = await _authorRepository.GetByCodeAsync(dto.Author_code);
             if (existingByCode != null)
-            {
-                throw new InvalidOperationException($"Tác giả với mã '{author.Author_code}' đã tồn tại.");
-            }
+                throw new InvalidOperationException($"Tác giả với mã '{dto.Author_code}' đã tồn tại.");
 
-            // Kiểm tra trùng lặp Author_name
-            var existingByName = await _authorRepository.GetByNameAsync(author.Author_name);
+            var existingByName = await _authorRepository.GetByNameAsync(dto.Author_name);
             if (existingByName != null)
-            {
-                throw new InvalidOperationException($"Tác giả với tên '{author.Author_name}' đã tồn tại.");
-            }
+                throw new InvalidOperationException($"Tác giả với tên '{dto.Author_name}' đã tồn tại.");
 
-            author.Created_at = DateTime.Now;
-            author.Updated_at = DateTime.Now;
+            var author = new Author
+            {
+                Author_code = dto.Author_code,
+                Author_name = dto.Author_name,
+                Pen_name = dto.Pen_name,
+                Email_author = dto.Email_author,
+                Phone_number = dto.Phone_number,
+                birth_date = dto.birth_date,
+                death_date = dto.death_date,
+                Nationality = dto.Nationality,
+                Biography = dto.Biography,
+                Created_by = createdBy,
+                Updated_by = createdBy,
+                Created_at = DateTime.UtcNow,
+                Updated_at = DateTime.UtcNow
+            };
             return await _authorRepository.AddAsync(author);
         }
 
-        public async Task<bool> UpdateAsync(Author author)
+        public async Task<bool> UpdateAsync(int id, UpdateAuthorDto dto, int updatedBy)
         {
-            var existing = await _authorRepository.GetByIdAsync(author.Id);
+            var existing = await _authorRepository.GetByIdAsync(id);
             if (existing == null) return false;
 
-            // Kiểm tra trùng lặp khi update (trừ bản ghi hiện tại)
-            var existingByCode = await _authorRepository.GetByCodeAsync(author.Author_code);
-            if (existingByCode != null && existingByCode.Id != author.Id)
-            {
-                throw new InvalidOperationException($"Tác giả với mã '{author.Author_code}' đã tồn tại.");
-            }
+            var existingByCode = await _authorRepository.GetByCodeAsync(dto.Author_code);
+            if (existingByCode != null && existingByCode.Id != id)
+                throw new InvalidOperationException($"Tác giả với mã '{dto.Author_code}' đã tồn tại.");
 
-            var existingByName = await _authorRepository.GetByNameAsync(author.Author_name);
-            if (existingByName != null && existingByName.Id != author.Id)
-            {
-                throw new InvalidOperationException($"Tác giả với tên '{author.Author_name}' đã tồn tại.");
-            }
+            var existingByName = await _authorRepository.GetByNameAsync(dto.Author_name);
+            if (existingByName != null && existingByName.Id != id)
+                throw new InvalidOperationException($"Tác giả với tên '{dto.Author_name}' đã tồn tại.");
 
-            existing.Author_code = author.Author_code;
-            existing.Author_name = author.Author_name;
-            existing.Pen_name = author.Pen_name;
-            existing.Email_author = author.Email_author;
-            existing.Phone_number = author.Phone_number;
-            existing.birth_date = author.birth_date;
-            existing.death_date = author.death_date;
-            existing.Nationality = author.Nationality;
-            existing.Biography = author.Biography;
-            existing.Updated_by = author.Updated_by;
-            existing.Updated_at = DateTime.Now;
+            existing.Author_code = dto.Author_code;
+            existing.Author_name = dto.Author_name;
+            existing.Pen_name = dto.Pen_name;
+            existing.Email_author = dto.Email_author;
+            existing.Phone_number = dto.Phone_number;
+            existing.birth_date = dto.birth_date;
+            existing.death_date = dto.death_date;
+            existing.Nationality = dto.Nationality;
+            existing.Biography = dto.Biography;
+            existing.Updated_by = updatedBy;
+            existing.Updated_at = DateTime.UtcNow;
             await _authorRepository.UpdateAsync(existing);
             return true;
         }

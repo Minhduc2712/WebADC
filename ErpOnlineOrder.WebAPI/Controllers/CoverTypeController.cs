@@ -7,7 +7,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class CoverTypeController : ControllerBase
+    public class CoverTypeController : ApiController
     {
         private readonly ICoverTypeService _coverTypeService;
 
@@ -36,14 +36,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             try
             {
-                var entity = new Cover_type
-                {
-                    Cover_type_code = dto.Cover_type_code,
-                    Cover_type_name = dto.Cover_type_name,
-                    Created_by = 0,
-                    Updated_by = 0
-                };
-                var created = await _coverTypeService.CreateAsync(entity);
+                var created = await _coverTypeService.CreateAsync(dto, GetCurrentUserId());
                 return Ok(MapToDto(created));
             }
             catch (Exception ex)
@@ -58,14 +51,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             if (id != dto.Id) return BadRequest();
             try
             {
-                var entity = new Cover_type
-                {
-                    Id = dto.Id,
-                    Cover_type_code = dto.Cover_type_code,
-                    Cover_type_name = dto.Cover_type_name,
-                    Updated_by = 0
-                };
-                var result = await _coverTypeService.UpdateAsync(entity);
+                var result = await _coverTypeService.UpdateAsync(id, dto, GetCurrentUserId());
                 return Ok(new { success = result });
             }
             catch (Exception ex)

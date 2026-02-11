@@ -125,6 +125,8 @@ namespace ErpOnlineOrder.Application.Services
                 Total_amount = orderDetails.Sum(od => od.Quantity),
                 Total_price = orderDetails.Sum(od => od.Total_price),
                 Order_status = "Pending",
+                Created_by = dto.Created_by,
+                Updated_by = dto.Created_by,
                 Created_at = DateTime.UtcNow,
                 Updated_at = DateTime.UtcNow,
                 Is_deleted = false,
@@ -171,6 +173,8 @@ namespace ErpOnlineOrder.Application.Services
                 Total_amount = orderDetails.Sum(od => od.Quantity),
                 Total_price = orderDetails.Sum(od => od.Total_price),
                 Order_status = "Pending",
+                Created_by = dto.Created_by,
+                Updated_by = dto.Created_by,
                 Created_at = DateTime.UtcNow,
                 Updated_at = DateTime.UtcNow,
                 Is_deleted = false,
@@ -204,6 +208,7 @@ namespace ErpOnlineOrder.Application.Services
                 Is_deleted = false
             }).ToList();
             order.Total_price = order.Order_Details.Sum(od => od.Total_price);
+            order.Updated_by = dto.Updated_by;
             order.Updated_at = DateTime.UtcNow;
             await _orderRepository.UpdateAsync(order);
             return true;
@@ -215,31 +220,38 @@ namespace ErpOnlineOrder.Application.Services
             return true;
         }
 
-        public async Task<Order> CopyOrderAsync(int id)
+        public async Task<Order> CopyOrderAsync(CopyOrderDto dto)
         {
-            var original = await _orderRepository.GetByIdAsync(id);
+            var original = await _orderRepository.GetByIdAsync(dto.SourceOrderId);
             if (original == null) throw new Exception("Order not found");
+
+            var orderDetails = original.Order_Details.Select(od => new Order_detail
+            {
+                Product_id = od.Product_id,
+                Quantity = od.Quantity,
+                Unit_price = od.Unit_price,
+                Total_price = od.Total_price,
+                Created_at = DateTime.UtcNow,
+                Updated_at = DateTime.UtcNow,
+                Is_deleted = false
+            }).ToList();
 
             var copy = new Order
             {
                 Order_code = $"ORD-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 6).ToUpper()}",
                 Order_date = DateTime.UtcNow,
                 Customer_id = original.Customer_id,
-                Total_price = original.Total_price,
+                Shipping_address = original.Shipping_address,
+                note = original.note,
+                Total_amount = orderDetails.Sum(od => od.Quantity),
+                Total_price = orderDetails.Sum(od => od.Total_price),
                 Order_status = "Pending",
+                Created_by = dto.Created_by,
+                Updated_by = dto.Created_by,
                 Created_at = DateTime.UtcNow,
                 Updated_at = DateTime.UtcNow,
                 Is_deleted = false,
-                Order_Details = original.Order_Details.Select(od => new Order_detail
-                {
-                    Product_id = od.Product_id,
-                    Quantity = od.Quantity,
-                    Unit_price = od.Unit_price,
-                    Total_price = od.Total_price,
-                    Created_at = DateTime.UtcNow,
-                    Updated_at = DateTime.UtcNow,
-                    Is_deleted = false
-                }).ToList()
+                Order_Details = orderDetails
             };
 
             await _orderRepository.AddAsync(copy);
@@ -262,21 +274,23 @@ namespace ErpOnlineOrder.Application.Services
             return customerOrders.Select(MapToOrderDTO);
         }
 
-        public async Task<bool> ConfirmOrderAsync(int id)
+        public async Task<bool> ConfirmOrderAsync(ConfirmOrderDto dto)
         {
-            var order = await _orderRepository.GetByIdAsync(id);
+            var order = await _orderRepository.GetByIdAsync(dto.OrderId);
             if (order == null) return false;
             order.Order_status = "Confirmed";
+            order.Updated_by = dto.Updated_by;
             order.Updated_at = DateTime.UtcNow;
             await _orderRepository.UpdateAsync(order);
             return true;
         }
 
-        public async Task<bool> CancelOrderAsync(int id)
+        public async Task<bool> CancelOrderAsync(CancelOrderDto dto)
         {
-            var order = await _orderRepository.GetByIdAsync(id);
+            var order = await _orderRepository.GetByIdAsync(dto.OrderId);
             if (order == null) return false;
             order.Order_status = "Cancelled";
+            order.Updated_by = dto.Updated_by;
             order.Updated_at = DateTime.UtcNow;
             await _orderRepository.UpdateAsync(order);
             return true;

@@ -1,3 +1,4 @@
+using ErpOnlineOrder.Application.DTOs.WarehouseDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Models;
@@ -28,51 +29,50 @@ namespace ErpOnlineOrder.Application.Services
             return await _warehouseRepository.GetByProvinceIdAsync(provinceId);
         }
 
-        public async Task<Warehouse> CreateAsync(Warehouse warehouse)
+        public async Task<Warehouse> CreateAsync(CreateWarehouseDto dto, int createdBy)
         {
-            // Kiểm tra trùng lặp Warehouse_code
-            var existingByCode = await _warehouseRepository.GetByCodeAsync(warehouse.Warehouse_code);
+            var existingByCode = await _warehouseRepository.GetByCodeAsync(dto.Warehouse_code);
             if (existingByCode != null)
-            {
-                throw new InvalidOperationException($"Kho hàng với mã '{warehouse.Warehouse_code}' đã tồn tại.");
-            }
+                throw new InvalidOperationException($"Kho hàng với mã '{dto.Warehouse_code}' đã tồn tại.");
 
-            // Kiểm tra trùng lặp Warehouse_name
-            var existingByName = await _warehouseRepository.GetByNameAsync(warehouse.Warehouse_name);
+            var existingByName = await _warehouseRepository.GetByNameAsync(dto.Warehouse_name);
             if (existingByName != null)
-            {
-                throw new InvalidOperationException($"Kho hàng với tên '{warehouse.Warehouse_name}' đã tồn tại.");
-            }
+                throw new InvalidOperationException($"Kho hàng với tên '{dto.Warehouse_name}' đã tồn tại.");
 
-            warehouse.Created_at = DateTime.Now;
-            warehouse.Updated_at = DateTime.Now;
-            return await _warehouseRepository.AddAsync(warehouse);
+            var warehouse = new Warehouse
+            {
+                Warehouse_code = dto.Warehouse_code,
+                Warehouse_name = dto.Warehouse_name,
+                Warehouse_address = dto.Warehouse_address,
+                Province_id = dto.Province_id,
+                Created_by = createdBy,
+                Updated_by = createdBy,
+                Created_at = DateTime.UtcNow,
+                Updated_at = DateTime.UtcNow
+            };
+            await _warehouseRepository.AddAsync(warehouse);
+            return warehouse;
         }
 
-        public async Task<bool> UpdateAsync(Warehouse warehouse)
+        public async Task<bool> UpdateAsync(UpdateWarehouseDto dto, int updatedBy)
         {
-            var existing = await _warehouseRepository.GetByIdAsync(warehouse.Id);
+            var existing = await _warehouseRepository.GetByIdAsync(dto.Id);
             if (existing == null) return false;
 
-            // Kiểm tra trùng lặp khi update (trừ bản ghi hiện tại)
-            var existingByCode = await _warehouseRepository.GetByCodeAsync(warehouse.Warehouse_code);
-            if (existingByCode != null && existingByCode.Id != warehouse.Id)
-            {
-                throw new InvalidOperationException($"Kho hàng với mã '{warehouse.Warehouse_code}' đã tồn tại.");
-            }
+            var existingByCode = await _warehouseRepository.GetByCodeAsync(dto.Warehouse_code);
+            if (existingByCode != null && existingByCode.Id != dto.Id)
+                throw new InvalidOperationException($"Kho hàng với mã '{dto.Warehouse_code}' đã tồn tại.");
 
-            var existingByName = await _warehouseRepository.GetByNameAsync(warehouse.Warehouse_name);
-            if (existingByName != null && existingByName.Id != warehouse.Id)
-            {
-                throw new InvalidOperationException($"Kho hàng với tên '{warehouse.Warehouse_name}' đã tồn tại.");
-            }
+            var existingByName = await _warehouseRepository.GetByNameAsync(dto.Warehouse_name);
+            if (existingByName != null && existingByName.Id != dto.Id)
+                throw new InvalidOperationException($"Kho hàng với tên '{dto.Warehouse_name}' đã tồn tại.");
 
-            existing.Warehouse_code = warehouse.Warehouse_code;
-            existing.Warehouse_name = warehouse.Warehouse_name;
-            existing.Warehouse_address = warehouse.Warehouse_address;
-            existing.Province_id = warehouse.Province_id;
-            existing.Updated_by = warehouse.Updated_by;
-            existing.Updated_at = DateTime.Now;
+            existing.Warehouse_code = dto.Warehouse_code;
+            existing.Warehouse_name = dto.Warehouse_name;
+            existing.Warehouse_address = dto.Warehouse_address;
+            existing.Province_id = dto.Province_id;
+            existing.Updated_by = updatedBy;
+            existing.Updated_at = DateTime.UtcNow;
             await _warehouseRepository.UpdateAsync(existing);
             return true;
         }

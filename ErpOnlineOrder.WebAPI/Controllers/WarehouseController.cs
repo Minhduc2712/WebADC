@@ -7,7 +7,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class WarehouseController : ControllerBase
+    public class WarehouseController : ApiController
     {
         private readonly IWarehouseService _warehouseService;
 
@@ -43,16 +43,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             try
             {
-                var entity = new Warehouse
-                {
-                    Warehouse_code = dto.Warehouse_code,
-                    Warehouse_name = dto.Warehouse_name,
-                    Warehouse_address = dto.Warehouse_address,
-                    Province_id = dto.Province_id,
-                    Created_by = 0,
-                    Updated_by = 0
-                };
-                var created = await _warehouseService.CreateAsync(entity);
+                var created = await _warehouseService.CreateAsync(dto, GetCurrentUserId());
                 return Ok(MapToDto(created));
             }
             catch (Exception ex)
@@ -67,16 +58,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             if (id != dto.Id) return BadRequest();
             try
             {
-                var entity = new Warehouse
-                {
-                    Id = dto.Id,
-                    Warehouse_code = dto.Warehouse_code,
-                    Warehouse_name = dto.Warehouse_name,
-                    Warehouse_address = dto.Warehouse_address,
-                    Province_id = dto.Province_id,
-                    Updated_by = 0
-                };
-                var result = await _warehouseService.UpdateAsync(entity);
+                var result = await _warehouseService.UpdateAsync(dto, GetCurrentUserId());
                 return Ok(new { success = result });
             }
             catch (Exception ex)

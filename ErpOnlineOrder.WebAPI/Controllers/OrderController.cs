@@ -7,7 +7,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class OrderController : ControllerBase
+    public class OrderController : ApiController
     {
         private readonly IOrderService _orderService;
 
@@ -33,6 +33,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto model)
         {
+            model.Created_by = GetCurrentUserId();
             var result = await _orderService.CreateOrderAsync(model);
             if (!result.Success)
             {
@@ -43,7 +44,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [HttpPost("admin")]
         public async Task<IActionResult> CreateOrderAdmin([FromBody] CreateOrderDto model)
         {
-            // TODO: Ki?m tra quy?n admin
+            model.Created_by = GetCurrentUserId();
             var result = await _orderService.CreateOrderWithoutValidationAsync(model);
             if (!result.Success)
             {
@@ -57,6 +58,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             try
             {
+                model.Updated_by = GetCurrentUserId();
                 var result = await _orderService.UpdateOrderAsync(model);
                 if (!result) return NotFound();
                 return Ok(new { success = result });
@@ -86,7 +88,8 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             try
             {
-                var copy = await _orderService.CopyOrderAsync(id);
+                var dto = new CopyOrderDto { SourceOrderId = id, Created_by = GetCurrentUserId() };
+                var copy = await _orderService.CopyOrderAsync(dto);
                 return Ok(copy);
             }
             catch (Exception ex)
@@ -131,7 +134,8 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             try
             {
-                var result = await _orderService.ConfirmOrderAsync(id);
+                var dto = new ConfirmOrderDto { OrderId = id, Updated_by = GetCurrentUserId() };
+                var result = await _orderService.ConfirmOrderAsync(dto);
                 if (!result) return NotFound();
                 return Ok(new { success = result });
             }
@@ -146,7 +150,8 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             try
             {
-                var result = await _orderService.CancelOrderAsync(id);
+                var dto = new CancelOrderDto { OrderId = id, Updated_by = GetCurrentUserId() };
+                var result = await _orderService.CancelOrderAsync(dto);
                 if (!result) return NotFound();
                 return Ok(new { success = result });
             }

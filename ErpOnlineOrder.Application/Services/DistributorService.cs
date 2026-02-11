@@ -1,3 +1,4 @@
+using ErpOnlineOrder.Application.DTOs.DistributorDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Models;
@@ -25,53 +26,52 @@ namespace ErpOnlineOrder.Application.Services
             return await _distributorRepository.GetAllAsync();
         }
 
-        public async Task<Distributor> CreateDistributorAsync(Distributor distributor)
+        public async Task<Distributor> CreateDistributorAsync(CreateDistributorDto dto, int createdBy)
         {
-            // Kiểm tra trùng lặp Distributor_code
-            var existingByCode = await _distributorRepository.GetByCodeAsync(distributor.Distributor_code);
+            var existingByCode = await _distributorRepository.GetByCodeAsync(dto.Distributor_code);
             if (existingByCode != null)
-            {
-                throw new InvalidOperationException($"Nhà phân phối với mã '{distributor.Distributor_code}' đã tồn tại.");
-            }
+                throw new InvalidOperationException($"Nhà phân phối với mã '{dto.Distributor_code}' đã tồn tại.");
 
-            // Kiểm tra trùng lặp Distributor_name
-            var existingByName = await _distributorRepository.GetByNameAsync(distributor.Distributor_name);
+            var existingByName = await _distributorRepository.GetByNameAsync(dto.Distributor_name);
             if (existingByName != null)
-            {
-                throw new InvalidOperationException($"Nhà phân phối với tên '{distributor.Distributor_name}' đã tồn tại.");
-            }
+                throw new InvalidOperationException($"Nhà phân phối với tên '{dto.Distributor_name}' đã tồn tại.");
 
-            distributor.Created_at = DateTime.UtcNow;
-            distributor.Updated_at = DateTime.UtcNow;
-            distributor.Is_deleted = false;
+            var distributor = new Distributor
+            {
+                Distributor_code = dto.Distributor_code,
+                Distributor_name = dto.Distributor_name,
+                Distributor_address = dto.Distributor_address,
+                Distributor_phone = dto.Distributor_phone,
+                Distributor_email = dto.Distributor_email,
+                Created_by = createdBy,
+                Updated_by = createdBy,
+                Created_at = DateTime.UtcNow,
+                Updated_at = DateTime.UtcNow,
+                Is_deleted = false
+            };
             await _distributorRepository.AddAsync(distributor);
             return distributor;
         }
 
-        public async Task<bool> UpdateDistributorAsync(Distributor distributor)
+        public async Task<bool> UpdateDistributorAsync(UpdateDistributorDto dto, int updatedBy)
         {
-            var existing = await _distributorRepository.GetByIdAsync(distributor.Id);
+            var existing = await _distributorRepository.GetByIdAsync(dto.Id);
             if (existing == null) return false;
 
-            // Kiểm tra trùng lặp khi update (trừ bản ghi hiện tại)
-            var existingByCode = await _distributorRepository.GetByCodeAsync(distributor.Distributor_code);
-            if (existingByCode != null && existingByCode.Id != distributor.Id)
-            {
-                throw new InvalidOperationException($"Nhà phân phối với mã '{distributor.Distributor_code}' đã tồn tại.");
-            }
+            var existingByCode = await _distributorRepository.GetByCodeAsync(dto.Distributor_code);
+            if (existingByCode != null && existingByCode.Id != dto.Id)
+                throw new InvalidOperationException($"Nhà phân phối với mã '{dto.Distributor_code}' đã tồn tại.");
 
-            var existingByName = await _distributorRepository.GetByNameAsync(distributor.Distributor_name);
-            if (existingByName != null && existingByName.Id != distributor.Id)
-            {
-                throw new InvalidOperationException($"Nhà phân phối với tên '{distributor.Distributor_name}' đã tồn tại.");
-            }
+            var existingByName = await _distributorRepository.GetByNameAsync(dto.Distributor_name);
+            if (existingByName != null && existingByName.Id != dto.Id)
+                throw new InvalidOperationException($"Nhà phân phối với tên '{dto.Distributor_name}' đã tồn tại.");
 
-            existing.Distributor_code = distributor.Distributor_code;
-            existing.Distributor_name = distributor.Distributor_name;
-            existing.Distributor_address = distributor.Distributor_address;
-            existing.Distributor_phone = distributor.Distributor_phone;
-            existing.Distributor_email = distributor.Distributor_email;
-            existing.Updated_by = distributor.Updated_by;
+            existing.Distributor_code = dto.Distributor_code;
+            existing.Distributor_name = dto.Distributor_name;
+            existing.Distributor_address = dto.Distributor_address;
+            existing.Distributor_phone = dto.Distributor_phone;
+            existing.Distributor_email = dto.Distributor_email;
+            existing.Updated_by = updatedBy;
             existing.Updated_at = DateTime.UtcNow;
             await _distributorRepository.UpdateAsync(existing);
             return true;

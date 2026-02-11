@@ -1,3 +1,4 @@
+using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Models;
@@ -25,51 +26,46 @@ namespace ErpOnlineOrder.Application.Services
             return await _categoryRepository.GetAllAsync();
         }
 
-        public async Task<Category> CreateCategoryAsync(Category category)
+        public async Task<Category> CreateCategoryAsync(CreateCategoryDto dto, int createdBy)
         {
-            // Kiểm tra trùng lặp Category_code
-            var existingByCode = await _categoryRepository.GetByCodeAsync(category.Category_code);
+            var existingByCode = await _categoryRepository.GetByCodeAsync(dto.Category_code);
             if (existingByCode != null)
-            {
-                throw new InvalidOperationException($"Danh mục với mã '{category.Category_code}' đã tồn tại.");
-            }
+                throw new InvalidOperationException($"Danh mục với mã '{dto.Category_code}' đã tồn tại.");
 
-            // Kiểm tra trùng lặp Category_name
-            var existingByName = await _categoryRepository.GetByNameAsync(category.Category_name);
+            var existingByName = await _categoryRepository.GetByNameAsync(dto.Category_name);
             if (existingByName != null)
-            {
-                throw new InvalidOperationException($"Danh mục với tên '{category.Category_name}' đã tồn tại.");
-            }
+                throw new InvalidOperationException($"Danh mục với tên '{dto.Category_name}' đã tồn tại.");
 
-            category.Created_at = DateTime.UtcNow;
-            category.Updated_at = DateTime.UtcNow;
-            category.Is_deleted = false;
+            var category = new Category
+            {
+                Category_code = dto.Category_code,
+                Category_name = dto.Category_name,
+                Created_by = createdBy,
+                Updated_by = createdBy,
+                Created_at = DateTime.UtcNow,
+                Updated_at = DateTime.UtcNow,
+                Is_deleted = false
+            };
             await _categoryRepository.AddAsync(category);
             return category;
         }
 
-        public async Task<bool> UpdateCategoryAsync(Category category)
+        public async Task<bool> UpdateCategoryAsync(int id, UpdateCategoryDto dto, int updatedBy)
         {
-            var existing = await _categoryRepository.GetByIdAsync(category.Id);
-            if (existing == null)
-                return false;
+            var existing = await _categoryRepository.GetByIdAsync(id);
+            if (existing == null) return false;
 
-            // Kiểm tra trùng lặp khi update (trừ bản ghi hiện tại)
-            var existingByCode = await _categoryRepository.GetByCodeAsync(category.Category_code);
-            if (existingByCode != null && existingByCode.Id != category.Id)
-            {
-                throw new InvalidOperationException($"Danh mục với mã '{category.Category_code}' đã tồn tại.");
-            }
+            var existingByCode = await _categoryRepository.GetByCodeAsync(dto.Category_code);
+            if (existingByCode != null && existingByCode.Id != id)
+                throw new InvalidOperationException($"Danh mục với mã '{dto.Category_code}' đã tồn tại.");
 
-            var existingByName = await _categoryRepository.GetByNameAsync(category.Category_name);
-            if (existingByName != null && existingByName.Id != category.Id)
-            {
-                throw new InvalidOperationException($"Danh mục với tên '{category.Category_name}' đã tồn tại.");
-            }
+            var existingByName = await _categoryRepository.GetByNameAsync(dto.Category_name);
+            if (existingByName != null && existingByName.Id != id)
+                throw new InvalidOperationException($"Danh mục với tên '{dto.Category_name}' đã tồn tại.");
 
-            existing.Category_code = category.Category_code;
-            existing.Category_name = category.Category_name;
-            existing.Updated_by = category.Updated_by;
+            existing.Category_code = dto.Category_code;
+            existing.Category_name = dto.Category_name;
+            existing.Updated_by = updatedBy;
             existing.Updated_at = DateTime.UtcNow;
             await _categoryRepository.UpdateAsync(existing);
             return true;

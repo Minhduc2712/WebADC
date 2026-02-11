@@ -1,10 +1,11 @@
+using ErpOnlineOrder.Application.DTOs;
+using ErpOnlineOrder.Application.DTOs.ProductDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Models;
-using ErpOnlineOrder.Application.DTOs;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace ErpOnlineOrder.Application.Services
 {
@@ -41,82 +42,102 @@ namespace ErpOnlineOrder.Application.Services
             return products.Select(p => MapToDto(p));
         }
 
-        public async Task<Product> CreateProductAsync(Product product)
+        public async Task<ProductDTO> CreateProductAsync(CreateProductDto dto, int createdBy)
         {
-            // Kiểm tra trùng lặp Product_code (mã sản phẩm phải duy nhất)
-            var existingByCode = await _productRepository.GetByCodeAsync(product.Product_code);
+            var existingByCode = await _productRepository.GetByCodeAsync(dto.Product_code);
             if (existingByCode != null)
-            {
-                throw new InvalidOperationException($"Sản phẩm với mã '{product.Product_code}' đã tồn tại.");
-            }
+                throw new InvalidOperationException($"Sản phẩm với mã '{dto.Product_code}' đã tồn tại.");
 
-            product.Created_at = DateTime.UtcNow;
-            product.Updated_at = DateTime.UtcNow;
-            return await _productRepository.AddAsync(product);
+            var now = DateTime.UtcNow;
+            var product = new Product
+            {
+                Product_code = dto.Product_code,
+                Product_name = dto.Product_name,
+                Product_price = dto.Product_price ?? "",
+                Product_link = dto.Product_link,
+                Product_description = dto.Product_description,
+                Tax_rate = dto.Tax_rate ?? 0,
+                Cover_type_id = dto.Cover_type_id,
+                Publisher_id = dto.Publisher_id,
+                Distributor_id = dto.Distributor_id,
+                Created_by = createdBy,
+                Updated_by = createdBy,
+                Created_at = now,
+                Updated_at = now,
+                Product_Categories = dto.CategoryIds?.Select(cid => new Product_category
+                {
+                    Category_id = cid,
+                    Created_by = createdBy,
+                    Updated_by = createdBy,
+                    Created_at = now,
+                    Updated_at = now,
+                    Is_deleted = false
+                }).ToList() ?? new List<Product_category>(),
+                Product_Authors = dto.AuthorIds?.Select(aid => new Product_author
+                {
+                    Author_id = aid,
+                    Created_by = createdBy,
+                    Updated_by = createdBy,
+                    Created_at = now,
+                    Updated_at = now,
+                    Is_deleted = false
+                }).ToList() ?? new List<Product_author>()
+            };
+            var created = await _productRepository.AddAsync(product);
+            return MapToDto(created);
         }
 
-        public async Task<bool> UpdateProductAsync(Product product)
+        public async Task<bool> UpdateProductAsync(int id, UpdateProductDto dto, int updatedBy)
         {
-            var existing = await _productRepository.GetByIdAsync(product.Id);
+            var existing = await _productRepository.GetByIdAsync(id);
             if (existing == null) return false;
 
-            // Kiểm tra trùng lặp mã khi update (trừ bản ghi hiện tại)
-            var existingByCode = await _productRepository.GetByCodeAsync(product.Product_code);
-            if (existingByCode != null && existingByCode.Id != product.Id)
-            {
-                throw new InvalidOperationException($"Sản phẩm với mã '{product.Product_code}' đã tồn tại.");
-            }
+            var existingByCode = await _productRepository.GetByCodeAsync(dto.Product_code);
+            if (existingByCode != null && existingByCode.Id != id)
+                throw new InvalidOperationException($"Sản phẩm với mã '{dto.Product_code}' đã tồn tại.");
 
-            existing.Product_code = product.Product_code;
-            existing.Product_name = product.Product_name;
-            existing.Product_price = product.Product_price;
-            existing.Product_link = product.Product_link;
-            existing.Product_description = product.Product_description;
-            existing.Tax_rate = product.Tax_rate;
-            existing.Cover_type_id = product.Cover_type_id;
-            existing.Publisher_id = product.Publisher_id;
-            existing.Distributor_id = product.Distributor_id;
-            existing.Updated_by = product.Updated_by;
+            existing.Product_code = dto.Product_code;
+            existing.Product_name = dto.Product_name;
+            existing.Product_price = dto.Product_price ?? "";
+            existing.Product_link = dto.Product_link;
+            existing.Product_description = dto.Product_description;
+            existing.Tax_rate = dto.Tax_rate ?? 0;
+            existing.Cover_type_id = dto.Cover_type_id;
+            existing.Publisher_id = dto.Publisher_id;
+            existing.Distributor_id = dto.Distributor_id;
+            existing.Updated_by = updatedBy;
             existing.Updated_at = DateTime.UtcNow;
 
-            // Đồng bộ Product_Categories và Product_Authors
-            if (product.Product_Categories != null)
+            var now = DateTime.UtcNow;
+            existing.Product_Categories ??= new List<Product_category>();
+            existing.Product_Categories.Clear();
+            foreach (var cid in dto.CategoryIds ?? Array.Empty<int>())
             {
-                existing.Product_Categories ??= new List<Product_category>();
-                existing.Product_Categories.Clear();
-                var now = DateTime.UtcNow;
-                foreach (var pc in product.Product_Categories)
+                existing.Product_Categories.Add(new Product_category
                 {
-                    existing.Product_Categories.Add(new Product_category
-                    {
-                        Product_id = existing.Id,
-                        Category_id = pc.Category_id,
-                        Created_by = pc.Created_by,
-                        Updated_by = product.Updated_by,
-                        Created_at = now,
-                        Updated_at = now,
-                        Is_deleted = false
-                    });
-                }
+                    Product_id = existing.Id,
+                    Category_id = cid,
+                    Created_by = updatedBy,
+                    Updated_by = updatedBy,
+                    Created_at = now,
+                    Updated_at = now,
+                    Is_deleted = false
+                });
             }
-            if (product.Product_Authors != null)
+            existing.Product_Authors ??= new List<Product_author>();
+            existing.Product_Authors.Clear();
+            foreach (var aid in dto.AuthorIds ?? Array.Empty<int>())
             {
-                existing.Product_Authors ??= new List<Product_author>();
-                existing.Product_Authors.Clear();
-                var now = DateTime.UtcNow;
-                foreach (var pa in product.Product_Authors)
+                existing.Product_Authors.Add(new Product_author
                 {
-                    existing.Product_Authors.Add(new Product_author
-                    {
-                        Product_id = existing.Id,
-                        Author_id = pa.Author_id,
-                        Created_by = pa.Created_by,
-                        Updated_by = product.Updated_by,
-                        Created_at = now,
-                        Updated_at = now,
-                        Is_deleted = false
-                    });
-                }
+                    Product_id = existing.Id,
+                    Author_id = aid,
+                    Created_by = updatedBy,
+                    Updated_by = updatedBy,
+                    Created_at = now,
+                    Updated_at = now,
+                    Is_deleted = false
+                });
             }
 
             await _productRepository.UpdateAsync(existing);

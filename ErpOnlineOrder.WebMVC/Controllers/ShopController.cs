@@ -199,6 +199,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 {
                     Order_date = DateTime.Now,
                     Customer_id = customer.Id,
+                    Created_by = userId,
                     Order_details = request.Items.Select(item => new OrderDetailDto
                     {
                         Product_id = item.ProductId,
@@ -249,7 +250,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return Json(new { success = false, message = "Không tìm thấy đơn hàng." });
                 }
 
-                var result = await _orderService.CancelOrderAsync(id);
+                var result = await _orderService.CancelOrderAsync(new CancelOrderDto { OrderId = id, Updated_by = userId });
                 if (result)
                 {
                     return Json(new { success = true, message = "Hủy đơn hàng thành công." });

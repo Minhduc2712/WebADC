@@ -1,4 +1,4 @@
-﻿using BCrypt.Net;
+using BCrypt.Net;
 using ErpOnlineOrder.Application.DTOs.AuthDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Security;
@@ -6,8 +6,8 @@ using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Enums;
 using ErpOnlineOrder.Domain.Models;
 using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Net.WebSockets;
 using System.Threading.Tasks;
 
 namespace ErpOnlineOrder.Application.Services
@@ -15,17 +15,19 @@ namespace ErpOnlineOrder.Application.Services
     public class AuthService : IAuthService
     {
         private readonly IUserRepository _userRepository;
-
         private readonly IRoleRepository _roleRepository;
-
+        private readonly IPermissionService _permissionService;
         private readonly IPasswordHasher _passwordHasher;
+
         public AuthService(
-        IUserRepository userRepository,
-        IRoleRepository roleRepository,
-        IPasswordHasher passwordHasher)
+            IUserRepository userRepository,
+            IRoleRepository roleRepository,
+            IPermissionService permissionService,
+            IPasswordHasher passwordHasher)
         {
             _userRepository = userRepository;
             _roleRepository = roleRepository;
+            _permissionService = permissionService;
             _passwordHasher = passwordHasher;
         }
 
@@ -182,9 +184,240 @@ namespace ErpOnlineOrder.Application.Services
             return true;
         }
 
-        //public async Task<bool> LogoutAsync()
-        //{
-            
-        //}
+        public async Task<LoginResponseDto?> GetLoginResponseAsync(LoginUserDto dto)
+        {
+            var username = await LoginAsync(dto);
+            if (string.IsNullOrEmpty(username)) return null;
+
+            var user = await _userRepository.FindByIdentifierAsync(dto.Identifier ?? "");
+            if (user == null || !user.Is_active || user.Is_deleted) return null;
+
+            var permissions = await _permissionService.GetUserPermissionsAsync(user.Id);
+            var roles = user.User_roles?
+                .Where(ur => !ur.Is_deleted && ur.Role != null && !ur.Role.Is_deleted)
+                .Select(ur => ur.Role!.Role_name)
+                .ToList() ?? new List<string>();
+
+            var fullName = user.Staff?.Full_name ?? user.Customer?.Full_name ?? user.Username;
+            var userType = user.Staff != null ? "Staff" : (user.Customer != null ? "Customer" : "");
+
+            return new LoginResponseDto
+            {
+                UserId = user.Id,
+                Username = user.Username ?? "",
+                Email = user.Email,
+                FullName = fullName ?? user.Username ?? "",
+                Roles = roles,
+                Permissions = permissions.ToList(),
+                StaffCode = user.Staff?.Staff_code,
+                CustomerCode = user.Customer?.Customer_code,
+                UserType = userType
+            };
+        }
+
+        public async Task<CheckUserPermissionsResultDto?> CheckUserPermissionsAsync(int userId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null) return null;
+
+            var permissions = await _permissionService.GetUserPermissionsAsync(userId);
+            var fullPermissions = await _permissionService.GetUserFullPermissionsAsync(userId);
+
+            var roles = user.User_roles?
+                .Where(ur => ur?.Role != null)
+                .Select(ur => new RoleInfoDto
+                {
+                    RoleId = ur!.Role_id,
+                    RoleName = ur.Role?.Role_name,
+                    PermissionCount = ur.Role?.Role_Permissions?.Count(rp => !rp.Is_deleted) ?? 0
+                })
+                .ToList() ?? new List<RoleInfoDto>();
+
+            return new CheckUserPermissionsResultDto
+            {
+                UserId = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                IsActive = user.Is_active,
+                Roles = roles,
+                AllPermissionCodes = permissions.ToList(),
+                PermissionCount = permissions.Count(),
+                HasStaffView = permissions.Contains("STAFF_VIEW"),
+                FullPermissions = fullPermissions
+            };
+        }
+
+        public async Task<GrantAllPermissionsResultDto?> GrantAllPermissionsAsync(int userId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null) return null;
+
+            var adminRole = await _roleRepository.GetByNameAsync("ROLE_ADMIN");
+            if (adminRole == null) return new GrantAllPermissionsResultDto
+            {
+                Success = false,
+                Message = "Role ROLE_ADMIN chua ton tai",
+                UserId = userId,
+                RoleId = 0,
+                RoleName = null
+            };
+
+            await _userRepository.AssignRoleAsync(userId, adminRole.Id);
+
+            return new GrantAllPermissionsResultDto
+            {
+                Success = true,
+                Message = $"Da gan role ROLE_ADMIN cho user {user.Username}",
+                UserId = userId,
+                RoleId = adminRole.Id,
+                RoleName = adminRole.Role_name
+            };
+        }
+
+        public async Task<SeedAdminResultDto> SeedAdminAsync(int createdBy)
+        {
+            var newPassword = "Admin@123";
+            var newHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+
+            var existingAdmin = await _userRepository.GetByUsernameAsync("admin");
+            if (existingAdmin != null)
+            {
+                existingAdmin.Password = newHash;
+                existingAdmin.Is_active = true;
+                existingAdmin.Is_deleted = false;
+                await _userRepository.UpdateAsync(existingAdmin);
+
+                return new SeedAdminResultDto
+                {
+                    Success = true,
+                    Message = "Da cap nhat password cho admin",
+                    Username = "admin",
+                    Password = newPassword,
+                    Hash = newHash,
+                    Verified = BCrypt.Net.BCrypt.Verify(newPassword, newHash)
+                };
+            }
+
+            var adminRole = await _roleRepository.GetByNameAsync("ROLE_ADMIN");
+            if (adminRole == null)
+                throw new InvalidOperationException("Role ROLE_ADMIN chua ton tai. Hay chay SeedData.sql truoc.");
+
+            var user = new User
+            {
+                Username = "admin",
+                Email = "admin@erponline.com",
+                Password = newHash,
+                Is_active = true,
+                Created_by = createdBy,
+                Created_at = DateTime.UtcNow,
+                Updated_by = createdBy,
+                Updated_at = DateTime.UtcNow,
+                Is_deleted = false,
+                User_roles = new List<User_role> { new User_role { Role_id = adminRole.Id } },
+                Staff = new Staff
+                {
+                    Staff_code = "ADMIN001",
+                    Full_name = "Quan tri vien",
+                    Phone_number = "0123456789",
+                    Created_by = createdBy,
+                    Created_at = DateTime.UtcNow,
+                    Updated_by = createdBy,
+                    Updated_at = DateTime.UtcNow,
+                    Is_deleted = false
+                }
+            };
+
+            await _userRepository.AddAsync(user);
+
+            return new SeedAdminResultDto
+            {
+                Success = true,
+                Message = "Da tao user admin thanh cong",
+                Username = "admin",
+                Password = newPassword,
+                Hash = newHash,
+                Verified = true
+            };
+        }
+
+        public async Task<CheckAdminResultDto?> CheckAdminAsync()
+        {
+            var admin = await _userRepository.GetByUsernameAsync("admin");
+            if (admin == null) return null;
+
+            var testPassword = "Admin@123";
+            return new CheckAdminResultDto
+            {
+                Id = admin.Id,
+                Username = admin.Username,
+                Email = admin.Email,
+                IsActive = admin.Is_active,
+                IsDeleted = admin.Is_deleted,
+                PasswordHash = admin.Password,
+                PasswordHashLength = admin.Password?.Length,
+                TestPassword = testPassword,
+                VerifyResult = BCrypt.Net.BCrypt.Verify(testPassword, admin.Password)
+            };
+        }
+
+        public async Task<bool> DeleteUserAsync(int id)
+        {
+            await _userRepository.DeleteAsync(id);
+            return true;
+        }
+
+        public async Task<DebugUserPermissionsResultDto?> DebugUserPermissionsAsync(int userId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null) return null;
+
+            var activeUserRoles = user.User_roles?.Where(ur => !ur.Is_deleted).ToList() ?? new List<User_role>();
+            var roleDetails = activeUserRoles.Select(ur => new DebugRoleDetailDto
+            {
+                UserRoleId = ur.Id,
+                RoleId = ur.Role_id,
+                RoleName = ur.Role?.Role_name ?? "NULL",
+                RoleIsDeleted = ur.Role?.Is_deleted ?? true,
+                RolePermissionsCount = ur.Role?.Role_Permissions?.Count ?? 0,
+                ActiveRolePermissions = ur.Role?.Role_Permissions?
+                    .Where(rp => !rp.Is_deleted && rp.Permission != null && !rp.Permission.Is_deleted)
+                    .Select(rp => rp.Permission!.Permission_code)
+                    .ToList() ?? new List<string>()
+            }).ToList();
+
+            var permissions = await _permissionService.GetUserPermissionsAsync(userId);
+
+            return new DebugUserPermissionsResultDto
+            {
+                UserId = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                TotalUserRoles = user.User_roles?.Count ?? 0,
+                ActiveUserRolesCount = activeUserRoles.Count,
+                RoleDetails = roleDetails,
+                AllPermissionCodes = permissions.ToList(),
+                PermissionCount = permissions.Count(),
+                HasStaffView = permissions.Contains("STAFF_VIEW"),
+                HasProductView = permissions.Contains("PRODUCT_VIEW"),
+                HasOrderView = permissions.Contains("ORDER_VIEW")
+            };
+        }
+
+        public async Task<DebugRolePermissionsResultDto?> DebugRolePermissionsAsync(int roleId)
+        {
+            var role = await _roleRepository.GetByIdAsync(roleId);
+            if (role == null) return null;
+
+            var rolePermissions = await _permissionService.GetRolePermissionsAsync(roleId);
+
+            return new DebugRolePermissionsResultDto
+            {
+                RoleId = role.Id,
+                RoleName = role.Role_name,
+                IsDeleted = role.Is_deleted,
+                PermissionCount = rolePermissions?.Permissions?.Count ?? 0,
+                Permissions = rolePermissions?.Permissions?.Select(p => p.Permission_code).ToList() ?? new List<string>()
+            };
+        }
     }
 }

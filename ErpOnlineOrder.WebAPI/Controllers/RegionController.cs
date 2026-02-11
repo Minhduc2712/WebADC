@@ -6,7 +6,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class RegionController : ControllerBase
+    public class RegionController : ApiController
     {
         private readonly IRegionService _regionService;
 
@@ -35,10 +35,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             try
             {
-                // TODO: L?y userId t? token
-                int createdBy = 1;
-
-                var created = await _regionService.CreateRegionAsync(dto, createdBy);
+                var created = await _regionService.CreateRegionAsync(dto, GetCurrentUserId());
                 if (created == null)
                 {
                     return BadRequest(new { message = "Không th? t?o khu v?c" });
@@ -56,10 +53,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 dto.Id = id;
-                // TODO: L?y userId t? token
-                int updatedBy = 1;
-
-                var result = await _regionService.UpdateRegionAsync(dto, updatedBy);
+                var result = await _regionService.UpdateRegionAsync(dto, GetCurrentUserId());
                 if (!result)
                 {
                     return NotFound(new { message = "Khu v?c không t?n t?i" });

@@ -1,4 +1,5 @@
-﻿using ErpOnlineOrder.Domain.Models;
+using ErpOnlineOrder.Application.DTOs.WarehouseDTOs;
+using ErpOnlineOrder.Domain.Models;
 
 namespace ErpOnlineOrder.Application.Interfaces.Services
 {
@@ -7,8 +8,8 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
         Task<Warehouse?> GetByIdAsync(int id);
         Task<IEnumerable<Warehouse>> GetAllAsync();
         Task<IEnumerable<Warehouse>> GetByProvinceIdAsync(int provinceId);
-        Task<Warehouse> CreateAsync(Warehouse warehouse);
-        Task<bool> UpdateAsync(Warehouse warehouse);
+        Task<Warehouse> CreateAsync(CreateWarehouseDto dto, int createdBy);
+        Task<bool> UpdateAsync(UpdateWarehouseDto dto, int updatedBy);
         Task<bool> DeleteAsync(int id);
     }
 }

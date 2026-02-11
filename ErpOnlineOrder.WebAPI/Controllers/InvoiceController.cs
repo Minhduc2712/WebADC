@@ -8,7 +8,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class InvoiceController : ControllerBase
+    public class InvoiceController : ApiController
     {
         private readonly IInvoiceService _invoiceService;
 
@@ -35,7 +35,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [HttpPost("split")]
         public async Task<IActionResult> SplitInvoice([FromBody] SplitInvoiceDto dto)
         {
-            var userId = int.TryParse(User.FindFirst("UserId")?.Value, out int uid) ? uid : 0;
+            var userId = GetCurrentUserId();
             var result = await _invoiceService.SplitInvoiceAsync(dto, userId);
             if (!result.Success)
             {
@@ -46,7 +46,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [HttpPost("merge")]
         public async Task<IActionResult> MergeInvoices([FromBody] MergeInvoicesDto dto)
         {
-            var userId = int.TryParse(User.FindFirst("UserId")?.Value, out int uid) ? uid : 0;
+            var userId = GetCurrentUserId();
             var result = await _invoiceService.MergeInvoicesAsync(dto, userId);
             if (!result.Success)
             {
@@ -61,9 +61,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _invoiceService.UndoSplitAsync(id, userId);
             if (!result)
             {
-                return BadRequest(new { message = "Kh?ng th? ho?n t?c" });
+                return BadRequest(new { message = "Không thể hoàn tác" });
             }
-            return Ok(new { success = true, message = "?? ho?n t?c t?ch h?a don" });
+            return Ok(new { success = true, message = "Đã hoàn tác tách hóa đơn" });
         }
         [HttpPost("{id}/undo-merge")]
         public async Task<IActionResult> UndoMerge(int id)
@@ -72,9 +72,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _invoiceService.UndoMergeAsync(id, userId);
             if (!result)
             {
-                return BadRequest(new { message = "Kh?ng th? ho?n t?c" });
+                return BadRequest(new { message = "Không thể hoàn tác" });
             }
-            return Ok(new { success = true, message = "?? ho?n t?c g?p h?a don" });
+            return Ok(new { success = true, message = "Đã hoàn tác gộp hóa đơn" });
         }
     }
 }

@@ -7,7 +7,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class AuthorController : ControllerBase
+    public class AuthorController : ApiController
     {
         private readonly IAuthorService _authorService;
 
@@ -36,21 +36,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             try
             {
-                var entity = new Author
-                {
-                    Author_code = dto.Author_code,
-                    Author_name = dto.Author_name,
-                    Pen_name = dto.Pen_name,
-                    Email_author = dto.Email_author,
-                    Phone_number = dto.Phone_number,
-                    birth_date = dto.birth_date,
-                    death_date = dto.death_date,
-                    Nationality = dto.Nationality,
-                    Biography = dto.Biography,
-                    Created_by = 0,
-                    Updated_by = 0
-                };
-                var created = await _authorService.CreateAsync(entity);
+                var created = await _authorService.CreateAsync(dto, GetCurrentUserId());
                 return Ok(MapToDto(created));
             }
             catch (Exception ex)
@@ -65,21 +51,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             if (id != dto.Id) return BadRequest();
             try
             {
-                var entity = new Author
-                {
-                    Id = dto.Id,
-                    Author_code = dto.Author_code,
-                    Author_name = dto.Author_name,
-                    Pen_name = dto.Pen_name,
-                    Email_author = dto.Email_author,
-                    Phone_number = dto.Phone_number,
-                    birth_date = dto.birth_date,
-                    death_date = dto.death_date,
-                    Nationality = dto.Nationality,
-                    Biography = dto.Biography,
-                    Updated_by = 0
-                };
-                var result = await _authorService.UpdateAsync(entity);
+                var result = await _authorService.UpdateAsync(id, dto, GetCurrentUserId());
                 return Ok(new { success = result });
             }
             catch (Exception ex)

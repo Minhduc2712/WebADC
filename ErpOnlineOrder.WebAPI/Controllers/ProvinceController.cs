@@ -8,7 +8,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ProvinceController : ControllerBase
+    public class ProvinceController : ApiController
     {
         private readonly IProvinceService _provinceService;
 
@@ -35,7 +35,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         public async Task<IActionResult> GetProvince(int id)
         {
             var province = await _provinceService.GetByIdAsync(id);
-            if (province == null) return NotFound(new { message = "T?nh thành không t?n t?i" });
+            if (province == null) return NotFound(new { message = "T?nh th?nh kh?ng t?n t?i" });
             return Ok(province);
         }
         [HttpPost]
@@ -44,10 +44,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             try
             {
-                // TODO: L?y userId t? token
-                int createdBy = 1;
-
-                var created = await _provinceService.CreateProvinceAsync(dto, createdBy);
+                var created = await _provinceService.CreateProvinceAsync(dto, GetCurrentUserId());
                 return CreatedAtAction(nameof(GetProvince), new { id = created?.Id }, created);
             }
             catch (Exception ex)
@@ -59,16 +56,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [RequirePermission(PermissionCodes.ProvinceUpdate)]
         public async Task<IActionResult> UpdateProvince(int id, [FromBody] UpdateProvinceDto dto)
         {
-            if (id != dto.Id) return BadRequest(new { message = "ID không kh?p" });
+            if (id != dto.Id) return BadRequest(new { message = "ID kh?ng kh?p" });
 
             try
             {
-                // TODO: L?y userId t? token
-                int updatedBy = 1;
-
-                var result = await _provinceService.UpdateProvinceAsync(dto, updatedBy);
-                if (!result) return NotFound(new { message = "T?nh thành không t?n t?i" });
-                return Ok(new { success = true, message = "C?p nh?t thành công" });
+                var result = await _provinceService.UpdateProvinceAsync(dto, GetCurrentUserId());
+                if (!result) return NotFound(new { message = "T?nh th?nh kh?ng t?n t?i" });
+                return Ok(new { success = true, message = "C?p nh?t th?nh c?ng" });
             }
             catch (Exception ex)
             {
@@ -82,8 +76,8 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var result = await _provinceService.DeleteProvinceAsync(id);
-                if (!result) return NotFound(new { message = "T?nh thành không t?n t?i" });
-                return Ok(new { success = true, message = "Xóa thành công" });
+                if (!result) return NotFound(new { message = "T?nh th?nh kh?ng t?n t?i" });
+                return Ok(new { success = true, message = "X?a th?nh c?ng" });
             }
             catch (Exception ex)
             {

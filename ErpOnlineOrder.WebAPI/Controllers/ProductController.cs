@@ -3,13 +3,12 @@ using ErpOnlineOrder.Application.DTOs.ProductDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.WebAPI.Attributes;
-using ErpOnlineOrder.Domain.Models;
 
 namespace ErpOnlineOrder.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ProductController : ControllerBase
+    public class ProductController : ApiController
     {
         private readonly IProductService _productService;
 
@@ -49,42 +48,8 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             try
             {
-                var now = DateTime.UtcNow;
-                var entity = new Product
-                {
-                    Product_code = dto.Product_code,
-                    Product_name = dto.Product_name,
-                    Product_price = dto.Product_price,
-                    Product_link = dto.Product_link,
-                    Product_description = dto.Product_description,
-                    Tax_rate = dto.Tax_rate,
-                    Cover_type_id = dto.Cover_type_id,
-                    Publisher_id = dto.Publisher_id,
-                    Distributor_id = dto.Distributor_id,
-                    Created_by = 0,
-                    Updated_by = 0,
-                    Product_Categories = dto.CategoryIds?.Select(cid => new Product_category
-                    {
-                        Category_id = cid,
-                        Created_by = 0,
-                        Updated_by = 0,
-                        Created_at = now,
-                        Updated_at = now,
-                        Is_deleted = false
-                    }).ToList() ?? new List<Product_category>(),
-                    Product_Authors = dto.AuthorIds?.Select(aid => new Product_author
-                    {
-                        Author_id = aid,
-                        Created_by = 0,
-                        Updated_by = 0,
-                        Created_at = now,
-                        Updated_at = now,
-                        Is_deleted = false
-                    }).ToList() ?? new List<Product_author>()
-                };
-                var created = await _productService.CreateProductAsync(entity);
-                var createdDto = await _productService.GetByIdAsync(created.Id);
-                return Ok(createdDto);
+                var created = await _productService.CreateProductAsync(dto, GetCurrentUserId());
+                return Ok(created);
             }
             catch (Exception ex)
             {
@@ -99,42 +64,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
 
             try
             {
-                var now = DateTime.UtcNow;
-                var entity = new Product
-                {
-                    Id = dto.Id,
-                    Product_code = dto.Product_code,
-                    Product_name = dto.Product_name,
-                    Product_price = dto.Product_price,
-                    Product_link = dto.Product_link,
-                    Product_description = dto.Product_description,
-                    Tax_rate = dto.Tax_rate,
-                    Cover_type_id = dto.Cover_type_id,
-                    Publisher_id = dto.Publisher_id,
-                    Distributor_id = dto.Distributor_id,
-                    Updated_by = 0,
-                    Product_Categories = dto.CategoryIds?.Select(cid => new Product_category
-                    {
-                        Product_id = id,
-                        Category_id = cid,
-                        Created_by = 0,
-                        Updated_by = 0,
-                        Created_at = now,
-                        Updated_at = now,
-                        Is_deleted = false
-                    }).ToList() ?? new List<Product_category>(),
-                    Product_Authors = dto.AuthorIds?.Select(aid => new Product_author
-                    {
-                        Product_id = id,
-                        Author_id = aid,
-                        Created_by = 0,
-                        Updated_by = 0,
-                        Created_at = now,
-                        Updated_at = now,
-                        Is_deleted = false
-                    }).ToList() ?? new List<Product_author>()
-                };
-                var result = await _productService.UpdateProductAsync(entity);
+                var result = await _productService.UpdateProductAsync(id, dto, GetCurrentUserId());
                 return Ok(new { success = result });
             }
             catch (Exception ex)
@@ -163,7 +93,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             if (file == null || file.Length == 0)
             {
-                return BadRequest(new { message = "File kh?ng h?p l?" });
+                return BadRequest(new { message = "File không hợp lệ" });
             }
 
             // TODO: Implement import logic

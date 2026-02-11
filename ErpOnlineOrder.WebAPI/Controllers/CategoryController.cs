@@ -7,7 +7,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class CategoryController : ControllerBase
+    public class CategoryController : ApiController
     {
         private readonly ICategoryService _categoryService;
 
@@ -36,14 +36,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             try
             {
-                var entity = new Category
-                {
-                    Category_code = dto.Category_code,
-                    Category_name = dto.Category_name,
-                    Created_by = 0,
-                    Updated_by = 0
-                };
-                var created = await _categoryService.CreateCategoryAsync(entity);
+                var created = await _categoryService.CreateCategoryAsync(dto, GetCurrentUserId());
                 return Ok(MapToDto(created));
             }
             catch (Exception ex)
@@ -59,14 +52,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
 
             try
             {
-                var entity = new Category
-                {
-                    Id = dto.Id,
-                    Category_code = dto.Category_code,
-                    Category_name = dto.Category_name,
-                    Updated_by = 0
-                };
-                var result = await _categoryService.UpdateCategoryAsync(entity);
+                var result = await _categoryService.UpdateCategoryAsync(id, dto, GetCurrentUserId());
                 return Ok(new { success = result });
             }
             catch (Exception ex)

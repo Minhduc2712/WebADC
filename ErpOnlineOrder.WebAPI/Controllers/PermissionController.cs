@@ -13,7 +13,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
 
     [ApiController]
     [Route("api/[controller]")]
-    public class PermissionController : ControllerBase
+    public class PermissionController : ApiController
     {
         private readonly IPermissionService _permissionService;
 
@@ -51,16 +51,14 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [HttpPost("permissions")]
         public async Task<IActionResult> CreatePermission([FromBody] CreatePermissionRequest request)
         {
-            var createdBy = int.TryParse(User.FindFirst("UserId")?.Value, out int uid) ? uid : 0;
-            var result = await _permissionService.CreatePermissionAsync(request.Permission_code, createdBy);
+            var result = await _permissionService.CreatePermissionAsync(request.Permission_code, GetCurrentUserId());
             if (!result) return BadRequest(new { message = "Tạo quyền thất bại" });
             return Ok(new { success = true });
         }
         [HttpPut("permissions/{id}")]
         public async Task<IActionResult> UpdatePermission(int id, [FromBody] CreatePermissionRequest request)
         {
-            var updatedBy = int.TryParse(User.FindFirst("UserId")?.Value, out int uid) ? uid : 0;
-            var result = await _permissionService.UpdatePermissionAsync(id, request.Permission_code, updatedBy);
+            var result = await _permissionService.UpdatePermissionAsync(id, request.Permission_code, GetCurrentUserId());
             if (!result) return NotFound(new { message = "Cập nhật thất bại" });
             return Ok(new { success = true });
         }
@@ -94,10 +92,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [HttpPost("roles")]
         public async Task<IActionResult> CreateRole([FromBody] CreateRoleDto dto)
         {
-            // TODO: L?y userId t? token
-            int createdBy = 1;
-
-            var result = await _permissionService.CreateRoleAsync(dto, createdBy);
+            var result = await _permissionService.CreateRoleAsync(dto, GetCurrentUserId());
             if (!result)
             {
                 return BadRequest(new { message = "Không th? t?o role" });
@@ -112,10 +107,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 return BadRequest(new { message = "ID không kh?p" });
             }
 
-            // TODO: L?y userId t? token
-            int updatedBy = 1;
-
-            var result = await _permissionService.UpdateRoleAsync(dto, updatedBy);
+            var result = await _permissionService.UpdateRoleAsync(dto, GetCurrentUserId());
             if (!result)
             {
                 return NotFound(new { message = "Role không t?n t?i" });
@@ -160,10 +152,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [HttpGet("user/me")]
         public async Task<IActionResult> GetMyPermissions()
         {
-            // TODO: L?y userId t? token
-            int userId = 1;
-
-            var permissions = await _permissionService.GetUserPermissionDetailsAsync(userId);
+            var permissions = await _permissionService.GetUserPermissionDetailsAsync(GetCurrentUserId());
             if (permissions == null)
             {
                 return NotFound(new { message = "User không t?n t?i" });
@@ -212,8 +201,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [HttpPost("user/assign-permissions")]
         public async Task<IActionResult> AssignPermissionsToUser([FromBody] AssignPermissionsToUserDto dto)
         {
-            var grantedBy = int.TryParse(User.FindFirst("UserId")?.Value, out int uid) ? uid : 0;
-            var result = await _permissionService.AssignPermissionsToUserAsync(dto, grantedBy);
+            var result = await _permissionService.AssignPermissionsToUserAsync(dto, GetCurrentUserId());
             if (!result) return BadRequest(new { message = "Gán quyền thất bại" });
             return Ok(new { success = true, message = "Gán quyền thành công" });
         }

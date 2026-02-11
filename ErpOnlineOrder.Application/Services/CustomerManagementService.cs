@@ -1,3 +1,4 @@
+using ErpOnlineOrder.Application.DTOs.CustomerManagementDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Models;
@@ -40,25 +41,41 @@ namespace ErpOnlineOrder.Application.Services
             return await _customerManagementRepository.GetByProvinceAsync(provinceId);
         }
 
-        public async Task<Customer_management> CreateCustomerManagementAsync(Customer_management customerManagement)
+        public async Task<Customer_management> CreateCustomerManagementAsync(CreateCustomerManagementDto dto, int createdBy)
         {
-            customerManagement.Created_at = DateTime.Now;
-            customerManagement.Updated_at = DateTime.Now;
-            customerManagement.Is_deleted = false;
-            await _customerManagementRepository.AddAsync(customerManagement);
-            return customerManagement;
+            var existing = await _customerManagementRepository.GetByStaffAndCustomerAsync(dto.Staff_id, dto.Customer_id);
+            if (existing != null)
+                throw new InvalidOperationException("Cán bộ này đã được gán phụ trách khách hàng này rồi.");
+
+            var assignment = new Customer_management
+            {
+                Staff_id = dto.Staff_id,
+                Customer_id = dto.Customer_id,
+                Province_id = dto.Province_id,
+                Created_by = createdBy,
+                Updated_by = createdBy,
+                Created_at = DateTime.UtcNow,
+                Updated_at = DateTime.UtcNow,
+                Is_deleted = false
+            };
+            await _customerManagementRepository.AddAsync(assignment);
+            return assignment;
         }
 
-        public async Task<bool> UpdateCustomerManagementAsync(Customer_management customerManagement)
+        public async Task<bool> UpdateCustomerManagementAsync(int id, UpdateCustomerManagementDto dto, int updatedBy)
         {
-            var existing = await _customerManagementRepository.GetByIdAsync(customerManagement.Id);
+            var existing = await _customerManagementRepository.GetByIdAsync(id);
             if (existing == null) return false;
 
-            existing.Staff_id = customerManagement.Staff_id;
-            existing.Customer_id = customerManagement.Customer_id;
-            existing.Province_id = customerManagement.Province_id;
-            existing.Updated_by = customerManagement.Updated_by;
-            existing.Updated_at = DateTime.Now;
+            var duplicate = await _customerManagementRepository.GetByStaffAndCustomerAsync(dto.Staff_id, dto.Customer_id);
+            if (duplicate != null && duplicate.Id != id)
+                throw new InvalidOperationException("Cán bộ này đã được gán phụ trách khách hàng này rồi.");
+
+            existing.Staff_id = dto.Staff_id;
+            existing.Customer_id = dto.Customer_id;
+            existing.Province_id = dto.Province_id;
+            existing.Updated_by = updatedBy;
+            existing.Updated_at = DateTime.UtcNow;
             await _customerManagementRepository.UpdateAsync(existing);
             return true;
         }
@@ -85,8 +102,8 @@ namespace ErpOnlineOrder.Application.Services
                 Province_id = provinceId,
                 Created_by = createdBy,
                 Updated_by = createdBy,
-                Created_at = DateTime.Now,
-                Updated_at = DateTime.Now,
+                Created_at = DateTime.UtcNow,
+                Updated_at = DateTime.UtcNow,
                 Is_deleted = false
             };
 

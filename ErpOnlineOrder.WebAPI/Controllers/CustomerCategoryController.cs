@@ -6,7 +6,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CustomerCategoryController : ControllerBase
+    public class CustomerCategoryController : ApiController
     {
         private readonly ICustomerCategoryService _customerCategoryService;
 
@@ -45,8 +45,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateCustomerCategoryDto dto)
         {
-            // TODO: L?y createdBy t? token/user dang nh?p
-            int createdBy = 1;
+            var createdBy = GetCurrentUserId();
             
             var result = await _customerCategoryService.AddCategoryToCustomerAsync(dto, createdBy);
             if (result == null)
@@ -58,10 +57,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [HttpPost("assign")]
         public async Task<IActionResult> AssignCategories([FromBody] AssignCategoriesToCustomerDto dto)
         {
-            // TODO: L?y createdBy t? token/user dang nh?p
-            int createdBy = 1;
-            
-            var result = await _customerCategoryService.AssignCategoriesToCustomerAsync(dto, createdBy);
+            var result = await _customerCategoryService.AssignCategoriesToCustomerAsync(dto, GetCurrentUserId());
             if (!result)
             {
                 return BadRequest("Không th? gán danh m?c cho khách hàng.");
@@ -76,8 +72,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 return BadRequest("ID không kh?p.");
             }
 
-            // TODO: L?y updatedBy t? token/user dang nh?p
-            int updatedBy = 1;
+            int updatedBy = GetCurrentUserId();
             
             var result = await _customerCategoryService.UpdateCustomerCategoryAsync(dto, updatedBy);
             if (!result)
@@ -89,8 +84,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            // TODO: L?y deletedBy t? token/user dang nh?p
-            int deletedBy = 1;
+            int deletedBy = GetCurrentUserId();
             
             var result = await _customerCategoryService.RemoveCategoryFromCustomerAsync(id, deletedBy);
             if (!result)

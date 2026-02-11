@@ -7,7 +7,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class PublisherController : ControllerBase
+    public class PublisherController : ApiController
     {
         private readonly IPublisherService _publisherService;
 
@@ -36,17 +36,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             try
             {
-                var entity = new Publisher
-                {
-                    Publisher_code = dto.Publisher_code,
-                    Publisher_name = dto.Publisher_name,
-                    Publisher_address = dto.Publisher_address,
-                    Publisher_phone = dto.Publisher_phone,
-                    Publisher_email = dto.Publisher_email,
-                    Created_by = 0,
-                    Updated_by = 0
-                };
-                var created = await _publisherService.CreateAsync(entity);
+                var created = await _publisherService.CreateAsync(dto, GetCurrentUserId());
                 return Ok(MapToDto(created));
             }
             catch (Exception ex)
@@ -61,17 +51,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             if (id != dto.Id) return BadRequest();
             try
             {
-                var entity = new Publisher
-                {
-                    Id = dto.Id,
-                    Publisher_code = dto.Publisher_code,
-                    Publisher_name = dto.Publisher_name,
-                    Publisher_address = dto.Publisher_address,
-                    Publisher_phone = dto.Publisher_phone,
-                    Publisher_email = dto.Publisher_email,
-                    Updated_by = 0
-                };
-                var result = await _publisherService.UpdateAsync(entity);
+                var result = await _publisherService.UpdateAsync(dto, GetCurrentUserId());
                 return Ok(new { success = result });
             }
             catch (Exception ex)

@@ -6,7 +6,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class WarehouseExportController : ControllerBase
+    public class WarehouseExportController : ApiController
     {
         private readonly IWarehouseExportService _exportService;
 
@@ -55,10 +55,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             try
             {
-                // TODO: L?y userId t? token
-                int userId = 1;
-
-                var result = await _exportService.CreateExportFromInvoiceAsync(dto, userId);
+                var result = await _exportService.CreateExportFromInvoiceAsync(dto, GetCurrentUserId());
                 if (result == null)
                 {
                     return BadRequest(new { message = "Không th? t?o phi?u xu?t kho" });
@@ -75,8 +72,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             try
             {
-                int userId = 1;
-                var result = await _exportService.UpdateDeliveryStatusAsync(id, status, userId);
+                var result = await _exportService.UpdateDeliveryStatusAsync(id, status, GetCurrentUserId());
                 if (!result)
                 {
                     return NotFound(new { message = "Phi?u xu?t kho không t?n t?i" });
@@ -93,8 +89,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             try
             {
-                int userId = 1;
-                var result = await _exportService.ConfirmExportAsync(id, userId);
+                var result = await _exportService.ConfirmExportAsync(id, GetCurrentUserId());
                 if (!result)
                 {
                     return NotFound(new { message = "Phi?u xu?t kho không t?n t?i" });
@@ -111,8 +106,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             try
             {
-                int userId = 1;
-                var result = await _exportService.CancelExportAsync(id, userId);
+                var result = await _exportService.CancelExportAsync(id, GetCurrentUserId());
                 if (!result)
                 {
                     return NotFound(new { message = "Phi?u xu?t kho không t?n t?i" });
@@ -143,8 +137,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             try
             {
-                int userId = 1;
-                var result = await _exportService.SplitExportAsync(dto, userId);
+                var result = await _exportService.SplitExportAsync(dto, GetCurrentUserId());
                 if (!result.Success)
                 {
                     return BadRequest(result);
@@ -161,8 +154,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             try
             {
-                int userId = 1;
-                var result = await _exportService.MergeExportsAsync(dto, userId);
+                var result = await _exportService.MergeExportsAsync(dto, GetCurrentUserId());
                 if (!result.Success)
                 {
                     return BadRequest(result);
@@ -179,8 +171,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             try
             {
-                int userId = 1;
-                var result = await _exportService.UndoSplitAsync(id, userId);
+                var result = await _exportService.UndoSplitAsync(id, GetCurrentUserId());
                 if (!result)
                 {
                     return BadRequest(new { message = "Không th? hoàn tác" });
@@ -197,8 +188,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             try
             {
-                int userId = 1;
-                var result = await _exportService.UndoMergeAsync(id, userId);
+                var result = await _exportService.UndoMergeAsync(id, GetCurrentUserId());
                 if (!result)
                 {
                     return BadRequest(new { message = "Không th? hoàn tác" });

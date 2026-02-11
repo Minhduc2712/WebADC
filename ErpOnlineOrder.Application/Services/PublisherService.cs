@@ -1,3 +1,4 @@
+using ErpOnlineOrder.Application.DTOs.PublisherDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Models;
@@ -23,52 +24,52 @@ namespace ErpOnlineOrder.Application.Services
             return await _publisherRepository.GetAllAsync();
         }
 
-        public async Task<Publisher> CreateAsync(Publisher publisher)
+        public async Task<Publisher> CreateAsync(CreatePublisherDto dto, int createdBy)
         {
-            // Kiểm tra trùng lặp Publisher_code
-            var existingByCode = await _publisherRepository.GetByCodeAsync(publisher.Publisher_code);
+            var existingByCode = await _publisherRepository.GetByCodeAsync(dto.Publisher_code);
             if (existingByCode != null)
-            {
-                throw new InvalidOperationException($"Nhà xuất bản với mã '{publisher.Publisher_code}' đã tồn tại.");
-            }
+                throw new InvalidOperationException($"Nhà xuất bản với mã '{dto.Publisher_code}' đã tồn tại.");
 
-            // Kiểm tra trùng lặp Publisher_name
-            var existingByName = await _publisherRepository.GetByNameAsync(publisher.Publisher_name);
+            var existingByName = await _publisherRepository.GetByNameAsync(dto.Publisher_name);
             if (existingByName != null)
-            {
-                throw new InvalidOperationException($"Nhà xuất bản với tên '{publisher.Publisher_name}' đã tồn tại.");
-            }
+                throw new InvalidOperationException($"Nhà xuất bản với tên '{dto.Publisher_name}' đã tồn tại.");
 
-            publisher.Created_at = DateTime.Now;
-            publisher.Updated_at = DateTime.Now;
-            return await _publisherRepository.AddAsync(publisher);
+            var publisher = new Publisher
+            {
+                Publisher_code = dto.Publisher_code,
+                Publisher_name = dto.Publisher_name,
+                Publisher_address = dto.Publisher_address,
+                Publisher_phone = dto.Publisher_phone,
+                Publisher_email = dto.Publisher_email,
+                Created_by = createdBy,
+                Updated_by = createdBy,
+                Created_at = DateTime.UtcNow,
+                Updated_at = DateTime.UtcNow
+            };
+            await _publisherRepository.AddAsync(publisher);
+            return publisher;
         }
 
-        public async Task<bool> UpdateAsync(Publisher publisher)
+        public async Task<bool> UpdateAsync(UpdatePublisherDto dto, int updatedBy)
         {
-            var existing = await _publisherRepository.GetByIdAsync(publisher.Id);
+            var existing = await _publisherRepository.GetByIdAsync(dto.Id);
             if (existing == null) return false;
 
-            // Kiểm tra trùng lặp khi update (trừ bản ghi hiện tại)
-            var existingByCode = await _publisherRepository.GetByCodeAsync(publisher.Publisher_code);
-            if (existingByCode != null && existingByCode.Id != publisher.Id)
-            {
-                throw new InvalidOperationException($"Nhà xuất bản với mã '{publisher.Publisher_code}' đã tồn tại.");
-            }
+            var existingByCode = await _publisherRepository.GetByCodeAsync(dto.Publisher_code);
+            if (existingByCode != null && existingByCode.Id != dto.Id)
+                throw new InvalidOperationException($"Nhà xuất bản với mã '{dto.Publisher_code}' đã tồn tại.");
 
-            var existingByName = await _publisherRepository.GetByNameAsync(publisher.Publisher_name);
-            if (existingByName != null && existingByName.Id != publisher.Id)
-            {
-                throw new InvalidOperationException($"Nhà xuất bản với tên '{publisher.Publisher_name}' đã tồn tại.");
-            }
+            var existingByName = await _publisherRepository.GetByNameAsync(dto.Publisher_name);
+            if (existingByName != null && existingByName.Id != dto.Id)
+                throw new InvalidOperationException($"Nhà xuất bản với tên '{dto.Publisher_name}' đã tồn tại.");
 
-            existing.Publisher_code = publisher.Publisher_code;
-            existing.Publisher_name = publisher.Publisher_name;
-            existing.Publisher_address = publisher.Publisher_address;
-            existing.Publisher_phone = publisher.Publisher_phone;
-            existing.Publisher_email = publisher.Publisher_email;
-            existing.Updated_by = publisher.Updated_by;
-            existing.Updated_at = DateTime.Now;
+            existing.Publisher_code = dto.Publisher_code;
+            existing.Publisher_name = dto.Publisher_name;
+            existing.Publisher_address = dto.Publisher_address;
+            existing.Publisher_phone = dto.Publisher_phone;
+            existing.Publisher_email = dto.Publisher_email;
+            existing.Updated_by = updatedBy;
+            existing.Updated_at = DateTime.UtcNow;
             await _publisherRepository.UpdateAsync(existing);
             return true;
         }

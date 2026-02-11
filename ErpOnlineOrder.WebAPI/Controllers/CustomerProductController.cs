@@ -6,7 +6,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CustomerProductController : ControllerBase
+    public class CustomerProductController : ApiController
     {
         private readonly ICustomerProductService _customerProductService;
 
@@ -45,8 +45,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateCustomerProductDto dto)
         {
-            // TODO: L?y createdBy t? token/user ??ng nh?p
-            int createdBy = 1;
+            int createdBy = GetCurrentUserId();
             
             var result = await _customerProductService.AddProductToCustomerAsync(dto, createdBy);
             if (result == null)
@@ -58,8 +57,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [HttpPost("assign")]
         public async Task<IActionResult> AssignProducts([FromBody] AssignProductsToCustomerDto dto)
         {
-            // TODO: L?y createdBy t? token/user ??ng nh?p
-            int createdBy = 1;
+            int createdBy = GetCurrentUserId();
             
             var result = await _customerProductService.AssignProductsToCustomerAsync(dto, createdBy);
             if (!result)
@@ -76,8 +74,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 return BadRequest("ID không kh?p.");
             }
 
-            // TODO: L?y updatedBy t? token/user ??ng nh?p
-            int updatedBy = 1;
+            int updatedBy = GetCurrentUserId();
             
             var result = await _customerProductService.UpdateCustomerProductAsync(dto, updatedBy);
             if (!result)
@@ -89,8 +86,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            // TODO: L?y deletedBy t? token/user ??ng nh?p
-            int deletedBy = 1;
+            int deletedBy = GetCurrentUserId();
             
             var result = await _customerProductService.RemoveProductFromCustomerAsync(id, deletedBy);
             if (!result)

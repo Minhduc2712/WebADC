@@ -16,11 +16,11 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
         
         Task<bool> UpdateOrderAsync(UpdateOrderDto dto);
         Task<bool> DeleteOrderAsync(int id);
-        Task<Order> CopyOrderAsync(int id);
+        Task<Order> CopyOrderAsync(CopyOrderDto dto);
         Task<IEnumerable<OrderDTO>> GetOrdersByStaffAsync(int staffId);
         Task<IEnumerable<OrderDTO>> GetOrdersByCustomerAsync(int customerId);
-        Task<bool> ConfirmOrderAsync(int id);
-        Task<bool> CancelOrderAsync(int id);
+        Task<bool> ConfirmOrderAsync(ConfirmOrderDto dto);
+        Task<bool> CancelOrderAsync(CancelOrderDto dto);
         Task<byte[]> ExportOrdersToExcelAsync();
         Task<IEnumerable<OrderDTO>> GetOrdersByStatusAsync(string status);
         Task<bool> DeletePendingOrderAsync(int id);

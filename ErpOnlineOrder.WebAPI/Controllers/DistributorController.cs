@@ -6,7 +6,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class DistributorController : ControllerBase
+    public class DistributorController : ApiController
     {
         private readonly IDistributorService _distributorService;
 
@@ -35,17 +35,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             try
             {
-                var entity = new Distributor
-                {
-                    Distributor_code = dto.Distributor_code,
-                    Distributor_name = dto.Distributor_name,
-                    Distributor_address = dto.Distributor_address,
-                    Distributor_phone = dto.Distributor_phone,
-                    Distributor_email = dto.Distributor_email,
-                    Created_by = 0,
-                    Updated_by = 0
-                };
-                var created = await _distributorService.CreateDistributorAsync(entity);
+                var created = await _distributorService.CreateDistributorAsync(dto, GetCurrentUserId());
                 return Ok(MapToDto(created));
             }
             catch (Exception ex)
@@ -61,17 +51,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
 
             try
             {
-                var entity = new Distributor
-                {
-                    Id = dto.Id,
-                    Distributor_code = dto.Distributor_code,
-                    Distributor_name = dto.Distributor_name,
-                    Distributor_address = dto.Distributor_address,
-                    Distributor_phone = dto.Distributor_phone,
-                    Distributor_email = dto.Distributor_email,
-                    Updated_by = 0
-                };
-                var result = await _distributorService.UpdateDistributorAsync(entity);
+                var result = await _distributorService.UpdateDistributorAsync(dto, GetCurrentUserId());
                 return Ok(new { success = result });
             }
             catch (Exception ex)

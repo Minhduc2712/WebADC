@@ -6,7 +6,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class OrganizationController : ControllerBase
+    public class OrganizationController : ApiController
     {
         private readonly IOrganizationService _organizationService;
 
@@ -51,10 +51,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             try
             {
-                // TODO: L?y userId t? token
-                int createdBy = 1;
-
-                var created = await _organizationService.CreateOrganizationAsync(dto, createdBy);
+                var created = await _organizationService.CreateOrganizationAsync(dto, GetCurrentUserId());
                 if (created == null)
                 {
                     return BadRequest(new { message = "Không th? t?o t? ch?c" });
@@ -72,10 +69,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 dto.Id = id;
-                // TODO: L?y userId t? token
-                int updatedBy = 1;
-
-                var result = await _organizationService.UpdateOrganizationAsync(dto, updatedBy);
+                var result = await _organizationService.UpdateOrganizationAsync(dto, GetCurrentUserId());
                 if (!result)
                 {
                     return NotFound(new { message = "T? ch?c không t?n t?i" });

@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using ErpOnlineOrder.Application.Interfaces.Services;
-using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.DTOs.CustomerDTOs;
 using ErpOnlineOrder.Domain.Models;
@@ -9,28 +8,26 @@ namespace ErpOnlineOrder.WebAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class CustomerController : ControllerBase
+    public class CustomerController : ApiController
     {
         private readonly ICustomerService _customerService;
-        private readonly ICustomerRepository _customerRepository;
 
-        public CustomerController(ICustomerService customerService, ICustomerRepository customerRepository)
+        public CustomerController(ICustomerService customerService)
         {
             _customerService = customerService;
-            _customerRepository = customerRepository;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetCustomers()
         {
-            var customers = await _customerRepository.GetAllAsync();
+            var customers = await _customerService.GetAllAsync();
             return Ok(customers.Select(MapToDto));
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetCustomer(int id)
         {
-            var customer = await _customerRepository.GetByIdAsync(id);
+            var customer = await _customerService.GetByIdAsync(id);
             if (customer == null) return NotFound();
             return Ok(MapToDto(customer));
         }
@@ -40,18 +37,8 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             try
             {
-                var entity = new Customer
-                {
-                    Customer_code = dto.Customer_code,
-                    Full_name = dto.Full_name,
-                    Phone_number = dto.Phone_number,
-                    Address = dto.Address,
-                    User_id = dto.User_id,
-                    Created_by = 0,
-                    Updated_by = 0
-                };
-                await _customerRepository.AddAsync(entity);
-                return Ok(MapToDto(entity));
+                var created = await _customerService.CreateCustomerAsync(dto, GetCurrentUserId());
+                return Ok(MapToDto(created));
             }
             catch (Exception ex)
             {
@@ -65,15 +52,8 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             if (id != dto.Id) return BadRequest();
             try
             {
-                var existing = await _customerRepository.GetByIdAsync(id);
-                if (existing == null) return NotFound();
-                existing.Customer_code = dto.Customer_code;
-                existing.Full_name = dto.Full_name;
-                existing.Phone_number = dto.Phone_number;
-                existing.Address = dto.Address;
-                existing.Updated_by = 0;
-                existing.Updated_at = DateTime.UtcNow;
-                await _customerRepository.UpdateAsync(existing);
+                var result = await _customerService.UpdateCustomerByAdminAsync(id, dto, GetCurrentUserId());
+                if (!result) return NotFound();
                 return Ok(new { success = true });
             }
             catch (Exception ex)
@@ -104,7 +84,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             try
             {
-                await _customerRepository.DeleteAsync(id);
+                await _customerService.DeleteAsync(id);
                 return Ok(new { success = true });
             }
             catch (Exception ex)

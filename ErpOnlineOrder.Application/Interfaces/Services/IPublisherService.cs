@@ -1,4 +1,5 @@
-﻿using ErpOnlineOrder.Domain.Models;
+using ErpOnlineOrder.Application.DTOs.PublisherDTOs;
+using ErpOnlineOrder.Domain.Models;
 
 namespace ErpOnlineOrder.Application.Interfaces.Services
 {
@@ -6,8 +7,8 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
     {
         Task<Publisher?> GetByIdAsync(int id);
         Task<IEnumerable<Publisher>> GetAllAsync();
-        Task<Publisher> CreateAsync(Publisher publisher);
-        Task<bool> UpdateAsync(Publisher publisher);
+        Task<Publisher> CreateAsync(CreatePublisherDto dto, int createdBy);
+        Task<bool> UpdateAsync(UpdatePublisherDto dto, int updatedBy);
         Task<bool> DeleteAsync(int id);
     }
 }

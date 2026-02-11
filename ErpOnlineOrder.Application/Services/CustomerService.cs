@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -22,6 +22,50 @@ namespace ErpOnlineOrder.Application.Services
             _customerRepository = customerRepository;
             _userRepository = userRepository;
             _organizationRepository = organizationRepository;
+        }
+
+        public async Task<Customer?> GetByIdAsync(int id)
+        {
+            return await _customerRepository.GetByIdAsync(id);
+        }
+
+        public async Task<IEnumerable<Customer>> GetAllAsync()
+        {
+            return await _customerRepository.GetAllAsync();
+        }
+
+        public async Task<Customer> CreateCustomerAsync(CreateCustomerDto dto, int createdBy)
+        {
+            var customer = new Customer
+            {
+                Customer_code = dto.Customer_code,
+                Full_name = dto.Full_name,
+                Phone_number = dto.Phone_number,
+                Address = dto.Address,
+                User_id = dto.User_id,
+                Created_by = createdBy,
+                Updated_by = createdBy,
+                Created_at = DateTime.UtcNow,
+                Updated_at = DateTime.UtcNow,
+                Is_deleted = false
+            };
+            await _customerRepository.AddAsync(customer);
+            return customer;
+        }
+
+        public async Task<bool> UpdateCustomerByAdminAsync(int id, UpdateCustomerByAdminDto dto, int updatedBy)
+        {
+            var existing = await _customerRepository.GetByIdAsync(id);
+            if (existing == null) return false;
+
+            existing.Customer_code = dto.Customer_code;
+            existing.Full_name = dto.Full_name;
+            existing.Phone_number = dto.Phone_number;
+            existing.Address = dto.Address;
+            existing.Updated_by = updatedBy;
+            existing.Updated_at = DateTime.UtcNow;
+            await _customerRepository.UpdateAsync(existing);
+            return true;
         }
 
         public async Task<bool> UpdateCustomerAsync(UpdateCustomerDto updateCustomerDto)
@@ -87,6 +131,12 @@ namespace ErpOnlineOrder.Application.Services
                 existingOrganization.Updated_at = DateTime.UtcNow;
                 await _organizationRepository.UpdateAsync(existingOrganization);
             }
+            return true;
+        }
+
+        public async Task<bool> DeleteAsync(int id)
+        {
+            await _customerRepository.DeleteAsync(id);
             return true;
         }
     }
