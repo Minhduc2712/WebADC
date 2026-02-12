@@ -22,6 +22,14 @@ namespace ErpOnlineOrder.WebMVC.Services
             return list ?? new List<ProductDTO>();
         }
 
+        public async Task<IEnumerable<ProductDTO>> GetForOrderAsync(CancellationToken cancellationToken = default)
+        {
+            var response = await _http.GetAsync("product/for-order", cancellationToken);
+            if (!response.IsSuccessStatusCode) return new List<ProductDTO>();
+            var list = await response.Content.ReadFromJsonAsync<List<ProductDTO>>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return list ?? new List<ProductDTO>();
+        }
+
         public async Task<IEnumerable<ProductDTO>> SearchAsync(string? name, string? author, string? publisher, CancellationToken cancellationToken = default)
         {
             var query = new List<string>();
@@ -52,7 +60,11 @@ namespace ErpOnlineOrder.WebMVC.Services
         public async Task<ProductDTO?> CreateAsync(CreateProductDto dto, CancellationToken cancellationToken = default)
         {
             var response = await _http.PostAsJsonAsync("product", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
+            if (!response.IsSuccessStatusCode)
+            {
+                var msg = await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken);
+                throw new InvalidOperationException(msg ?? "Thêm sản phẩm thất bại.");
+            }
             return await response.Content.ReadFromJsonAsync<ProductDTO>(ErpApiClientHelper.JsonOptions, cancellationToken);
         }
 

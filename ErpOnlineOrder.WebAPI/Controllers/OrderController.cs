@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.DTOs.OrderDTOs;
 using ErpOnlineOrder.Domain.Models;
@@ -60,8 +60,11 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             {
                 model.Updated_by = GetCurrentUserId();
                 var result = await _orderService.UpdateOrderAsync(model);
-                if (!result) return NotFound();
-                return Ok(new { success = result });
+                if (!result.Success)
+                {
+                    return BadRequest(result);
+                }
+                return Ok(result);
             }
             catch (Exception ex)
             {

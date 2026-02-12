@@ -21,6 +21,7 @@ namespace ErpOnlineOrder.Application.DTOs
 
     public class OrderDetailDTO
     {
+        public int Product_id { get; set; }
         public string Product_name { get; set; } = null!;
         public int Quantity { get; set; }
         public decimal Unit_price { get; set; }

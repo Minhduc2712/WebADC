@@ -1,5 +1,7 @@
+using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.Application.DTOs.CustomerProductDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.WebAPI.Attributes;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErpOnlineOrder.WebAPI.Controllers
@@ -14,25 +16,30 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             _customerProductService = customerProductService;
         }
+
         [HttpGet]
+        [RequirePermission(PermissionCodes.CustomerProductView)]
         public async Task<IActionResult> GetAll()
         {
             var result = await _customerProductService.GetAllAsync();
             return Ok(result);
         }
         [HttpGet("customer/{customerId}")]
+        [RequirePermission(PermissionCodes.CustomerProductView)]
         public async Task<IActionResult> GetByCustomerId(int customerId)
         {
             var result = await _customerProductService.GetProductsByCustomerIdAsync(customerId);
             return Ok(result);
         }
         [HttpGet("product/{productId}")]
+        [RequirePermission(PermissionCodes.CustomerProductView)]
         public async Task<IActionResult> GetByProductId(int productId)
         {
             var result = await _customerProductService.GetCustomersByProductIdAsync(productId);
             return Ok(result);
         }
         [HttpGet("{id}")]
+        [RequirePermission(PermissionCodes.CustomerProductView)]
         public async Task<IActionResult> GetById(int id)
         {
             var result = await _customerProductService.GetByIdAsync(id);
@@ -43,6 +50,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             return Ok(result);
         }
         [HttpPost]
+        [RequirePermission(PermissionCodes.CustomerProductAssign)]
         public async Task<IActionResult> Create([FromBody] CreateCustomerProductDto dto)
         {
             int createdBy = GetCurrentUserId();
@@ -55,6 +63,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
         [HttpPost("assign")]
+        [RequirePermission(PermissionCodes.CustomerProductAssign)]
         public async Task<IActionResult> AssignProducts([FromBody] AssignProductsToCustomerDto dto)
         {
             int createdBy = GetCurrentUserId();
@@ -67,6 +76,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             return Ok(new { message = "Gán s?n ph?m thành công." });
         }
         [HttpPut("{id}")]
+        [RequirePermission(PermissionCodes.CustomerProductAssign)]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateCustomerProductDto dto)
         {
             if (id != dto.Id)
@@ -84,6 +94,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             return NoContent();
         }
         [HttpDelete("{id}")]
+        [RequirePermission(PermissionCodes.CustomerProductAssign)]
         public async Task<IActionResult> Delete(int id)
         {
             int deletedBy = GetCurrentUserId();
@@ -96,6 +107,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             return NoContent();
         }
         [HttpGet("check/{customerId}/{productId}")]
+        [RequirePermission(PermissionCodes.CustomerProductView)]
         public async Task<IActionResult> CheckPermission(int customerId, int productId)
         {
             var canOrder = await _customerProductService.CanCustomerOrderProductAsync(customerId, productId);

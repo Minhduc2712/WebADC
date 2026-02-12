@@ -43,6 +43,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 ViewBag.CanUpdate = true;
                 ViewBag.CanDelete = true;
                 ViewBag.CanAssign = true;
+                ViewBag.CanAssignProduct = true;
                 return;
             }
 
@@ -51,6 +52,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             ViewBag.CanUpdate = permissions.Contains(PermissionCodes.CustomerUpdate);
             ViewBag.CanDelete = permissions.Contains(PermissionCodes.CustomerDelete);
             ViewBag.CanAssign = permissions.Contains(PermissionCodes.CustomerAssign);
+            ViewBag.CanAssignProduct = permissions.Contains(PermissionCodes.CustomerProductView);
         }
 
         #region CRUD Khách hàng

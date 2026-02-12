@@ -9,7 +9,7 @@ namespace ErpOnlineOrder.WebMVC.Services
         Task<OrderDTO?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
         Task<IEnumerable<OrderDTO>> GetByStatusAsync(string status, CancellationToken cancellationToken = default);
         Task<(bool Success, string? Message, int? Order_id)> CreateOrderAdminAsync(CreateOrderDto model, CancellationToken cancellationToken = default);
-        Task<bool> UpdateOrderAsync(UpdateOrderDto model, CancellationToken cancellationToken = default);
+        Task<(bool Success, string? ErrorMessage)> UpdateOrderAsync(UpdateOrderDto model, CancellationToken cancellationToken = default);
         Task<bool> DeleteOrderAsync(int id, CancellationToken cancellationToken = default);
         Task<int?> CopyOrderAsync(int id, CancellationToken cancellationToken = default);
         Task<bool> ConfirmOrderAsync(int id, CancellationToken cancellationToken = default);

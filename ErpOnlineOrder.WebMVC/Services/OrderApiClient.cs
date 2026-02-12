@@ -49,10 +49,16 @@ namespace ErpOnlineOrder.WebMVC.Services
             return (false, msg, null);
         }
 
-        public async Task<bool> UpdateOrderAsync(UpdateOrderDto model, CancellationToken cancellationToken = default)
+        public async Task<(bool Success, string? ErrorMessage)> UpdateOrderAsync(UpdateOrderDto model, CancellationToken cancellationToken = default)
         {
             var response = await _http.PutAsJsonAsync("order", model, ErpApiClientHelper.JsonOptions, cancellationToken);
-            return response.IsSuccessStatusCode;
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<UpdateOrderResultDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
+                return (result?.Success ?? true, null);
+            }
+            var msg = await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken);
+            return (false, msg);
         }
 
         public async Task<bool> DeleteOrderAsync(int id, CancellationToken cancellationToken = default)

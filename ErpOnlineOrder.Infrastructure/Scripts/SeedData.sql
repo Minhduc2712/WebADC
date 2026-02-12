@@ -1,4 +1,4 @@
--- =============================================
+﻿-- =============================================
 -- Script: SeedData.sql
 -- Description: Seed du lieu mac dinh cho ErpOnlineOrder
 -- Version: 2.0 - Complete seed data
@@ -251,14 +251,23 @@ IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'STAFF_ASSIGN')
     INSERT INTO Permissions (Permission_code, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('STAFF_ASSIGN', 0, GETDATE(), 0, GETDATE(), 0);
 
--- Report permissions
-IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'REPORT_VIEW')
+-- Settings permissions
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'SETTINGS_VIEW')
     INSERT INTO Permissions (Permission_code, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
-    VALUES ('REPORT_VIEW', 0, GETDATE(), 0, GETDATE(), 0);
+    VALUES ('SETTINGS_VIEW', 0, GETDATE(), 0, GETDATE(), 0);
 
-IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'REPORT_EXPORT')
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'SETTINGS_UPDATE')
     INSERT INTO Permissions (Permission_code, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
-    VALUES ('REPORT_EXPORT', 0, GETDATE(), 0, GETDATE(), 0);
+    VALUES ('SETTINGS_UPDATE', 0, GETDATE(), 0, GETDATE(), 0);
+
+-- Customer product permissions (gán sản phẩm cho khách hàng)
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'CUSTOMER_PRODUCT_VIEW')
+    INSERT INTO Permissions (Permission_code, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('CUSTOMER_PRODUCT_VIEW', 0, GETDATE(), 0, GETDATE(), 0);
+
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'CUSTOMER_PRODUCT_ASSIGN')
+    INSERT INTO Permissions (Permission_code, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('CUSTOMER_PRODUCT_ASSIGN', 0, GETDATE(), 0, GETDATE(), 0);
 
 PRINT N'Da seed Permissions';
 GO
@@ -357,6 +366,26 @@ IF NOT EXISTS (SELECT 1 FROM Provinces WHERE Province_code = 'DN')
 IF NOT EXISTS (SELECT 1 FROM Categories WHERE Category_code = 'SACH')
     INSERT INTO Categories (Category_code, Category_name, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('SACH', N'Sách', 0, GETDATE(), 0, GETDATE(), 0);
+
+-- SystemSettings (SMTP)
+IF NOT EXISTS (SELECT 1 FROM SystemSettings WHERE SettingKey = 'SMTP_HOST')
+    INSERT INTO SystemSettings (SettingKey, SettingValue, Description, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SMTP_HOST', 'smtp.gmail.com', N'SMT server host', 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM SystemSettings WHERE SettingKey = 'SMTP_PORT')
+    INSERT INTO SystemSettings (SettingKey, SettingValue, Description, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SMTP_PORT', '587', N'SMTP port (587 TLS, 465 SSL)', 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM SystemSettings WHERE SettingKey = 'SMTP_USE_SSL')
+    INSERT INTO SystemSettings (SettingKey, SettingValue, Description, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SMTP_USE_SSL', 'false', N'Use SSL (true/false)', 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM SystemSettings WHERE SettingKey = 'SMTP_FROM_NAME')
+    INSERT INTO SystemSettings (SettingKey, SettingValue, Description, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SMTP_FROM_NAME', 'ERP Online Order', N'Tên người gửi', 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM SystemSettings WHERE SettingKey = 'SMTP_FROM_EMAIL')
+    INSERT INTO SystemSettings (SettingKey, SettingValue, Description, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SMTP_FROM_EMAIL', '', N'Email người gửi', 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM SystemSettings WHERE SettingKey = 'SMTP_PASSWORD')
+    INSERT INTO SystemSettings (SettingKey, SettingValue, Description, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SMTP_PASSWORD', '', N'Mật khẩu ứng dụng email', 0, GETDATE(), 0, GETDATE(), 0);
 
 -- Authors
 IF NOT EXISTS (SELECT 1 FROM Authors WHERE Author_code = 'TG001')

@@ -4,6 +4,7 @@
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
     var customerAssignments = ViewBag.Assignments as List<ErpOnlineOrder.Domain.Models.Customer_management> ?? new List<ErpOnlineOrder.Domain.Models.Customer_management>();
     var canAssign = (bool)(ViewBag.CanAssign ?? false);
+    var canAssignProduct = (bool)(ViewBag.CanAssignProduct ?? false);
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -22,6 +23,12 @@
         {
             <a href="@Url.Action("AssignStaff", new { id = Model.Id })" class="btn btn-outline-success">
                 <i class="fas fa-user-tag me-1"></i>Gán cán bộ
+            </a>
+        }
+        @if (canAssignProduct)
+        {
+            <a href="@Url.Action("Index", "CustomerProduct", new { customerId = Model.Id })" class="btn btn-outline-primary">
+                <i class="fas fa-box me-1"></i>Gán sản phẩm
             </a>
         }
         <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
@@ -178,3 +185,24 @@
         </div>
     </div>
 </div>
+
+@if (canAssignProduct)
+{
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="table-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-box me-2 text-primary"></i>Sản phẩm được phép đặt</span>
+                <a href="@Url.Action("Index", "CustomerProduct", new { customerId = Model.Id })" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-box me-1"></i>Quản lý sản phẩm
+                </a>
+            </div>
+            <div class="card-body py-3 text-center">
+                <a href="@Url.Action("Index", "CustomerProduct", new { customerId = Model.Id })" class="btn btn-primary">
+                    <i class="fas fa-box me-1"></i>Xem và gán sản phẩm cho khách hàng
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+}

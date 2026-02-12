@@ -94,7 +94,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             try
             {
                 ViewBag.Customers = await GetCustomerSelectListAsync();
-                ViewBag.Products = await _productApiClient.GetAllAsync();
+                ViewBag.Products = await _productApiClient.GetForOrderAsync();
                 return View();
             }
             catch (Exception ex)
@@ -118,7 +118,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (!ModelState.IsValid)
                 {
                     ViewBag.Customers = await GetCustomerSelectListAsync(model.Customer_id);
-                    ViewBag.Products = await _productApiClient.GetAllAsync();
+                    ViewBag.Products = await _productApiClient.GetForOrderAsync();
                     return View(model);
                 }
 
@@ -139,12 +139,102 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 }
                 SetErrorMessage(message ?? "Tạo đơn hàng thất bại!");
                 ViewBag.Customers = await GetCustomerSelectListAsync(model.Customer_id);
-                ViewBag.Products = await _productApiClient.GetAllAsync();
+                ViewBag.Products = await _productApiClient.GetForOrderAsync();
                 return View(model);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating order");
+                SetErrorMessage(GetDetailedErrorMessage(ex));
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        [RequirePermission(PermissionCodes.OrderUpdate)]
+        public async Task<IActionResult> Edit(int id)
+        {
+            try
+            {
+                var order = await _orderApiClient.GetByIdAsync(id);
+                if (order == null)
+                    return NotFound();
+                if (order.Order_status != "Pending")
+                {
+                    SetErrorMessage("Chỉ có thể sửa đơn hàng đang chờ xử lý.");
+                    return RedirectToAction(nameof(Details), new { id });
+                }
+
+                var model = new UpdateOrderDto
+                {
+                    Id = order.Id,
+                    Order_code = order.Order_code,
+                    Order_date = order.Order_date,
+                    Shipping_address = order.Shipping_address,
+                    note = order.note,
+                    Order_details = order.Order_details.Select(od => new OrderDetailDto
+                    {
+                        Product_id = od.Product_id,
+                        Quantity = od.Quantity,
+                        Unit_price = od.Unit_price
+                    }).ToList()
+                };
+                ViewBag.Order = order;
+                ViewBag.Customers = await GetCustomerSelectListAsync();
+                ViewBag.Products = await _productApiClient.GetForOrderAsync();
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading edit form");
+                SetErrorMessage(GetDetailedErrorMessage(ex));
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequirePermission(PermissionCodes.OrderUpdate)]
+        public async Task<IActionResult> Edit(int id, UpdateOrderDto model)
+        {
+            try
+            {
+                if (model.Id != id)
+                    return NotFound();
+
+                var order = await _orderApiClient.GetByIdAsync(id);
+                if (order == null)
+                    return NotFound();
+                if (order.Order_status != "Pending")
+                {
+                    SetErrorMessage("Chỉ có thể sửa đơn hàng đang chờ xử lý.");
+                    return RedirectToAction(nameof(Details), new { id });
+                }
+                if (model.Order_details == null || !model.Order_details.Any())
+                {
+                    SetErrorMessage("Đơn hàng phải có ít nhất một sản phẩm.");
+                    ViewBag.Order = order;
+                    ViewBag.Customers = await GetCustomerSelectListAsync();
+                    ViewBag.Products = await _productApiClient.GetForOrderAsync();
+                    return View(model);
+                }
+
+                model.Updated_by = GetCurrentUserId();
+                var (success, errorMessage) = await _orderApiClient.UpdateOrderAsync(model);
+
+                if (success)
+                {
+                    SetSuccessMessage("Cập nhật đơn hàng thành công!");
+                    return RedirectToAction(nameof(Details), new { id });
+                }
+                SetErrorMessage(errorMessage ?? "Cập nhật đơn hàng thất bại!");
+                ViewBag.Order = order;
+                ViewBag.Customers = await GetCustomerSelectListAsync();
+                ViewBag.Products = await _productApiClient.GetForOrderAsync();
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating order");
                 SetErrorMessage(GetDetailedErrorMessage(ex));
                 return RedirectToAction(nameof(Index));
             }

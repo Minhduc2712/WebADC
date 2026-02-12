@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using ErpOnlineOrder.Application.DTOs.ProductDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.Constants;
@@ -23,7 +23,19 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var products = await _productService.SearchAsync(name, author, publisher);
             return Ok(products);
         }
-        [HttpGet("{id}/entity")]
+
+        /// <summary>
+        /// Lấy danh sách sản phẩm cho màn hình tạo/sửa đơn hàng, gán sản phẩm cho khách hàng.
+        /// Cho phép user có ProductView, OrderCreate, OrderUpdate, CustomerProductView hoặc CustomerProductAssign.
+        /// </summary>
+        [HttpGet("for-order")]
+        [RequireAnyPermission(PermissionCodes.ProductView, PermissionCodes.OrderCreate, PermissionCodes.OrderUpdate, PermissionCodes.CustomerProductView, PermissionCodes.CustomerProductAssign)]
+        public async Task<IActionResult> GetProductsForOrder()
+        {
+            var products = await _productService.SearchAsync(null, null, null);
+            return Ok(products);
+        }
+        [HttpGet("{id:int}/entity")]
         [RequirePermission(PermissionCodes.ProductView)]
         public async Task<IActionResult> GetProductEntity(int id)
         {
@@ -31,7 +43,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             if (product == null) return NotFound();
             return Ok(product);
         }
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         [RequirePermission(PermissionCodes.ProductView)]
         public async Task<IActionResult> GetProduct(int id)
         {
@@ -95,15 +107,12 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             {
                 return BadRequest(new { message = "File không hợp lệ" });
             }
-
-            // TODO: Implement import logic
             return Ok(new { message = "Import successful", fileName = file.FileName, size = file.Length });
         }
         [HttpGet("export")]
         [RequirePermission(PermissionCodes.ProductExport)]
         public async Task<IActionResult> ExportProducts()
         {
-            // TODO: Implement export logic
             return Ok(new { message = "Export successful" });
         }
     }

@@ -65,8 +65,8 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             return new DistributorDto
             {
                 Id = d.Id,
-                Distributor_code = d.Distributor_code,
-                Distributor_name = d.Distributor_name,
+                Distributor_code = d.Distributor_code ?? "",
+                Distributor_name = d.Distributor_name ?? "",
                 Distributor_address = d.Distributor_address ?? "",
                 Distributor_phone = d.Distributor_phone ?? "",
                 Distributor_email = d.Distributor_email ?? "",

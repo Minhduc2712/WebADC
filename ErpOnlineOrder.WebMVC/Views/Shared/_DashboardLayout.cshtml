@@ -182,7 +182,7 @@
             <li><a href="@Url.Action("Index", "Order")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Order" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")"><i class="fas fa-home"></i> Trang chủ</a></li>
             
             @* QUẢN LÝ - Hiển thị nếu có ít nhất 1 quyền VIEW *@
-            @if (Context.Session.HasAnyPermission("PRODUCT_VIEW", "ORDER_VIEW", "CUSTOMER_VIEW", "CUSTOMER_ASSIGN", "INVOICE_VIEW", "WAREHOUSE_VIEW"))
+            @if (Context.Session.HasAnyPermission("PRODUCT_VIEW", "ORDER_VIEW", "CUSTOMER_VIEW", "CUSTOMER_ASSIGN", "CUSTOMER_PRODUCT_VIEW", "INVOICE_VIEW", "WAREHOUSE_VIEW"))
             {
                 <li class="menu-title">QUẢN LÝ</li>
                 

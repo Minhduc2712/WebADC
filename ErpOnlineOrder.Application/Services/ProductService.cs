@@ -1,4 +1,4 @@
-using ErpOnlineOrder.Application.DTOs;
+﻿using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.DTOs.ProductDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
@@ -157,9 +157,9 @@ namespace ErpOnlineOrder.Application.Services
                 Id = p.Id,
                 Product_code = p.Product_code ?? "",
                 Product_name = p.Product_name ?? "",
-                Product_description = p.Product_description,
-                Product_price = p.Product_price,
-                Product_link = p.Product_link,
+                Product_description = p.Product_description ?? "",
+                Product_price = p.Product_price ?? "",
+                Product_link = p.Product_link ?? "",
                 Publisher_name = p.Publisher?.Publisher_name ?? "",
                 Authors = p.Product_Authors?
                     .Where(pa => pa?.Author != null)

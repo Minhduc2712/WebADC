@@ -15,19 +15,22 @@ namespace ErpOnlineOrder.Application.Services
         private readonly ICustomerProductRepository _customerProductRepository;
         private readonly ICustomerCategoryRepository _customerCategoryRepository;
         private readonly IProductRepository _productRepository;
+        private readonly IEmailService _emailService;
 
         public OrderService(
             IOrderRepository orderRepository, 
             ICustomerManagementRepository customerManagementRepository,
             ICustomerProductRepository customerProductRepository,
             ICustomerCategoryRepository customerCategoryRepository,
-            IProductRepository productRepository)
+            IProductRepository productRepository,
+            IEmailService emailService)
         {
             _orderRepository = orderRepository;
             _customerManagementRepository = customerManagementRepository;
             _customerProductRepository = customerProductRepository;
             _customerCategoryRepository = customerCategoryRepository;
             _productRepository = productRepository;
+            _emailService = emailService;
         }
 
         public async Task<OrderDTO?> GetByIdAsync(int id)
@@ -75,7 +78,6 @@ namespace ErpOnlineOrder.Application.Services
                     continue;
                 }
 
-                // Kiểm tra số lượng tối đa
                 var customerProduct = await _customerProductRepository.GetByCustomerAndProductAsync(customerId, detail.Product_id);
                 if (customerProduct?.Max_quantity != null && detail.Quantity > customerProduct.Max_quantity)
                 {
@@ -89,7 +91,6 @@ namespace ErpOnlineOrder.Application.Services
                 }
             }
 
-            // Nếu có sản phẩm không hợp lệ, trả về lỗi
             if (invalidProducts.Any())
             {
                 result.Success = false;
@@ -139,6 +140,8 @@ namespace ErpOnlineOrder.Application.Services
             result.Message = "Tạo đơn hàng thành công";
             result.Order_id = order.Id;
             result.Order_code = order.Order_code;
+            _ = Task.Run(() => _emailService.SendOrderNotificationForStaffAndAdminAsync(order.Id));
+            _ = Task.Run(() => _emailService.SendOrderNotificationForCustomerAsync(order.Id));
             return result;
         }
 
@@ -187,31 +190,56 @@ namespace ErpOnlineOrder.Application.Services
             result.Message = "Tạo đơn hàng thành công";
             result.Order_id = order.Id;
             result.Order_code = order.Order_code;
+            _ = Task.Run(() => _emailService.SendOrderNotificationForStaffAndAdminAsync(order.Id));
+            _ = Task.Run(() => _emailService.SendOrderNotificationForCustomerAsync(order.Id));
             return result;
         }
 
-        public async Task<bool> UpdateOrderAsync(UpdateOrderDto dto)
+        public async Task<UpdateOrderResultDto> UpdateOrderAsync(UpdateOrderDto dto)
         {
+            var result = new UpdateOrderResultDto();
+
             var order = await _orderRepository.GetByIdAsync(dto.Id);
-            if (order == null) return false;
+            if (order == null)
+                 return new UpdateOrderResultDto { Success = false, Message = "Đơn hàng không tồn tại." };
+
+            if (order.Order_status != "Pending")
+                return new UpdateOrderResultDto { Success = false, Message = "Chỉ có thể sửa đơn hàng đang chờ xử lý." };
 
             order.Order_code = dto.Order_code;
             order.Order_date = dto.Order_date;
-            order.Order_Details = dto.Order_details.Select(od => new Order_detail
+            order.Shipping_address = dto.Shipping_address;
+            order.note = dto.note;
+            order.Order_Details.Clear();
+            foreach (var od in dto.Order_details)
             {
-                Product_id = od.Product_id,
-                Quantity = od.Quantity,
-                Unit_price = od.Unit_price,
-                Total_price = od.Quantity * od.Unit_price,
-                Created_at = DateTime.UtcNow,
-                Updated_at = DateTime.UtcNow,
-                Is_deleted = false
-            }).ToList();
+                order.Order_Details.Add(new Order_detail
+                {
+                    Order_id = order.Id,
+                    Product_id = od.Product_id,
+                    Quantity = od.Quantity,
+                    Unit_price = od.Unit_price,
+                    Total_price = od.Quantity * od.Unit_price,
+                    Created_at = DateTime.UtcNow,
+                    Updated_at = DateTime.UtcNow,
+                    Created_by = dto.Updated_by,
+                    Updated_by = dto.Updated_by,
+                    Is_deleted = false
+                });
+            }
+            order.Total_amount = order.Order_Details.Sum(od => od.Quantity);
             order.Total_price = order.Order_Details.Sum(od => od.Total_price);
             order.Updated_by = dto.Updated_by;
             order.Updated_at = DateTime.UtcNow;
             await _orderRepository.UpdateAsync(order);
-            return true;
+
+            result.Success = true;
+            result.Message = "Cập nhật đơn hàng thành công";
+            result.Order_id = order.Id;
+            result.Order_code = order.Order_code;
+            _ = Task.Run(() => _emailService.SendOrderNotificationForStaffAndAdminAsync(order.Id));
+            _ = Task.Run(() => _emailService.SendOrderNotificationForCustomerAsync(order.Id));
+            return result;
         }
 
         public async Task<bool> DeleteOrderAsync(int id)
@@ -461,6 +489,7 @@ namespace ErpOnlineOrder.Application.Services
                 note = order.note,
                 Order_details = order.Order_Details.Select(od => new OrderDetailDTO
                 {
+                    Product_id = od.Product_id,
                     Product_name = od.Product?.Product_name ?? "",
                     Quantity = od.Quantity,
                     Unit_price = od.Unit_price,

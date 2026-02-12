@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
@@ -49,6 +49,7 @@ namespace ErpOnlineOrder.Infrastructure.Persistence
         public DbSet<Organization_information> OrganizationInformations => Set<Organization_information>();
         public DbSet<Customer_product> CustomerProducts => Set<Customer_product>();
         public DbSet<Customer_category> CustomerCategories => Set<Customer_category>();
+        public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -520,6 +521,22 @@ namespace ErpOnlineOrder.Infrastructure.Persistence
                     .HasForeignKey(x => x.Province_id)
                     .OnDelete(DeleteBehavior.Restrict);
                 entity.HasIndex(x => new { x.Staff_id, x.Customer_id }).IsUnique();
+            });
+
+            // SystemSetting configuration
+            modelBuilder.Entity<SystemSetting>(entity =>
+            {
+                entity.ToTable("SystemSettings");
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.SettingKey).HasMaxLength(100).IsRequired();
+                entity.Property(x => x.SettingValue).HasMaxLength(1000);
+                entity.Property(x => x.Description).HasMaxLength(200);
+                entity.Property(x => x.CreatedBy).HasColumnName("Created_by");
+                entity.Property(x => x.CreatedAt).HasColumnName("Created_at");
+                entity.Property(x => x.IsDeleted).HasColumnName("Is_deleted");
+                entity.Property(x => x.UpdatedBy).HasColumnName("Updated_by");
+                entity.Property(x => x.UpdatedAt).HasColumnName("Updated_at");
+                entity.HasIndex(x => x.SettingKey).IsUnique();
             });
         }
     }

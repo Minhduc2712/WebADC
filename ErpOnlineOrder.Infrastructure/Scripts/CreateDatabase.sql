@@ -722,6 +722,24 @@ BEGIN
 END
 GO
 
+-- SystemSettings table (key-value settings)
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'SystemSettings')
+BEGIN
+    CREATE TABLE SystemSettings (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        SettingKey NVARCHAR(100) NOT NULL UNIQUE,
+        SettingValue NVARCHAR(1000) NULL,
+        Description NVARCHAR(200) NULL,
+        Created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+        Created_by INT NOT NULL DEFAULT 0,
+        Is_deleted BIT NOT NULL DEFAULT 0,
+        Updated_by INT NOT NULL DEFAULT 0,
+        Updated_at DATETIME2 NOT NULL DEFAULT GETDATE()
+    );
+    PRINT N'Da tao bang SystemSettings';
+END
+GO
+
 -- =============================================
 -- 10. TAO INDEX
 -- =============================================

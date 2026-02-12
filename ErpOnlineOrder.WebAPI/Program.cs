@@ -1,4 +1,4 @@
-using ErpOnlineOrder.WebAPI.Controllers;
+﻿using ErpOnlineOrder.WebAPI.Controllers;
 using ErpOnlineOrder.WebAPI.Middleware;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.Services;
@@ -74,6 +74,7 @@ builder.Services.AddScoped<IAuthorRepository, AuthorRepository>();
 builder.Services.AddScoped<IPublisherRepository, PublisherRepository>();
 builder.Services.AddScoped<ICoverTypeRepository, CoverTypeRepository>();
 builder.Services.AddScoped<IWarehouseRepository, WarehouseRepository>();
+builder.Services.AddScoped<ISystemSettingRepository, SystemSettingRepository>();
 
 // Add security services
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
@@ -91,7 +92,6 @@ builder.Services.AddScoped<IProvinceService, ProvinceService>();
 builder.Services.AddScoped<IDistributorService, DistributorService>();
 builder.Services.AddScoped<IOrganizationService, OrganizationService>();
 builder.Services.AddScoped<ICustomerManagementService, CustomerManagementService>();
-builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<ICustomerProductService, CustomerProductService>();
 builder.Services.AddScoped<ICustomerCategoryService, CustomerCategoryService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
@@ -100,6 +100,8 @@ builder.Services.AddScoped<IAuthorService, AuthorService>();
 builder.Services.AddScoped<IPublisherService, PublisherService>();
 builder.Services.AddScoped<ICoverTypeService, CoverTypeService>();
 builder.Services.AddScoped<IWarehouseService, WarehouseService>();
+builder.Services.AddScoped<ISettingService, SettingService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 var app = builder.Build();
 

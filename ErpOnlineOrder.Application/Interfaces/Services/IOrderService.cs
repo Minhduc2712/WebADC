@@ -1,4 +1,4 @@
-using ErpOnlineOrder.Domain.Models;
+﻿using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.DTOs.OrderDTOs;
 using System.Collections.Generic;
@@ -14,7 +14,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
         Task<CreateOrderResultDto> CreateOrderAsync(CreateOrderDto dto);
         Task<CreateOrderResultDto> CreateOrderWithoutValidationAsync(CreateOrderDto dto);
         
-        Task<bool> UpdateOrderAsync(UpdateOrderDto dto);
+        Task<UpdateOrderResultDto> UpdateOrderAsync(UpdateOrderDto dto);
         Task<bool> DeleteOrderAsync(int id);
         Task<Order> CopyOrderAsync(CopyOrderDto dto);
         Task<IEnumerable<OrderDTO>> GetOrdersByStaffAsync(int staffId);

@@ -12,7 +12,6 @@ namespace ErpOnlineOrder.Application.Constants
         public const string Invoice = "INVOICE";
         public const string Warehouse = "WAREHOUSE";
         public const string Staff = "STAFF";
-        public const string Report = "REPORT";
         public const string Distributor = "DISTRIBUTOR";
         public const string Role = "ROLE";
         public const string Permission = "PERMISSION";
@@ -69,6 +68,8 @@ namespace ErpOnlineOrder.Application.Constants
         public const string CustomerUpdate = "CUSTOMER_UPDATE";
         public const string CustomerDelete = "CUSTOMER_DELETE";
         public const string CustomerAssign = "CUSTOMER_ASSIGN";
+        public const string CustomerProductView = "CUSTOMER_PRODUCT_VIEW";
+        public const string CustomerProductAssign = "CUSTOMER_PRODUCT_ASSIGN";
 
         // Order Permissions
         public const string OrderView = "ORDER_VIEW";
@@ -98,10 +99,6 @@ namespace ErpOnlineOrder.Application.Constants
         public const string StaffDelete = "STAFF_DELETE";
         public const string StaffAssignRole = "STAFF_ASSIGN";
 
-        // Report Permissions
-        public const string ReportView = "REPORT_VIEW";
-        public const string ReportExport = "REPORT_EXPORT";
-
         // Distributor Permissions
         public const string DistributorView = "DISTRIBUTOR_VIEW";
         public const string DistributorCreate = "DISTRIBUTOR_CREATE";
@@ -121,5 +118,9 @@ namespace ErpOnlineOrder.Application.Constants
         public const string PermissionUpdate = "PERMISSION_UPDATE";
         public const string PermissionDelete = "PERMISSION_DELETE";
         public const string PermissionAssignUser = "PERMISSION_ASSIGN";
+
+        // Settings
+        public const string SettingsView = "SETTINGS_VIEW";
+        public const string SettingsUpdate = "SETTINGS_UPDATE";
     }
 }

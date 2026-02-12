@@ -1,23 +1,27 @@
-@model ErpOnlineOrder.Application.DTOs.OrderDTOs.CreateOrderDto
+@model ErpOnlineOrder.Application.DTOs.OrderDTOs.UpdateOrderDto
 @{
-    ViewData["Title"] = "Tạo đơn hàng";
+    ViewData["Title"] = "Sửa đơn hàng";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
     var products = ViewBag.Products as IEnumerable<ErpOnlineOrder.Application.DTOs.ProductDTO> ?? Enumerable.Empty<ErpOnlineOrder.Application.DTOs.ProductDTO>();
+    var order = ViewBag.Order as ErpOnlineOrder.Application.DTOs.OrderDTO;
+    var customerName = order?.Customer_name ?? "—";
 }
 
 <div class="container-fluid">
     <div class="mb-4">
-        <h4 class="mb-0">Tạo đơn hàng mới</h4>
+        <h4 class="mb-0">Sửa đơn hàng @Model.Order_code</h4>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-0">
                 <li class="breadcrumb-item"><a href="@Url.Action("Index", "Order")">Trang chủ</a></li>
                 <li class="breadcrumb-item"><a href="@Url.Action("Index")">Đơn hàng</a></li>
-                <li class="breadcrumb-item active">Tạo mới</li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Details", new { id = Model.Id })">@Model.Order_code</a></li>
+                <li class="breadcrumb-item active">Sửa</li>
             </ol>
         </nav>
     </div>
 
-    <form asp-action="Create" method="post" id="orderForm">
+    <form asp-action="Edit" asp-route-id="@Model.Id" method="post" id="orderForm">
+        <input type="hidden" asp-for="Id" />
         <div class="row">
             <div class="col-md-8">
                 <div class="card shadow-sm mb-4">
@@ -53,7 +57,34 @@
                                 </tr>
                             </thead>
                             <tbody id="orderItems">
-                                <!-- Dynamic rows -->
+                                @{
+                                    var idx = 0;
+                                }
+                                @foreach (var item in Model.Order_details)
+                                {
+                                    var productName = order?.Order_details?.FirstOrDefault(od => od.Product_id == item.Product_id)?.Product_name ?? "Sản phẩm";
+                                    <tr>
+                                        <td>
+                                            @productName
+                                            <input type="hidden" name="Order_details[@idx].Product_id" value="@item.Product_id" />
+                                        </td>
+                                        <td>
+                                            <input type="number" name="Order_details[@idx].Quantity" value="@item.Quantity" min="1"
+                                                   class="form-control form-control-sm quantity-input" onchange="updateTotal()" />
+                                        </td>
+                                        <td>
+                                            <input type="number" name="Order_details[@idx].Unit_price" value="@item.Unit_price" step="0.01"
+                                                   class="form-control form-control-sm price-input" onchange="updateTotal()" />
+                                        </td>
+                                        <td class="item-total">@((item.Quantity * item.Unit_price).ToString("N0")) VNĐ</td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeRow(this)">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    idx++;
+                                }
                             </tbody>
                             <tfoot>
                                 <tr class="table-light">
@@ -70,17 +101,21 @@
             <div class="col-md-4">
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-white py-3">
-                        <h6 class="mb-0"><i class="fas fa-user me-2"></i>Thông tin khách hàng</h6>
+                        <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Thông tin đơn hàng</h6>
                     </div>
                     <div class="card-body">
                         <div class="mb-3">
-                            <label asp-for="Customer_id" class="form-label">Khách hàng <span class="text-danger">*</span></label>
-                            @Html.DropDownListFor(m => m.Customer_id, ViewBag.Customers as SelectList, "-- Chọn khách hàng --", new { @class = "form-select" })
-                            <span asp-validation-for="Customer_id" class="text-danger"></span>
+                            <label asp-for="Order_code" class="form-label">Mã đơn hàng <span class="text-danger">*</span></label>
+                            <input asp-for="Order_code" class="form-control" />
+                            <span asp-validation-for="Order_code" class="text-danger"></span>
                         </div>
                         <div class="mb-3">
                             <label asp-for="Order_date" class="form-label">Ngày đặt hàng</label>
-                            <input asp-for="Order_date" class="form-control" type="date" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                            <input asp-for="Order_date" class="form-control" type="date" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Khách hàng</label>
+                            <input type="text" class="form-control bg-light" value="@customerName" readonly />
                         </div>
                         <div class="mb-3">
                             <label asp-for="Shipping_address" class="form-label">Địa chỉ giao hàng</label>
@@ -95,9 +130,9 @@
 
                 <div class="d-grid gap-2">
                     <button type="submit" class="btn btn-primary btn-lg">
-                        <i class="fas fa-save me-2"></i>Tạo đơn hàng
+                        <i class="fas fa-save me-2"></i>Cập nhật đơn hàng
                     </button>
-                    <a asp-action="Index" class="btn btn-secondary">
+                    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">
                         <i class="fas fa-times me-2"></i>Hủy
                     </a>
                 </div>
@@ -109,7 +144,7 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        let itemIndex = 0;
+        let itemIndex = @Model.Order_details.Count;
 
         function addProduct() {
             const select = document.getElementById('productSelect');
@@ -127,7 +162,7 @@
                     <input type="hidden" name="Order_details[${itemIndex}].Product_id" value="${productId}" />
                 </td>
                 <td>
-                    <input type="number" name="Order_details[${itemIndex}].Quantity" value="1" min="1" 
+                    <input type="number" name="Order_details[${itemIndex}].Quantity" value="1" min="1"
                            class="form-control form-control-sm quantity-input" onchange="updateTotal()" />
                 </td>
                 <td>
@@ -158,10 +193,13 @@
                 const qty = parseFloat(row.querySelector('.quantity-input')?.value) || 0;
                 const price = parseFloat(row.querySelector('.price-input')?.value) || 0;
                 const itemTotal = qty * price;
-                row.querySelector('.item-total').textContent = itemTotal.toLocaleString() + ' VNĐ';
+                const totalCell = row.querySelector('.item-total');
+                if (totalCell) totalCell.textContent = itemTotal.toLocaleString() + ' VNĐ';
                 total += itemTotal;
             });
             document.getElementById('totalAmount').textContent = total.toLocaleString();
         }
+
+        document.addEventListener('DOMContentLoaded', updateTotal);
     </script>
 }

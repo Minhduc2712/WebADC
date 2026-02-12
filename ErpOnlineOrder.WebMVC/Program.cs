@@ -1,4 +1,4 @@
-using ErpOnlineOrder.Application.Interfaces.Services;
+﻿using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.Services;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Security;
@@ -65,6 +65,7 @@ builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.ICustomerApiClient, Er
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IOrderApiClient, ErpOnlineOrder.WebMVC.Services.OrderApiClient>();
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IPermissionApiClient, ErpOnlineOrder.WebMVC.Services.PermissionApiClient>();
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.ICustomerManagementApiClient, ErpOnlineOrder.WebMVC.Services.CustomerManagementApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.ICustomerProductApiClient, ErpOnlineOrder.WebMVC.Services.CustomerProductApiClient>();
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IAdminApiClient, ErpOnlineOrder.WebMVC.Services.AdminApiClient>();
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IInvoiceApiClient, ErpOnlineOrder.WebMVC.Services.InvoiceApiClient>();
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IWarehouseExportApiClient, ErpOnlineOrder.WebMVC.Services.WarehouseExportApiClient>();
@@ -97,6 +98,8 @@ builder.Services.AddScoped<IPublisherRepository, PublisherRepository>();
 builder.Services.AddScoped<ICoverTypeRepository, CoverTypeRepository>();
 builder.Services.AddScoped<IWarehouseRepository, WarehouseRepository>();
 builder.Services.AddScoped<IStaffRepository, StaffRepository>();
+builder.Services.AddScoped<ISystemSettingRepository, SystemSettingRepository>();
+
 
 // Add security services
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
@@ -115,7 +118,6 @@ builder.Services.AddScoped<IProvinceService, ProvinceService>();
 builder.Services.AddScoped<IDistributorService, DistributorService>();
 builder.Services.AddScoped<IOrganizationService, OrganizationService>();
 builder.Services.AddScoped<ICustomerManagementService, CustomerManagementService>();
-builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<ICustomerProductService, CustomerProductService>();
 builder.Services.AddScoped<ICustomerCategoryService, CustomerCategoryService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
@@ -124,6 +126,8 @@ builder.Services.AddScoped<IAuthorService, AuthorService>();
 builder.Services.AddScoped<IPublisherService, PublisherService>();
 builder.Services.AddScoped<ICoverTypeService, CoverTypeService>();
 builder.Services.AddScoped<IWarehouseService, WarehouseService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<ISettingService, SettingService>();
 
 // Logging
 builder.Services.AddLogging(logging =>

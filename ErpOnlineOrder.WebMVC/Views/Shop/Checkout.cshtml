@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewData["Title"] = "Thanh toán";
     Layout = "~/Views/Shared/_ShopLayout.cshtml";
 }
@@ -33,6 +33,7 @@
                         }
                         <div class="account-section billing-section">
                             <h5 class="wrapper-heading">Thông tin giao hàng</h5>
+                            <h4 class=" wrapper-heading"> Thông tin người nhận </h4>
                             <div class="review-form">
                                 <div class="account-inner-form">
                                     <div class="review-form-name">
@@ -54,6 +55,7 @@
                                         <input type="tel" id="phone" class="form-control" placeholder="0123 456 789">
                                     </div>
                                 </div>
+                                <h4 class=" wrapper-heading"> Thông tin đơn vị </h4>
                                 <div class="review-form-name">
                                     <label for="country" class="form-label">Tỉnh / Thành phố *</label>
                                     <select id="country" class="form-select">
@@ -70,7 +72,7 @@
                                     <input type="text" id="address" class="form-control" placeholder="Nhập địa chỉ giao hàng">
                                 </div>
                                 <div class="account-inner-form city-inner-form">
-                                    <div class="review-form-name">
+                                    <div class="review-form-name">  
                                         <label for="city" class="form-label">Quận / Huyện *</label>
                                         <input type="text" id="city" class="form-control" placeholder="Nhập quận/huyện">
                                     </div>
