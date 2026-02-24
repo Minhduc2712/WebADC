@@ -1,4 +1,4 @@
-﻿using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.Services;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Security;
@@ -69,6 +69,7 @@ builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.ICustomerProductApiCli
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IAdminApiClient, ErpOnlineOrder.WebMVC.Services.AdminApiClient>();
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IInvoiceApiClient, ErpOnlineOrder.WebMVC.Services.InvoiceApiClient>();
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IWarehouseExportApiClient, ErpOnlineOrder.WebMVC.Services.WarehouseExportApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.ISettingApiClient, ErpOnlineOrder.WebMVC.Services.SettingApiClient>();
 
 // Add DbContext
 builder.Services.AddDbContext<ErpOnlineOrderDbContext>(options =>

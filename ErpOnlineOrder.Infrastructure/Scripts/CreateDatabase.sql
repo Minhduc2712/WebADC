@@ -86,15 +86,44 @@ BEGIN
     CREATE TABLE Permissions (
         Id INT IDENTITY(1,1) PRIMARY KEY,
         Permission_code NVARCHAR(100) NOT NULL UNIQUE,
-        Module_id INT NULL,
-        Action_id INT NULL,
+        Parent_id INT NULL,
+        Is_special BIT NOT NULL DEFAULT 0,
         Created_by INT NOT NULL DEFAULT 0,
         Created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
         Updated_by INT NOT NULL DEFAULT 0,
         Updated_at DATETIME2 NOT NULL DEFAULT GETDATE(),
-        Is_deleted BIT NOT NULL DEFAULT 0
+        Is_deleted BIT NOT NULL DEFAULT 0,
+        CONSTRAINT FK_Permissions_Parent FOREIGN KEY (Parent_id) REFERENCES Permissions(Id)
     );
     PRINT N'Da tao bang Permissions';
+END
+GO
+
+-- Migration: Them Parent_id, Is_special neu bang da ton tai
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'Permissions')
+BEGIN
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Permissions') AND name = 'Parent_id')
+    BEGIN
+        ALTER TABLE Permissions ADD Parent_id INT NULL;
+        ALTER TABLE Permissions ADD CONSTRAINT FK_Permissions_Parent FOREIGN KEY (Parent_id) REFERENCES Permissions(Id);
+        PRINT N'Da them cot Parent_id vao Permissions';
+    END
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Permissions') AND name = 'Is_special')
+    BEGIN
+        ALTER TABLE Permissions ADD Is_special BIT NOT NULL DEFAULT 0;
+        PRINT N'Da them cot Is_special vao Permissions';
+    END
+    -- Xoa Module_id, Action_id neu ton tai
+    IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Permissions') AND name = 'Module_id')
+    BEGIN
+        ALTER TABLE Permissions DROP COLUMN Module_id;
+        PRINT N'Da xoa cot Module_id khoi Permissions';
+    END
+    IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Permissions') AND name = 'Action_id')
+    BEGIN
+        ALTER TABLE Permissions DROP COLUMN Action_id;
+        PRINT N'Da xoa cot Action_id khoi Permissions';
+    END
 END
 GO
 

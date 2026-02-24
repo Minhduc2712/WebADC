@@ -42,6 +42,13 @@ namespace ErpOnlineOrder.Application.Services
             return products.Select(p => MapToDto(p));
         }
 
+        public async Task<IEnumerable<ProductDTO>> SearchByAllAsync(string? searchString)
+        {
+            var products = await _productRepository.SearchByAllAsync(searchString);
+            return products.Select(p => MapToDto(p));
+        }
+
+
         public async Task<ProductDTO> CreateProductAsync(CreateProductDto dto, int createdBy)
         {
             var existingByCode = await _productRepository.GetByCodeAsync(dto.Product_code);

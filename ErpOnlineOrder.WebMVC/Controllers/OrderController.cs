@@ -88,67 +88,35 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             }
         }
 
-        [RequirePermission(PermissionCodes.OrderCreate)]
-        public async Task<IActionResult> Create()
-        {
-            try
-            {
-                ViewBag.Customers = await GetCustomerSelectListAsync();
-                ViewBag.Products = await _productApiClient.GetForOrderAsync();
-                return View();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error loading create form");
-                SetErrorMessage(GetDetailedErrorMessage(ex));
-                return RedirectToAction(nameof(Index));
-            }
-        }
+        // [ĐÃ BỎ] Chức năng tạo đơn hàng thay mặt khách hàng (Admin)
+        // /// <summary>Hiển thị form tạo đơn hàng thay mặt khách hàng (Admin). Yêu cầu ORDER_CREATE.</summary>
+        // [RequirePermission(PermissionCodes.OrderCreate)]
+        // public async Task<IActionResult> Create()
+        // {
+        //     try
+        //     {
+        //         ViewBag.Customers = await GetCustomerSelectListAsync();
+        //         ViewBag.Products = await _productApiClient.GetForOrderAsync();
+        //         return View();
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         _logger.LogError(ex, "Error loading create form");
+        //         SetErrorMessage(GetDetailedErrorMessage(ex));
+        //         return RedirectToAction(nameof(Index));
+        //     }
+        // }
 
+        [RequirePermission(PermissionCodes.OrderCreate)]
+        public IActionResult Create() => RedirectToAction(nameof(Index));
+
+        // [ĐÃ BỎ] POST tạo đơn hàng thay mặt khách hàng (Admin)
+        // [HttpPost][ValidateAntiForgeryToken][RequirePermission(PermissionCodes.OrderCreate)]
+        // public async Task<IActionResult> Create(CreateOrderDto model) { ... }
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequirePermission(PermissionCodes.OrderCreate)]
-        public async Task<IActionResult> Create(CreateOrderDto model)
-        {
-            try
-            {
-                if (model.Customer_id == null)
-                    ModelState.AddModelError(nameof(CreateOrderDto.Customer_id), "Vui lòng chọn khách hàng.");
-
-                if (!ModelState.IsValid)
-                {
-                    ViewBag.Customers = await GetCustomerSelectListAsync(model.Customer_id);
-                    ViewBag.Products = await _productApiClient.GetForOrderAsync();
-                    return View(model);
-                }
-
-                var dto = new CreateOrderDto
-                {
-                    Order_date = model.Order_date,
-                    Customer_id = model.Customer_id!.Value,
-                    Shipping_address = model.Shipping_address,
-                    note = model.note,
-                    Order_details = model.Order_details ?? new List<OrderDetailDto>()
-                };
-                var (success, message, orderId) = await _orderApiClient.CreateOrderAdminAsync(dto);
-
-                if (success && orderId.HasValue)
-                {
-                    SetSuccessMessage("Tạo đơn hàng thành công!");
-                    return RedirectToAction(nameof(Details), new { id = orderId });
-                }
-                SetErrorMessage(message ?? "Tạo đơn hàng thất bại!");
-                ViewBag.Customers = await GetCustomerSelectListAsync(model.Customer_id);
-                ViewBag.Products = await _productApiClient.GetForOrderAsync();
-                return View(model);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating order");
-                SetErrorMessage(GetDetailedErrorMessage(ex));
-                return RedirectToAction(nameof(Index));
-            }
-        }
+        public IActionResult Create(CreateOrderDto _) => RedirectToAction(nameof(Index));
 
         [RequirePermission(PermissionCodes.OrderUpdate)]
         public async Task<IActionResult> Edit(int id)

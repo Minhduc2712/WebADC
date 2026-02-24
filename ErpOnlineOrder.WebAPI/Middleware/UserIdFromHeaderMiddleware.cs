@@ -2,9 +2,6 @@ using System.Security.Claims;
 
 namespace ErpOnlineOrder.WebAPI.Middleware
 {
-    /// <summary>
-    /// Đọc header X-User-Id (do WebMVC gửi khi gọi API) và gán vào HttpContext.User để RequirePermission hoạt động.
-    /// </summary>
     public class UserIdFromHeaderMiddleware
     {
         private readonly RequestDelegate _next;

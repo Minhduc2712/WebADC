@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.DTOs.OrderDTOs;
 using ErpOnlineOrder.Domain.Models;
@@ -41,17 +41,12 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             }
             return Ok(result);
         }
+        // [ĐÃ BỎ] Chức năng tạo đơn hàng thay mặt khách hàng (Admin)
+        // /// <summary>Tạo đơn hàng thay mặt khách hàng (Admin/Staff). Bỏ qua validation...</summary>
+        // [HttpPost("admin")]
+        // public async Task<IActionResult> CreateOrderAdmin([FromBody] CreateOrderDto model) { ... }
         [HttpPost("admin")]
-        public async Task<IActionResult> CreateOrderAdmin([FromBody] CreateOrderDto model)
-        {
-            model.Created_by = GetCurrentUserId();
-            var result = await _orderService.CreateOrderWithoutValidationAsync(model);
-            if (!result.Success)
-            {
-                return BadRequest(result);
-            }
-            return Ok(result);
-        }
+        public IActionResult CreateOrderAdmin() => StatusCode(410, new { message = "Chức năng tạo đơn hàng Admin đã tạm đóng." });
 
         [HttpPut]
         public async Task<IActionResult> UpdateOrder([FromBody] UpdateOrderDto model)

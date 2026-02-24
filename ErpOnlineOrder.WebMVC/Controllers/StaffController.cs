@@ -423,21 +423,17 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (staff == null)
                     return NotFound();
 
-                var allPermissions = await _permissionApiClient.GetAllPermissionsAsync();
                 var userFullPermissions = await _permissionApiClient.GetUserFullPermissionsAsync(id);
+                var permissionTree = (await _permissionApiClient.GetPermissionsTreeAsync()).ToList();
+                var specialPermissions = (await _permissionApiClient.GetSpecialPermissionsAsync()).ToList();
                 var currentDirectPermissionIds = userFullPermissions?.DirectPermissions
                     .Where(p => p.IsValid)
                     .Select(p => p.PermissionId)
                     .ToList() ?? new List<int>();
 
-                // Group permissions by module
-                var groupedPermissions = allPermissions
-                    .GroupBy(p => p.Module_name)
-                    .OrderBy(g => g.Key)
-                    .ToDictionary(g => g.Key, g => g.ToList());
-
                 ViewBag.Staff = staff;
-                ViewBag.GroupedPermissions = groupedPermissions;
+                ViewBag.PermissionTree = permissionTree;
+                ViewBag.SpecialPermissions = specialPermissions;
                 ViewBag.CurrentDirectPermissionIds = currentDirectPermissionIds;
                 ViewBag.UserFullPermissions = userFullPermissions;
 

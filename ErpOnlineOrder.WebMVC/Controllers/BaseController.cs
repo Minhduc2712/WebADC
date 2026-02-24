@@ -3,9 +3,6 @@ using System.Text.Json;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
-    
-    /// Base controller với xử lý lỗi chi tiết và hỗ trợ thông báo
-    
     public class BaseController : Controller
     {
                 
@@ -106,24 +103,16 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             }
         }
 
-        /// Đặt thông báo thành công
-        
         protected void SetSuccessMessage(string message)
         {
             TempData["SuccessMessage"] = message;
         }
 
-        
-        /// Đặt thông báo lỗi
-        
         protected void SetErrorMessage(string message)
         {
             TempData["ErrorMessage"] = message;
         }
 
-        
-        /// Đặt thông báo lỗi với danh sách chi tiết
-        
         protected void SetErrorMessage(string message, List<string> details)
         {
             TempData["ErrorMessage"] = message;
@@ -133,9 +122,6 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             }
         }
 
-        
-        /// Đặt thông báo lỗi từ Exception với danh sách chi tiết
-        
         protected void SetErrorFromException(Exception ex, string? contextMessage = null)
         {
             var errorMessage = GetDetailedErrorMessage(ex);
@@ -164,25 +150,16 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             }
         }
 
-        
-        /// Đặt thông báo cảnh báo
-        
         protected void SetWarningMessage(string message)
         {
             TempData["WarningMessage"] = message;
         }
 
-        
-        /// Đặt thông báo thông tin
-        
         protected void SetInfoMessage(string message)
         {
             TempData["InfoMessage"] = message;
         }
 
-        
-        /// Lấy tất cả lỗi từ ModelState dưới dạng danh sách
-        
         protected List<string> GetModelStateErrors()
         {
             return ModelState.Values
@@ -192,9 +169,6 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 .ToList();
         }
 
-        
-        /// Đặt thông báo lỗi từ ModelState errors
-        
         protected void SetErrorFromModelState(string? headerMessage = null)
         {
             var errors = GetModelStateErrors();

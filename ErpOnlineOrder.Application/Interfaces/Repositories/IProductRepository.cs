@@ -11,6 +11,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
         Task<Product?> GetByNameAsync(string name);
         Task<IEnumerable<Product>> GetAllAsync();
         Task<IEnumerable<Product>> SearchAsync(string? name, string? author, string? publisher);
+        Task<IEnumerable<Product>> SearchByAllAsync(string? searchString);
         Task<IEnumerable<Product>> GetByCategoryIdAsync(int categoryId);
         Task<Product> AddAsync(Product product);
         Task DeleteAsync(int id);

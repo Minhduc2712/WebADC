@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Dapper;
+using System.Data;
 
 namespace ErpOnlineOrder.Infrastructure.Repositories
 {
@@ -84,6 +86,35 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             }
 
             return await query.ToListAsync();
+        }
+
+        public async Task<IEnumerable<Product>> SearchByAllAsync(string? searchString)
+        {
+            if (string.IsNullOrWhiteSpace(searchString))
+                return await GetAllAsync();
+
+            var connection = _context.Database.GetDbConnection();
+            if (connection.State != ConnectionState.Open)
+                await connection.OpenAsync();
+
+            var query = $"%{searchString.Trim()}%";
+            const string sql = @"
+            SELECT DISTINCT p.*
+            FROM Products p
+            LEFT JOIN Publishers pub ON p.Publisher_id = pub.Id AND pub.Is_deleted = 0
+            LEFT JOIN ProductAuthors pa ON p.Id = pa.Product_id AND pa.Is_deleted = 0
+            LEFT JOIN Authors a ON pa.Author_id = a.Id AND a.Is_deleted = 0
+            WHERE p.Is_deleted = 0
+            AND (
+                p.Product_name LIKE @query
+                OR p.Product_code LIKE @query
+                OR (p.Product_description IS NOT NULL AND p.Product_description LIKE @query)
+                OR (pub.Publisher_name IS NOT NULL AND pub.Publisher_name LIKE @query)
+                OR (a.Author_name IS NOT NULL AND a.Author_name LIKE @query)
+                )";
+
+            var result = await connection.QueryAsync<Product>(sql, new { query });
+            return result.ToList();
         }
 
         public async Task<IEnumerable<Product>> GetByCategoryIdAsync(int categoryId)

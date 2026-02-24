@@ -43,6 +43,22 @@ namespace ErpOnlineOrder.WebMVC.Services
             return list ?? new List<PermissionDto>();
         }
 
+        public async Task<IEnumerable<PermissionDto>> GetPermissionsTreeAsync(CancellationToken cancellationToken = default)
+        {
+            var response = await _http.GetAsync("permission/permissions/tree", cancellationToken);
+            if (!response.IsSuccessStatusCode) return Array.Empty<PermissionDto>();
+            var list = await response.Content.ReadFromJsonAsync<List<PermissionDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return list ?? new List<PermissionDto>();
+        }
+
+        public async Task<IEnumerable<PermissionDto>> GetSpecialPermissionsAsync(CancellationToken cancellationToken = default)
+        {
+            var response = await _http.GetAsync("permission/permissions/special", cancellationToken);
+            if (!response.IsSuccessStatusCode) return Array.Empty<PermissionDto>();
+            var list = await response.Content.ReadFromJsonAsync<List<PermissionDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return list ?? new List<PermissionDto>();
+        }
+
         public async Task<(bool Success, string? Error)> AssignPermissionsToUserAsync(AssignPermissionsToUserDto dto, CancellationToken cancellationToken = default)
         {
             var response = await _http.PostAsJsonAsync("permission/user/assign-permissions", dto, ErpApiClientHelper.JsonOptions, cancellationToken);

@@ -12,6 +12,8 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
         Task<Product?> GetEntityByIdAsync(int id);
         Task<IEnumerable<ProductDTO>> GetAllAsync();
         Task<IEnumerable<ProductDTO>> SearchAsync(string? name, string? author, string? publisher);
+
+        Task<IEnumerable<ProductDTO>> SearchByAllAsync(string? searchString);
         Task<ProductDTO> CreateProductAsync(CreateProductDto dto, int createdBy);
         Task<bool> UpdateProductAsync(int id, UpdateProductDto dto, int updatedBy);
         Task<bool> DeleteProductAsync(int id);

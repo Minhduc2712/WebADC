@@ -5,10 +5,6 @@ using System.Security.Claims;
 
 namespace ErpOnlineOrder.WebAPI.Attributes
 {
-    /// <summary>
-    /// Cho phép truy cập nếu user có BẤT KỲ quyền nào trong danh sách.
-    /// Dùng cho các endpoint cần nhiều quyền thay thế (vd: ProductView hoặc OrderCreate).
-    /// </summary>
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true)]
     public class RequireAnyPermissionAttribute : TypeFilterAttribute
     {

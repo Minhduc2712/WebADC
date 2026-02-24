@@ -23,6 +23,12 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .FirstOrDefaultAsync(s => s.SettingKey == key && !s.IsDeleted);
         }
 
+        public async Task<SystemSetting?> GetByIdAsync(int id)
+        {
+            return await _context.SystemSettings
+                .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
+        }
+
         public async Task<IEnumerable<SystemSetting>> GetAllAsync()
         {
             return await _context.SystemSettings

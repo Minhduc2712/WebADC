@@ -67,6 +67,39 @@ namespace ErpOnlineOrder.Application.Services
             return true;
         }
 
+        public async Task<bool> CreateSettingAsync(string key, string value, string? description, int updatedBy)
+        {
+            var existing = await _settingRepository.GetByKeyAsync(key);
+            if (existing != null) return false;
+
+            var setting = new SystemSetting
+            {
+                SettingKey = key,
+                SettingValue = value ?? "",
+                Description = description,
+                CreatedBy = updatedBy,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedBy = updatedBy,
+                UpdatedAt = DateTime.UtcNow,
+                IsDeleted = false
+            };
+            await _settingRepository.AddAsync(setting);
+            return true;
+        }
+
+        public async Task<bool> UpdateSettingAsync(int id, string value, string? description, int updatedBy)
+        {
+            var setting = await _settingRepository.GetByIdAsync(id);
+            if (setting == null) return false;
+
+            setting.SettingValue = value;
+            setting.Description = description;
+            setting.UpdatedBy = updatedBy;
+            setting.UpdatedAt = DateTime.UtcNow;
+            await _settingRepository.UpdateAsync(setting);
+            return true;
+        }
+
         public async Task<SmtpSettingsDto> GetSmtpSettingsAsync()
         {
             var host = await GetAsync(SettingKeys.SmtpHost);

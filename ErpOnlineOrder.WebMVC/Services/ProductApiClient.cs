@@ -30,13 +30,11 @@ namespace ErpOnlineOrder.WebMVC.Services
             return list ?? new List<ProductDTO>();
         }
 
-        public async Task<IEnumerable<ProductDTO>> SearchAsync(string? name, string? author, string? publisher, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<ProductDTO>> SearchAsync(string? search, CancellationToken cancellationToken = default)
         {
-            var query = new List<string>();
-            if (!string.IsNullOrEmpty(name)) query.Add($"name={Uri.EscapeDataString(name)}");
-            if (!string.IsNullOrEmpty(author)) query.Add($"author={Uri.EscapeDataString(author)}");
-            if (!string.IsNullOrEmpty(publisher)) query.Add($"publisher={Uri.EscapeDataString(publisher)}");
-            var path = query.Count > 0 ? "product?" + string.Join("&", query) : "product";
+            var path = !string.IsNullOrEmpty(search)
+                ? "product?search=" + Uri.EscapeDataString(search)
+                : "product";
             var response = await _http.GetAsync(path, cancellationToken);
             if (!response.IsSuccessStatusCode) return new List<ProductDTO>();
             var list = await response.Content.ReadFromJsonAsync<List<ProductDTO>>(ErpApiClientHelper.JsonOptions, cancellationToken);

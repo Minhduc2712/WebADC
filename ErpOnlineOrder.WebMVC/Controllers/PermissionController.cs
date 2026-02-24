@@ -232,13 +232,11 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (userFullPermissions == null)
                     return NotFound();
 
-                var allPermissions = await _permissionApiClient.GetAllPermissionsAsync();
+                var permissionTree = (await _permissionApiClient.GetPermissionsTreeAsync()).ToList();
+                var specialPermissions = (await _permissionApiClient.GetSpecialPermissionsAsync()).ToList();
 
-                ViewBag.AllPermissions = allPermissions.ToList();
-                ViewBag.GroupedPermissions = allPermissions
-                    .GroupBy(p => p.Module_name)
-                    .OrderBy(g => g.Key)
-                    .ToDictionary(g => g.Key, g => g.ToList());
+                ViewBag.PermissionTree = permissionTree;
+                ViewBag.SpecialPermissions = specialPermissions;
 
                 return View(userFullPermissions);
             }

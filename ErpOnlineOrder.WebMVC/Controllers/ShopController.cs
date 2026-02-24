@@ -61,7 +61,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
                 if (!string.IsNullOrEmpty(search))
                 {
-                    products = await _productService.SearchAsync(search, null, null);
+                    products = await _productService.SearchByAllAsync(search);
                 }
                 else
                 {

@@ -71,6 +71,44 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+        [HttpPost]
+        [RequirePermission(PermissionCodes.SettingsUpdate)]
+        public async Task<IActionResult> Create([FromBody] CreateSettingDto dto)
+        {
+            try
+            {
+                var key = dto.SettingKey?.Trim().ToUpperInvariant() ?? "";
+                if (string.IsNullOrEmpty(key))
+                    return BadRequest(new { message = "Mã cài đặt không được để trống." });
+
+                var created = await _settingService.CreateSettingAsync(key, dto.SettingValue ?? "", dto.Description, GetCurrentUserId());
+                if (!created)
+                    return BadRequest(new { message = $"Mã cài đặt '{key}' đã tồn tại." });
+                return Ok(new { success = true, message = "Đã thêm cài đặt mới." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPut("{id:int}")]
+        [RequirePermission(PermissionCodes.SettingsUpdate)]
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateSettingDto dto)
+        {
+            try
+            {
+                var updated = await _settingService.UpdateSettingAsync(id, dto.SettingValue ?? "", dto.Description, GetCurrentUserId());
+                if (!updated)
+                    return NotFound(new { message = "Cài đặt không tồn tại." });
+                return Ok(new { success = true, message = "Đã cập nhật." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
     }
 
     public class SetSettingRequest

@@ -1,4 +1,4 @@
-﻿using ErpOnlineOrder.Application.Interfaces.Repositories;
+using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -33,10 +33,19 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<Permission>> GetByModuleIdAsync(int moduleId)
+        public async Task<IEnumerable<Permission>> GetByParentIdAsync(int? parentId)
         {
             return await _context.Permissions
-                .Where(p => p.Module_id == moduleId && !p.Is_deleted)
+                .Where(p => !p.Is_deleted && p.Parent_id == parentId)
+                .OrderBy(p => p.Permission_code)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Permission>> GetSpecialPermissionsAsync()
+        {
+            return await _context.Permissions
+                .Where(p => !p.Is_deleted && p.Is_special)
+                .OrderBy(p => p.Permission_code)
                 .ToListAsync();
         }
 

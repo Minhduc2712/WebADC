@@ -35,6 +35,18 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var permissions = await _permissionService.GetPermissionsByModuleAsync(moduleCode);
             return Ok(permissions);
         }
+        [HttpGet("permissions/tree")]
+        public async Task<IActionResult> GetPermissionsTree()
+        {
+            var tree = await _permissionService.GetPermissionsTreeAsync();
+            return Ok(tree);
+        }
+        [HttpGet("permissions/special")]
+        public async Task<IActionResult> GetSpecialPermissions()
+        {
+            var specials = await _permissionService.GetSpecialPermissionsAsync();
+            return Ok(specials);
+        }
         [HttpGet("permissions/{id}")]
         public async Task<IActionResult> GetPermissionById(int id)
         {

@@ -1,8 +1,5 @@
 namespace ErpOnlineOrder.Application.DTOs.AuthDTOs
 {
-    /// <summary>
-    /// Dữ liệu trả về từ API Login để MVC set session (hoặc client lưu token).
-    /// </summary>
     public class LoginResponseDto
     {
         public int UserId { get; set; }

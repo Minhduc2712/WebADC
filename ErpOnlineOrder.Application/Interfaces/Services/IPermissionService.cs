@@ -17,6 +17,8 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
         Task<UserPermissionDto?> GetUserPermissionDetailsAsync(int userId);
         Task<IEnumerable<PermissionDto>> GetAllPermissionsAsync();
         Task<IEnumerable<PermissionDto>> GetPermissionsByModuleAsync(string moduleCode);
+        Task<IEnumerable<PermissionDto>> GetPermissionsTreeAsync();
+        Task<IEnumerable<PermissionDto>> GetSpecialPermissionsAsync();
         
         // Quản lý Permission (CRUD)
         Task<PermissionDto?> GetPermissionByIdAsync(int id);

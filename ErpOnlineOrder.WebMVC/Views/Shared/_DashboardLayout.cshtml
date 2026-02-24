@@ -13,17 +13,30 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - ERP</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet" />
     <style>
         :root {
             --sidebar-width: 260px;
-            --primary-color: #667eea;
-            --secondary-color: #764ba2;
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --primary-light: #e0e7ff;
+            --sidebar-bg: #0f172a;
+            --sidebar-hover: rgba(255,255,255,0.06);
+            --sidebar-active: rgba(79, 70, 229, 0.2);
+            --sidebar-text: rgba(255,255,255,0.9);
+            --sidebar-muted: rgba(255,255,255,0.45);
+            --content-bg: #f8fafc;
+            --card-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            --card-shadow-hover: 0 8px 24px rgba(0,0,0,0.08);
         }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f6f9;
+            font-family: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--content-bg);
+            color: #1e293b;
         }
         /* Sidebar */
         .sidebar {
@@ -32,52 +45,123 @@
             left: 0;
             width: var(--sidebar-width);
             height: 100vh;
-            background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            background: var(--sidebar-bg);
             z-index: 1000;
-            transition: all 0.3s;
             overflow-y: auto;
+            border-right: 1px solid rgba(255,255,255,0.05);
         }
         .sidebar-header {
-            padding: 20px;
-            text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
         }
         .sidebar-header h4 {
             color: white;
             margin: 0;
             font-weight: 700;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .sidebar-header .logo-icon {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
         }
         .sidebar-menu {
-            padding: 20px 0;
+            padding: 16px 12px;
             list-style: none;
             margin: 0;
         }
         .sidebar-menu li {
-            margin-bottom: 5px;
+            margin-bottom: 2px;
         }
         .sidebar-menu a {
             display: flex;
             align-items: center;
-            padding: 12px 20px;
-            color: rgba(255,255,255,0.8);
+            padding: 12px 16px;
+            color: var(--sidebar-text);
             text-decoration: none;
-            transition: all 0.3s;
+            border-radius: 10px;
+            transition: all 0.2s;
+            font-size: 0.9375rem;
         }
-        .sidebar-menu a:hover, .sidebar-menu a.active {
-            background: rgba(255,255,255,0.15);
+        .sidebar-menu a:hover {
+            background: var(--sidebar-hover);
             color: white;
-            border-left: 4px solid white;
+        }
+        .sidebar-menu a.active {
+            background: var(--sidebar-active);
+            color: #a5b4fc;
+            font-weight: 500;
         }
         .sidebar-menu a i {
-            width: 25px;
-            margin-right: 10px;
+            width: 22px;
+            margin-right: 12px;
+            opacity: 0.9;
         }
         .menu-title {
-            font-size: 12px;
+            font-size: 10px;
+            font-weight: 600;
             text-transform: uppercase;
-            color: rgba(255,255,255,0.5);
-            padding: 15px 20px 10px;
-            letter-spacing: 1px;
+            letter-spacing: 0.12em;
+            color: var(--sidebar-muted);
+            padding: 20px 16px 6px;
+        }
+        /* Submenu */
+        .menu-item-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            color: var(--sidebar-text);
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            border-radius: 10px;
+            font-size: 0.9375rem;
+        }
+        .menu-item-toggle:hover {
+            background: var(--sidebar-hover);
+            color: white;
+        }
+        .menu-item-toggle .fa-chevron-down {
+            transition: transform 0.25s;
+            font-size: 0.7rem;
+            opacity: 0.7;
+        }
+        .menu-item-toggle[aria-expanded="true"] .fa-chevron-down {
+            transform: rotate(180deg);
+        }
+        .menu-item-toggle.active {
+            background: var(--sidebar-active);
+            color: #a5b4fc;
+            font-weight: 500;
+        }
+        .submenu {
+            list-style: none;
+            margin: 0;
+            padding: 4px 0 4px 8px;
+            border-left: 2px solid rgba(255,255,255,0.1);
+            margin-left: 22px;
+        }
+        .submenu li a {
+            padding: 10px 16px 10px 12px;
+            font-size: 0.875rem;
+            border-radius: 8px;
+        }
+        .submenu li a i {
+            width: 18px;
+            margin-right: 10px;
+            font-size: 0.8rem;
         }
         /* Main Content */
         .main-content {
@@ -86,88 +170,183 @@
         }
         /* Top Navbar */
         .top-navbar {
-            background: white;
-            padding: 15px 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(12px);
+            padding: 14px 28px;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.05);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-bottom: 1px solid #f1f5f9;
         }
         .search-box {
             position: relative;
-            width: 300px;
+            width: 280px;
         }
         .search-box input {
-            padding: 10px 15px 10px 40px;
-            border: 1px solid #e1e1e1;
-            border-radius: 25px;
+            padding: 10px 16px 10px 40px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
             width: 100%;
+            font-size: 0.9rem;
+            transition: border-color 0.2s;
+        }
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
         }
         .search-box i {
             position: absolute;
-            left: 15px;
+            left: 14px;
             top: 50%;
             transform: translateY(-50%);
-            color: #999;
+            color: #94a3b8;
         }
         .user-dropdown {
             display: flex;
             align-items: center;
             cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 10px;
+            transition: background 0.2s;
+        }
+        .user-dropdown:hover {
+            background: #f1f5f9;
         }
         .user-avatar {
             width: 40px;
             height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-right: 10px;
+            margin-right: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
         }
         /* Content Area */
         .content-wrapper {
-            padding: 30px;
+            padding: 24px 28px 40px;
         }
-        /* Cards */
+        /* Stat Cards */
         .stat-card {
             background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            transition: transform 0.3s;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: var(--card-shadow);
+            transition: all 0.25s;
+            border: 1px solid #f1f5f9;
         }
         .stat-card:hover {
-            transform: translateY(-5px);
+            box-shadow: var(--card-shadow-hover);
+            transform: translateY(-2px);
         }
         .stat-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 15px;
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 1.25rem;
             color: white;
         }
-        .stat-icon.blue { background: linear-gradient(135deg, #667eea, #764ba2); }
-        .stat-icon.green { background: linear-gradient(135deg, #11998e, #38ef7d); }
-        .stat-icon.orange { background: linear-gradient(135deg, #f093fb, #f5576c); }
-        .stat-icon.red { background: linear-gradient(135deg, #eb3349, #f45c43); }
-        /* Tables */
+        .stat-icon.blue { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .stat-icon.green { background: linear-gradient(135deg, #10b981, #059669); }
+        .stat-icon.orange { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .stat-icon.red { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        /* Stat Cards - Compact (dùng chung) */
+        .stat-card-compact {
+            border-radius: 8px;
+            padding: 0 !important;
+            transition: transform 0.2s;
+        }
+        .stat-card-compact:hover { transform: translateY(-1px); }
+        .stat-card-compact .card-body { padding: 0.5rem 0.75rem !important; }
+        .stat-label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; color: #6c757d; margin-bottom: 0.1rem; }
+        .stat-value { font-size: 1.1rem; font-weight: 700; color: #2d3748; }
+        .stat-icon-sm {
+            width: 28px; height: 28px;
+            border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem;
+        }
+        .stat-icon-sm.blue { background: linear-gradient(135deg, #3b82f6, #2563eb) !important; color: white !important; }
+        .stat-icon-sm.green { background: linear-gradient(135deg, #10b981, #059669) !important; color: white !important; }
+        .stat-icon-sm.orange { background: linear-gradient(135deg, #f59e0b, #d97706) !important; color: white !important; }
+        .stat-icon-sm.red { background: linear-gradient(135deg, #ef4444, #dc2626) !important; color: white !important; }
+        .stat-icon-sm.yellow { background: linear-gradient(135deg, #ffc107, #ff9800) !important; color: white !important; }
+        /* Table Cards */
         .table-card {
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border-radius: 14px;
+            box-shadow: var(--card-shadow);
             overflow: hidden;
+            border: 1px solid #f1f5f9;
         }
         .table-card .card-header {
-            background: white;
-            border-bottom: 1px solid #eee;
-            padding: 20px;
+            background: #fafbfc;
+            border-bottom: 1px solid #f1f5f9;
+            padding: 18px 24px;
             font-weight: 600;
+            font-size: 0.9rem;
+            color: #334155;
         }
+        /* Buttons override */
+        .btn-primary {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            border-color: var(--primary-dark);
+        }
+        .breadcrumb-item a { color: var(--primary); }
+        .breadcrumb-item a:hover { text-decoration: underline; }
+        /* Table styling */
+        .table-card .table thead th {
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #64748b;
+            padding: 14px 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .table-card .table tbody td {
+            padding: 14px 20px;
+            vertical-align: middle;
+        }
+        .table-card .table tbody tr:hover {
+            background: #f8fafc;
+        }
+        .table-card .table .btn-group-sm .btn {
+            border-radius: 8px;
+        }
+        /* Form controls in content */
+        .content-wrapper .form-control, .content-wrapper .form-select {
+            border-radius: 10px;
+            border-color: #e2e8f0;
+        }
+        .content-wrapper .form-control:focus, .content-wrapper .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+        /* Card in pages using shadow-sm */
+        .content-wrapper .card.shadow-sm {
+            border-radius: 14px;
+            border: 1px solid #f1f5f9;
+        }
+        .content-wrapper .card {
+            border-radius: 14px;
+            border: 1px solid #f1f5f9;
+        }
+        .text-indigo { color: #4f46e5 !important; }
+        .btn-outline-primary { border-color: #4f46e5; color: #4f46e5; }
+        .btn-outline-primary:hover { background: #4f46e5; border-color: #4f46e5; color: white; }
     </style>
     @RenderSection("Styles", required: false)
 </head>
@@ -175,20 +354,23 @@
     <!-- Sidebar -->
     <nav class="sidebar">
         <div class="sidebar-header">
-            <h4><i class="fas fa-cube me-2"></i>ERP System</h4>
+            <h4>
+                <span class="logo-icon"><i class="fas fa-cube"></i></span>
+                ERP System
+            </h4>
         </div>
         <ul class="sidebar-menu">
             <li class="menu-title">CHÍNH</li>
             <li><a href="@Url.Action("Index", "Order")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Order" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")"><i class="fas fa-home"></i> Trang chủ</a></li>
             
             @* QUẢN LÝ - Hiển thị nếu có ít nhất 1 quyền VIEW *@
-            @if (Context.Session.HasAnyPermission("PRODUCT_VIEW", "ORDER_VIEW", "CUSTOMER_VIEW", "CUSTOMER_ASSIGN", "CUSTOMER_PRODUCT_VIEW", "INVOICE_VIEW", "WAREHOUSE_VIEW"))
+            @if (Context.Session.HasAnyPermission("PRODUCT_VIEW", "ORDER_VIEW", "CUSTOMER_VIEW", "CUSTOMER_ASSIGN", "CUSTOMER_PRODUCT_VIEW", "INVOICE_VIEW"))
             {
                 <li class="menu-title">QUẢN LÝ</li>
                 
-                @if (Context.Session.HasPermission("PRODUCT_VIEW"))
+                @if (Context.Session.HasPermission("CUSTOMER_VIEW"))
                 {
-                    <li><a href="@Url.Action("Index", "Product")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Product" ? "active" : "")"><i class="fas fa-box"></i> Sản phẩm</a></li>
+                    <li><a href="@Url.Action("Index", "CustomerManagement")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "CustomerManagement" && ViewContext.RouteData.Values["action"]?.ToString() != "StaffAssignment" ? "active" : "")"><i class="fas fa-users"></i> Khách hàng</a></li>
                 }
                 
                 @if (Context.Session.HasPermission("ORDER_VIEW"))
@@ -196,9 +378,9 @@
                     <li><a href="@Url.Action("Index", "Order")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Order" ? "active" : "")"><i class="fas fa-shopping-cart"></i> Đơn hàng</a></li>
                 }
                 
-                @if (Context.Session.HasPermission("CUSTOMER_VIEW"))
+                @if (Context.Session.HasPermission("PRODUCT_VIEW"))
                 {
-                    <li><a href="@Url.Action("Index", "CustomerManagement")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "CustomerManagement" && ViewContext.RouteData.Values["action"]?.ToString() != "StaffAssignment" ? "active" : "")"><i class="fas fa-users"></i> Khách hàng</a></li>
+                    <li><a href="@Url.Action("Index", "Product")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Product" ? "active" : "")"><i class="fas fa-box"></i> Sản phẩm</a></li>
                 }
                 @if (Context.Session.HasPermission("CUSTOMER_ASSIGN"))
                 {
@@ -209,11 +391,13 @@
                 {
                     <li><a href="@Url.Action("Index", "Invoice")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Invoice" ? "active" : "")"><i class="fas fa-file-invoice"></i> Hóa đơn</a></li>
                 }
-                
-                @if (Context.Session.HasPermission("WAREHOUSE_VIEW"))
-                {
-                    <li><a href="@Url.Action("Index", "WarehouseExport")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "WarehouseExport" ? "active" : "")"><i class="fas fa-warehouse"></i> Xuất kho</a></li>
-                }
+            }
+            
+            @* QUẢN LÝ XUẤT KHO - Phiếu xuất kho *@
+            @if (Context.Session.HasPermission("WAREHOUSE_EXPORT_VIEW"))
+            {
+                <li class="menu-title">QUẢN LÝ XUẤT KHO</li>
+                <li><a href="@Url.Action("Index", "WarehouseExport")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "WarehouseExport" ? "active" : "")"><i class="fas fa-truck-loading"></i> Phiếu xuất kho</a></li>
             }
             
             @* NHÂN SỰ - Hiển thị nếu có quyền STAFF_VIEW *@
@@ -223,50 +407,66 @@
                 <li><a href="@Url.Action("Index", "Staff")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Staff" ? "active" : "")"><i class="fas fa-users-cog"></i> Quản lý nhân sự</a></li>
             }
             
-            @* CẤU HÌNH - Hiển thị nếu có ít nhất 1 quyền *@
+            @* DANH MỤC CHUNG - Mỗi danh mục 1 menu nav, 1 màn CRUD riêng *@
+            @{
+                var controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+            }
             @if (Context.Session.HasAnyPermission("CATEGORY_VIEW", "DISTRIBUTOR_VIEW", "REGION_VIEW", "PROVINCE_VIEW", "WAREHOUSE_VIEW"))
             {
-                <li class="menu-title">CẤU HÌNH</li>
-                
+                <li class="menu-title">DANH MỤC CHUNG</li>
                 @if (Context.Session.HasPermission("CATEGORY_VIEW"))
                 {
-                    <li><a href="@Url.Action("Index", "Category")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Category" ? "active" : "")"><i class="fas fa-tags"></i> Danh mục</a></li>
-                    <li><a href="@Url.Action("Index", "Author")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Author" ? "active" : "")"><i class="fas fa-user-edit"></i> Tác giả</a></li>
-                    <li><a href="@Url.Action("Index", "Publisher")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Publisher" ? "active" : "")"><i class="fas fa-building"></i> Nhà xuất bản</a></li>
-                    <li><a href="@Url.Action("Index", "CoverType")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "CoverType" ? "active" : "")"><i class="fas fa-book"></i> Loại bìa</a></li>
+                    <li><a href="@Url.Action("Index", "Category")" class="@(controller == "Category" ? "active" : "")"><i class="fas fa-tags"></i> Thể loại</a></li>
+                }
+                @if (Context.Session.HasPermission("CATEGORY_VIEW"))
+                {
+                    <li><a href="@Url.Action("Index", "Author")" class="@(controller == "Author" ? "active" : "")"><i class="fas fa-user-edit"></i> Tác giả</a></li>
+                }
+                @if (Context.Session.HasPermission("CATEGORY_VIEW"))
+                {
+                    <li><a href="@Url.Action("Index", "Publisher")" class="@(controller == "Publisher" ? "active" : "")"><i class="fas fa-building"></i> Nhà xuất bản</a></li>
+                }
+                @if (Context.Session.HasPermission("CATEGORY_VIEW"))
+                {
+                    <li><a href="@Url.Action("Index", "CoverType")" class="@(controller == "CoverType" ? "active" : "")"><i class="fas fa-book"></i> Loại bìa</a></li>
+                }
+                @if (Context.Session.HasPermission("REGION_VIEW"))
+                {
+                    <li><a href="@Url.Action("Index", "Region")" class="@(controller == "Region" ? "active" : "")"><i class="fas fa-map"></i> Khu vực</a></li>
+                }
+                @if (Context.Session.HasPermission("PROVINCE_VIEW"))
+                {
+                    <li><a href="@Url.Action("Index", "Province")" class="@(controller == "Province" ? "active" : "")"><i class="fas fa-map-marker-alt"></i> Tỉnh thành</a></li>
                 }
                 @if (Context.Session.HasPermission("DISTRIBUTOR_VIEW"))
                 {
-                    <li><a href="@Url.Action("Index", "Distributor")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Distributor" ? "active" : "")"><i class="fas fa-truck"></i> Nhà phân phối</a></li>
+                    <li><a href="@Url.Action("Index", "Distributor")" class="@(controller == "Distributor" ? "active" : "")"><i class="fas fa-truck"></i> Nhà phân phối</a></li>
                 }
-                
-                @if (Context.Session.HasPermission("REGION_VIEW"))
-                {
-                    <li><a href="@Url.Action("Index", "Region")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Region" ? "active" : "")"><i class="fas fa-map"></i> Khu vực</a></li>
-                }
-                
-                @if (Context.Session.HasPermission("PROVINCE_VIEW"))
-                {
-                    <li><a href="@Url.Action("Index", "Province")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Province" ? "active" : "")"><i class="fas fa-map-marker-alt"></i> Tỉnh thành</a></li>
-                }
-                
                 @if (Context.Session.HasPermission("WAREHOUSE_VIEW"))
                 {
-                    <li><a href="@Url.Action("Index", "Warehouse")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Warehouse" ? "active" : "")"><i class="fas fa-warehouse"></i> Kho hàng</a></li>
+                    <li><a href="@Url.Action("Index", "Warehouse")" class="@(controller == "Warehouse" ? "active" : "")"><i class="fas fa-warehouse"></i> Kho hàng</a></li>
                 }
             }
             
-            @* HỆ THỐNG *@
-            @if (Context.Session.HasPermission("ROLE_VIEW") || Context.Session.HasPermission("PERMISSION_VIEW"))
+            @* HỆ THỐNG - Mỗi chức năng 1 nav riêng *@
+            @if (Context.Session.HasPermission("ROLE_VIEW") || Context.Session.HasPermission("ROLE_ASSIGN") || Context.Session.HasPermission("PERMISSION_VIEW") || Context.Session.HasPermission("PERMISSION_ASSIGN") || Context.Session.HasPermission("SETTINGS_VIEW"))
             {
                 <li class="menu-title">HỆ THỐNG</li>
-                @if (Context.Session.HasPermission("ROLE_VIEW"))
+                @if (Context.Session.HasPermission("ROLE_VIEW") || Context.Session.HasPermission("ROLE_ASSIGN"))
                 {
-                    <li><a href="@Url.Action("Index", "Role")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Role" ? "active" : "")"><i class="fas fa-user-shield"></i> Phân quyền Role</a></li>
+                    <li><a href="@Url.Action("Index", "Role")" class="@(controller == "Role" ? "active" : "")"><i class="fas fa-user-shield"></i> Phân quyền Role</a></li>
+                }
+                @if (Context.Session.HasPermission("PERMISSION_ASSIGN"))
+                {
+                    <li><a href="@Url.Action("UserPermissions", "Permission")" class="@(controller == "Permission" && (ViewContext.RouteData.Values["action"]?.ToString() == "UserPermissions" || ViewContext.RouteData.Values["action"]?.ToString() == "UserPermissionDetails") ? "active" : "")"><i class="fas fa-user-tag"></i> Gán quyền User</a></li>
                 }
                 @if (Context.Session.HasPermission("PERMISSION_VIEW"))
                 {
-                    <li><a href="@Url.Action("Index", "Permission")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Permission" ? "active" : "")"><i class="fas fa-key"></i> Quản lý quyền</a></li>
+                    <li><a href="@Url.Action("Index", "Permission")" class="@(controller == "Permission" && ViewContext.RouteData.Values["action"]?.ToString() != "UserPermissions" && ViewContext.RouteData.Values["action"]?.ToString() != "UserPermissionDetails" ? "active" : "")"><i class="fas fa-list"></i> Quản lý quyền</a></li>
+                }
+                @if (Context.Session.HasPermission("SETTINGS_VIEW"))
+                {
+                    <li><a href="@Url.Action("Index", "Setting")" class="@(controller == "Setting" ? "active" : "")"><i class="fas fa-sliders-h"></i> Cài đặt</a></li>
                 }
             }
         </ul>
@@ -298,13 +498,17 @@
                         </div>
                         <i class="fas fa-chevron-down ms-2"></i>
                     </div>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-sm py-2">
-                        <li class="px-3 py-2 border-bottom">
+                    <ul class="dropdown-menu dropdown-menu-end shadow-lg py-2 border-0" style="border-radius: 12px; min-width: 220px;">
+                        <li class="px-3 py-3 border-bottom">
                             <div class="small text-muted">@username</div>
                             <div class="fw-semibold">@fullName</div>
-                            <span class="badge bg-primary mt-1">@roleDisplay</span>
+                            <span class="badge mt-1" style="background: var(--primary); color: white;">@roleDisplay</span>
                         </li>
                         <li><a class="dropdown-item py-2" href="@Url.Action("ChangePassword", "Auth")"><i class="fas fa-key me-2 text-secondary"></i> Đổi mật khẩu</a></li>
+                        @if (Context.Session.HasPermission("SETTINGS_VIEW"))
+                        {
+                            <li><a class="dropdown-item py-2" href="@Url.Action("Index", "Setting")"><i class="fas fa-sliders-h me-2 text-secondary"></i> Cài đặt hệ thống</a></li>
+                        }
                         <li><hr class="dropdown-divider my-1"></li>
                         <li>
                             <form asp-controller="Auth" asp-action="Logout" method="post" class="mb-0">

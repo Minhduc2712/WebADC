@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ErpOnlineOrder.Infrastructure.Migrations
 {
     [DbContext(typeof(ErpOnlineOrderDbContext))]
-    [Migration("20260209104150_FixProvinceMapping")]
-    partial class FixProvinceMapping
+    [Migration("20260212100000_RemoveModuleActionAddParentId")]
+    partial class RemoveModuleActionAddParentId
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -727,9 +727,6 @@ namespace ErpOnlineOrder.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("Action_id")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("Created_at")
                         .HasColumnType("datetime2");
 
@@ -739,13 +736,18 @@ namespace ErpOnlineOrder.Infrastructure.Migrations
                     b.Property<bool>("Is_deleted")
                         .HasColumnType("bit");
 
-                    b.Property<int?>("Module_id")
-                        .HasColumnType("int");
+                    b.Property<bool>("Is_special")
+                        .HasColumnType("bit")
+                        .HasColumnName("Is_special");
 
                     b.Property<string>("Permission_code")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("Parent_id")
+                        .HasColumnType("int")
+                        .HasColumnName("Parent_id");
 
                     b.Property<DateTime>("Updated_at")
                         .HasColumnType("datetime2");
@@ -754,6 +756,8 @@ namespace ErpOnlineOrder.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Parent_id");
 
                     b.ToTable("Permissions", (string)null);
                 });
@@ -1830,6 +1834,16 @@ namespace ErpOnlineOrder.Infrastructure.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("ErpOnlineOrder.Domain.Models.Permission", b =>
+                {
+                    b.HasOne("ErpOnlineOrder.Domain.Models.Permission", "Parent")
+                        .WithMany("Children")
+                        .HasForeignKey("Parent_id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Parent");
+                });
+
             modelBuilder.Entity("ErpOnlineOrder.Domain.Models.Product_image", b =>
                 {
                     b.HasOne("ErpOnlineOrder.Domain.Models.Product", "Product")
@@ -2088,6 +2102,8 @@ namespace ErpOnlineOrder.Infrastructure.Migrations
 
             modelBuilder.Entity("ErpOnlineOrder.Domain.Models.Permission", b =>
                 {
+                    b.Navigation("Children");
+
                     b.Navigation("Role_Permissions");
 
                     b.Navigation("User_Permissions");

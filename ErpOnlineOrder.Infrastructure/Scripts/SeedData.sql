@@ -1,4 +1,4 @@
-﻿-- =============================================
+-- =============================================
 -- Script: SeedData.sql
 -- Description: Seed du lieu mac dinh cho ErpOnlineOrder
 -- Version: 2.0 - Complete seed data
@@ -133,6 +133,51 @@ IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'WAREHOUSE_DELE
     INSERT INTO Permissions (Permission_code, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('WAREHOUSE_DELETE', 0, GETDATE(), 0, GETDATE(), 0);
 
+-- Warehouse Export permissions (Phiếu xuất kho) - parent + children
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'WAREHOUSE_EXPORT' AND (Parent_id IS NULL OR Parent_id = 0))
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('WAREHOUSE_EXPORT', NULL, 0, 0, GETDATE(), 0, GETDATE(), 0);
+
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'WAREHOUSE_EXPORT_VIEW')
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    SELECT 'WAREHOUSE_EXPORT_VIEW', p.Id, 0, 0, GETDATE(), 0, GETDATE(), 0
+    FROM Permissions p WHERE p.Permission_code = 'WAREHOUSE_EXPORT' AND p.Parent_id IS NULL;
+
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'WAREHOUSE_EXPORT_VIEW')
+    INSERT INTO Permissions (Permission_code, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('WAREHOUSE_EXPORT_VIEW', 0, GETDATE(), 0, GETDATE(), 0);
+
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'WAREHOUSE_EXPORT_CREATE')
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    SELECT 'WAREHOUSE_EXPORT_CREATE', p.Id, 0, 0, GETDATE(), 0, GETDATE(), 0
+    FROM Permissions p WHERE p.Permission_code = 'WAREHOUSE_EXPORT' AND p.Parent_id IS NULL;
+
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'WAREHOUSE_EXPORT_CREATE')
+    INSERT INTO Permissions (Permission_code, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('WAREHOUSE_EXPORT_CREATE', 0, GETDATE(), 0, GETDATE(), 0);
+
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'WAREHOUSE_EXPORT_UPDATE')
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    SELECT 'WAREHOUSE_EXPORT_UPDATE', p.Id, 0, 0, GETDATE(), 0, GETDATE(), 0
+    FROM Permissions p WHERE p.Permission_code = 'WAREHOUSE_EXPORT' AND p.Parent_id IS NULL;
+
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'WAREHOUSE_EXPORT_UPDATE')
+    INSERT INTO Permissions (Permission_code, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('WAREHOUSE_EXPORT_UPDATE', 0, GETDATE(), 0, GETDATE(), 0);
+
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'WAREHOUSE_EXPORT_DELETE')
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    SELECT 'WAREHOUSE_EXPORT_DELETE', p.Id, 0, 0, GETDATE(), 0, GETDATE(), 0
+    FROM Permissions p WHERE p.Permission_code = 'WAREHOUSE_EXPORT' AND p.Parent_id IS NULL;
+
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'WAREHOUSE_EXPORT_DELETE')
+    INSERT INTO Permissions (Permission_code, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('WAREHOUSE_EXPORT_DELETE', 0, GETDATE(), 0, GETDATE(), 0);
+
+-- Gan Parent_id cho WAREHOUSE_EXPORT_* neu chua co
+UPDATE Permissions SET Parent_id = (SELECT Id FROM Permissions WHERE Permission_code = 'WAREHOUSE_EXPORT' AND Parent_id IS NULL)
+WHERE Permission_code IN ('WAREHOUSE_EXPORT_VIEW', 'WAREHOUSE_EXPORT_CREATE', 'WAREHOUSE_EXPORT_UPDATE', 'WAREHOUSE_EXPORT_DELETE') AND (Parent_id IS NULL OR Parent_id = 0);
+
 -- Staff permissions
 IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'STAFF_VIEW')
     INSERT INTO Permissions (Permission_code, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
@@ -251,14 +296,32 @@ IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'STAFF_ASSIGN')
     INSERT INTO Permissions (Permission_code, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('STAFF_ASSIGN', 0, GETDATE(), 0, GETDATE(), 0);
 
--- Settings permissions
+-- Settings permissions (Cai dat he thong - SMTP, tham so chung)
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'SETTINGS' AND (Parent_id IS NULL OR Parent_id = 0))
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SETTINGS', NULL, 0, 0, GETDATE(), 0, GETDATE(), 0);
+
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'SETTINGS_VIEW')
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    SELECT 'SETTINGS_VIEW', p.Id, 0, 0, GETDATE(), 0, GETDATE(), 0
+    FROM Permissions p WHERE p.Permission_code = 'SETTINGS' AND p.Parent_id IS NULL;
+
 IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'SETTINGS_VIEW')
     INSERT INTO Permissions (Permission_code, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('SETTINGS_VIEW', 0, GETDATE(), 0, GETDATE(), 0);
 
 IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'SETTINGS_UPDATE')
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    SELECT 'SETTINGS_UPDATE', p.Id, 0, 0, GETDATE(), 0, GETDATE(), 0
+    FROM Permissions p WHERE p.Permission_code = 'SETTINGS' AND p.Parent_id IS NULL;
+
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'SETTINGS_UPDATE')
     INSERT INTO Permissions (Permission_code, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('SETTINGS_UPDATE', 0, GETDATE(), 0, GETDATE(), 0);
+
+-- Gan Parent_id cho SETTINGS_VIEW, SETTINGS_UPDATE neu chua co
+UPDATE Permissions SET Parent_id = (SELECT Id FROM Permissions WHERE Permission_code = 'SETTINGS' AND Parent_id IS NULL)
+WHERE Permission_code IN ('SETTINGS_VIEW', 'SETTINGS_UPDATE') AND (Parent_id IS NULL OR Parent_id = 0);
 
 -- Customer product permissions (gán sản phẩm cho khách hàng)
 IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'CUSTOMER_PRODUCT_VIEW')
@@ -268,6 +331,14 @@ IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'CUSTOMER_PRODU
 IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'CUSTOMER_PRODUCT_ASSIGN')
     INSERT INTO Permissions (Permission_code, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('CUSTOMER_PRODUCT_ASSIGN', 0, GETDATE(), 0, GETDATE(), 0);
+
+-- Quyen dac thu (chi tiet theo chuc nang)
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'INVOICE_PRINT_2023')
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('INVOICE_PRINT_2023', NULL, 1, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'INVOICE_PRINT_2025')
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('INVOICE_PRINT_2025', NULL, 1, 0, GETDATE(), 0, GETDATE(), 0);
 
 PRINT N'Da seed Permissions';
 GO
@@ -556,6 +627,23 @@ IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'DISTRIBUTOR_UP
 IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'DISTRIBUTOR_DELETE')
     INSERT INTO Permissions (Permission_code, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('DISTRIBUTOR_DELETE', 0, GETDATE(), 0, GETDATE(), 0);
+
+-- Settings permissions (bo sung neu chua co)
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'SETTINGS' AND (Parent_id IS NULL OR Parent_id = 0))
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SETTINGS', NULL, 0, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'SETTINGS_VIEW')
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    SELECT 'SETTINGS_VIEW', p.Id, 0, 0, GETDATE(), 0, GETDATE(), 0 FROM Permissions p WHERE p.Permission_code = 'SETTINGS' AND p.Parent_id IS NULL;
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'SETTINGS_VIEW')
+    INSERT INTO Permissions (Permission_code, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES ('SETTINGS_VIEW', 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'SETTINGS_UPDATE')
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    SELECT 'SETTINGS_UPDATE', p.Id, 0, 0, GETDATE(), 0, GETDATE(), 0 FROM Permissions p WHERE p.Permission_code = 'SETTINGS' AND p.Parent_id IS NULL;
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'SETTINGS_UPDATE')
+    INSERT INTO Permissions (Permission_code, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES ('SETTINGS_UPDATE', 0, GETDATE(), 0, GETDATE(), 0);
+UPDATE Permissions SET Parent_id = (SELECT Id FROM Permissions WHERE Permission_code = 'SETTINGS' AND Parent_id IS NULL)
+WHERE Permission_code IN ('SETTINGS_VIEW', 'SETTINGS_UPDATE') AND (Parent_id IS NULL OR Parent_id = 0);
 
 PRINT N'Da seed them Permissions';
 GO

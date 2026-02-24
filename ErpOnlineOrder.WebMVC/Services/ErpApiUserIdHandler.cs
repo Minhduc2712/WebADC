@@ -2,9 +2,6 @@ using System.Net.Http.Headers;
 
 namespace ErpOnlineOrder.WebMVC.Services
 {
-    /// <summary>
-    /// Gửi UserId từ Session (MVC) lên API qua header để API có thể kiểm tra quyền.
-    /// </summary>
     public class ErpApiUserIdHandler : DelegatingHandler
     {
         private readonly IHttpContextAccessor _httpContextAccessor;

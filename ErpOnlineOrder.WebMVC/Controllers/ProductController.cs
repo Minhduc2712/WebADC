@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.DTOs.ProductDTOs;
@@ -38,21 +38,12 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             _distributorApiClient = distributorApiClient;
             _logger = logger;
         }
-        public async Task<IActionResult> Index(string? name, string? author, string? publisher)
+        public async Task<IActionResult> Index(string? search)
         {
             try
             {
-                IEnumerable<ProductDTO> products;
-
-                if (!string.IsNullOrEmpty(name) || !string.IsNullOrEmpty(author) || !string.IsNullOrEmpty(publisher))
-                    products = await _productApiClient.SearchAsync(name, author, publisher);
-                else
-                    products = await _productApiClient.GetAllAsync();
-
-                ViewBag.Name = name;
-                ViewBag.Author = author;
-                ViewBag.Publisher = publisher;
-
+                var products = await _productApiClient.SearchAsync(search);
+                ViewBag.Search = search;
                 return View(products);
             }
             catch (Exception ex)

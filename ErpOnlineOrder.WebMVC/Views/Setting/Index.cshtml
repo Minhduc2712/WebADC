@@ -1,0 +1,175 @@
+@model ErpOnlineOrder.Application.DTOs.SettingsDTOs.SettingIndexViewModel
+@using System.Collections.Generic
+@using System.Linq
+@{
+    ViewData["Title"] = "Cài đặt hệ thống";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var canUpdate = ViewBag.CanUpdate ?? false;
+    var smtp = Model?.Smtp ?? new ErpOnlineOrder.Application.DTOs.SettingsDTOs.SmtpSettingsDto();
+    var allSettings = Model?.AllSettings ?? new List<ErpOnlineOrder.Application.DTOs.SettingsDTOs.SystemSettingDto>();
+}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h4 mb-1 fw-bold text-dark">
+                <i class="fas fa-sliders-h text-indigo me-2"></i>Cài đặt hệ thống
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0 small">
+                    <li class="breadcrumb-item"><a asp-controller="Order" asp-action="Index">Trang chủ</a></li>
+                    <li class="breadcrumb-item active">Cài đặt</li>
+                </ol>
+            </nav>
+        </div>
+        @if (canUpdate)
+        {
+            <a asp-action="CreateSetting" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i> Thêm cài đặt
+            </a>
+        }
+    </div>
+
+    <ul class="nav nav-tabs mb-4" id="settingTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="smtp-tab" data-bs-toggle="tab" data-bs-target="#smtp-panel" type="button" role="tab">
+                <i class="fas fa-envelope me-1"></i> Cấu hình SMTP (Email)
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="params-tab" data-bs-toggle="tab" data-bs-target="#params-panel" type="button" role="tab">
+                <i class="fas fa-cog me-1"></i> Tham số chung
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="settingTabsContent">
+        <div class="tab-pane fade show active" id="smtp-panel" role="tabpanel">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h6 class="mb-0 fw-semibold">
+                        <i class="fas fa-server me-2"></i>Cấu hình máy chủ SMTP
+                    </h6>
+                    <small class="text-muted">Dùng để gửi email thông báo đơn hàng, xác nhận, v.v.</small>
+                </div>
+                <div class="card-body">
+                    <form asp-action="SaveSmtp" method="post" id="smtpForm">
+                        @Html.AntiForgeryToken()
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="Smtp.Host" class="form-label">Máy chủ SMTP</label>
+                                <input name="Host" value="@smtp.Host" class="form-control" placeholder="smtp.gmail.com" />
+                                <span asp-validation-for="Smtp.Host" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-3">
+                                <label asp-for="Smtp.Port" class="form-label">Cổng</label>
+                                <input name="Port" type="number" value="@smtp.Port" class="form-control" placeholder="587" />
+                                <span asp-validation-for="Smtp.Port" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label d-block">SSL</label>
+                                <div class="form-check form-switch mt-2">
+                                    <input name="UseSsl" type="checkbox" checked="@smtp.UseSsl" class="form-check-input" />
+                                    <label class="form-check-label">Bật SSL/TLS</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Smtp.FromEmail" class="form-label">Email gửi</label>
+                                <input name="FromEmail" type="email" value="@smtp.FromEmail" class="form-control" placeholder="noreply@company.com" />
+                                <span asp-validation-for="Smtp.FromEmail" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Smtp.FromName" class="form-label">Tên hiển thị</label>
+                                <input name="FromName" value="@smtp.FromName" class="form-control" placeholder="ERP Online Order" />
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Smtp.Password" class="form-label">Mật khẩu ứng dụng</label>
+                                <input name="Password" type="password" class="form-control" placeholder="Để trống nếu không đổi" autocomplete="new-password" />
+                                <small class="text-muted">Gmail: dùng App Password. Để trống nếu không muốn thay đổi.</small>
+                            </div>
+                        </div>
+                        @if (canUpdate)
+                        {
+                            <div class="mt-4">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i> Lưu cấu hình
+                                </button>
+                                <a asp-action="Index" class="btn btn-outline-secondary ms-2">Hủy</a>
+                            </div>
+                        }
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="params-panel" role="tabpanel">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0 fw-semibold">
+                            <i class="fas fa-list me-2"></i>Danh sách tham số
+                        </h6>
+                        <small class="text-muted">Các cài đặt key-value dùng trong hệ thống</small>
+                    </div>
+                    @if (canUpdate)
+                    {
+                        <a asp-action="CreateSetting" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus me-1"></i> Thêm
+                        </a>
+                    }
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width:25%">Mã</th>
+                                    <th style="width:35%">Giá trị</th>
+                                    <th style="width:30%">Mô tả</th>
+                                    @if (canUpdate)
+                                    {
+                                        <th style="width:10%" class="text-center">Thao tác</th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var s in allSettings)
+                                {
+                                    <tr>
+                                        <td><code class="text-primary">@s.SettingKey</code></td>
+                                        <td>@s.SettingValue</td>
+                                        <td class="text-muted small">@(s.Description ?? "-")</td>
+                                        @if (canUpdate)
+                                        {
+                                            <td class="text-center">
+                                                <a asp-action="EditSetting" asp-route-id="@s.Id" class="btn btn-sm btn-outline-warning" title="Sửa">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            </td>
+                                        }
+                                    </tr>
+                                }
+                                @if (!allSettings.Any())
+                                {
+                                    <tr>
+                                        <td colspan="@(canUpdate ? 4 : 3)" class="text-center py-4 text-muted">
+                                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                                            <p class="mb-0">Chưa có tham số nào. Chỉ có cài đặt SMTP.</p>
+                                            @if (canUpdate)
+                                            {
+                                                <a asp-action="CreateSetting" class="btn btn-sm btn-primary mt-2">Thêm cài đặt</a>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

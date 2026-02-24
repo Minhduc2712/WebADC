@@ -1,3 +1,4 @@
+using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.Application.DTOs.PermissionDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
@@ -198,42 +199,248 @@ namespace ErpOnlineOrder.Application.Services
                     };
                 });
         }
-        private static string GetModuleDisplayName(string moduleCode)
+
+        public async Task<IEnumerable<PermissionDto>> GetPermissionsTreeAsync()
         {
-            return moduleCode.ToUpper() switch
+            var all = (await _permissionRepository.GetAllAsync()).ToList();
+            var roots = all.Where(p => p.Parent_id == null && !p.Is_special).ToList();
+            var children = all.Where(p => p.Parent_id != null && !p.Is_special).ToList();
+
+            // Fallback: chua chay migration - tat ca Parent_id null, nhom theo danh muc
+            var hasFolders = roots.Any(r => !r.Permission_code.Contains("_"));
+            if (!hasFolders && roots.Any())
             {
-                "PRODUCT" => "Sản phẩm",
-                "CATEGORY" => "Danh mục",
-                "REGION" => "Vùng miền",
-                "PROVINCE" => "Tỉnh/Thành",
-                "ORGANIZATION" => "Tổ chức",
-                "CUSTOMER" => "Khách hàng",
-                "ORDER" => "Đơn hàng",
-                "INVOICE" => "Hóa đơn",
-                "WAREHOUSE" => "Kho hàng",
-                "STAFF" => "Nhân sự",
-                "REPORT" => "Báo cáo",
-                "DISTRIBUTOR" => "Nhà phân phối",
-                "ROLE" => "Phân quyền",
-                "PERMISSION" => "Quyền hạn",
-                _ => moduleCode
+                return BuildTreeFromModuleGrouping(all.Where(p => !p.Is_special).ToList());
+            }
+
+            // Gom cac nhom "Danh muc chung" (REGION, PROVINCE, ORGANIZATION, DISTRIBUTOR, WAREHOUSE)
+            var danhMucChungRoots = roots.Where(r => PermissionCodes.DanhMucChungCodes.Contains(r.Permission_code)).ToList();
+            var otherRoots = roots.Except(danhMucChungRoots).ToList();
+
+            var result = new List<PermissionDto>();
+            var sortedOther = otherRoots.OrderBy(r => GetCategorySortOrder(r.Permission_code)).ThenBy(r => r.Permission_code).ToList();
+            var danhMucChungSortOrder = GetCategorySortOrder("REGION"); // Vi tri cua "Danh muc chung" = vi tri REGION
+
+            foreach (var r in sortedOther)
+            {
+                var order = GetCategorySortOrder(r.Permission_code);
+                if (danhMucChungRoots.Any() && order > danhMucChungSortOrder)
+                {
+                    result.Add(new PermissionDto
+                    {
+                        Id = 0,
+                        Permission_code = "DANH_MUC_CHUNG",
+                        Module_name = "Danh mục chung",
+                        Action_name = "",
+                        Parent_id = null,
+                        Is_special = false,
+                        Children = danhMucChungRoots
+                            .OrderBy(x => GetCategorySortOrder(x.Permission_code))
+                            .Select(x => MapToTreeDto(x, children))
+                            .ToList()
+                    });
+                    danhMucChungRoots = new List<Permission>(); // Chi them 1 lan
+                }
+
+                result.Add(MapToTreeDto(r, children));
+            }
+            if (danhMucChungRoots.Any())
+            {
+                result.Add(new PermissionDto
+                {
+                    Id = 0,
+                    Permission_code = "DANH_MUC_CHUNG",
+                    Module_name = "Danh mục chung",
+                    Action_name = "",
+                    Parent_id = null,
+                    Is_special = false,
+                    Children = danhMucChungRoots
+                        .OrderBy(x => GetCategorySortOrder(x.Permission_code))
+                        .Select(x => MapToTreeDto(x, children))
+                        .ToList()
+                });
+            }
+
+            return result;
+        }
+
+        private static IEnumerable<PermissionDto> BuildTreeFromModuleGrouping(List<Permission> permissions)
+        {
+            var grouped = permissions
+                .GroupBy(p => GetCategoryCode(p.Permission_code))
+                .OrderBy(g => GetCategorySortOrder(g.Key))
+                .ToList();
+
+            var danhMucChungGroups = grouped.Where(g => PermissionCodes.DanhMucChungCodes.Contains(g.Key)).ToList();
+            var otherGroups = grouped.Except(danhMucChungGroups).ToList();
+            var insertOrder = GetCategorySortOrder("REGION");
+            var danhMucChungAdded = false;
+
+            foreach (var grp in otherGroups)
+            {
+                if (!danhMucChungAdded && GetCategorySortOrder(grp.Key) > insertOrder)
+                {
+                    yield return new PermissionDto
+                    {
+                        Id = 0,
+                        Permission_code = "DANH_MUC_CHUNG",
+                        Module_name = "Danh mục chung",
+                        Action_name = "",
+                        Children = danhMucChungGroups
+                            .OrderBy(g => GetCategorySortOrder(g.Key))
+                            .SelectMany(g =>
+                            {
+                                var moduleName = GetModuleDisplayName(g.Key);
+                                return g.OrderBy(p => p.Permission_code).Select(c => MapChildPermission(c, moduleName));
+                            })
+                            .ToList()
+                    };
+                    danhMucChungAdded = true;
+                }
+                var moduleCode = grp.Key;
+                var moduleName = GetModuleDisplayName(moduleCode);
+                var childList = grp.OrderBy(p => p.Permission_code).ToList();
+                yield return new PermissionDto
+                {
+                    Id = 0,
+                    Permission_code = moduleCode,
+                    Module_name = moduleName,
+                    Action_name = "",
+                    Children = childList.Select(c => MapChildPermission(c, moduleName)).ToList()
+                };
+            }
+
+            if (!danhMucChungAdded && danhMucChungGroups.Any())
+            {
+                yield return new PermissionDto
+                {
+                    Id = 0,
+                    Permission_code = "DANH_MUC_CHUNG",
+                    Module_name = "Danh mục chung",
+                    Action_name = "",
+                    Children = danhMucChungGroups
+                        .OrderBy(g => GetCategorySortOrder(g.Key))
+                        .SelectMany(g =>
+                        {
+                            var moduleName = GetModuleDisplayName(g.Key);
+                            return g.OrderBy(p => p.Permission_code).Select(c => MapChildPermission(c, moduleName));
+                        })
+                        .ToList()
+                };
+            }
+        }
+
+        private static string GetCategoryCode(string permissionCode)
+        {
+            if (string.IsNullOrEmpty(permissionCode) || !permissionCode.Contains('_'))
+                return "OTHER";
+            if (permissionCode.StartsWith("WAREHOUSE_EXPORT_", StringComparison.OrdinalIgnoreCase))
+                return "WAREHOUSE_EXPORT";
+            return permissionCode.Split('_')[0];
+        }
+
+        private static int GetCategorySortOrder(string categoryCode)
+        {
+            var order = Array.IndexOf(PermissionCodes.CategoryOrder, categoryCode.ToUpper());
+            return order >= 0 ? order : 999;
+        }
+
+        private static PermissionDto MapChildPermission(Permission c, string moduleName)
+        {
+            var actionPart = c.Permission_code.Contains('_')
+                ? string.Join("_", c.Permission_code.Split('_').Skip(1))
+                : "";
+            var actionName = GetActionDisplayName(c.Permission_code, actionPart);
+            return new PermissionDto
+            {
+                Id = c.Id,
+                Permission_code = c.Permission_code,
+                Module_name = moduleName,
+                Action_name = actionName,
+                Parent_id = null,
+                Is_special = false
             };
         }
-        private static string GetActionDisplayName(string actionCode)
+
+        public async Task<IEnumerable<PermissionDto>> GetSpecialPermissionsAsync()
         {
-            return actionCode.ToUpper() switch
+            var specials = await _permissionRepository.GetSpecialPermissionsAsync();
+            return specials.Select(p => MapToDto(p));
+        }
+
+        private static PermissionDto MapToTreeDto(Permission p, List<Permission> allChildren)
+        {
+            var parts = p.Permission_code.Split('_');
+            var moduleName = PermissionCodes.CategoryDisplayNames.TryGetValue(p.Permission_code, out var catName)
+                ? catName
+                : (parts.Length > 0 ? GetModuleDisplayName(parts[0]) : p.Permission_code);
+            var actionName = parts.Length > 1 ? GetActionDisplayName(string.Join("_", parts.Skip(1))) : "";
+
+            var childPerms = allChildren.Where(c => c.Parent_id == p.Id).OrderBy(c => c.Permission_code).ToList();
+            var childDtos = childPerms.Select(c =>
             {
-                "VIEW" => "Xem",
-                "CREATE" => "Thêm mới",
-                "UPDATE" => "Cập nhật",
-                "DELETE" => "Xóa",
-                "EXPORT" => "Xuất file",
-                "IMPORT" => "Nhập file",
-                "APPROVE" => "Duyệt",
-                "REJECT" => "Từ chối",
-                "ASSIGN" => "Phân quyền",
-                _ => actionCode
+                var cp = c.Permission_code.Split('_');
+                return new PermissionDto
+                {
+                    Id = c.Id,
+                    Permission_code = c.Permission_code,
+                    Module_name = cp.Length > 0 ? GetModuleDisplayName(cp[0]) : c.Permission_code,
+                    Action_name = cp.Length > 1 ? GetActionDisplayName(string.Join("_", cp.Skip(1))) : "",
+                    Parent_id = c.Parent_id,
+                    Is_special = false,
+                    Children = null
+                };
+            }).ToList();
+
+            return new PermissionDto
+            {
+                Id = p.Id,
+                Permission_code = p.Permission_code,
+                Module_name = moduleName,
+                Action_name = actionName,
+                Parent_id = p.Parent_id,
+                Is_special = false,
+                Children = childDtos.Any() ? childDtos : null
             };
+        }
+
+        private static PermissionDto MapToDto(Permission p)
+        {
+            var parts = p.Permission_code.Split('_');
+            var moduleName = parts.Length > 0 ? GetModuleDisplayName(parts[0]) : p.Permission_code;
+            var actionName = parts.Length > 1 ? GetActionDisplayName(string.Join("_", parts.Skip(1))) : p.Permission_code;
+            return new PermissionDto
+            {
+                Id = p.Id,
+                Permission_code = p.Permission_code,
+                Module_name = moduleName,
+                Action_name = actionName,
+                Parent_id = p.Parent_id,
+                Is_special = p.Is_special
+            };
+        }
+        private static string GetModuleDisplayName(string moduleCode)
+        {
+            if (string.IsNullOrEmpty(moduleCode)) return moduleCode ?? "";
+            return PermissionCodes.CategoryDisplayNames.TryGetValue(moduleCode, out var name)
+                ? name : moduleCode;
+        }
+
+        private static string GetActionDisplayName(string actionPart)
+        {
+            if (string.IsNullOrEmpty(actionPart)) return "";
+            return PermissionCodes.ActionDisplayNames.TryGetValue(actionPart, out var name)
+                ? name : actionPart;
+        }
+
+        private static string GetActionDisplayName(string permissionCode, string actionPart)
+        {
+            if (string.IsNullOrEmpty(actionPart)) return "";
+            if (PermissionCodes.ActionDisplayNames.TryGetValue(actionPart, out var name))
+                return name;
+            if (PermissionCodes.ActionDisplayNames.TryGetValue(permissionCode, out var fullName))
+                return fullName;
+            return actionPart;
         }
 
         #endregion

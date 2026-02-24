@@ -13,6 +13,8 @@ namespace ErpOnlineOrder.WebMVC.Services
         Task<(bool Success, string? Error)> AssignPermissionsToRoleAsync(int roleId, AssignPermissionsToRoleDto dto, CancellationToken cancellationToken = default);
         Task<UserFullPermissionDto?> GetUserFullPermissionsAsync(int userId, CancellationToken cancellationToken = default);
         Task<IEnumerable<PermissionDto>> GetAllPermissionsAsync(CancellationToken cancellationToken = default);
+        Task<IEnumerable<PermissionDto>> GetPermissionsTreeAsync(CancellationToken cancellationToken = default);
+        Task<IEnumerable<PermissionDto>> GetSpecialPermissionsAsync(CancellationToken cancellationToken = default);
         Task<PermissionDto?> GetPermissionByIdAsync(int id, CancellationToken cancellationToken = default);
         Task<bool> IsPermissionCodeExistsAsync(string code, int? excludeId = null, CancellationToken cancellationToken = default);
         Task<(bool Success, string? Error)> CreatePermissionAsync(string permissionCode, CancellationToken cancellationToken = default);

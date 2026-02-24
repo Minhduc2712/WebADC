@@ -43,30 +43,30 @@
         </div>
     </div>
 
-    <!-- Thống kê -->
-    <div class="row mb-4">
-        <div class="col-xl-3 col-md-6 mb-3">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col me-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Tổng quyền</div>
-                            <div class="h5 mb-0 font-weight-bold">@Model.Count()</div>
-                        </div>
-                        <div class="col-auto"><i class="fas fa-key fa-2x text-gray-300"></i></div>
+    <!-- Thống kê - Compact -->
+    <div class="row mb-2 g-2">
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card-compact shadow-sm border-start border-primary border-3">
+                <div class="card-body d-flex align-items-center justify-content-between py-1 px-2">
+                    <div>
+                        <div class="stat-label">Tổng quyền</div>
+                        <div class="stat-value">@Model.Count()</div>
+                    </div>
+                    <div class="stat-icon-sm bg-primary bg-opacity-10 rounded-2 p-1">
+                        <i class="fas fa-key text-primary"></i>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-xl-3 col-md-6 mb-3">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col me-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Số module</div>
-                            <div class="h5 mb-0 font-weight-bold">@groupedPermissions.Count</div>
-                        </div>
-                        <div class="col-auto"><i class="fas fa-th-large fa-2x text-gray-300"></i></div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card-compact shadow-sm border-start border-success border-3">
+                <div class="card-body d-flex align-items-center justify-content-between py-1 px-2">
+                    <div>
+                        <div class="stat-label">Số module</div>
+                        <div class="stat-value">@groupedPermissions.Count</div>
+                    </div>
+                    <div class="stat-icon-sm bg-success bg-opacity-10 rounded-2 p-1">
+                        <i class="fas fa-th-large text-success"></i>
                     </div>
                 </div>
             </div>

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ErpOnlineOrder.Domain.Models
 {
@@ -11,17 +6,13 @@ namespace ErpOnlineOrder.Domain.Models
     {
         public int Id { get; set; }
         public string Permission_code { get; set; } = string.Empty;
-        
-        // public int Module_id { get; set; }
-        // [ForeignKey("Module_id")]
-        // public virtual Module Module { get; set; } = null!;
 
-        // public int Action_id { get; set; }
-        // [ForeignKey("Action_id")]
-        // public virtual Action Action { get; set; } = null!;
-        
-        public int? Module_id { get; set; }
-        public int? Action_id { get; set; }
+        public int? Parent_id { get; set; }
+        [ForeignKey("Parent_id")]
+        public virtual Permission? Parent { get; set; }
+        public virtual ICollection<Permission> Children { get; set; } = new List<Permission>();
+
+        public bool Is_special { get; set; }
 
         public int Created_by { get; set; }
         public DateTime Created_at { get; set; }
@@ -30,7 +21,6 @@ namespace ErpOnlineOrder.Domain.Models
         public bool Is_deleted { get; set; }
 
         public virtual ICollection<Role_permission> Role_Permissions { get; set; } = new List<Role_permission>();
-
         public virtual ICollection<User_permission> User_Permissions { get; set; } = new List<User_permission>();
     }
 }

@@ -129,15 +129,15 @@ namespace ErpOnlineOrder.Infrastructure.Persistence
                 entity.HasOne(x => x.Role).WithMany(x => x.User_roles).HasForeignKey(x => x.Role_id);
             });
 
-            // Permission configuration
+            // Permission configuration (de quy cha-con)
             modelBuilder.Entity<Permission>(entity =>
             {
                 entity.ToTable("Permissions");
                 entity.HasKey(x => x.Id);
                 entity.Property(x => x.Permission_code).HasMaxLength(100).IsRequired();
-                // Module_id va Action_id la optional
-                entity.Property(x => x.Module_id).IsRequired(false);
-                entity.Property(x => x.Action_id).IsRequired(false);
+                entity.Property(x => x.Parent_id).HasColumnName("Parent_id").IsRequired(false);
+                entity.Property(x => x.Is_special).HasColumnName("Is_special");
+                entity.HasOne(x => x.Parent).WithMany(x => x.Children).HasForeignKey(x => x.Parent_id).OnDelete(DeleteBehavior.Restrict);
             });
 
             // Role_permission configuration

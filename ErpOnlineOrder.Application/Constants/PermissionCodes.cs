@@ -1,35 +1,62 @@
 namespace ErpOnlineOrder.Application.Constants
 {
-    public static class ModuleCodes
-    {
-        public const string Product = "PRODUCT";
-        public const string Category = "CATEGORY";
-        public const string Region = "REGION";
-        public const string Province = "PROVINCE";
-        public const string Organization = "ORGANIZATION";
-        public const string Customer = "CUSTOMER";
-        public const string Order = "ORDER";
-        public const string Invoice = "INVOICE";
-        public const string Warehouse = "WAREHOUSE";
-        public const string Staff = "STAFF";
-        public const string Distributor = "DISTRIBUTOR";
-        public const string Role = "ROLE";
-        public const string Permission = "PERMISSION";
-    }
-    public static class ActionCodes
-    {
-        public const string View = "VIEW";
-        public const string Create = "CREATE";
-        public const string Update = "UPDATE";
-        public const string Delete = "DELETE";
-        public const string Export = "EXPORT";
-        public const string Import = "IMPORT";
-        public const string Approve = "APPROVE";
-        public const string Reject = "REJECT";
-        public const string Assign = "ASSIGN";
-    }
     public static class PermissionCodes
     {
+        public static readonly string[] CategoryOrder =
+        {
+            "PRODUCT", "CATEGORY", "REGION", "PROVINCE", "ORGANIZATION", "DISTRIBUTOR",
+            "CUSTOMER", "ORDER", "INVOICE", "WAREHOUSE", "WAREHOUSE_EXPORT", "STAFF",
+            "ROLE", "PERMISSION", "SETTINGS"
+        };
+
+        public static readonly HashSet<string> DanhMucChungCodes = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "REGION", "PROVINCE", "ORGANIZATION", "DISTRIBUTOR", "WAREHOUSE"
+        };
+
+        public static readonly Dictionary<string, string> CategoryDisplayNames = new(StringComparer.OrdinalIgnoreCase)
+        {
+            { "PRODUCT", "Danh mục sản phẩm" },
+            { "CATEGORY", "Thể loại" },
+            { "REGION", "Vùng miền" },
+            { "PROVINCE", "Tỉnh/Thành" },
+            { "ORGANIZATION", "Tổ chức" },
+            { "DISTRIBUTOR", "Nhà phân phối" },
+            { "CUSTOMER", "Danh mục khách hàng" },
+            { "ORDER", "Đơn hàng" },
+            { "INVOICE", "Hóa đơn" },
+            { "WAREHOUSE", "Kho hàng" },
+            { "WAREHOUSE_EXPORT", "Xuất kho" },
+            { "STAFF", "Danh sách cán bộ" },
+            { "ROLE", "Vai trò" },
+            { "PERMISSION", "Quyền hạn" },
+            { "SETTINGS", "Cài đặt hệ thống" },
+            { "REPORT", "Báo cáo" },
+            { "OTHER", "Khác" },
+            { "DANH_MUC_CHUNG", "Danh mục chung" }
+        };
+
+        public static readonly Dictionary<string, string> ActionDisplayNames = new(StringComparer.OrdinalIgnoreCase)
+        {
+            { "VIEW", "Xem" },
+            { "CREATE", "Thêm mới" },
+            { "UPDATE", "Cập nhật" },
+            { "DELETE", "Xóa" },
+            { "EXPORT", "Xuất file" },
+            { "IMPORT", "Nhập file" },
+            { "APPROVE", "Duyệt" },
+            { "REJECT", "Từ chối" },
+            { "ASSIGN", "Phân quyền" },
+            { "PRINT_2023", "In ủy nhiệm chi năm 2023" },
+            { "PRINT_2025", "In ủy nhiệm chi năm 2025" },
+            { "PRODUCT_VIEW", "Xem sản phẩm khách hàng" },
+            { "PRODUCT_ASSIGN", "Phân quyền sản phẩm" },
+            { "EXPORT_VIEW", "Xem" },
+            { "EXPORT_CREATE", "Thêm mới" },
+            { "EXPORT_UPDATE", "Cập nhật" },
+            { "EXPORT_DELETE", "Xóa" }
+        };
+
         // Product Permissions
         public const string ProductView = "PRODUCT_VIEW";
         public const string ProductCreate = "PRODUCT_CREATE";
@@ -86,11 +113,17 @@ namespace ErpOnlineOrder.Application.Constants
         public const string InvoiceUpdate = "INVOICE_UPDATE";
         public const string InvoiceDelete = "INVOICE_DELETE";
 
-        // Warehouse Permissions
+        // Warehouse Permissions (Kho hàng - master data)
         public const string WarehouseView = "WAREHOUSE_VIEW";
         public const string WarehouseCreate = "WAREHOUSE_CREATE";
         public const string WarehouseUpdate = "WAREHOUSE_UPDATE";
         public const string WarehouseDelete = "WAREHOUSE_DELETE";
+
+        // Warehouse Export Permissions (Phiếu xuất kho)
+        public const string WarehouseExportView = "WAREHOUSE_EXPORT_VIEW";
+        public const string WarehouseExportCreate = "WAREHOUSE_EXPORT_CREATE";
+        public const string WarehouseExportUpdate = "WAREHOUSE_EXPORT_UPDATE";
+        public const string WarehouseExportDelete = "WAREHOUSE_EXPORT_DELETE";
 
         // Staff Permissions
         public const string StaffView = "STAFF_VIEW";
@@ -122,5 +155,9 @@ namespace ErpOnlineOrder.Application.Constants
         // Settings
         public const string SettingsView = "SETTINGS_VIEW";
         public const string SettingsUpdate = "SETTINGS_UPDATE";
+
+        // Quyen dac thu (chi tiet, hien thi rieng dropdown)
+        public const string InvoicePrint2023 = "INVOICE_PRINT_2023";
+        public const string InvoicePrint2025 = "INVOICE_PRINT_2025";
     }
 }

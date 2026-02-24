@@ -7,7 +7,7 @@ using ErpOnlineOrder.WebMVC.Services;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
-    [RequirePermission(PermissionCodes.WarehouseView)]
+    [RequirePermission(PermissionCodes.WarehouseExportView)]
     public class WarehouseExportController : BaseController
     {
         private readonly IWarehouseExportApiClient _warehouseExportApiClient;
@@ -77,7 +77,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             }
         }
 
-        [RequirePermission(PermissionCodes.WarehouseCreate)]
+        [RequirePermission(PermissionCodes.WarehouseExportCreate)]
         public async Task<IActionResult> Create()
         {
             try
@@ -103,7 +103,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequirePermission(PermissionCodes.WarehouseCreate)]
+        [RequirePermission(PermissionCodes.WarehouseExportCreate)]
         public async Task<IActionResult> Create(CreateWarehouseExportDto model)
         {
             try
@@ -135,7 +135,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequirePermission(PermissionCodes.WarehouseUpdate)]
+        [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
         public async Task<IActionResult> Confirm(int id)
         {
             try
@@ -158,7 +158,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequirePermission(PermissionCodes.WarehouseUpdate)]
+        [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
         public async Task<IActionResult> Cancel(int id)
         {
             try
@@ -181,7 +181,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequirePermission(PermissionCodes.WarehouseUpdate)]
+        [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
         public async Task<IActionResult> UpdateDeliveryStatus(int id, string status)
         {
             try
@@ -204,7 +204,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequirePermission(PermissionCodes.WarehouseDelete)]
+        [RequirePermission(PermissionCodes.WarehouseExportDelete)]
         public async Task<IActionResult> Delete(int id)
         {
             try
@@ -226,7 +226,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         }
 
         [HttpGet]
-        [RequirePermission(PermissionCodes.WarehouseUpdate)]
+        [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
         public async Task<IActionResult> Split(int id)
         {
             try
@@ -247,7 +247,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequirePermission(PermissionCodes.WarehouseUpdate)]
+        [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
         public async Task<IActionResult> Split(SplitWarehouseExportDto dto)
         {
             try
@@ -269,7 +269,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         }
 
         [HttpGet]
-        [RequirePermission(PermissionCodes.WarehouseUpdate)]
+        [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
         public async Task<IActionResult> Merge()
         {
             try
@@ -287,7 +287,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequirePermission(PermissionCodes.WarehouseUpdate)]
+        [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
         public async Task<IActionResult> Merge(MergeWarehouseExportsDto dto)
         {
             try
@@ -326,9 +326,9 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 var permissions = await _permissionApiClient.GetUserPermissionCodesAsync(userId);
                 ViewBag.CurrentUserPermissions = permissions?.ToList() ?? new List<string>();
 
-                ViewBag.CanCreate = permissions?.Contains(PermissionCodes.WarehouseCreate) ?? false;
-                ViewBag.CanUpdate = permissions?.Contains(PermissionCodes.WarehouseUpdate) ?? false;
-                ViewBag.CanDelete = permissions?.Contains(PermissionCodes.WarehouseDelete) ?? false;
+                ViewBag.CanCreate = permissions?.Contains(PermissionCodes.WarehouseExportCreate) ?? false;
+                ViewBag.CanUpdate = permissions?.Contains(PermissionCodes.WarehouseExportUpdate) ?? false;
+                ViewBag.CanDelete = permissions?.Contains(PermissionCodes.WarehouseExportDelete) ?? false;
             }
             catch
             {

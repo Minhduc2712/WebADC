@@ -1,4 +1,4 @@
-﻿-- =============================================
+-- =============================================
 -- Script: CreateAdminUser.sql
 -- Description: Tao user admin moi voi password dung
 -- Password: Admin@123
@@ -37,50 +37,15 @@ GO
 -- =============================================
 PRINT N'Buoc 2: Kiem tra va seed du lieu co ban...';
 
--- Seed Modules
-IF NOT EXISTS (SELECT 1 FROM Modules WHERE Module_code = 'STAFF')
-BEGIN
-    INSERT INTO Modules (Module_code, Module_name, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES
-    ('PRODUCT', N'Quan ly san pham', 1, GETDATE(), 1, GETDATE(), 0),
-    ('CATEGORY', N'Quan ly danh muc', 1, GETDATE(), 1, GETDATE(), 0),
-    ('CUSTOMER', N'Quan ly khach hang', 1, GETDATE(), 1, GETDATE(), 0),
-    ('ORDER', N'Quan ly don hang', 1, GETDATE(), 1, GETDATE(), 0),
-    ('INVOICE', N'Quan ly hoa don', 1, GETDATE(), 1, GETDATE(), 0),
-    ('WAREHOUSE', N'Quan ly kho', 1, GETDATE(), 1, GETDATE(), 0),
-    ('STAFF', N'Quan ly nhan vien', 1, GETDATE(), 1, GETDATE(), 0),
-    ('REPORT', N'Bao cao', 1, GETDATE(), 1, GETDATE(), 0),
-    ('ROLE', N'Quan ly vai tro', 1, GETDATE(), 1, GETDATE(), 0);
-    PRINT N'  - Da seed Modules';
-END
-
--- Seed Actions
-IF NOT EXISTS (SELECT 1 FROM Actions WHERE Action_code = 'VIEW')
-BEGIN
-    INSERT INTO Actions (Action_code, Action_name, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES
-    ('VIEW', N'Xem', 1, GETDATE(), 1, GETDATE(), 0),
-    ('CREATE', N'Them moi', 1, GETDATE(), 1, GETDATE(), 0),
-    ('UPDATE', N'Cap nhat', 1, GETDATE(), 1, GETDATE(), 0),
-    ('DELETE', N'Xoa', 1, GETDATE(), 1, GETDATE(), 0),
-    ('ASSIGN', N'Gan quyen', 1, GETDATE(), 1, GETDATE(), 0);
-    PRINT N'  - Da seed Actions';
-END
-
--- Seed Permissions
-DECLARE @StaffModuleId INT = (SELECT Id FROM Modules WHERE Module_code = 'STAFF');
-DECLARE @ViewActionId INT = (SELECT Id FROM Actions WHERE Action_code = 'VIEW');
-DECLARE @CreateActionId INT = (SELECT Id FROM Actions WHERE Action_code = 'CREATE');
-DECLARE @UpdateActionId INT = (SELECT Id FROM Actions WHERE Action_code = 'UPDATE');
-DECLARE @DeleteActionId INT = (SELECT Id FROM Actions WHERE Action_code = 'DELETE');
-DECLARE @AssignActionId INT = (SELECT Id FROM Actions WHERE Action_code = 'ASSIGN');
-
+-- Seed Permissions (Staff)
 IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'STAFF_VIEW')
 BEGIN
-    INSERT INTO Permissions (Permission_code, Module_id, Action_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES
-    ('STAFF_VIEW', @StaffModuleId, @ViewActionId, 1, GETDATE(), 1, GETDATE(), 0),
-    ('STAFF_CREATE', @StaffModuleId, @CreateActionId, 1, GETDATE(), 1, GETDATE(), 0),
-    ('STAFF_UPDATE', @StaffModuleId, @UpdateActionId, 1, GETDATE(), 1, GETDATE(), 0),
-    ('STAFF_DELETE', @StaffModuleId, @DeleteActionId, 1, GETDATE(), 1, GETDATE(), 0),
-    ('STAFF_ASSIGN', @StaffModuleId, @AssignActionId, 1, GETDATE(), 1, GETDATE(), 0);
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES
+    ('STAFF_VIEW', NULL, 0, 1, GETDATE(), 1, GETDATE(), 0),
+    ('STAFF_CREATE', NULL, 0, 1, GETDATE(), 1, GETDATE(), 0),
+    ('STAFF_UPDATE', NULL, 0, 1, GETDATE(), 1, GETDATE(), 0),
+    ('STAFF_DELETE', NULL, 0, 1, GETDATE(), 1, GETDATE(), 0),
+    ('STAFF_ASSIGN', NULL, 0, 1, GETDATE(), 1, GETDATE(), 0);
     PRINT N'  - Da seed Permissions';
 END
 
