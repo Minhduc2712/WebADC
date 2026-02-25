@@ -170,6 +170,8 @@
         }
         /* Top Navbar */
         .top-navbar {
+            position: relative;
+            z-index: 1050;
             background: rgba(255,255,255,0.95);
             backdrop-filter: blur(12px);
             padding: 14px 28px;
@@ -213,6 +215,14 @@
         }
         .user-dropdown:hover {
             background: #f1f5f9;
+        }
+        .top-navbar .dropdown {
+            position: relative;
+            z-index: 1100;
+        }
+        .top-navbar .dropdown-menu,
+        .dropdown-menu.show {
+            z-index: 9999 !important;
         }
         .user-avatar {
             width: 40px;
