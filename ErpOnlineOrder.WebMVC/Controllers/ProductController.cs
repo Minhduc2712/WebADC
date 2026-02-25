@@ -136,7 +136,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 var product = await _productApiClient.GetEntityByIdAsync(id);
 
                 if (product == null)
-                    return NotFound();
+                {
+                    TempData["ErrorMessage"] = "Sản phẩm không tồn tại hoặc đã bị xóa.";
+                    return RedirectToAction(nameof(Index));
+                }
 
                 await LoadDropdownsAsync(product);
                 return View(product);

@@ -127,6 +127,16 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             try
             {
+                var userId = TryGetCurrentUserId();
+                if (!userId.HasValue || userId.Value <= 0)
+                    return Unauthorized(new { message = "Vui lòng đăng nhập." });
+
+                var customer = await _customerService.GetByIdAsync(model.Customer_id);
+                if (customer == null)
+                    return NotFound(new { message = "Không tìm thấy khách hàng." });
+                if (customer.User_id != userId.Value)
+                    return Forbid();
+
                 var result = await _customerService.UpdateOrganizationAsync(model);
                 return Ok(new { success = result });
             }

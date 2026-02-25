@@ -51,7 +51,13 @@ namespace ErpOnlineOrder.WebMVC.Services
         public async Task<Product?> GetEntityByIdAsync(int id, CancellationToken cancellationToken = default)
         {
             var response = await _http.GetAsync("product/" + id + "/entity", cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                return null;
+            if (!response.IsSuccessStatusCode)
+            {
+                var msg = await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken);
+                throw new InvalidOperationException(msg ?? $"Lỗi khi tải sản phẩm: {response.StatusCode}");
+            }
             return await response.Content.ReadFromJsonAsync<Product>(ErpApiClientHelper.JsonOptions, cancellationToken);
         }
 

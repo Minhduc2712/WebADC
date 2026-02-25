@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace ErpOnlineOrder.WebMVC.Services
 {
@@ -8,7 +9,8 @@ namespace ErpOnlineOrder.WebMVC.Services
         public static readonly JsonSerializerOptions JsonOptions = new()
         {
             PropertyNameCaseInsensitive = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            ReferenceHandler = ReferenceHandler.IgnoreCycles
         };
 
         public static async Task<string?> ReadErrorMessageAsync(HttpResponseMessage response, CancellationToken cancellationToken = default)

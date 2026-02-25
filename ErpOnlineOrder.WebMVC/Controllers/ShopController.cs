@@ -5,6 +5,7 @@ using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.DTOs.OrderDTOs;
 using ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs;
 using ErpOnlineOrder.Application.DTOs.InvoiceDTOs;
+using ErpOnlineOrder.Application.DTOs.CustomerDTOs;
 using ErpOnlineOrder.WebMVC.Extensions;
 using ErpOnlineOrder.WebMVC.Attributes;
 
@@ -18,6 +19,8 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         private readonly IWarehouseExportService _warehouseExportService;
         private readonly IInvoiceService _invoiceService;
         private readonly ICustomerRepository _customerRepository;
+        private readonly IOrganizationService _organizationService;
+        private readonly ICustomerService _customerService;
         private readonly ILogger<ShopController> _logger;
 
         public ShopController(
@@ -26,6 +29,8 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             IWarehouseExportService warehouseExportService,
             IInvoiceService invoiceService,
             ICustomerRepository customerRepository,
+            IOrganizationService organizationService,
+            ICustomerService customerService,
             ILogger<ShopController> logger)
         {
             _productService = productService;
@@ -33,6 +38,8 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             _warehouseExportService = warehouseExportService;
             _invoiceService = invoiceService;
             _customerRepository = customerRepository;
+            _organizationService = organizationService;
+            _customerService = customerService;
             _logger = logger;
         }
 
@@ -485,6 +492,62 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         public IActionResult Account()
         {
             return View();
+        }
+
+        /// <summary>Khách hàng chỉnh sửa thông tin đơn vị (tổ chức).</summary>
+        [HttpGet]
+        public async Task<IActionResult> UpdateOrganization()
+        {
+            var customerId = await GetCurrentCustomerIdAsync();
+            if (!customerId.HasValue)
+                return RedirectToAction("Login", "Auth");
+
+            var org = await _organizationService.GetByCustomerIdAsync(customerId.Value);
+            var model = new UpdateOrganizationByCustomerDto
+            {
+                Customer_id = customerId.Value,
+                Organization_name = org?.Organization_name ?? "",
+                Address = org?.Address ?? "",
+                Tax_number = org?.Tax_number ?? 0,
+                Recipient_name = org?.Recipient_name ?? "",
+                Recipient_phone = org?.Recipient_phone ?? 0,
+                Recipient_address = org?.Recipient_address ?? ""
+            };
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateOrganization(UpdateOrganizationByCustomerDto model)
+        {
+            var customerId = await GetCurrentCustomerIdAsync();
+            if (!customerId.HasValue)
+                return RedirectToAction("Login", "Auth");
+
+            model.Customer_id = customerId.Value;
+            if (string.IsNullOrWhiteSpace(model.Organization_name))
+                ModelState.AddModelError("Organization_name", "Tên đơn vị không được để trống.");
+            if (string.IsNullOrWhiteSpace(model.Address))
+                ModelState.AddModelError("Address", "Địa chỉ không được để trống.");
+
+            if (!ModelState.IsValid)
+                return View(model);
+
+            try
+            {
+                var result = await _customerService.UpdateOrganizationAsync(model);
+                if (result)
+                {
+                    TempData["SuccessMessage"] = "Cập nhật thông tin đơn vị thành công.";
+                    return RedirectToAction(nameof(Account));
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating organization for customer {CustomerId}", customerId);
+                ModelState.AddModelError("", "Có lỗi xảy ra khi cập nhật. Vui lòng thử lại.");
+            }
+            return View(model);
         }
 
         public IActionResult Info(string slug)
