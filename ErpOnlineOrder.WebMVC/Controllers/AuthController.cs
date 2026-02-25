@@ -423,6 +423,15 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         }
         private IActionResult RedirectToReturnUrl(string? returnUrl)
         {
+            var isCustomer = HttpContext.Session.IsCustomer();
+
+            // Khách hàng luôn về Shop - không redirect đến trang nội bộ (Order, Home, Staff...)
+            if (isCustomer)
+            {
+                HttpContext.Session.Remove("ReturnUrl");
+                return RedirectToAction("Index", "Shop");
+            }
+
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
             {
                 return Redirect(returnUrl);
@@ -433,11 +442,6 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 HttpContext.Session.Remove("ReturnUrl");
                 return Redirect(sessionReturnUrl);
-            }
-
-            if (HttpContext.Session.IsCustomer())
-            {
-                return RedirectToAction("Index", "Shop");
             }
 
             return RedirectToAction("Index", "Order");

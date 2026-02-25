@@ -1,6 +1,6 @@
 namespace ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs
 {
-    public class WarehouseExportDto
+    public class WarehouseExportDto : Application.DTOs.IRecordPermissionDto
     {
         public int Id { get; set; }
         public string Warehouse_export_code { get; set; } = string.Empty;
@@ -39,6 +39,8 @@ namespace ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs
         
         public List<WarehouseExportDetailDto> Details { get; set; } = new();
         public List<WarehouseExportDto> Child_exports { get; set; } = new();
+        public bool AllowUpdate { get; set; }
+        public bool AllowDelete { get; set; }
     }
     public class WarehouseExportDetailDto
     {

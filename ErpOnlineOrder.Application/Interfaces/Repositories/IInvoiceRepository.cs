@@ -7,6 +7,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
         Task<Invoice?> GetByIdAsync(int id);
         Task<Invoice?> GetByCodeAsync(string code);
         Task<IEnumerable<Invoice>> GetAllAsync();
+        Task<IEnumerable<Invoice>> GetByCustomerIdsAsync(IEnumerable<int> customerIds);
         Task<IEnumerable<Invoice>> GetByCustomerIdAsync(int customerId);
         Task<IEnumerable<Invoice>> GetByStatusAsync(string status);
         Task<IEnumerable<Invoice>> GetChildInvoicesAsync(int parentInvoiceId);

@@ -7,87 +7,83 @@
     var currentCategory = ViewBag.Category as string;
     var currentSort = ViewBag.Sort as string;
     var productList = Model.ToList();
+    var totalCount = ViewBag.TotalCount as int? ?? productList.Count;
+
+    string FormatPrice(string price)
+    {
+        if (string.IsNullOrEmpty(price)) return "0 đ";
+        var cleaned = new string(price.Where(c => char.IsDigit(c)).ToArray());
+        if (string.IsNullOrEmpty(cleaned) || !long.TryParse(cleaned, out var num)) return price;
+        return num.ToString("N0", new System.Globalization.CultureInfo("vi-VN")) + " đ";
+    }
 }
 
-<!-- Breadcrumb -->
-<section class="blog about-blog">
-    <div class="container">
-        <div class="blog-bradcrum">
-            <span><a asp-action="Index">Trang chủ</a></span>
-            <span class="devider">/</span>
-            <span><a href="#">Sản phẩm</a></span>
-            @if (!string.IsNullOrEmpty(currentCategory))
-            {
-                <span class="devider">/</span>
-                <span><a href="#">@currentCategory</a></span>
-            }
-        </div>
-        <div class="blog-heading about-heading">
-            <h1 class="heading">@(string.IsNullOrEmpty(currentCategory) ? "Sản phẩm" : currentCategory)</h1>
-        </div>
-    </div>
-</section>
+@section Styles {
+    <link rel="stylesheet" href="~/shop/css/products.css">
+}
 
-<!-- Product Listing -->
-<section class="product footer-padding">
+<!-- Main Content -->
+<section class="products-main products-page">
     <div class="container">
         <div class="row">
             <!-- Sidebar Filter -->
             <div class="col-lg-3">
-                <div class="sidebar-section">
-                    <!-- Search -->
-                    <div class="sidebar-widget mb-4">
-                        <h5 class="widget-title mb-3">Tìm kiếm</h5>
-                        <form asp-action="Products" method="get">
-                            <input type="hidden" name="category" value="@currentCategory" />
-                            <input type="hidden" name="sort" value="@currentSort" />
-                            <div class="search-section" style="display: flex; gap: 8px;">
-                                <input type="text" name="search" class="form-control" placeholder="Tìm kiếm..." value="@currentSearch">
-                                <button type="submit" class="shop-btn" style="white-space: nowrap; padding: 8px 16px;">Tìm</button>
-                            </div>
-                        </form>
-                    </div>
+                <aside class="products-sidebar">
+                    <div class="filter-card">
+                        <div class="filter-header">
+                            <i class="fas fa-filter me-2"></i> Bộ lọc
+                        </div>
+                        <div class="filter-body">
+                            <!-- Search -->
+                            <form asp-action="Products" method="get">
+                                <input type="hidden" name="category" value="@currentCategory" />
+                                <input type="hidden" name="sort" value="@currentSort" />
+                                <div class="search-box">
+                                    <input type="text" name="search" placeholder="Tìm kiếm sản phẩm..." value="@currentSearch">
+                                    <button type="submit" class="btn-search">
+                                        <i class="fas fa-search"></i> Tìm
+                                    </button>
+                                </div>
+                            </form>
 
-                    <!-- Categories -->
-                    @if (categories.Any())
-                    {
-                        <div class="sidebar-widget mb-4">
-                            <h5 class="widget-title mb-3">Danh mục</h5>
-                            <ul class="widget-category-list" style="list-style: none; padding: 0;">
-                                <li class="py-2" style="border-bottom: 1px solid #eee;">
-                                    <a asp-action="Products" asp-route-search="@currentSearch" asp-route-sort="@currentSort"
-                                       class="text-decoration-none d-flex justify-content-between align-items-center @(string.IsNullOrEmpty(currentCategory) ? "fw-bold" : "")"
-                                       style="color: @(string.IsNullOrEmpty(currentCategory) ? "#1a7f37" : "#555");">
-                                        <span>Tất cả</span>
-                                        <span class="badge bg-light text-dark">@productList.Count</span>
-                                    </a>
-                                </li>
-                                @foreach (var cat in categories)
-                                {
-                                    <li class="py-2" style="border-bottom: 1px solid #eee;">
-                                        <a asp-action="Products" asp-route-category="@cat" asp-route-search="@currentSearch" asp-route-sort="@currentSort"
-                                           class="text-decoration-none d-flex justify-content-between align-items-center @(currentCategory == cat ? "fw-bold" : "")"
-                                           style="color: @(currentCategory == cat ? "#1a7f37" : "#555");">
-                                            <span>@cat</span>
+                            <!-- Categories -->
+                            @if (categories.Any())
+                            {
+                                <div class="filter-header" style="margin: 0 -1.8rem; padding: 1rem 1.8rem; font-size: 1.4rem;">Danh mục</div>
+                                <ul class="category-list">
+                                    <li>
+                                        <a asp-action="Products" asp-route-search="@currentSearch" asp-route-sort="@currentSort"
+                                           class="@(string.IsNullOrEmpty(currentCategory) ? "active" : "")">
+                                            <span>Tất cả</span>
+                                            <span class="badge-count">@totalCount</span>
                                         </a>
                                     </li>
-                                }
-                            </ul>
+                                    @foreach (var cat in categories)
+                                    {
+                                        <li>
+                                            <a asp-action="Products" asp-route-category="@cat" asp-route-search="@currentSearch" asp-route-sort="@currentSort"
+                                               class="@(currentCategory == cat ? "active" : "")">
+                                                <span>@cat</span>
+                                            </a>
+                                        </li>
+                                    }
+                                </ul>
+                            }
                         </div>
-                    }
-                </div>
+                    </div>
+                </aside>
             </div>
 
             <!-- Product Grid -->
             <div class="col-lg-9">
-                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-                    <p class="mb-0" style="color: #555;">Hiển thị <strong>@productList.Count</strong> sản phẩm</p>
-                    <div class="d-flex gap-2 align-items-center">
-                        <span style="color: #555;">Sắp xếp:</span>
-                        <form asp-action="Products" method="get" id="sortForm">
+                <div class="products-toolbar">
+                    <p class="product-count mb-0">Hiển thị <strong>@productList.Count</strong> sản phẩm</p>
+                    <div class="sort-group">
+                        <label for="sortSelect">Sắp xếp:</label>
+                        <form asp-action="Products" method="get" id="sortForm" class="d-inline">
                             <input type="hidden" name="search" value="@currentSearch" />
                             <input type="hidden" name="category" value="@currentCategory" />
-                            <select name="sort" class="form-select form-select-sm" onchange="document.getElementById('sortForm').submit()" style="min-width: 150px;">
+                            <select name="sort" id="sortSelect" class="form-select" onchange="document.getElementById('sortForm').submit()">
                                 <option value="" selected="@(string.IsNullOrEmpty(currentSort))">Mặc định</option>
                                 <option value="newest" selected="@(currentSort == "newest")">Mới nhất</option>
                                 <option value="price_asc" selected="@(currentSort == "price_asc")">Giá tăng dần</option>
@@ -100,66 +96,53 @@
 
                 @if (!productList.Any())
                 {
-                    <div class="text-center py-5">
+                    <div class="products-empty">
                         <h5>Không tìm thấy sản phẩm nào</h5>
-                        <p style="color: #888;">Vui lòng thử lại với từ khóa khác.</p>
+                        <p>Vui lòng thử lại với từ khóa hoặc danh mục khác.</p>
                         <a asp-action="Products" class="shop-btn">Xem tất cả sản phẩm</a>
                     </div>
                 }
                 else
                 {
-                    <div class="arrival-section">
-                        <div class="row g-4">
-                            @foreach (var product in productList)
-                            {
-                                <div class="col-lg-4 col-md-6 col-sm-6">
-                                    <div class="product-wrapper" data-aos="fade-up">
-                                        <div class="product-img">
-                                            <a asp-action="ProductDetail" asp-route-id="@product.Id">
-                                                @if (product.Images.Any())
-                                                {
-                                                    <img src="@product.Images.First()" alt="@product.Product_name">
-                                                }
-                                                else
-                                                {
-                                                    <img src="~/shop/images/homepage-one/product-img/product-img-1.webp" alt="@product.Product_name">
-                                                }
-                                            </a>
+                    <div class="products-grid">
+                        @foreach (var product in productList)
+                        {
+                            <article class="product-card">
+                                <a asp-action="ProductDetail" asp-route-id="@product.Id" class="card-image-wrap">
+                                    @if (product.Images.Any())
+                                    {
+                                        <img src="@product.Images.First()" alt="@product.Product_name">
+                                    }
+                                    else
+                                    {
+                                        <img src="~/shop/images/homepage-one/product-img/product-img-1.webp" alt="@product.Product_name">
+                                    }
+                                </a>
+                                <div class="card-body">
+                                    <a asp-action="ProductDetail" asp-route-id="@product.Id" class="card-title">@product.Product_name</a>
+                                    @if (product.Authors.Any())
+                                    {
+                                        <p class="card-author">@string.Join(", ", product.Authors)</p>
+                                    }
+                                    @if (product.Categories.Any())
+                                    {
+                                        <div class="card-categories">
+                                            @foreach (var cat in product.Categories)
+                                            {
+                                                <span class="cat-tag">@cat</span>
+                                            }
                                         </div>
-                                        <div class="product-info">
-                                            <div class="product-description">
-                                                <a asp-action="ProductDetail" asp-route-id="@product.Id" class="product-details">@product.Product_name</a>
-                                                @if (product.Authors.Any())
-                                                {
-                                                    <p style="font-size: 13px; color: #888; margin-bottom: 4px;">@string.Join(", ", product.Authors)</p>
-                                                }
-                                                @if (product.Categories.Any())
-                                                {
-                                                    <p style="font-size: 12px; margin-bottom: 4px;">
-                                                        @foreach (var cat in product.Categories)
-                                                        {
-                                                            <span class="badge" style="background: #f0f0f0; color: #555; font-weight: normal;">@cat</span>
-                                                        }
-                                                    </p>
-                                                }
-                                                <div class="price">
-                                                    <span class="new-price">@product.Product_price</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="product-cart-btn">
-                                            <a href="javascript:void(0)" class="product-btn"
-                                               onclick="addToCart(@product.Id, '@Html.Raw(product.Product_name.Replace("'", "\\'"))', parsePrice('@product.Product_price'), '@product.Product_price', '@(product.Images.Any() ? product.Images.First() : "")', 1)">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right:5px;">
-                                                    <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
-                                                </svg>
-                                                Đặt hàng
-                                            </a>
-                                        </div>
+                                    }
+                                    <div class="card-price">@FormatPrice(product.Product_price)</div>
+                                    <div class="card-action">
+                                        <a href="javascript:void(0)" class="btn-order"
+                                           onclick="addToCart(@product.Id, '@Html.Raw(product.Product_name.Replace("'", "\\'"))', parsePrice('@product.Product_price'), '@product.Product_price', '@(product.Images.Any() ? product.Images.First() : "")', 1)">
+                                            <i class="fas fa-shopping-cart"></i> Đặt hàng
+                                        </a>
                                     </div>
                                 </div>
-                            }
-                        </div>
+                            </article>
+                        }
                     </div>
                 }
             </div>

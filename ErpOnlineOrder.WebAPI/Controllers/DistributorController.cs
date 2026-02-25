@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Application.Services;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.Application.DTOs.DistributorDTOs;
 namespace ErpOnlineOrder.WebAPI.Controllers
@@ -9,17 +11,26 @@ namespace ErpOnlineOrder.WebAPI.Controllers
     public class DistributorController : ApiController
     {
         private readonly IDistributorService _distributorService;
+        private readonly IPermissionService _permissionService;
 
-        public DistributorController(IDistributorService distributorService)
+        public DistributorController(IDistributorService distributorService, IPermissionService permissionService)
         {
             _distributorService = distributorService;
+            _permissionService = permissionService;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetDistributors()
         {
             var distributors = await _distributorService.GetAllAsync();
-            return Ok(distributors.Select(MapToDto));
+            var list = distributors.Select(MapToDto).ToList();
+            var userId = TryGetCurrentUserId();
+            if (userId.HasValue && userId.Value > 0)
+            {
+                foreach (var dto in list)
+                    await RecordPermissionEnricher.EnrichAsync(dto, userId.Value, _permissionService, PermissionCodes.DistributorUpdate, PermissionCodes.DistributorDelete);
+            }
+            return Ok(list);
         }
 
         [HttpGet("{id}")]
@@ -27,7 +38,11 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             var distributor = await _distributorService.GetByIdAsync(id);
             if (distributor == null) return NotFound();
-            return Ok(MapToDto(distributor));
+            var dto = MapToDto(distributor);
+            var userId = TryGetCurrentUserId();
+            if (userId.HasValue && userId.Value > 0)
+                await RecordPermissionEnricher.EnrichAsync(dto, userId.Value, _permissionService, PermissionCodes.DistributorUpdate, PermissionCodes.DistributorDelete);
+            return Ok(dto);
         }
 
         [HttpPost]

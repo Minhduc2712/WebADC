@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs;
+using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.WebMVC.Attributes;
 using ErpOnlineOrder.WebMVC.Services;
 
@@ -11,6 +12,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
     public class WarehouseExportController : BaseController
     {
         private readonly IWarehouseExportApiClient _warehouseExportApiClient;
+        private readonly IWarehouseExportService _warehouseExportService;
         private readonly IInvoiceApiClient _invoiceApiClient;
         private readonly IWarehouseApiClient _warehouseApiClient;
         private readonly IPermissionApiClient _permissionApiClient;
@@ -18,12 +20,14 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         public WarehouseExportController(
             IWarehouseExportApiClient warehouseExportApiClient,
+            IWarehouseExportService warehouseExportService,
             IInvoiceApiClient invoiceApiClient,
             IWarehouseApiClient warehouseApiClient,
             IPermissionApiClient permissionApiClient,
             ILogger<WarehouseExportController> logger)
         {
             _warehouseExportApiClient = warehouseExportApiClient;
+            _warehouseExportService = warehouseExportService;
             _invoiceApiClient = invoiceApiClient;
             _warehouseApiClient = warehouseApiClient;
             _permissionApiClient = permissionApiClient;
@@ -275,7 +279,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             try
             {
                 var exports = await _warehouseExportApiClient.GetAllAsync();
-                return View(exports.Where(e => e.Status != "Completed" && e.Status != "Cancelled"));
+                return View(exports.Where(e => e.Status != "Completed" && e.Status != "Cancelled" && e.Status != "Merged"));
             }
             catch (Exception ex)
             {
@@ -306,6 +310,71 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             }
 
             return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
+        public async Task<IActionResult> UndoSplit(int id)
+        {
+            try
+            {
+                var result = await _warehouseExportApiClient.UndoSplitAsync(id);
+                if (result)
+                    SetSuccessMessage("Đã hoàn tác tách phiếu xuất kho!");
+                else
+                    SetErrorMessage("Không thể hoàn tác tách phiếu xuất kho!");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error undoing split");
+                SetErrorMessage(GetDetailedErrorMessage(ex));
+            }
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
+        public async Task<IActionResult> UndoMerge(int id)
+        {
+            try
+            {
+                var result = await _warehouseExportApiClient.UndoMergeAsync(id);
+                if (result)
+                    SetSuccessMessage("Đã hoàn tác gộp phiếu xuất kho!");
+                else
+                    SetErrorMessage("Không thể hoàn tác gộp phiếu xuất kho!");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error undoing merge");
+                SetErrorMessage(GetDetailedErrorMessage(ex));
+            }
+            return RedirectToAction(nameof(Index));
+        }
+
+        [RequirePermission(PermissionCodes.WarehouseExportView)]
+        [HttpGet]
+        public async Task<IActionResult> ExportExcel(string? status)
+        {
+            try
+            {
+                var bytes = await _warehouseExportService.ExportWarehouseExportsToExcelAsync(status);
+                if (bytes == null || bytes.Length == 0)
+                {
+                    SetErrorMessage("Không có dữ liệu để xuất.");
+                    return RedirectToAction(nameof(Index));
+                }
+                return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    $"PhieuXuatKho_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error exporting warehouse exports");
+                SetErrorMessage(GetDetailedErrorMessage(ex));
+                return RedirectToAction(nameof(Index));
+            }
         }
 
         private async Task LoadCurrentUserPermissions()

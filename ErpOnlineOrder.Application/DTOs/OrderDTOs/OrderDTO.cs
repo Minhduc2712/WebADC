@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ErpOnlineOrder.Application.DTOs
 {
-    public class OrderDTO
+    public class OrderDTO : IRecordPermissionDto
     {
         public int Id { get; set; }
         public string Order_code { get; set; } = null!;
@@ -17,6 +17,11 @@ namespace ErpOnlineOrder.Application.DTOs
         public string? Shipping_address { get; set; }
         public string? note { get; set; }
         public List<OrderDetailDTO> Order_details { get; set; } = new();
+        public bool AllowUpdate { get; set; }
+        public bool AllowDelete { get; set; }
+        public bool AllowApprove { get; set; }
+        public bool AllowReject { get; set; }
+        public bool AllowExport { get; set; }
     }
 
     public class OrderDetailDTO

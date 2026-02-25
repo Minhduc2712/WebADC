@@ -17,7 +17,8 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<Invoice?> GetByIdAsync(int id)
         {
             return await _context.Invoices
-                .Include(i => i.Customer)
+                .Include(i => i.Customer)!.ThenInclude(c => c!.Customer_managements)
+                .ThenInclude(cm => cm.Province)
                 .Include(i => i.Staff)
                 .Include(i => i.Order)
                 .Include(i => i.Parent_invoice)
@@ -39,11 +40,27 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<IEnumerable<Invoice>> GetAllAsync()
         {
             return await _context.Invoices
-                .Include(i => i.Customer)
+                .Include(i => i.Customer)!.ThenInclude(c => c!.Customer_managements)
+                .ThenInclude(cm => cm.Province)
                 .Include(i => i.Staff)
                 .Include(i => i.Invoice_Details)
                     .ThenInclude(d => d.Product)
                 .Where(i => !i.Is_deleted)
+                .OrderByDescending(i => i.Created_at)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Invoice>> GetByCustomerIdsAsync(IEnumerable<int> customerIds)
+        {
+            var ids = customerIds.ToList();
+            if (ids.Count == 0) return new List<Invoice>();
+            return await _context.Invoices
+                .Include(i => i.Customer)!.ThenInclude(c => c!.Customer_managements)
+                .ThenInclude(cm => cm.Province)
+                .Include(i => i.Staff)
+                .Include(i => i.Invoice_Details)
+                    .ThenInclude(d => d.Product)
+                .Where(i => ids.Contains(i.Customer_id) && !i.Is_deleted)
                 .OrderByDescending(i => i.Created_at)
                 .ToListAsync();
         }

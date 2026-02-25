@@ -1,4 +1,4 @@
-﻿using ErpOnlineOrder.Application.Interfaces.Repositories;
+using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -45,6 +45,15 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .Include(cm => cm.Staff)
                 .Include(cm => cm.Province)
                 .OrderByDescending(cm => cm.Created_at)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<int>> GetCustomerIdsByStaffAsync(int staffId)
+        {
+            return await _context.CustomerManagements
+                .Where(cm => !cm.Is_deleted && cm.Staff_id == staffId)
+                .Select(cm => cm.Customer_id)
+                .Distinct()
                 .ToListAsync();
         }
 

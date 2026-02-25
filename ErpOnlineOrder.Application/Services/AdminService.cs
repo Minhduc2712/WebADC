@@ -13,40 +13,48 @@ namespace ErpOnlineOrder.Application.Services
         private readonly ICustomerRepository _customerRepository;
         private readonly IOrderRepository _orderRepository;
         private readonly IRolePermissionRepository _rolePermissionRepository;
+        private readonly IPermissionService _permissionService;
 
         public AdminService(
             IUserRepository userRepository,
             IRoleRepository roleRepository,
             ICustomerRepository customerRepository,
             IOrderRepository orderRepository,
-            IRolePermissionRepository rolePermissionRepository)
+            IRolePermissionRepository rolePermissionRepository,
+            IPermissionService permissionService)
         {
             _userRepository = userRepository;
             _roleRepository = roleRepository;
             _customerRepository = customerRepository;
             _orderRepository = orderRepository;
             _rolePermissionRepository = rolePermissionRepository;
+            _permissionService = permissionService;
         }
 
         #region Qu?n lý tài kho?n nhân viên
 
-        public async Task<IEnumerable<StaffAccountDto>> GetAllStaffAsync()
+        public async Task<IEnumerable<StaffAccountDto>> GetAllStaffAsync(int? currentUserId = null)
         {
             var users = await _userRepository.GetAllAsync();
             var staffUsers = users.Where(u => u.Staff != null && !u.Is_deleted);
-            
-            return staffUsers.Select(u => MapToStaffAccountDto(u));
+            var list = staffUsers.Select(u => MapToStaffAccountDto(u)).ToList();
+            if (currentUserId.HasValue && currentUserId.Value > 0)
+            {
+                foreach (var dto in list)
+                    await RecordPermissionEnricher.EnrichStaffAsync(dto, currentUserId.Value, _permissionService);
+            }
+            return list;
         }
 
-        public async Task<StaffAccountDto?> GetStaffByIdAsync(int userId)
+        public async Task<StaffAccountDto?> GetStaffByIdAsync(int userId, int? currentUserId = null)
         {
             var user = await _userRepository.GetByIdAsync(userId);
             if (user == null || user.Staff == null)
-            {
                 return null;
-            }
-            
-            return MapToStaffAccountDto(user);
+            var dto = MapToStaffAccountDto(user);
+            if (currentUserId.HasValue && currentUserId.Value > 0)
+                await RecordPermissionEnricher.EnrichStaffAsync(dto, currentUserId.Value, _permissionService);
+            return dto;
         }
 
         public async Task<StaffAccountDto?> CreateStaffAccountAsync(CreateStaffAccountDto dto, int createdBy)

@@ -75,6 +75,7 @@ builder.Services.AddScoped<IPublisherRepository, PublisherRepository>();
 builder.Services.AddScoped<ICoverTypeRepository, CoverTypeRepository>();
 builder.Services.AddScoped<IWarehouseRepository, WarehouseRepository>();
 builder.Services.AddScoped<ISystemSettingRepository, SystemSettingRepository>();
+builder.Services.AddScoped<IStaffRepository, StaffRepository>();
 
 // Add security services
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();

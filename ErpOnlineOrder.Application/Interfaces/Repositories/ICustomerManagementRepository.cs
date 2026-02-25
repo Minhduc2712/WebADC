@@ -9,6 +9,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
         Task<Customer_management?> GetByIdAsync(int id);
         Task<IEnumerable<Customer_management>> GetAllAsync();
         Task<IEnumerable<Customer_management>> GetByStaffAsync(int staffId);
+        Task<IEnumerable<int>> GetCustomerIdsByStaffAsync(int staffId);
         Task<IEnumerable<Customer_management>> GetByCustomerAsync(int customerId);
         Task<Customer_management?> GetByStaffAndCustomerAsync(int staffId, int customerId);
         Task<IEnumerable<Customer_management>> GetByProvinceAsync(int provinceId);

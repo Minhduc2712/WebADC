@@ -10,6 +10,8 @@
         "Confirmed" => "bg-primary",
         "Completed" => "bg-success",
         "Cancelled" => "bg-danger",
+        "Split" => "bg-info",
+        "Merged" => "bg-secondary",
         _ => "bg-secondary"
     };
     var statusText = Model.Status switch
@@ -19,6 +21,8 @@
         "Confirmed" => "Đã xác nhận",
         "Completed" => "Hoàn thành",
         "Cancelled" => "Đã hủy",
+        "Split" => "Đã tách",
+        "Merged" => "Đã gộp",
         _ => Model.Status
     };
 }
@@ -40,6 +44,26 @@
             <a href="@Url.Action("Split", new { id = Model.Id })" class="btn btn-info me-2">
                 <i class="fas fa-expand-arrows-alt me-1"></i>Tách hóa đơn
             </a>
+        }
+        @if (Model.Status == "Split")
+        {
+            <form asp-action="UndoSplit" method="post" style="display: inline;" onsubmit="return confirm('Bạn có chắc muốn hoàn tác tách hóa đơn?');">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="parentInvoiceId" value="@Model.Id" />
+                <button type="submit" class="btn btn-warning me-2" title="Hoàn tác tách hóa đơn">
+                    <i class="fas fa-undo me-1"></i>Hoàn tác tách
+                </button>
+            </form>
+        }
+        @if (Model.Invoice_code.StartsWith("INV-M-"))
+        {
+            <form asp-action="UndoMerge" method="post" style="display: inline;" onsubmit="return confirm('Bạn có chắc muốn hoàn tác gộp hóa đơn?');">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="mergedInvoiceId" value="@Model.Id" />
+                <button type="submit" class="btn btn-warning me-2" title="Hoàn tác gộp hóa đơn">
+                    <i class="fas fa-undo me-1"></i>Hoàn tác gộp
+                </button>
+            </form>
         }
         <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left me-1"></i>Quay lại

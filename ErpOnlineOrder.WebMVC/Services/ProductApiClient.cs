@@ -79,5 +79,18 @@ namespace ErpOnlineOrder.WebMVC.Services
             if (response.IsSuccessStatusCode) return (true, null);
             return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
         }
+
+        public async Task<byte[]> ExportToExcelAsync(string? search = null, CancellationToken cancellationToken = default)
+        {
+            var path = !string.IsNullOrEmpty(search)
+                ? "product/export?search=" + Uri.EscapeDataString(search)
+                : "product/export";
+            using var request = new HttpRequestMessage(HttpMethod.Get, path);
+            request.Headers.Accept.Clear();
+            request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            var response = await _http.SendAsync(request, cancellationToken);
+            if (!response.IsSuccessStatusCode) return Array.Empty<byte>();
+            return await response.Content.ReadAsByteArrayAsync(cancellationToken);
+        }
     }
 }

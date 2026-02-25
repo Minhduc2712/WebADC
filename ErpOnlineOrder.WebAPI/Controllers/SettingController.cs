@@ -21,7 +21,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [RequirePermission(PermissionCodes.SettingsView)]
         public async Task<IActionResult> GetAll()
         {
-            var settings = await _settingService.GetAllAsync();
+            var settings = await _settingService.GetAllAsync(TryGetCurrentUserId());
             return Ok(settings);
         }
 

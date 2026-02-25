@@ -52,5 +52,18 @@ namespace ErpOnlineOrder.WebMVC.Services
             var response = await _http.PostAsync($"invoice/{mergedInvoiceId}/undo-merge", null, cancellationToken);
             return response.IsSuccessStatusCode;
         }
+
+        public async Task<byte[]> ExportToExcelAsync(string? status = null, CancellationToken cancellationToken = default)
+        {
+            var path = !string.IsNullOrEmpty(status)
+                ? "invoice/export?status=" + Uri.EscapeDataString(status)
+                : "invoice/export";
+            using var request = new HttpRequestMessage(HttpMethod.Get, path);
+            request.Headers.Accept.Clear();
+            request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            var response = await _http.SendAsync(request, cancellationToken);
+            if (!response.IsSuccessStatusCode) return Array.Empty<byte>();
+            return await response.Content.ReadAsByteArrayAsync(cancellationToken);
+        }
     }
 }

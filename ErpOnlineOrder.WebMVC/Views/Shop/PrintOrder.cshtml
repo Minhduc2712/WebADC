@@ -1,0 +1,124 @@
+@model ErpOnlineOrder.Application.DTOs.OrderDTO
+@{
+    Layout = null;
+    ViewData["Title"] = "In đơn đặt hàng - " + Model.Order_code;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.4; color: #333; margin: 20px; }
+        .print-header { text-align: center; margin-bottom: 24px; border-bottom: 2px solid #333; padding-bottom: 12px; }
+        .print-header h1 { margin: 0; font-size: 18pt; }
+        .print-header .sub { font-size: 11pt; color: #666; margin-top: 4px; }
+        .info-block { margin-bottom: 16px; }
+        .info-block label { font-weight: bold; display: inline-block; min-width: 120px; }
+        table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+        th, td { border: 1px solid #333; padding: 8px 10px; text-align: left; }
+        th { background: #f5f5f5; font-weight: bold; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .total-row { font-weight: bold; font-size: 13pt; }
+        .no-print { margin-top: 20px; }
+        @@media print {
+            body { margin: 0; }
+            .no-print { display: none !important; }
+            .print-page { page-break-after: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <div class="print-header">
+        <h1>ĐƠN ĐẶT HÀNG</h1>
+        <div class="sub">Phiếu in theo mẫu - @DateTime.Now.ToString("dd/MM/yyyy HH:mm")</div>
+    </div>
+
+    <div class="info-block">
+        <label>Mã đơn hàng:</label> @Model.Order_code
+    </div>
+    <div class="info-block">
+        <label>Ngày đặt:</label> @Model.Order_date.ToString("dd/MM/yyyy HH:mm")
+    </div>
+    <div class="info-block">
+        <label>Khách hàng:</label> @Model.Customer_name
+    </div>
+    @if (!string.IsNullOrEmpty(Model.Shipping_address))
+    {
+        <div class="info-block">
+            <label>Địa chỉ giao:</label> @Model.Shipping_address
+        </div>
+    }
+    @if (!string.IsNullOrEmpty(Model.note))
+    {
+        <div class="info-block">
+            <label>Ghi chú:</label> @Model.note
+        </div>
+    }
+    <div class="info-block">
+        <label>Trạng thái:</label>
+        @(Model.Order_status switch
+        {
+            "Pending" => "Chờ xác nhận",
+            "Confirmed" => "Đã xác nhận",
+            "Cancelled" => "Đã hủy",
+            _ => Model.Order_status
+        })
+    </div>
+
+    <table class="print-page">
+        <thead>
+            <tr>
+                <th style="width: 40px;">#</th>
+                <th>Tên sản phẩm</th>
+                <th class="text-center" style="width: 80px;">Số lượng</th>
+                <th class="text-right" style="width: 100px;">Đơn giá</th>
+                <th class="text-right" style="width: 120px;">Thành tiền</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                var idx = 1;
+            }
+            @if (Model.Order_details != null && Model.Order_details.Any())
+            {
+                @foreach (var d in Model.Order_details)
+                {
+                    <tr>
+                        <td>@idx</td>
+                        <td>@d.Product_name</td>
+                        <td class="text-center">@d.Quantity</td>
+                        <td class="text-right">@d.Unit_price.ToString("N0")</td>
+                        <td class="text-right">@d.Total_price.ToString("N0")</td>
+                    </tr>
+                    idx++;
+                }
+            }
+        </tbody>
+        <tfoot>
+            <tr class="total-row">
+                <td colspan="4" class="text-right">Tổng cộng:</td>
+                <td class="text-right">@Model.Total_price.ToString("N0") VNĐ</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="no-print">
+        <button type="button" onclick="window.print()" style="padding: 10px 24px; font-size: 14px; cursor: pointer; background: #1a7f37; color: white; border: none; border-radius: 6px;">
+            <i class="fas fa-print"></i> In đơn
+        </button>
+        <a href="@Url.Action("Orders")" style="margin-left: 12px; padding: 10px 24px; font-size: 14px; display: inline-block; background: #666; color: white; text-decoration: none; border-radius: 6px;">Quay lại</a>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.matchMedia('print').matches) {
+                window.onafterprint = function() { window.close(); };
+            }
+        });
+    </script>
+</body>
+</html>

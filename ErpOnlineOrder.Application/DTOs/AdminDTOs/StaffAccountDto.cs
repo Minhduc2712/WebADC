@@ -1,6 +1,6 @@
 namespace ErpOnlineOrder.Application.DTOs.AdminDTOs
 {
-    public class StaffAccountDto
+    public class StaffAccountDto : Application.DTOs.IRecordPermissionDto
     {
         public int User_id { get; set; }
         public int Staff_id { get; set; }
@@ -12,5 +12,8 @@ namespace ErpOnlineOrder.Application.DTOs.AdminDTOs
         public bool Is_active { get; set; }
         public List<string> Roles { get; set; } = new();
         public DateTime Created_at { get; set; }
+        public bool AllowUpdate { get; set; }
+        public bool AllowDelete { get; set; }
+        public bool AllowAssign { get; set; }
     }
 }

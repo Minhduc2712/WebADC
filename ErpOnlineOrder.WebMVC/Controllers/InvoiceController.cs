@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.Application.DTOs.InvoiceDTOs;
+using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.WebMVC.Attributes;
 using ErpOnlineOrder.WebMVC.Services;
 
@@ -10,15 +11,18 @@ namespace ErpOnlineOrder.WebMVC.Controllers
     public class InvoiceController : BaseController
     {
         private readonly IInvoiceApiClient _invoiceApiClient;
+        private readonly IInvoiceService _invoiceService;
         private readonly IPermissionApiClient _permissionApiClient;
         private readonly ILogger<InvoiceController> _logger;
 
         public InvoiceController(
             IInvoiceApiClient invoiceApiClient,
+            IInvoiceService invoiceService,
             IPermissionApiClient permissionApiClient,
             ILogger<InvoiceController> logger)
         {
             _invoiceApiClient = invoiceApiClient;
+            _invoiceService = invoiceService;
             _permissionApiClient = permissionApiClient;
             _logger = logger;
         }
@@ -126,7 +130,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             try
             {
                 var invoices = await _invoiceApiClient.GetAllAsync();
-                return View(invoices.Where(i => i.Status != "Completed" && i.Status != "Cancelled"));
+                return View(invoices.Where(i => i.Status != "Completed" && i.Status != "Cancelled" && i.Status != "Merged"));
             }
             catch (Exception ex)
             {
@@ -218,6 +222,29 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             }
 
             return RedirectToAction(nameof(Index));
+        }
+
+        [RequirePermission(PermissionCodes.InvoiceView)]
+        [HttpGet]
+        public async Task<IActionResult> ExportExcel(string? status)
+        {
+            try
+            {
+                var bytes = await _invoiceService.ExportInvoicesToExcelAsync(status);
+                if (bytes == null || bytes.Length == 0)
+                {
+                    SetErrorMessage("Không có dữ liệu để xuất.");
+                    return RedirectToAction(nameof(Index));
+                }
+                return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    $"HoaDon_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error exporting invoices");
+                SetErrorMessage(GetDetailedErrorMessage(ex));
+                return RedirectToAction(nameof(Index));
+            }
         }
 
         private async Task LoadCurrentUserPermissions()

@@ -1,8 +1,10 @@
-﻿using ErpOnlineOrder.Application.DTOs;
+using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.DTOs.ProductDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Models;
+using ClosedXML.Excel;
+using ErpOnlineOrder.Application.Helpers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,17 +14,27 @@ namespace ErpOnlineOrder.Application.Services
     public class ProductService : IProductService
     {
         private readonly IProductRepository _productRepository;
+        private readonly ICustomerProductRepository _customerProductRepository;
+        private readonly IPermissionService _permissionService;
 
-        public ProductService(IProductRepository productRepository)
+        public ProductService(
+            IProductRepository productRepository,
+            ICustomerProductRepository customerProductRepository,
+            IPermissionService permissionService)
         {
             _productRepository = productRepository;
+            _customerProductRepository = customerProductRepository;
+            _permissionService = permissionService;
         }
 
-        public async Task<ProductDTO?> GetByIdAsync(int id)
+        public async Task<ProductDTO?> GetByIdAsync(int id, int? userId = null)
         {
             var product = await _productRepository.GetByIdAsync(id);
             if (product == null) return null;
-            return MapToDto(product);
+            var dto = MapToDto(product);
+            if (userId.HasValue && userId.Value > 0)
+                await RecordPermissionEnricher.EnrichProductAsync(dto, userId.Value, _permissionService);
+            return dto;
         }
 
         public async Task<Product?> GetEntityByIdAsync(int id)
@@ -30,24 +42,77 @@ namespace ErpOnlineOrder.Application.Services
             return await _productRepository.GetByIdAsync(id);
         }
 
-        public async Task<IEnumerable<ProductDTO>> GetAllAsync()
+        public async Task<IEnumerable<ProductDTO>> GetAllAsync(int? userId = null)
         {
             var products = await _productRepository.GetAllAsync();
-            return products.Select(p => MapToDto(p));
+            var list = products.Select(p => MapToDto(p)).ToList();
+            if (userId.HasValue && userId.Value > 0)
+            {
+                foreach (var dto in list)
+                    await RecordPermissionEnricher.EnrichProductAsync(dto, userId.Value, _permissionService);
+            }
+            return list;
         }
 
-        public async Task<IEnumerable<ProductDTO>> SearchAsync(string? name, string? author, string? publisher)
+        public async Task<IEnumerable<ProductDTO>> SearchAsync(string? name, string? author, string? publisher, int? userId = null)
         {
             var products = await _productRepository.SearchAsync(name, author, publisher);
-            return products.Select(p => MapToDto(p));
+            var list = products.Select(p => MapToDto(p)).ToList();
+            if (userId.HasValue && userId.Value > 0)
+            {
+                foreach (var dto in list)
+                    await RecordPermissionEnricher.EnrichProductAsync(dto, userId.Value, _permissionService);
+            }
+            return list;
         }
 
-        public async Task<IEnumerable<ProductDTO>> SearchByAllAsync(string? searchString)
+        public async Task<IEnumerable<ProductDTO>> SearchByAllAsync(string? searchString, int? userId = null)
         {
             var products = await _productRepository.SearchByAllAsync(searchString);
-            return products.Select(p => MapToDto(p));
+            var list = products.Select(p => MapToDto(p)).ToList();
+            if (userId.HasValue && userId.Value > 0)
+            {
+                foreach (var dto in list)
+                    await RecordPermissionEnricher.EnrichProductAsync(dto, userId.Value, _permissionService);
+            }
+            return list;
         }
 
+        public async Task<IEnumerable<ProductDTO>> GetProductsForShopAsync(int? customerId = null)
+        {
+            var products = await _productRepository.GetAllAsync();
+            var list = products.Select(p => MapToDto(p)).ToList();
+
+            if (customerId.HasValue && customerId.Value > 0)
+            {
+                var assigned = await _customerProductRepository.GetByCustomerIdAsync(customerId.Value);
+                var allowedProductIds = assigned.Where(cp => cp.Is_active).Select(cp => cp.Product_id).ToHashSet();
+                list = list.Where(p => allowedProductIds.Contains(p.Id)).ToList();
+            }
+
+            return list;
+        }
+
+        public async Task<IEnumerable<ProductDTO>> SearchByAllForShopAsync(string? searchString, int? customerId = null)
+        {
+            var products = await _productRepository.SearchByAllAsync(searchString);
+            var list = products.Select(p => MapToDto(p)).ToList();
+
+            if (customerId.HasValue && customerId.Value > 0)
+            {
+                var assigned = await _customerProductRepository.GetByCustomerIdAsync(customerId.Value);
+                var allowedProductIds = assigned.Where(cp => cp.Is_active).Select(cp => cp.Product_id).ToHashSet();
+                list = list.Where(p => allowedProductIds.Contains(p.Id)).ToList();
+            }
+
+            return list;
+        }
+
+        public async Task<bool> IsProductAssignedToCustomerAsync(int productId, int customerId)
+        {
+            var cp = await _customerProductRepository.GetByCustomerAndProductAsync(customerId, productId);
+            return cp != null && !cp.Is_deleted && cp.Is_active;
+        }
 
         public async Task<ProductDTO> CreateProductAsync(CreateProductDto dto, int createdBy)
         {
@@ -155,6 +220,50 @@ namespace ErpOnlineOrder.Application.Services
         {
             await _productRepository.DeleteAsync(id);
             return true;
+        }
+
+        public async Task<byte[]> ExportProductsToExcelAsync(string? search = null)
+        {
+            var products = await _productRepository.GetAllAsync();
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var q = search.Trim().ToLowerInvariant();
+                products = products.Where(p =>
+                    (p.Product_name?.ToLowerInvariant().Contains(q) ?? false) ||
+                    (p.Product_code?.ToLowerInvariant().Contains(q) ?? false) ||
+                    (p.Product_description?.ToLowerInvariant().Contains(q) ?? false) ||
+                    (p.Publisher?.Publisher_name?.ToLowerInvariant().Contains(q) ?? false) ||
+                    (p.Product_Authors?.Any(pa => pa.Author?.Author_name?.ToLowerInvariant().Contains(q) ?? false) ?? false)
+                ).ToList();
+            }
+            using var workbook = new XLWorkbook();
+            var ws = workbook.Worksheets.Add("Sản phẩm");
+
+            ws.Cell(1, 1).Value = "Mã SP";
+            ws.Cell(1, 2).Value = "Tên sản phẩm";
+            ws.Cell(1, 3).Value = "Tác giả";
+            ws.Cell(1, 4).Value = "Nhà xuất bản";
+            ws.Cell(1, 5).Value = "Giá";
+            ws.Cell(1, 6).Value = "Danh mục";
+            ws.Range(1, 1, 1, 6).Style.Font.Bold = true;
+
+            int row = 2;
+            foreach (var p in products)
+            {
+                var dto = MapToDto(p);
+                ExcelHelper.SetCellValue(ws.Cell(row, 1), dto.Product_code);
+                ExcelHelper.SetCellValue(ws.Cell(row, 2), dto.Product_name);
+                ExcelHelper.SetCellValue(ws.Cell(row, 3), string.Join(", ", dto.Authors ?? new List<string>()));
+                ExcelHelper.SetCellValue(ws.Cell(row, 4), dto.Publisher_name ?? "");
+                ExcelHelper.SetCellValue(ws.Cell(row, 5), dto.Product_price ?? "");
+                ExcelHelper.SetCellValue(ws.Cell(row, 6), string.Join(", ", dto.Categories ?? new List<string>()));
+                row++;
+            }
+            ws.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream, false);
+            return stream.ToArray();
         }
 
         private static ProductDTO MapToDto(Product p)

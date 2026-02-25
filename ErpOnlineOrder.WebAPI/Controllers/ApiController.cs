@@ -7,12 +7,18 @@ namespace ErpOnlineOrder.WebAPI.Controllers
     {
         protected int GetCurrentUserId()
         {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)??User.FindFirst("UserId");
-        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-            {
-            throw new UnauthorizedAccessException("User not authenticated");
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("UserId");
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+                throw new UnauthorizedAccessException("User not authenticated");
+            return userId;
         }
-        return userId;
+
+        protected int? TryGetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("UserId");
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId) || userId <= 0)
+                return null;
+            return userId;
         }
     }
 }

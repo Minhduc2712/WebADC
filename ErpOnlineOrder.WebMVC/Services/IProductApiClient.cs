@@ -14,5 +14,6 @@ namespace ErpOnlineOrder.WebMVC.Services
         Task<ProductDTO?> CreateAsync(CreateProductDto dto, CancellationToken cancellationToken = default);
         Task<(bool Success, string? Error)> UpdateAsync(int id, UpdateProductDto dto, CancellationToken cancellationToken = default);
         Task<(bool Success, string? Error)> DeleteAsync(int id, CancellationToken cancellationToken = default);
+        Task<byte[]> ExportToExcelAsync(string? search = null, CancellationToken cancellationToken = default);
     }
 }

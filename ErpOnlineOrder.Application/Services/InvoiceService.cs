@@ -1,31 +1,77 @@
-﻿using ErpOnlineOrder.Application.DTOs.InvoiceDTOs;
+using ErpOnlineOrder.Application.DTOs.InvoiceDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Models;
+using ClosedXML.Excel;
+using ErpOnlineOrder.Application.Helpers;
 
 namespace ErpOnlineOrder.Application.Services
 {
     public class InvoiceService : IInvoiceService
     {
         private readonly IInvoiceRepository _invoiceRepository;
+        private readonly IStaffRepository _staffRepository;
+        private readonly ICustomerManagementRepository _customerManagementRepository;
+        private readonly IPermissionService _permissionService;
 
-        public InvoiceService(IInvoiceRepository invoiceRepository)
+        public InvoiceService(IInvoiceRepository invoiceRepository, IStaffRepository staffRepository,
+            ICustomerManagementRepository customerManagementRepository, IPermissionService permissionService)
         {
             _invoiceRepository = invoiceRepository;
+            _staffRepository = staffRepository;
+            _customerManagementRepository = customerManagementRepository;
+            _permissionService = permissionService;
         }
 
         #region CRUD cơ bản
 
-        public async Task<InvoiceDto?> GetByIdAsync(int id)
+        public async Task<InvoiceDto?> GetByIdAsync(int id, int? userId = null)
         {
             var invoice = await _invoiceRepository.GetByIdAsync(id);
-            return invoice != null ? MapToDto(invoice) : null;
+            if (invoice == null) return null;
+
+            // Cán bộ phụ trách chỉ xem được hóa đơn của khách hàng mình quản lý
+            if (userId.HasValue && userId.Value > 0 && !await _permissionService.IsAdminAsync(userId.Value))
+            {
+                var staff = await _staffRepository.GetByUserIdAsync(userId.Value);
+                if (staff != null)
+                {
+                    var customerIds = await _customerManagementRepository.GetCustomerIdsByStaffAsync(staff.Id);
+                    if (!customerIds.Contains(invoice.Customer_id))
+                        return null;
+                }
+            }
+
+            var dto = MapToDto(invoice);
+            if (userId.HasValue && userId.Value > 0)
+                await RecordPermissionEnricher.EnrichInvoiceAsync(dto, userId.Value, _permissionService);
+            return dto;
         }
 
-        public async Task<IEnumerable<InvoiceDto>> GetAllAsync()
+        public async Task<IEnumerable<InvoiceDto>> GetAllAsync(int? userId = null)
         {
-            var invoices = await _invoiceRepository.GetAllAsync();
-            return invoices.Select(MapToDto);
+            IEnumerable<Invoice> invoices;
+            if (userId.HasValue && userId.Value > 0 && !await _permissionService.IsAdminAsync(userId.Value))
+            {
+                var staff = await _staffRepository.GetByUserIdAsync(userId.Value);
+                if (staff != null)
+                {
+                    var customerIds = await _customerManagementRepository.GetCustomerIdsByStaffAsync(staff.Id);
+                    invoices = await _invoiceRepository.GetByCustomerIdsAsync(customerIds);
+                }
+                else
+                    invoices = await _invoiceRepository.GetAllAsync();
+            }
+            else
+                invoices = await _invoiceRepository.GetAllAsync();
+
+            var list = invoices.Select(MapToDto).ToList();
+            if (userId.HasValue && userId.Value > 0)
+            {
+                foreach (var dto in list)
+                    await RecordPermissionEnricher.EnrichInvoiceAsync(dto, userId.Value, _permissionService);
+            }
+            return list;
         }
 
         public async Task<IEnumerable<InvoiceDto>> GetByCustomerIdAsync(int customerId)
@@ -163,8 +209,10 @@ namespace ErpOnlineOrder.Application.Services
                 return result;
             }
 
-            // 1. Lấy tất cả hóa đơn cần gộp
+            // 1. Lấy tất cả hóa đơn cần gộp (cần load Customer_managements để lấy Province)
             var invoices = new List<Invoice>();
+            int? requiredProvinceId = null;
+
             foreach (var id in dto.Invoice_ids)
             {
                 var invoice = await _invoiceRepository.GetByIdAsync(id);
@@ -175,13 +223,6 @@ namespace ErpOnlineOrder.Application.Services
                     return result;
                 }
 
-                if (invoice.Customer_id != dto.Customer_id)
-                {
-                    result.Success = false;
-                    result.Message = "Tất cả hóa đơn phải cùng một khách hàng";
-                    return result;
-                }
-
                 if (invoice.Status == "Merged" || invoice.Status == "Cancelled")
                 {
                     result.Success = false;
@@ -189,18 +230,40 @@ namespace ErpOnlineOrder.Application.Services
                     return result;
                 }
 
+                var mgmt = invoice.Customer?.Customer_managements?
+                    .FirstOrDefault(cm => !cm.Is_deleted && cm.Province != null);
+                var provinceId = mgmt?.Province_id;
+
+                if (!provinceId.HasValue)
+                {
+                    result.Success = false;
+                    result.Message = $"Khách hàng của hóa đơn {invoice.Invoice_code} chưa được gán tỉnh/thành phố. Vui lòng gán cán bộ phụ trách theo tỉnh cho khách hàng.";
+                    return result;
+                }
+
+                if (requiredProvinceId == null)
+                    requiredProvinceId = provinceId;
+                else if (requiredProvinceId != provinceId)
+                {
+                    result.Success = false;
+                    result.Message = "Tất cả hóa đơn phải từ khách hàng cùng một tỉnh/thành phố";
+                    return result;
+                }
+
                 invoices.Add(invoice);
             }
 
             var now = DateTime.UtcNow;
+            var staffId = dto.Staff_id > 0 ? dto.Staff_id : invoices.First().Staff_id;
+            var customerId = dto.Customer_id > 0 ? dto.Customer_id : invoices.First().Customer_id;
 
-            // 2. Tạo hóa đơn gộp mới
+            // 2. Tạo hóa đơn gộp mới (dùng khách hàng của hóa đơn đầu tiên)
             var mergedInvoice = new Invoice
             {
                 Invoice_code = $"INV-M-{now:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 6).ToUpper()}",
                 Invoice_date = now,
-                Customer_id = dto.Customer_id,
-                Staff_id = dto.Staff_id,
+                Customer_id = customerId,
+                Staff_id = staffId,
                 Status = "Draft",
                 Split_merge_note = dto.Note ?? $"Gộp từ {invoices.Count} hóa đơn: {string.Join(", ", invoices.Select(i => i.Invoice_code))}",
                 Created_by = userId,
@@ -363,12 +426,56 @@ namespace ErpOnlineOrder.Application.Services
             return true;
         }
 
+        public async Task<byte[]> ExportInvoicesToExcelAsync(string? status = null)
+        {
+            var invoices = !string.IsNullOrEmpty(status)
+                ? await _invoiceRepository.GetByStatusAsync(status)
+                : await _invoiceRepository.GetAllAsync();
+            using var workbook = new XLWorkbook();
+            var ws = workbook.Worksheets.Add("Hóa đơn");
+
+            ws.Cell(1, 1).Value = "Mã HĐ";
+            ws.Cell(1, 2).Value = "Ngày lập";
+            ws.Cell(1, 3).Value = "Khách hàng";
+            ws.Cell(1, 4).Value = "Tỉnh/TP";
+            ws.Cell(1, 5).Value = "Tổng tiền";
+            ws.Cell(1, 6).Value = "Thuế";
+            ws.Cell(1, 7).Value = "Thành tiền";
+            ws.Cell(1, 8).Value = "Trạng thái";
+            ws.Range(1, 1, 1, 8).Style.Font.Bold = true;
+
+            int row = 2;
+            foreach (var inv in invoices)
+            {
+                var dto = MapToDto(inv);
+                ExcelHelper.SetCellValue(ws.Cell(row, 1), dto.Invoice_code);
+                ExcelHelper.SetCellValue(ws.Cell(row, 2), dto.Invoice_date.ToString("dd/MM/yyyy"));
+                ExcelHelper.SetCellValue(ws.Cell(row, 3), dto.Customer_name ?? "");
+                ExcelHelper.SetCellValue(ws.Cell(row, 4), dto.Province_name ?? "");
+                ws.Cell(row, 5).Value = dto.Total_amount;
+                ws.Cell(row, 6).Value = dto.Tax_amount;
+                ws.Cell(row, 7).Value = dto.Grand_total;
+                ExcelHelper.SetCellValue(ws.Cell(row, 8), dto.Status ?? "");
+                row++;
+            }
+            ws.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream, false);
+            return stream.ToArray();
+        }
+
         #endregion
 
         #region Mapping
 
         private static InvoiceDto MapToDto(Invoice invoice)
         {
+            var firstMgmt = invoice.Customer?.Customer_managements?
+                .FirstOrDefault(cm => !cm.Is_deleted && cm.Province != null);
+            var provinceId = firstMgmt?.Province_id;
+            var provinceName = firstMgmt?.Province?.Province_name;
+
             return new InvoiceDto
             {
                 Id = invoice.Id,
@@ -376,6 +483,8 @@ namespace ErpOnlineOrder.Application.Services
                 Invoice_date = invoice.Invoice_date,
                 Customer_id = invoice.Customer_id,
                 Customer_name = invoice.Customer?.Full_name ?? "",
+                Province_id = provinceId,
+                Province_name = provinceName,
                 Total_amount = invoice.Total_amount,
                 Tax_amount = invoice.Tax_amount,
                 Status = invoice.Status,

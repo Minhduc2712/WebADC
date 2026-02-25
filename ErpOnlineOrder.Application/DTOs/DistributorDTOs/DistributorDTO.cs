@@ -1,7 +1,6 @@
-
 namespace ErpOnlineOrder.Application.DTOs.DistributorDTOs
 {
-    public class DistributorDto
+    public class DistributorDto : Application.DTOs.IRecordPermissionDto
     {
         public int Id { get; set; }
         public string Distributor_code { get; set; } = null!;
@@ -11,7 +10,7 @@ namespace ErpOnlineOrder.Application.DTOs.DistributorDTOs
         public string Distributor_email { get; set; } = null!;
         public DateTime Created_at { get; set; }
         public DateTime Updated_at { get; set; }
+        public bool AllowUpdate { get; set; }
+        public bool AllowDelete { get; set; }
     }
-
-    
 }

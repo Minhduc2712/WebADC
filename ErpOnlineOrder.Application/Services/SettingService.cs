@@ -12,10 +12,12 @@ namespace ErpOnlineOrder.Application.Services
     public class SettingService : ISettingService
     {
         private readonly ISystemSettingRepository _settingRepository;
+        private readonly IPermissionService _permissionService;
 
-        public SettingService(ISystemSettingRepository settingRepository)
+        public SettingService(ISystemSettingRepository settingRepository, IPermissionService permissionService)
         {
             _settingRepository = settingRepository;
+            _permissionService = permissionService;
         }
 
         public async Task<string?> GetAsync(string key)
@@ -24,10 +26,10 @@ namespace ErpOnlineOrder.Application.Services
             return setting?.SettingValue;
         }
 
-        public async Task<IEnumerable<SystemSettingDto>> GetAllAsync()
+        public async Task<IEnumerable<SystemSettingDto>> GetAllAsync(int? userId = null)
         {
             var settings = await _settingRepository.GetAllAsync();
-            return settings.Select(s => new SystemSettingDto
+            var list = settings.Select(s => new SystemSettingDto
             {
                 Id = s.Id,
                 SettingKey = s.SettingKey,
@@ -37,7 +39,13 @@ namespace ErpOnlineOrder.Application.Services
                 CreatedAt = s.CreatedAt,
                 UpdatedBy = s.UpdatedBy,
                 UpdatedAt = s.UpdatedAt
-            });
+            }).ToList();
+            if (userId.HasValue && userId.Value > 0)
+            {
+                foreach (var dto in list)
+                    await RecordPermissionEnricher.EnrichSettingAsync(dto, userId.Value, _permissionService);
+            }
+            return list;
         }
 
         public async Task<bool> SetAsync(string key, string value, int updatedBy)

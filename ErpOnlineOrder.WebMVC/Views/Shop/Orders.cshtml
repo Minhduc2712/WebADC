@@ -1,4 +1,4 @@
-﻿@model List<ErpOnlineOrder.Application.DTOs.OrderDTO>
+@model List<ErpOnlineOrder.Application.DTOs.OrderDTO>
 @{
     ViewData["Title"] = "Đơn hàng của tôi";
     Layout = "~/Views/Shared/_ShopLayout.cshtml";
@@ -8,7 +8,7 @@
 <section class="blog about-blog">
     <div class="container">
         <div class="blog-bradcrum">
-            <span><a asp-action="Index">Trang chủ</a></span>
+            <span><a asp-action="Products">Sản phẩm</a></span>
             <span class="devider">/</span>
             <span><a href="#">Đơn hàng của tôi</a></span>
         </div>
@@ -80,6 +80,7 @@
                                         };
                                     }
                                     <span style="padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 500; background: @(statusColor)20; color: @statusColor;">@statusText</span>
+                                    <a asp-action="PrintOrder" asp-route-id="@order.Id" target="_blank" style="color: #1a7f37; font-size: 13px; text-decoration: none;" title="In đơn hàng"><i class="fas fa-print"></i> In</a>
                                     @if (order.Order_status == "Pending")
                                     {
                                         <a href="javascript:void(0)" onclick="cancelOrder(@order.Id)" style="color: #f44336; font-size: 13px; text-decoration: underline;">Hủy đơn</a>

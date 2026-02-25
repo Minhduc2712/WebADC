@@ -35,6 +35,14 @@ namespace ErpOnlineOrder.WebMVC.Services
             return list ?? new List<WarehouseExportDto>();
         }
 
+        public async Task<IEnumerable<WarehouseExportDto>> GetByCustomerIdAsync(int customerId, CancellationToken cancellationToken = default)
+        {
+            var response = await _http.GetAsync($"warehouseexport/customer/{customerId}", cancellationToken);
+            if (!response.IsSuccessStatusCode) return Array.Empty<WarehouseExportDto>();
+            var list = await response.Content.ReadFromJsonAsync<List<WarehouseExportDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return list ?? new List<WarehouseExportDto>();
+        }
+
         public async Task<WarehouseExportDto?> CreateAsync(CreateWarehouseExportDto dto, CancellationToken cancellationToken = default)
         {
             var response = await _http.PostAsJsonAsync("warehouseexport", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
@@ -102,6 +110,19 @@ namespace ErpOnlineOrder.WebMVC.Services
             if (!response.IsSuccessStatusCode) return false;
             var obj = await response.Content.ReadFromJsonAsync<CheckInvoiceResponse>(ErpApiClientHelper.JsonOptions, cancellationToken);
             return obj?.has_export ?? false;
+        }
+
+        public async Task<byte[]> ExportToExcelAsync(string? status = null, CancellationToken cancellationToken = default)
+        {
+            var path = !string.IsNullOrEmpty(status)
+                ? "warehouseexport/export?status=" + Uri.EscapeDataString(status)
+                : "warehouseexport/export";
+            using var request = new HttpRequestMessage(HttpMethod.Get, path);
+            request.Headers.Accept.Clear();
+            request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            var response = await _http.SendAsync(request, cancellationToken);
+            if (!response.IsSuccessStatusCode) return Array.Empty<byte>();
+            return await response.Content.ReadAsByteArrayAsync(cancellationToken);
         }
 
         private class CheckInvoiceResponse { public bool has_export { get; set; } }

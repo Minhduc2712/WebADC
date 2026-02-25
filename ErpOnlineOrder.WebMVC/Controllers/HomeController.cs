@@ -23,7 +23,11 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         public IActionResult Index()
         {
             if (HttpContext.Session.IsAuthenticated())
+            {
+                if (HttpContext.Session.IsCustomer())
+                    return RedirectToAction("Index", "Shop");
                 return RedirectToAction("Index", "Order");
+            }
             return RedirectToAction("Login", "Auth");
         }
 

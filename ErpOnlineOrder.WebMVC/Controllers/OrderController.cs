@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.DTOs.OrderDTOs;
+using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.WebMVC.Attributes;
 using ErpOnlineOrder.WebMVC.Services;
 
@@ -12,6 +13,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
     public class OrderController : BaseController
     {
         private readonly IOrderApiClient _orderApiClient;
+        private readonly IOrderService _orderService;
         private readonly ICustomerApiClient _customerApiClient;
         private readonly IProductApiClient _productApiClient;
         private readonly IPermissionApiClient _permissionApiClient;
@@ -19,12 +21,14 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         public OrderController(
             IOrderApiClient orderApiClient,
+            IOrderService orderService,
             ICustomerApiClient customerApiClient,
             IProductApiClient productApiClient,
             IPermissionApiClient permissionApiClient,
             ILogger<OrderController> logger)
         {
             _orderApiClient = orderApiClient;
+            _orderService = orderService;
             _customerApiClient = customerApiClient;
             _productApiClient = productApiClient;
             _permissionApiClient = permissionApiClient;
@@ -73,7 +77,8 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var order = await _orderApiClient.GetByIdAsync(id);
+                var userId = GetCurrentUserId();
+                var order = await _orderService.GetByIdAsync(id, userId);
                 if (order == null)
                     return NotFound();
 
@@ -88,31 +93,24 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             }
         }
 
-        // [ĐÃ BỎ] Chức năng tạo đơn hàng thay mặt khách hàng (Admin)
-        // /// <summary>Hiển thị form tạo đơn hàng thay mặt khách hàng (Admin). Yêu cầu ORDER_CREATE.</summary>
-        // [RequirePermission(PermissionCodes.OrderCreate)]
-        // public async Task<IActionResult> Create()
-        // {
-        //     try
-        //     {
-        //         ViewBag.Customers = await GetCustomerSelectListAsync();
-        //         ViewBag.Products = await _productApiClient.GetForOrderAsync();
-        //         return View();
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         _logger.LogError(ex, "Error loading create form");
-        //         SetErrorMessage(GetDetailedErrorMessage(ex));
-        //         return RedirectToAction(nameof(Index));
-        //     }
-        // }
+        /// <summary>In đơn đặt hàng. Cán bộ phụ trách in được đơn của khách mình quản lý.</summary>
+        [HttpGet]
+        public async Task<IActionResult> PrintOrder(int id)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == 0)
+                return RedirectToAction("Login", "Auth");
+
+            var order = await _orderService.GetByIdAsync(id, userId);
+            if (order == null)
+                return NotFound();
+
+            return View("~/Views/Shop/PrintOrder.cshtml", order);
+        }
 
         [RequirePermission(PermissionCodes.OrderCreate)]
         public IActionResult Create() => RedirectToAction(nameof(Index));
 
-        // [ĐÃ BỎ] POST tạo đơn hàng thay mặt khách hàng (Admin)
-        // [HttpPost][ValidateAntiForgeryToken][RequirePermission(PermissionCodes.OrderCreate)]
-        // public async Task<IActionResult> Create(CreateOrderDto model) { ... }
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequirePermission(PermissionCodes.OrderCreate)]
@@ -279,7 +277,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var bytes = await _orderApiClient.ExportOrdersToExcelAsync();
+                var bytes = await _orderService.ExportOrdersToExcelAsync();
                 return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     $"DonHang_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
             }

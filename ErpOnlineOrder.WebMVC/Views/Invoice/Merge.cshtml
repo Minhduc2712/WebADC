@@ -26,7 +26,7 @@
                     <form asp-action="Merge" method="post" id="mergeForm">
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle me-2"></i>
-                            Chọn ít nhất 2 hóa đơn <strong>cùng khách hàng</strong> để gộp. Các hóa đơn phải ở trạng thái "Chờ xử lý" hoặc "Đã xác nhận".
+                            Chọn ít nhất 2 hóa đơn <strong>cùng tỉnh/thành phố</strong> để gộp (có thể khác khách hàng). Các hóa đơn phải ở trạng thái "Chờ xử lý" hoặc "Đã xác nhận".
                         </div>
 
                         <div class="mb-3">
@@ -54,6 +54,7 @@
                                             </th>
                                             <th>Mã hóa đơn</th>
                                             <th>Khách hàng</th>
+                                            <th>Tỉnh/TP</th>
                                             <th>Ngày tạo</th>
                                             <th>Tổng tiền</th>
                                             <th>Số SP</th>
@@ -82,11 +83,13 @@
                                                     <input type="checkbox" class="form-check-input invoice-checkbox" 
                                                            name="Invoice_ids" value="@invoice.Id" 
                                                            data-customer="@invoice.Customer_id" 
+                                                           data-province="@(invoice.Province_id ?? 0)"
                                                            data-amount="@invoice.Total_amount"
                                                            onchange="updateSelection()" />
                                                 </td>
                                                 <td><span class="badge bg-secondary">@invoice.Invoice_code</span></td>
                                                 <td>@invoice.Customer_name</td>
+                                                <td>@(invoice.Province_name ?? "-")</td>
                                                 <td>@invoice.Invoice_date.ToString("dd/MM/yyyy")</td>
                                                 <td class="text-success fw-bold">@invoice.Total_amount.ToString("N0") VNĐ</td>
                                                 <td><span class="badge bg-info">@invoice.Details.Count</span></td>
@@ -128,9 +131,13 @@
                         </tr>
                     </table>
                     
-                    <div id="customerWarning" class="alert alert-danger d-none">
+                    <div id="provinceWarning" class="alert alert-danger d-none">
                         <i class="fas fa-exclamation-triangle me-2"></i>
-                        Các hóa đơn phải cùng một khách hàng!
+                        Các hóa đơn phải cùng một tỉnh/thành phố!
+                    </div>
+                    <div id="noProvinceWarning" class="alert alert-warning d-none">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Một số hóa đơn có khách hàng chưa được gán tỉnh/thành phố.
                     </div>
                 </div>
             </div>
@@ -143,7 +150,8 @@
                     <div class="alert alert-warning mb-0">
                         <h6><i class="fas fa-exclamation-triangle me-2"></i>Lưu ý quan trọng:</h6>
                         <ul class="mb-0 small">
-                            <li>Chỉ gộp được các hóa đơn <strong>cùng khách hàng</strong></li>
+                            <li>Chỉ gộp được các hóa đơn <strong>cùng tỉnh/thành phố</strong> (có thể khác khách hàng)</li>
+                            <li>Khách hàng phải đã được gán cán bộ phụ trách theo tỉnh</li>
                             <li>Hóa đơn đã hoàn thành hoặc đã hủy không thể gộp</li>
                             <li>Sau khi gộp, các hóa đơn gốc sẽ bị hủy</li>
                             <li>Có thể hoàn tác gộp nếu cần</li>
@@ -168,11 +176,14 @@
         const checked = document.querySelectorAll('.invoice-checkbox:checked');
         const count = checked.length;
         let total = 0;
-        const customers = new Set();
+        const provinces = new Set();
         let customerId = 0;
+        let hasNoProvince = false;
         
         checked.forEach(cb => {
-            customers.add(cb.dataset.customer);
+            const provinceId = cb.dataset.province || '0';
+            if (provinceId === '0') hasNoProvince = true;
+            else provinces.add(provinceId);
             total += parseFloat(cb.dataset.amount) || 0;
             customerId = cb.dataset.customer;
         });
@@ -181,14 +192,21 @@
         document.getElementById('totalAmount').textContent = total.toLocaleString();
         document.getElementById('customerId').value = customerId;
         
-        const customerWarning = document.getElementById('customerWarning');
+        const provinceWarning = document.getElementById('provinceWarning');
+        const noProvinceWarning = document.getElementById('noProvinceWarning');
         const mergeBtn = document.getElementById('mergeBtn');
         
-        if (customers.size > 1) {
-            customerWarning.classList.remove('d-none');
+        if (hasNoProvince) {
+            noProvinceWarning.classList.remove('d-none');
+            provinceWarning.classList.add('d-none');
+            mergeBtn.disabled = true;
+        } else if (provinces.size > 1) {
+            provinceWarning.classList.remove('d-none');
+            noProvinceWarning.classList.add('d-none');
             mergeBtn.disabled = true;
         } else {
-            customerWarning.classList.add('d-none');
+            provinceWarning.classList.add('d-none');
+            noProvinceWarning.classList.add('d-none');
             mergeBtn.disabled = count < 2;
         }
     }

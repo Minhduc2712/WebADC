@@ -8,8 +8,8 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
 {
     public interface IOrderService
     {
-        Task<OrderDTO?> GetByIdAsync(int id);
-        Task<IEnumerable<OrderDTO>> GetAllAsync();
+        Task<OrderDTO?> GetByIdAsync(int id, int? userId = null);
+        Task<IEnumerable<OrderDTO>> GetAllAsync(int? userId = null);
         Task<Order?> GetByCodeAsync(string code);
         Task<CreateOrderResultDto> CreateOrderAsync(CreateOrderDto dto);
         Task<CreateOrderResultDto> CreateOrderWithoutValidationAsync(CreateOrderDto dto);
@@ -22,7 +22,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
         Task<bool> ConfirmOrderAsync(ConfirmOrderDto dto);
         Task<bool> CancelOrderAsync(CancelOrderDto dto);
         Task<byte[]> ExportOrdersToExcelAsync();
-        Task<IEnumerable<OrderDTO>> GetOrdersByStatusAsync(string status);
+        Task<IEnumerable<OrderDTO>> GetOrdersByStatusAsync(string status, int? userId = null);
         Task<bool> DeletePendingOrderAsync(int id);
         Task<IEnumerable<CustomerAllowedProductDto>> GetAllowedProductsForCustomerAsync(int customerId);
         Task<bool> CanCustomerOrderProductAsync(int customerId, int productId);

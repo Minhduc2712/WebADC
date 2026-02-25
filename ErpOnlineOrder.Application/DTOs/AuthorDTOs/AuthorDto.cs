@@ -1,6 +1,6 @@
 namespace ErpOnlineOrder.Application.DTOs.AuthorDTOs
 {
-    public class AuthorDto
+    public class AuthorDto : Application.DTOs.IRecordPermissionDto
     {
         public int Id { get; set; }
         public string Author_code { get; set; } = null!;
@@ -14,5 +14,7 @@ namespace ErpOnlineOrder.Application.DTOs.AuthorDTOs
         public string? Biography { get; set; }
         public DateTime Created_at { get; set; }
         public DateTime Updated_at { get; set; }
+        public bool AllowUpdate { get; set; }
+        public bool AllowDelete { get; set; }
     }
 }

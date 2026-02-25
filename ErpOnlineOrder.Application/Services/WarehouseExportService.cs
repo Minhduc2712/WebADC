@@ -3,6 +3,8 @@ using ErpOnlineOrder.Application.DTOs.InvoiceDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Models;
+using ClosedXML.Excel;
+using ErpOnlineOrder.Application.Helpers;
 
 namespace ErpOnlineOrder.Application.Services
 {
@@ -11,29 +13,42 @@ namespace ErpOnlineOrder.Application.Services
         private readonly IWarehouseExportRepository _exportRepository;
         private readonly IInvoiceRepository _invoiceRepository;
         private readonly IInvoiceService _invoiceService;
+        private readonly IPermissionService _permissionService;
 
         public WarehouseExportService(
             IWarehouseExportRepository exportRepository,
             IInvoiceRepository invoiceRepository,
-            IInvoiceService invoiceService)
+            IInvoiceService invoiceService,
+            IPermissionService permissionService)
         {
             _exportRepository = exportRepository;
             _invoiceRepository = invoiceRepository;
             _invoiceService = invoiceService;
+            _permissionService = permissionService;
         }
 
         #region CRUD c? b?n
 
-        public async Task<WarehouseExportDto?> GetByIdAsync(int id)
+        public async Task<WarehouseExportDto?> GetByIdAsync(int id, int? userId = null)
         {
             var export = await _exportRepository.GetByIdAsync(id);
-            return export != null ? MapToDto(export) : null;
+            if (export == null) return null;
+            var dto = MapToDto(export);
+            if (userId.HasValue && userId.Value > 0)
+                await RecordPermissionEnricher.EnrichWarehouseExportAsync(dto, userId.Value, _permissionService);
+            return dto;
         }
 
-        public async Task<IEnumerable<WarehouseExportDto>> GetAllAsync()
+        public async Task<IEnumerable<WarehouseExportDto>> GetAllAsync(int? userId = null)
         {
             var exports = await _exportRepository.GetAllAsync();
-            return exports.Select(MapToDto);
+            var list = exports.Select(MapToDto).ToList();
+            if (userId.HasValue && userId.Value > 0)
+            {
+                foreach (var dto in list)
+                    await RecordPermissionEnricher.EnrichWarehouseExportAsync(dto, userId.Value, _permissionService);
+            }
+            return list;
         }
 
         public async Task<IEnumerable<WarehouseExportDto>> GetByInvoiceIdAsync(int invoiceId)
@@ -627,6 +642,47 @@ namespace ErpOnlineOrder.Application.Services
         {
             var childExports = await _exportRepository.GetChildExportsAsync(parentExportId);
             return childExports.Select(MapToDto);
+        }
+
+        public async Task<byte[]> ExportWarehouseExportsToExcelAsync(string? status = null)
+        {
+            var exports = !string.IsNullOrEmpty(status)
+                ? await _exportRepository.GetByStatusAsync(status)
+                : await _exportRepository.GetAllAsync();
+            using var workbook = new XLWorkbook();
+            var ws = workbook.Worksheets.Add("Phiếu xuất kho");
+
+            ws.Cell(1, 1).Value = "Mã phiếu";
+            ws.Cell(1, 2).Value = "Ngày xuất";
+            ws.Cell(1, 3).Value = "Hóa đơn";
+            ws.Cell(1, 4).Value = "Khách hàng";
+            ws.Cell(1, 5).Value = "Kho";
+            ws.Cell(1, 6).Value = "Tổng SL";
+            ws.Cell(1, 7).Value = "Tổng tiền";
+            ws.Cell(1, 8).Value = "Trạng thái";
+            ws.Cell(1, 9).Value = "Giao hàng";
+            ws.Range(1, 1, 1, 9).Style.Font.Bold = true;
+
+            int row = 2;
+            foreach (var exp in exports)
+            {
+                var dto = MapToDto(exp);
+                ExcelHelper.SetCellValue(ws.Cell(row, 1), dto.Warehouse_export_code);
+                ExcelHelper.SetCellValue(ws.Cell(row, 2), dto.Export_date.ToString("dd/MM/yyyy"));
+                ExcelHelper.SetCellValue(ws.Cell(row, 3), dto.Invoice_code ?? "");
+                ExcelHelper.SetCellValue(ws.Cell(row, 4), dto.Customer_name ?? "");
+                ExcelHelper.SetCellValue(ws.Cell(row, 5), dto.Warehouse_name ?? "");
+                ws.Cell(row, 6).Value = dto.Total_quantity;
+                ws.Cell(row, 7).Value = dto.Total_amount;
+                ExcelHelper.SetCellValue(ws.Cell(row, 8), dto.Status ?? "");
+                ExcelHelper.SetCellValue(ws.Cell(row, 9), dto.Delivery_status ?? "");
+                row++;
+            }
+            ws.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream, false);
+            return stream.ToArray();
         }
 
         #endregion

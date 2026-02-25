@@ -58,6 +58,24 @@
                 <i class="fas fa-expand-arrows-alt me-1"></i>Tách phiếu
             </a>
         }
+        @if (Model.Status == "Split")
+        {
+            <form asp-action="UndoSplit" asp-route-id="@Model.Id" method="post" style="display: inline;" onsubmit="return confirm('Bạn có chắc muốn hoàn tác tách phiếu xuất kho?');">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-warning me-2">
+                    <i class="fas fa-undo me-1"></i>Hoàn tác tách
+                </button>
+            </form>
+        }
+        @if (Model.Warehouse_export_code.StartsWith("EXP-M-"))
+        {
+            <form asp-action="UndoMerge" asp-route-id="@Model.Id" method="post" style="display: inline;" onsubmit="return confirm('Bạn có chắc muốn hoàn tác gộp phiếu xuất kho?');">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-warning me-2">
+                    <i class="fas fa-undo me-1"></i>Hoàn tác gộp
+                </button>
+            </form>
+        }
         <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left me-1"></i>Quay lại
         </a>

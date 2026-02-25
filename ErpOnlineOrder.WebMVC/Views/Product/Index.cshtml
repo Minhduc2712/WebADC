@@ -53,7 +53,7 @@
         <span><i class="fas fa-box me-2"></i>Danh sách sản phẩm (@Model.Count() sản phẩm)</span>
         @if (Context.Session.HasPermission("PRODUCT_EXPORT"))
         {
-            <a href="@Url.Action("Export")" class="btn btn-sm btn-success">
+            <a href="@Url.Action("Export", new { search = ViewBag.Search })" class="btn btn-sm btn-success">
                 <i class="fas fa-file-excel me-1"></i>Xuất Excel
             </a>
         }

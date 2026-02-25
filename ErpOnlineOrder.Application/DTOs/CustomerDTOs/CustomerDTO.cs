@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ErpOnlineOrder.Application.DTOs
 {
-    public class CustomerDTO
+    public class CustomerDTO : IRecordPermissionDto
     {
         public int Id { get; set; }
         public string Customer_code { get; set; } = null!;
@@ -18,5 +18,7 @@ namespace ErpOnlineOrder.Application.DTOs
         public bool Is_deleted { get; set; }
         public string? Username { get; set; }
         public string? Email { get; set; }
+        public bool AllowUpdate { get; set; }
+        public bool AllowDelete { get; set; }
     }
 }

@@ -24,14 +24,14 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [RequirePermission(PermissionCodes.StaffView)]
         public async Task<IActionResult> GetAllStaff()
         {
-            var staff = await _adminService.GetAllStaffAsync();
+            var staff = await _adminService.GetAllStaffAsync(TryGetCurrentUserId());
             return Ok(staff);
         }
         [HttpGet("staff/{userId}")]
         [RequirePermission(PermissionCodes.StaffView)]
         public async Task<IActionResult> GetStaffById(int userId)
         {
-            var staff = await _adminService.GetStaffByIdAsync(userId);
+            var staff = await _adminService.GetStaffByIdAsync(userId, TryGetCurrentUserId());
             if (staff == null)
             {
                 return NotFound(new { message = "Nhân viên không t?n t?i" });

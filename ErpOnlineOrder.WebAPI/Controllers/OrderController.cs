@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.DTOs.OrderDTOs;
 using ErpOnlineOrder.Domain.Models;
@@ -19,14 +19,14 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetOrders()
         {
-            var orders = await _orderService.GetAllAsync();
+            var orders = await _orderService.GetAllAsync(TryGetCurrentUserId());
             return Ok(orders);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetOrder(int id)
         {
-            var order = await _orderService.GetByIdAsync(id);
+            var order = await _orderService.GetByIdAsync(id, TryGetCurrentUserId());
             if (order == null) return NotFound();
             return Ok(order);
         }
@@ -41,10 +41,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             }
             return Ok(result);
         }
-        // [ĐÃ BỎ] Chức năng tạo đơn hàng thay mặt khách hàng (Admin)
-        // /// <summary>Tạo đơn hàng thay mặt khách hàng (Admin/Staff). Bỏ qua validation...</summary>
-        // [HttpPost("admin")]
-        // public async Task<IActionResult> CreateOrderAdmin([FromBody] CreateOrderDto model) { ... }
+
         [HttpPost("admin")]
         public IActionResult CreateOrderAdmin() => StatusCode(410, new { message = "Chức năng tạo đơn hàng Admin đã tạm đóng." });
 
@@ -169,7 +166,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [HttpGet("status/{status}")]
         public async Task<IActionResult> GetOrdersByStatus(string status)
         {
-            var orders = await _orderService.GetOrdersByStatusAsync(status);
+            var orders = await _orderService.GetOrdersByStatusAsync(status, TryGetCurrentUserId());
             return Ok(orders);
         }
 

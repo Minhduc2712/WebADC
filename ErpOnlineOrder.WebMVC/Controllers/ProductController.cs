@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.DTOs.ProductDTOs;
 using ErpOnlineOrder.Application.Constants;
+using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.WebMVC.Attributes;
 using ErpOnlineOrder.WebMVC.Extensions;
@@ -14,6 +15,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
     public class ProductController : BaseController
     {
         private readonly IProductApiClient _productApiClient;
+        private readonly IProductService _productService;
         private readonly ICategoryApiClient _categoryApiClient;
         private readonly IAuthorApiClient _authorApiClient;
         private readonly IPublisherApiClient _publisherApiClient;
@@ -23,6 +25,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         public ProductController(
             IProductApiClient productApiClient,
+            IProductService productService,
             ICategoryApiClient categoryApiClient,
             IAuthorApiClient authorApiClient,
             IPublisherApiClient publisherApiClient,
@@ -31,6 +34,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             ILogger<ProductController> logger)
         {
             _productApiClient = productApiClient;
+            _productService = productService;
             _categoryApiClient = categoryApiClient;
             _authorApiClient = authorApiClient;
             _publisherApiClient = publisherApiClient;
@@ -215,6 +219,29 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             }
 
             return RedirectToAction(nameof(Index));
+        }
+
+        [RequirePermission(PermissionCodes.ProductExport)]
+        [HttpGet]
+        public async Task<IActionResult> Export(string? search)
+        {
+            try
+            {
+                var bytes = await _productService.ExportProductsToExcelAsync(search);
+                if (bytes == null || bytes.Length == 0)
+                {
+                    TempData["ErrorMessage"] = "Không có dữ liệu để xuất.";
+                    return RedirectToAction(nameof(Index));
+                }
+                return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    $"SanPham_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error exporting products");
+                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                return RedirectToAction(nameof(Index));
+            }
         }
 
         private async Task LoadDropdownsAsync(Product? product = null)

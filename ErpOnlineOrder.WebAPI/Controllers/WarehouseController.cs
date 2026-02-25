@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.Application.DTOs.WarehouseDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Application.Services;
 using ErpOnlineOrder.Domain.Models;
 
 namespace ErpOnlineOrder.WebAPI.Controllers
@@ -10,17 +12,26 @@ namespace ErpOnlineOrder.WebAPI.Controllers
     public class WarehouseController : ApiController
     {
         private readonly IWarehouseService _warehouseService;
+        private readonly IPermissionService _permissionService;
 
-        public WarehouseController(IWarehouseService warehouseService)
+        public WarehouseController(IWarehouseService warehouseService, IPermissionService permissionService)
         {
             _warehouseService = warehouseService;
+            _permissionService = permissionService;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             var list = await _warehouseService.GetAllAsync();
-            return Ok(list.Select(MapToDto));
+            var dtos = list.Select(MapToDto).ToList();
+            var userId = TryGetCurrentUserId();
+            if (userId.HasValue && userId.Value > 0)
+            {
+                foreach (var dto in dtos)
+                    await RecordPermissionEnricher.EnrichAsync(dto, userId.Value, _permissionService, PermissionCodes.WarehouseUpdate, PermissionCodes.WarehouseDelete);
+            }
+            return Ok(dtos);
         }
 
         [HttpGet("{id}")]
@@ -28,14 +39,25 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             var item = await _warehouseService.GetByIdAsync(id);
             if (item == null) return NotFound();
-            return Ok(MapToDto(item));
+            var dto = MapToDto(item);
+            var userId = TryGetCurrentUserId();
+            if (userId.HasValue && userId.Value > 0)
+                await RecordPermissionEnricher.EnrichAsync(dto, userId.Value, _permissionService, PermissionCodes.WarehouseUpdate, PermissionCodes.WarehouseDelete);
+            return Ok(dto);
         }
 
         [HttpGet("province/{provinceId}")]
         public async Task<IActionResult> GetByProvinceId(int provinceId)
         {
             var list = await _warehouseService.GetByProvinceIdAsync(provinceId);
-            return Ok(list.Select(MapToDto));
+            var dtos = list.Select(MapToDto).ToList();
+            var userId = TryGetCurrentUserId();
+            if (userId.HasValue && userId.Value > 0)
+            {
+                foreach (var dto in dtos)
+                    await RecordPermissionEnricher.EnrichAsync(dto, userId.Value, _permissionService, PermissionCodes.WarehouseUpdate, PermissionCodes.WarehouseDelete);
+            }
+            return Ok(dtos);
         }
 
         [HttpPost]

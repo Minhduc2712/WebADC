@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ErpOnlineOrder.Application.DTOs.RegionDTOs
 {
-    public class RegionDTO
+    public class RegionDTO : Application.DTOs.IRecordPermissionDto
     {
         public int Id { get; set; }
         public string Region_code { get; set; } = string.Empty;
@@ -14,5 +14,7 @@ namespace ErpOnlineOrder.Application.DTOs.RegionDTOs
         public int Province_count { get; set; }
         public DateTime Created_at { get; set; }
         public DateTime Updated_at { get; set; }
+        public bool AllowUpdate { get; set; }
+        public bool AllowDelete { get; set; }
     }
 }

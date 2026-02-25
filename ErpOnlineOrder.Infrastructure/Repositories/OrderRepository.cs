@@ -20,7 +20,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<Order?> GetByIdAsync(int id)
         {
             return await _context.Orders
-                .Include(o => o.Customer)
+                .Include(o => o.Customer).ThenInclude(c => c!.User)
                 .Include(o => o.Order_Details).ThenInclude(od => od.Product)
                 .FirstOrDefaultAsync(o => o.Id == id && !o.Is_deleted);
         }
@@ -31,6 +31,18 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .Where(o => !o.Is_deleted)
                 .Include(o => o.Customer)
                 .Include(o => o.Order_Details).ThenInclude(od => od.Product)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Order>> GetByCustomerIdsAsync(IEnumerable<int> customerIds)
+        {
+            var ids = customerIds.ToList();
+            if (ids.Count == 0) return new List<Order>();
+            return await _context.Orders
+                .Where(o => !o.Is_deleted && ids.Contains(o.Customer_id))
+                .Include(o => o.Customer)
+                .Include(o => o.Order_Details).ThenInclude(od => od.Product)
+                .OrderByDescending(o => o.Order_date)
                 .ToListAsync();
         }
 

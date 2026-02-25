@@ -20,14 +20,14 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var list = await _invoiceService.GetAllAsync();
+            var list = await _invoiceService.GetAllAsync(TryGetCurrentUserId());
             return Ok(list);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var invoice = await _invoiceService.GetByIdAsync(id);
+            var invoice = await _invoiceService.GetByIdAsync(id, TryGetCurrentUserId());
             if (invoice == null) return NotFound();
             return Ok(invoice);
         }
@@ -75,6 +75,14 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 return BadRequest(new { message = "Không thể hoàn tác" });
             }
             return Ok(new { success = true, message = "Đã hoàn tác gộp hóa đơn" });
+        }
+
+        [HttpGet("export")]
+        public async Task<IActionResult> ExportExcel([FromQuery] string? status)
+        {
+            var bytes = await _invoiceService.ExportInvoicesToExcelAsync(status);
+            return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"HoaDon_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
         }
     }
 }

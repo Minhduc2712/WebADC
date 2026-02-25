@@ -4,6 +4,7 @@
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
     var assignments = ViewBag.Assignments as List<ErpOnlineOrder.Domain.Models.Customer_management> ?? new List<ErpOnlineOrder.Domain.Models.Customer_management>();
     var canAssign = (bool)(ViewBag.CanAssign ?? false);
+    var canAssignProduct = (bool)(ViewBag.CanAssignProduct ?? false);
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -74,7 +75,7 @@
                         <th>Địa chỉ</th>
                         <th>Cán bộ phụ trách</th>
                         <th>Ngày tạo</th>
-                        <th style="width: 160px;">Thao tác</th>
+                        <th style="width: 200px;">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -154,6 +155,13 @@
                                             <a asp-action="AssignStaff" asp-route-id="@customer.Id" class="btn btn-outline-success" title="Gán cán bộ phụ trách"
                                                data-bs-toggle="tooltip">
                                                 <i class="fas fa-user-tag"></i>
+                                            </a>
+                                        }
+                                        @if (canAssignProduct)
+                                        {
+                                            <a href="@Url.Action("AssignProducts", "CustomerProduct", new { customerId = customer.Id })" class="btn btn-outline-info" title="Gán sản phẩm"
+                                               data-bs-toggle="tooltip">
+                                                <i class="fas fa-box"></i>
                                             </a>
                                         }
                                         @if (Context.Session.HasPermission("CUSTOMER_UPDATE"))

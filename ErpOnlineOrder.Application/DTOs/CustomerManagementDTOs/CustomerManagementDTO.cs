@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ErpOnlineOrder.Application.DTOs
 {
-    public class CustomerManagementDTO
+    public class CustomerManagementDTO : IRecordPermissionDto
     {
         public int Id { get; set; }
         public string Staff_name { get; set; } = null!;
@@ -14,5 +14,7 @@ namespace ErpOnlineOrder.Application.DTOs
         public string Province_name { get; set; } = null!;
         public DateTime Created_at { get; set; }
         public DateTime Updated_at { get; set; }
+        public bool AllowUpdate { get; set; }
+        public bool AllowDelete { get; set; }
     }
 }

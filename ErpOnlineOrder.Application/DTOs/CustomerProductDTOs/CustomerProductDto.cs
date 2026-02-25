@@ -1,6 +1,6 @@
 namespace ErpOnlineOrder.Application.DTOs.CustomerProductDTOs
 {
-    public class CustomerProductDto
+    public class CustomerProductDto : Application.DTOs.IRecordPermissionDto
     {
         public int Id { get; set; }
         public int Customer_id { get; set; }
@@ -14,5 +14,7 @@ namespace ErpOnlineOrder.Application.DTOs.CustomerProductDTOs
         public int? Max_quantity { get; set; }
         public bool Is_active { get; set; }
         public DateTime Created_at { get; set; }
+        public bool AllowUpdate { get; set; }
+        public bool AllowDelete { get; set; }
     }
 }

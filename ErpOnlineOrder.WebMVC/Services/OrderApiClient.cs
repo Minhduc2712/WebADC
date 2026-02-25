@@ -95,7 +95,10 @@ namespace ErpOnlineOrder.WebMVC.Services
 
         public async Task<byte[]> ExportOrdersToExcelAsync(CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync("order/export", cancellationToken);
+            using var request = new HttpRequestMessage(HttpMethod.Get, "order/export");
+            request.Headers.Accept.Clear();
+            request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            var response = await _http.SendAsync(request, cancellationToken);
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadAsByteArrayAsync(cancellationToken);
         }

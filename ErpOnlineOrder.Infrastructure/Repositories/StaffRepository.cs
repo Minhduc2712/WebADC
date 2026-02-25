@@ -21,6 +21,12 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .FirstOrDefaultAsync(s => s.Id == id && !s.Is_deleted);
         }
 
+        public async Task<Staff?> GetByUserIdAsync(int userId)
+        {
+            return await _context.Staffs
+                .FirstOrDefaultAsync(s => s.User_id == userId && !s.Is_deleted);
+        }
+
         public async Task<IEnumerable<Staff>> GetAllAsync()
         {
             return await _context.Staffs

@@ -1,14 +1,11 @@
-﻿using ErpOnlineOrder.Application.Interfaces.Repositories;
+using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Models;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
-using Org.BouncyCastle.Cms;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,8 +13,8 @@ using SmtpSettingsDto = ErpOnlineOrder.Application.DTOs.SettingsDTOs.SmtpSetting
 
 namespace ErpOnlineOrder.Application.Services
 {
-   public class EmailService : IEmailService
-   {
+    public class EmailService : IEmailService
+    {
         private readonly ISettingService _settingService;
         private readonly IOrderRepository _orderRepository;
         private readonly IUserRepository _userRepository;
@@ -25,11 +22,11 @@ namespace ErpOnlineOrder.Application.Services
         private readonly ICustomerManagementRepository _customerManagementRepository;
 
         public EmailService(
-             ISettingService settingService,
-             IOrderRepository orderRepository,
-             IRoleRepository roleRepository,
-             IUserRepository userRepository,
-             ICustomerManagementRepository customerManagementRepository)
+            ISettingService settingService,
+            IOrderRepository orderRepository,
+            IRoleRepository roleRepository,
+            IUserRepository userRepository,
+            ICustomerManagementRepository customerManagementRepository)
         {
             _settingService = settingService;
             _orderRepository = orderRepository;
@@ -43,30 +40,27 @@ namespace ErpOnlineOrder.Application.Services
             try
             {
                 var order = await _orderRepository.GetByIdAsync(OrderId);
-                if ( order == null)
-                    return;
+                if (order == null) return;
+
                 var smtp = await _settingService.GetSmtpSettingsAsync();
-                if (smtp == null)
-                    return;
-                var invoiceEmail = await getNotificationInvoiceAsync(order.Customer_id);
+                if (!IsSmtpValid(smtp)) return;
+
+                var staffAdminEmails = await GetStaffAndAdminEmailsAsync(order.Customer_id);
+                if (staffAdminEmails.Count == 0) return;
 
                 var subject = $"[Thông báo] Đơn hàng mới đã được tạo - Đơn hàng #{order.Order_code}";
-                var bodyForStaffAndAdmin = BuildOrderNotificationBodyForStaffAndAdmin(order);
-                foreach ( var email in invoiceEmail)
-                {
-                    await SendEmailAsync(
-                        settings : smtp,
-                        toEmail: email,
-                        subject: subject,
-                        htmlBody: bodyForStaffAndAdmin,
-                        cancellationToken: cancellationToken);
-                }
+                var body = BuildOrderNotificationBodyForStaffAndAdmin(order);
 
+                foreach (var email in staffAdminEmails)
+                {
+                    if (string.IsNullOrWhiteSpace(email)) continue;
+                    await SendEmailAsync(smtp!, email.Trim(), subject, body, cancellationToken);
+                }
             }
-            catch (Exception ex)
+            catch (System.Exception)
             {
+                // Email gửi thất bại - có thể do SMTP chưa cấu hình hoặc lỗi kết nối
             }
-            
         }
 
         public async Task SendOrderNotificationForCustomerAsync(int OrderId, CancellationToken cancellationToken = default)
@@ -74,88 +68,67 @@ namespace ErpOnlineOrder.Application.Services
             try
             {
                 var order = await _orderRepository.GetByIdAsync(OrderId);
-                if (order == null)
-                    return;
-                var smtp = await _settingService.GetSmtpSettingsAsync();
-                if (smtp == null)
-                    return;
-                var invoiceEmail = await getNotificationInvoiceAsync(order.Customer_id);
-                var subject = $"[Thông báo] Đơn hàng mới đã được tạo - Đơn hàng #{order.Order_code}";
-                var htmlBodyForCustomer = BuildOrderNotificationBodyCustomer(order);
-                foreach (var email in invoiceEmail)
-                {
-                    await SendEmailAsync(
-                        settings: smtp,
-                        toEmail: email,
-                        subject: subject,
-                        htmlBody: htmlBodyForCustomer,
-                        cancellationToken: cancellationToken);
-                }
-            }
+                if (order == null) return;
 
-            catch (Exception ex)
+                var smtp = await _settingService.GetSmtpSettingsAsync();
+                if (!IsSmtpValid(smtp)) return;
+
+                var customerEmail = GetCustomerEmail(order);
+                if (string.IsNullOrWhiteSpace(customerEmail)) return;
+
+                var subject = $"[Xác nhận] Đơn hàng của bạn đã được tạo - Đơn hàng #{order.Order_code}";
+                var body = BuildOrderNotificationBodyCustomer(order);
+
+                await SendEmailAsync(smtp!, customerEmail, subject, body, cancellationToken);
+            }
+            catch (System.Exception)
             {
+                // Email gửi thất bại - có thể do SMTP chưa cấu hình hoặc lỗi kết nối
             }
         }
 
-
-        public async Task<HashSet<String>> getNotificationInvoiceAsync(int CustomerId)
+        private static bool IsSmtpValid(SmtpSettingsDto? smtp)
         {
-            var emails = new HashSet<String>();
+            return smtp != null && !string.IsNullOrWhiteSpace(smtp.FromEmail);
+        }
 
-            var admin = await _roleRepository.GetByNameAsync("ROLE_ADMIN");
+        private static string? GetCustomerEmail(Order order)
+        {
+            var user = order.Customer?.User;
+            if (user == null || user.Is_deleted) return null;
+            return string.IsNullOrWhiteSpace(user.Email) ? null : user.Email.Trim();
+        }
 
-            if ( admin != null) 
+        private async Task<HashSet<string>> GetStaffAndAdminEmailsAsync(int customerId)
+        {
+            var emails = new HashSet<string>();
+
+            var adminRole = await _roleRepository.GetByNameAsync("ROLE_ADMIN");
+            if (adminRole != null)
             {
-                var adminUsers = await _userRepository.GetUsersByRoleAsync(admin.Id);
-                foreach ( var user in adminUsers)
+                var adminUsers = await _userRepository.GetUsersByRoleAsync(adminRole.Id);
+                foreach (var user in adminUsers)
                 {
-                    if ( user.Is_active && !user.Is_deleted)
-                    {
-                        emails.Add( user.Email);
-                    }
+                    if (user.Is_active && !user.Is_deleted && !string.IsNullOrWhiteSpace(user.Email))
+                        emails.Add(user.Email.Trim());
                 }
             }
 
-            var managentStaff = await _customerManagementRepository.GetByCustomerAsync(CustomerId);
-
-            if (managentStaff != null)
+            var managementStaff = await _customerManagementRepository.GetByCustomerAsync(customerId);
+            if (managementStaff != null)
             {
-                foreach (var staff in managentStaff)
+                foreach (var mgmt in managementStaff)
                 {
-                    if (staff.Staff != null &&  !staff.Staff.Is_deleted)
+                    if (mgmt.Staff != null && !mgmt.Staff.Is_deleted)
                     {
-                        var StaffUser = await _userRepository.GetByIdAsync(staff.Staff.User_id);
-                        if (StaffUser != null && StaffUser.Is_active && !StaffUser.Is_deleted)
-                        {
-                            emails.Add(StaffUser.Email);
-                        }
+                        var staffUser = await _userRepository.GetByIdAsync(mgmt.Staff.User_id);
+                        if (staffUser != null && staffUser.Is_active && !staffUser.Is_deleted && !string.IsNullOrWhiteSpace(staffUser.Email))
+                            emails.Add(staffUser.Email.Trim());
                     }
                 }
             }
 
             return emails;
-        }
-
-        public async Task getNotificationForCusInvoiceAsync(int CustomerId)
-        {
-            var email = new HashSet<String>();
-
-            var managentStaff = await _customerManagementRepository.GetByCustomerAsync(CustomerId);
-            if (managentStaff != null)
-            {
-                foreach (var customer in managentStaff)
-                {
-                    if (customer.Customer != null && !customer.Customer.Is_deleted)
-                    {
-                        var CustomerUser = await _userRepository.GetByIdAsync(customer.Customer.User_id);
-                        if (CustomerUser != null && CustomerUser.Is_active && !CustomerUser.Is_deleted)
-                        {
-                            email.Add(CustomerUser.Email);
-                        }
-                    }
-                }
-            }
         }
 
         private static string BuildOrderNotificationBodyForStaffAndAdmin(Order order)
@@ -199,7 +172,7 @@ namespace ErpOnlineOrder.Application.Services
         {
             var sb = new StringBuilder();
             sb.Append("<html><body style='font-family: Arial, sans-serif;'>");
-            sb.Append("<h2>Đơn hàng mới - Thông báo</h2>");
+            sb.Append("<h2>Xác nhận đơn hàng</h2>");
             sb.Append($"<p><strong>Mã đơn:</strong> {WebUtility.HtmlEncode(order.Order_code)}</p>");
             sb.Append($"<p><strong>Ngày đặt:</strong> {order.Order_date:dd/MM/yyyy HH:mm}</p>");
             sb.Append($"<p><strong>Trạng thái:</strong> {WebUtility.HtmlEncode(order.Order_status ?? "Pending")}</p>");

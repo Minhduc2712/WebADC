@@ -3,6 +3,8 @@ using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.DTOs.OrderDTOs;
+using ClosedXML.Excel;
+using ErpOnlineOrder.Application.Helpers;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -11,39 +13,81 @@ namespace ErpOnlineOrder.Application.Services
     public class OrderService : IOrderService
     {
         private readonly IOrderRepository _orderRepository;
+        private readonly IStaffRepository _staffRepository;
         private readonly ICustomerManagementRepository _customerManagementRepository;
         private readonly ICustomerProductRepository _customerProductRepository;
         private readonly ICustomerCategoryRepository _customerCategoryRepository;
         private readonly IProductRepository _productRepository;
         private readonly IEmailService _emailService;
+        private readonly IPermissionService _permissionService;
 
         public OrderService(
-            IOrderRepository orderRepository, 
+            IOrderRepository orderRepository,
+            IStaffRepository staffRepository,
             ICustomerManagementRepository customerManagementRepository,
             ICustomerProductRepository customerProductRepository,
             ICustomerCategoryRepository customerCategoryRepository,
             IProductRepository productRepository,
-            IEmailService emailService)
+            IEmailService emailService,
+            IPermissionService permissionService)
         {
             _orderRepository = orderRepository;
+            _staffRepository = staffRepository;
             _customerManagementRepository = customerManagementRepository;
             _customerProductRepository = customerProductRepository;
             _customerCategoryRepository = customerCategoryRepository;
             _productRepository = productRepository;
             _emailService = emailService;
+            _permissionService = permissionService;
         }
 
-        public async Task<OrderDTO?> GetByIdAsync(int id)
+        public async Task<OrderDTO?> GetByIdAsync(int id, int? userId = null)
         {
             var order = await _orderRepository.GetByIdAsync(id);
             if (order == null) return null;
-            return MapToOrderDTO(order);
+
+            // Cán bộ phụ trách chỉ xem được đơn hàng của khách hàng mình quản lý
+            if (userId.HasValue && userId.Value > 0 && !await _permissionService.IsAdminAsync(userId.Value))
+            {
+                var staff = await _staffRepository.GetByUserIdAsync(userId.Value);
+                if (staff != null)
+                {
+                    var customerIds = await _customerManagementRepository.GetCustomerIdsByStaffAsync(staff.Id);
+                    if (!customerIds.Contains(order.Customer_id))
+                        return null;
+                }
+            }
+
+            var dto = MapToOrderDTO(order);
+            if (userId.HasValue && userId.Value > 0)
+                await RecordPermissionEnricher.EnrichOrderAsync(dto, userId.Value, _permissionService);
+            return dto;
         }
 
-        public async Task<IEnumerable<OrderDTO>> GetAllAsync()
+        public async Task<IEnumerable<OrderDTO>> GetAllAsync(int? userId = null)
         {
-            var orders = await _orderRepository.GetAllAsync();
-            return orders.Select(MapToOrderDTO);
+            IEnumerable<Order> orders;
+            if (userId.HasValue && userId.Value > 0 && !await _permissionService.IsAdminAsync(userId.Value))
+            {
+                var staff = await _staffRepository.GetByUserIdAsync(userId.Value);
+                if (staff != null)
+                {
+                    var customerIds = await _customerManagementRepository.GetCustomerIdsByStaffAsync(staff.Id);
+                    orders = await _orderRepository.GetByCustomerIdsAsync(customerIds);
+                }
+                else
+                    orders = await _orderRepository.GetAllAsync();
+            }
+            else
+                orders = await _orderRepository.GetAllAsync();
+
+            var list = orders.Select(MapToOrderDTO).ToList();
+            if (userId.HasValue && userId.Value > 0)
+            {
+                foreach (var dto in list)
+                    await RecordPermissionEnricher.EnrichOrderAsync(dto, userId.Value, _permissionService);
+            }
+            return list;
         }
 
         public async Task<Order?> GetByCodeAsync(string code)
@@ -306,6 +350,19 @@ namespace ErpOnlineOrder.Application.Services
         {
             var order = await _orderRepository.GetByIdAsync(dto.OrderId);
             if (order == null) return false;
+
+            // Cán bộ phụ trách chỉ xác nhận được đơn hàng của khách hàng mình quản lý
+            if (dto.Updated_by > 0 && !await _permissionService.IsAdminAsync(dto.Updated_by))
+            {
+                var staff = await _staffRepository.GetByUserIdAsync(dto.Updated_by);
+                if (staff != null)
+                {
+                    var customerIds = await _customerManagementRepository.GetCustomerIdsByStaffAsync(staff.Id);
+                    if (!customerIds.Contains(order.Customer_id))
+                        return false;
+                }
+            }
+
             order.Order_status = "Confirmed";
             order.Updated_by = dto.Updated_by;
             order.Updated_at = DateTime.UtcNow;
@@ -317,6 +374,19 @@ namespace ErpOnlineOrder.Application.Services
         {
             var order = await _orderRepository.GetByIdAsync(dto.OrderId);
             if (order == null) return false;
+
+            // Cán bộ phụ trách chỉ hủy được đơn hàng của khách hàng mình quản lý
+            if (dto.Updated_by > 0 && !await _permissionService.IsAdminAsync(dto.Updated_by))
+            {
+                var staff = await _staffRepository.GetByUserIdAsync(dto.Updated_by);
+                if (staff != null)
+                {
+                    var customerIds = await _customerManagementRepository.GetCustomerIdsByStaffAsync(staff.Id);
+                    if (!customerIds.Contains(order.Customer_id))
+                        return false;
+                }
+            }
+
             order.Order_status = "Cancelled";
             order.Updated_by = dto.Updated_by;
             order.Updated_at = DateTime.UtcNow;
@@ -327,13 +397,57 @@ namespace ErpOnlineOrder.Application.Services
         public async Task<byte[]> ExportOrdersToExcelAsync()
         {
             var orders = await _orderRepository.GetAllAsync();
-            // TODO: Implement Excel export logic
-            return Array.Empty<byte>();
+            using var workbook = new XLWorkbook();
+            var ws = workbook.Worksheets.Add("Đơn hàng");
+
+            ws.Cell(1, 1).Value = "Mã đơn";
+            ws.Cell(1, 2).Value = "Ngày đặt";
+            ws.Cell(1, 3).Value = "Khách hàng";
+            ws.Cell(1, 4).Value = "Địa chỉ giao";
+            ws.Cell(1, 5).Value = "Trạng thái";
+            ws.Cell(1, 6).Value = "Tổng tiền";
+            ws.Cell(1, 7).Value = "Ghi chú";
+            ws.Range(1, 1, 1, 7).Style.Font.Bold = true;
+
+            int row = 2;
+            foreach (var o in orders)
+            {
+                var customerName = o.Customer != null
+                    ? (!string.IsNullOrWhiteSpace(o.Customer.Full_name) ? o.Customer.Full_name : o.Customer.Customer_code ?? "")
+                    : "";
+                ExcelHelper.SetCellValue(ws.Cell(row, 1), o.Order_code);
+                ExcelHelper.SetCellValue(ws.Cell(row, 2), o.Order_date.ToString("dd/MM/yyyy HH:mm"));
+                ExcelHelper.SetCellValue(ws.Cell(row, 3), customerName);
+                ExcelHelper.SetCellValue(ws.Cell(row, 4), o.Shipping_address ?? "");
+                ExcelHelper.SetCellValue(ws.Cell(row, 5), o.Order_status ?? "");
+                ws.Cell(row, 6).Value = o.Total_price;
+                ExcelHelper.SetCellValue(ws.Cell(row, 7), o.note ?? "");
+                row++;
+            }
+            ws.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream, false);
+            return stream.ToArray();
         }
 
-        public async Task<IEnumerable<OrderDTO>> GetOrdersByStatusAsync(string status)
+        public async Task<IEnumerable<OrderDTO>> GetOrdersByStatusAsync(string status, int? userId = null)
         {
-            var orders = await _orderRepository.GetAllAsync();
+            IEnumerable<Order> orders;
+            if (userId.HasValue && userId.Value > 0 && !await _permissionService.IsAdminAsync(userId.Value))
+            {
+                var staff = await _staffRepository.GetByUserIdAsync(userId.Value);
+                if (staff != null)
+                {
+                    var customerIds = await _customerManagementRepository.GetCustomerIdsByStaffAsync(staff.Id);
+                    orders = await _orderRepository.GetByCustomerIdsAsync(customerIds);
+                }
+                else
+                    orders = await _orderRepository.GetAllAsync();
+            }
+            else
+                orders = await _orderRepository.GetAllAsync();
+
             var filtered = orders.Where(o => o.Order_status == status);
             return filtered.Select(MapToOrderDTO);
         }

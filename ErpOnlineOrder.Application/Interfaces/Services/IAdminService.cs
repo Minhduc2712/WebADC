@@ -5,8 +5,8 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
     public interface IAdminService
     {
         #region Qu?n lý tài kho?n nhân viên
-        Task<IEnumerable<StaffAccountDto>> GetAllStaffAsync();
-        Task<StaffAccountDto?> GetStaffByIdAsync(int userId);
+        Task<IEnumerable<StaffAccountDto>> GetAllStaffAsync(int? currentUserId = null);
+        Task<StaffAccountDto?> GetStaffByIdAsync(int userId, int? currentUserId = null);
         Task<StaffAccountDto?> CreateStaffAccountAsync(CreateStaffAccountDto dto, int createdBy);
         Task<bool> UpdateStaffAccountAsync(UpdateStaffAccountDto dto, int updatedBy);
         Task<bool> DeleteStaffAccountAsync(int userId, int deletedBy);

@@ -10,5 +10,6 @@ namespace ErpOnlineOrder.WebMVC.Services
         Task<MergeInvoiceResultDto?> MergeAsync(MergeInvoicesDto dto, CancellationToken cancellationToken = default);
         Task<bool> UndoSplitAsync(int parentInvoiceId, CancellationToken cancellationToken = default);
         Task<bool> UndoMergeAsync(int mergedInvoiceId, CancellationToken cancellationToken = default);
+        Task<byte[]> ExportToExcelAsync(string? status = null, CancellationToken cancellationToken = default);
     }
 }

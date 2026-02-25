@@ -1,4 +1,5 @@
 using ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs;
+using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,23 +10,25 @@ namespace ErpOnlineOrder.WebAPI.Controllers
     public class WarehouseExportController : ApiController
     {
         private readonly IWarehouseExportService _exportService;
+        private readonly ICustomerRepository _customerRepository;
 
-        public WarehouseExportController(IWarehouseExportService exportService)
+        public WarehouseExportController(IWarehouseExportService exportService, ICustomerRepository customerRepository)
         {
             _exportService = exportService;
+            _customerRepository = customerRepository;
         }
 
         #region CRUD c? b?n
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var exports = await _exportService.GetAllAsync();
+            var exports = await _exportService.GetAllAsync(TryGetCurrentUserId());
             return Ok(exports);
         }
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var export = await _exportService.GetByIdAsync(id);
+            var export = await _exportService.GetByIdAsync(id, TryGetCurrentUserId());
             if (export == null)
             {
                 return NotFound(new { message = "Phi?u xu?t kho không t?n t?i" });
@@ -42,6 +45,21 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         public async Task<IActionResult> GetByCustomer(int customerId)
         {
             var exports = await _exportService.GetByCustomerIdAsync(customerId);
+            return Ok(exports);
+        }
+        /// <summary>Lấy phiếu xuất kho của khách hàng đang đăng nhập (dùng UserId từ token/session).</summary>
+        [HttpGet("my-exports")]
+        public async Task<IActionResult> GetMyExports()
+        {
+            var userId = TryGetCurrentUserId();
+            if (!userId.HasValue || userId.Value <= 0)
+                return Unauthorized(new { message = "Vui lòng đăng nhập" });
+
+            var customer = await _customerRepository.GetByUserIdAsync(userId.Value);
+            if (customer == null)
+                return Ok(new List<WarehouseExportDto>());
+
+            var exports = await _exportService.GetByCustomerIdAsync(customer.Id);
             return Ok(exports);
         }
         [HttpGet("warehouse/{warehouseId}")]
@@ -211,6 +229,14 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             var hasExport = await _exportService.HasExportForInvoiceAsync(invoiceId);
             return Ok(new { invoice_id = invoiceId, has_export = hasExport });
+        }
+
+        [HttpGet("export")]
+        public async Task<IActionResult> ExportExcel([FromQuery] string? status)
+        {
+            var bytes = await _exportService.ExportWarehouseExportsToExcelAsync(status);
+            return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"PhieuXuatKho_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
         }
 
         #endregion

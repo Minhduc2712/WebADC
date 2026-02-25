@@ -6,8 +6,8 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
     {
         #region CRUD c? b?n
         
-        Task<WarehouseExportDto?> GetByIdAsync(int id);
-        Task<IEnumerable<WarehouseExportDto>> GetAllAsync();
+        Task<WarehouseExportDto?> GetByIdAsync(int id, int? userId = null);
+        Task<IEnumerable<WarehouseExportDto>> GetAllAsync(int? userId = null);
         Task<IEnumerable<WarehouseExportDto>> GetByInvoiceIdAsync(int invoiceId);
         Task<IEnumerable<WarehouseExportDto>> GetByCustomerIdAsync(int customerId);
         Task<IEnumerable<WarehouseExportDto>> GetByWarehouseIdAsync(int warehouseId);
@@ -31,6 +31,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
         #region Ki?m tra
         Task<bool> HasExportForInvoiceAsync(int invoiceId);
         Task<IEnumerable<WarehouseExportDto>> GetChildExportsAsync(int parentExportId);
+        Task<byte[]> ExportWarehouseExportsToExcelAsync(string? status = null);
         
         #endregion
     }

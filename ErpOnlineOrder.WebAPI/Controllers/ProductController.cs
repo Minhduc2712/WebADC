@@ -20,7 +20,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [RequirePermission(PermissionCodes.ProductView)]
         public async Task<IActionResult> GetProducts([FromQuery] string? search)
         {
-            var products = await _productService.SearchByAllAsync(search);
+            var products = await _productService.SearchByAllAsync(search, TryGetCurrentUserId());
             return Ok(products);
         }
 
@@ -28,7 +28,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [RequireAnyPermission(PermissionCodes.ProductView, PermissionCodes.OrderCreate, PermissionCodes.OrderUpdate, PermissionCodes.CustomerProductView, PermissionCodes.CustomerProductAssign)]
         public async Task<IActionResult> GetProductsForOrder()
         {
-            var products = await _productService.SearchAsync(null, null, null);
+            var products = await _productService.SearchAsync(null, null, null, TryGetCurrentUserId());
             return Ok(products);
         }
         [HttpGet("{id:int}/entity")]
@@ -43,7 +43,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [RequirePermission(PermissionCodes.ProductView)]
         public async Task<IActionResult> GetProduct(int id)
         {
-            var product = await _productService.GetByIdAsync(id);
+            var product = await _productService.GetByIdAsync(id, TryGetCurrentUserId());
             if (product == null)
             {
                 return NotFound();
@@ -107,9 +107,11 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         }
         [HttpGet("export")]
         [RequirePermission(PermissionCodes.ProductExport)]
-        public async Task<IActionResult> ExportProducts()
+        public async Task<IActionResult> ExportProducts([FromQuery] string? search)
         {
-            return Ok(new { message = "Export successful" });
+            var bytes = await _productService.ExportProductsToExcelAsync(search);
+            return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"SanPham_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
         }
     }
 }

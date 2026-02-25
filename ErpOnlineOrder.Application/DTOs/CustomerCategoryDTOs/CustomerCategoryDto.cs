@@ -1,6 +1,6 @@
 namespace ErpOnlineOrder.Application.DTOs.CustomerCategoryDTOs
 {
-    public class CustomerCategoryDto
+    public class CustomerCategoryDto : Application.DTOs.IRecordPermissionDto
     {
         public int Id { get; set; }
         public int Customer_id { get; set; }
@@ -11,5 +11,7 @@ namespace ErpOnlineOrder.Application.DTOs.CustomerCategoryDTOs
         public decimal? Discount_percent { get; set; }
         public bool Is_active { get; set; }
         public DateTime Created_at { get; set; }
+        public bool AllowUpdate { get; set; }
+        public bool AllowDelete { get; set; }
     }
 }

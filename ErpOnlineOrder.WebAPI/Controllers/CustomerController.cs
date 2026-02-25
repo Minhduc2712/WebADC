@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Application.Services;
 using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.DTOs.CustomerDTOs;
 using ErpOnlineOrder.Domain.Models;
@@ -11,17 +13,26 @@ namespace ErpOnlineOrder.WebAPI.Controllers
     public class CustomerController : ApiController
     {
         private readonly ICustomerService _customerService;
+        private readonly IPermissionService _permissionService;
 
-        public CustomerController(ICustomerService customerService)
+        public CustomerController(ICustomerService customerService, IPermissionService permissionService)
         {
             _customerService = customerService;
+            _permissionService = permissionService;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetCustomers()
         {
             var customers = await _customerService.GetAllAsync();
-            return Ok(customers.Select(MapToDto));
+            var list = customers.Select(MapToDto).ToList();
+            var userId = TryGetCurrentUserId();
+            if (userId.HasValue && userId.Value > 0)
+            {
+                foreach (var dto in list)
+                    await RecordPermissionEnricher.EnrichAsync(dto, userId.Value, _permissionService, PermissionCodes.CustomerUpdate, PermissionCodes.CustomerDelete);
+            }
+            return Ok(list);
         }
 
         [HttpGet("{id}")]
@@ -29,7 +40,11 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             var customer = await _customerService.GetByIdAsync(id);
             if (customer == null) return NotFound();
-            return Ok(MapToDto(customer));
+            var dto = MapToDto(customer);
+            var userId = TryGetCurrentUserId();
+            if (userId.HasValue && userId.Value > 0)
+                await RecordPermissionEnricher.EnrichAsync(dto, userId.Value, _permissionService, PermissionCodes.CustomerUpdate, PermissionCodes.CustomerDelete);
+            return Ok(dto);
         }
 
         [HttpPost]

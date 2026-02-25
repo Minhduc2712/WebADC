@@ -1,6 +1,6 @@
 namespace ErpOnlineOrder.Application.DTOs.PublisherDTOs
 {
-    public class PublisherDto
+    public class PublisherDto : Application.DTOs.IRecordPermissionDto
     {
         public int Id { get; set; }
         public string Publisher_code { get; set; } = null!;
@@ -10,5 +10,7 @@ namespace ErpOnlineOrder.Application.DTOs.PublisherDTOs
         public string? Publisher_email { get; set; }
         public DateTime Created_at { get; set; }
         public DateTime Updated_at { get; set; }
+        public bool AllowUpdate { get; set; }
+        public bool AllowDelete { get; set; }
     }
 }
