@@ -67,14 +67,14 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<IEnumerable<OrderDTO>> GetAllAsync(int? userId = null)
         {
-            IEnumerable<Order> orders;
+            IEnumerable<OrderDTO> orders;
             if (userId.HasValue && userId.Value > 0 && !await _permissionService.IsAdminAsync(userId.Value))
             {
                 var staff = await _staffRepository.GetByUserIdAsync(userId.Value);
                 if (staff != null)
                 {
                     var customerIds = await _customerManagementRepository.GetCustomerIdsByStaffAsync(staff.Id);
-                    orders = await _orderRepository.GetByCustomerIdsAsync(customerIds);
+                    orders = await _orderRepository.GetByCustomerIdsDTOAsync(customerIds);
                 }
                 else
                     orders = await _orderRepository.GetAllAsync();
@@ -82,7 +82,7 @@ namespace ErpOnlineOrder.Application.Services
             else
                 orders = await _orderRepository.GetAllAsync();
 
-            var list = orders.Select(EntityMappers.ToOrderDto).ToList();
+            var list = orders.ToList();
             if (userId.HasValue && userId.Value > 0)
             {
                 var permissions = (await _permissionService.GetUserPermissionsAsync(userId.Value)).ToHashSet();
@@ -104,8 +104,8 @@ namespace ErpOnlineOrder.Application.Services
                 }
             }
 
-            var paged = await _orderRepository.GetPagedOrdersAsync(request, customerIds);
-            var dtos = paged.Items.Select(EntityMappers.ToOrderDto).ToList();
+            var paged = await _orderRepository.GetPagedOrdersDTOAsync(request, customerIds);
+            var dtos = paged.Items.ToList();
             if (userId.HasValue && userId.Value > 0)
             {
                 var permissions = (await _permissionService.GetUserPermissionsAsync(userId.Value)).ToHashSet();
@@ -364,23 +364,20 @@ namespace ErpOnlineOrder.Application.Services
         public async Task<IEnumerable<OrderDTO>> GetOrdersByStaffAsync(int staffId)
         {
             var managedCustomers = await _customerManagementRepository.GetByStaffAsync(staffId);
-            var customerIds = managedCustomers.Select(cm => cm.Customer_id).Distinct();
-            var orders = await _orderRepository.GetAllAsync();
-            var filteredOrders = orders.Where(o => customerIds.Contains(o.Customer_id));
-            return filteredOrders.Select(EntityMappers.ToOrderDto);
+            var customerIds = managedCustomers.Select(cm => cm.Customer_id).Distinct().ToList();
+            if (customerIds.Count == 0) return new List<OrderDTO>();
+            return await _orderRepository.GetByCustomerIdsDTOAsync(customerIds);
         }
 
         public async Task<IEnumerable<OrderDTO>> GetOrdersByCustomerAsync(int customerId)
         {
-            var orders = await _orderRepository.GetAllAsync();
-            var customerOrders = orders.Where(o => o.Customer_id == customerId);
-            return customerOrders.Select(EntityMappers.ToOrderDto);
+            return await _orderRepository.GetByCustomerIdsDTOAsync(new[] { customerId });
         }
 
         public async Task<PagedResult<OrderDTO>> GetOrdersByCustomerPagedAsync(int customerId, OrderFilterRequest request)
         {
-            var paged = await _orderRepository.GetPagedOrdersAsync(request, new[] { customerId });
-            var dtos = paged.Items.Select(EntityMappers.ToOrderDto).ToList();
+            var paged = await _orderRepository.GetPagedOrdersDTOAsync(request, new[] { customerId });
+            var dtos = paged.Items.ToList();
             return new PagedResult<OrderDTO>
             {
                 Items = dtos,
@@ -456,12 +453,9 @@ namespace ErpOnlineOrder.Application.Services
             int row = 2;
             foreach (var o in orders)
             {
-                var customerName = o.Customer != null
-                    ? (!string.IsNullOrWhiteSpace(o.Customer.Full_name) ? o.Customer.Full_name : o.Customer.Customer_code ?? "")
-                    : "";
                 ExcelHelper.SetCellValue(ws.Cell(row, 1), o.Order_code);
                 ExcelHelper.SetCellValue(ws.Cell(row, 2), o.Order_date.ToString("dd/MM/yyyy HH:mm"));
-                ExcelHelper.SetCellValue(ws.Cell(row, 3), customerName);
+                ExcelHelper.SetCellValue(ws.Cell(row, 3), o.Customer_name ?? "");
                 ExcelHelper.SetCellValue(ws.Cell(row, 4), o.Shipping_address ?? "");
                 ExcelHelper.SetCellValue(ws.Cell(row, 5), o.Order_status ?? "");
                 ws.Cell(row, 6).Value = o.Total_price;
@@ -477,14 +471,14 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<IEnumerable<OrderDTO>> GetOrdersByStatusAsync(string status, int? userId = null)
         {
-            IEnumerable<Order> orders;
+            IEnumerable<OrderDTO> orders;
             if (userId.HasValue && userId.Value > 0 && !await _permissionService.IsAdminAsync(userId.Value))
             {
                 var staff = await _staffRepository.GetByUserIdAsync(userId.Value);
                 if (staff != null)
                 {
                     var customerIds = await _customerManagementRepository.GetCustomerIdsByStaffAsync(staff.Id);
-                    orders = await _orderRepository.GetByCustomerIdsAsync(customerIds);
+                    orders = await _orderRepository.GetByCustomerIdsDTOAsync(customerIds);
                 }
                 else
                     orders = await _orderRepository.GetAllAsync();
@@ -493,7 +487,7 @@ namespace ErpOnlineOrder.Application.Services
                 orders = await _orderRepository.GetAllAsync();
 
             var filtered = orders.Where(o => o.Order_status == status);
-            return filtered.Select(EntityMappers.ToOrderDto);
+            return filtered.ToList();
         }
 
         public async Task<bool> DeletePendingOrderAsync(int id)

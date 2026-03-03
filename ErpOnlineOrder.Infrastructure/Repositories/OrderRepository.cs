@@ -111,6 +111,48 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             return await query.ToPagedListAsync(request);
         }
 
+        public async Task<PagedResult<OrderDTO>> GetPagedOrdersDTOAsync(OrderFilterRequest request, IEnumerable<int>? customerIds = null)
+        {
+            var query = _context.Orders
+                .AsNoTracking()
+                .Where(o => !o.Is_deleted)
+                .AsQueryable();
+
+            if (customerIds != null)
+            {
+                var ids = customerIds.ToList();
+                if (ids.Count > 0)
+                    query = query.Where(o => ids.Contains(o.Customer_id));
+                else
+                    return new PagedResult<OrderDTO> { Items = new List<OrderDTO>(), Page = request.Page, PageSize = request.PageSize, TotalCount = 0 };
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Status))
+                query = query.Where(o => o.Order_status == request.Status);
+
+            if (request.DateFrom.HasValue)
+                query = query.Where(o => o.Order_date >= request.DateFrom.Value);
+
+            if (request.DateTo.HasValue)
+            {
+                var toDate = request.DateTo.Value.Date.AddDays(1);
+                query = query.Where(o => o.Order_date < toDate);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+            {
+                var search = request.SearchTerm.Trim().ToLowerInvariant();
+                query = query.Where(o =>
+                    (o.Order_code != null && o.Order_code.ToLower().Contains(search)) ||
+                    (o.Customer != null && o.Customer.Full_name != null && o.Customer.Full_name.ToLower().Contains(search))
+                );
+            }
+
+            query = query.OrderByDescending(o => o.Order_date);
+            var projectedQuery = ProjectToOrderDto(query);
+            return await projectedQuery.ToPagedListAsync(request);
+        }
+
         public async Task<IEnumerable<Order>> GetByCustomerIdsAsync(IEnumerable<int> customerIds)
         {
             var ids = customerIds.ToList();
@@ -122,6 +164,17 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .Include(o => o.Order_Details).ThenInclude(od => od.Product)
                 .OrderByDescending(o => o.Order_date)
                 .ToListAsync();
+        }
+
+        public async Task<IEnumerable<OrderDTO>> GetByCustomerIdsDTOAsync(IEnumerable<int> customerIds)
+        {
+            var ids = customerIds.ToList();
+            if (ids.Count == 0) return new List<OrderDTO>();
+            var query = _context.Orders
+                .AsNoTracking()
+                .Where(o => !o.Is_deleted && ids.Contains(o.Customer_id))
+                .OrderByDescending(o => o.Order_date);
+            return await ProjectToOrderDto(query).ToListAsync();
         }
 
         public async Task<Order?> GetByCodeAsync(string code)
