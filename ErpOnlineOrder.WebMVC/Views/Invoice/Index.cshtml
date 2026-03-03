@@ -196,7 +196,7 @@
                                         <a asp-action="Details" asp-route-id="@invoice.Id" class="btn btn-outline-primary" title="Xem chi tiết">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        @if (invoice.Status != "Completed" && invoice.Status != "Cancelled" && invoice.Details.Count > 1)
+                                        @if (invoice.Status != "Completed" && invoice.Status != "Cancelled" && invoice.Status != "Split" && invoice.Status != "Merged" && invoice.Details.Count > 1)
                                         {
                                             <a asp-action="Split" asp-route-id="@invoice.Id" class="btn btn-outline-info" title="Tách hóa đơn">
                                                 <i class="fas fa-expand-arrows-alt"></i>

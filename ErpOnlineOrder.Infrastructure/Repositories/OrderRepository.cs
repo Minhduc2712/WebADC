@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ErpOnlineOrder.Application.DTOs;
 
 namespace ErpOnlineOrder.Infrastructure.Repositories
 {
@@ -18,6 +19,33 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             _context = context;
         }
 
+        private static IQueryable<OrderDTO> ProjectToOrderDto(IQueryable<Order> query)
+        {
+            return query.Select(o => new OrderDTO
+            {
+                Id = o.Id,
+                Order_code = o.Order_code ?? "",
+                Order_date = o.Order_date,
+                Total_price = o.Total_price,
+                Order_status = o.Order_status ?? "",
+                Customer_name = o.Customer != null
+                    ? (!string.IsNullOrWhiteSpace(o.Customer.Full_name) ? o.Customer.Full_name : o.Customer.Customer_code ?? "—")
+                    : "—",
+                Shipping_address = o.Shipping_address,
+                note = o.note,
+                Order_details = o.Order_Details
+                    .Where(od => !od.Is_deleted)
+                    .Select(od => new OrderDetailDTO
+                    {
+                        Product_id = od.Product_id,
+                        Product_name = od.Product != null ? (od.Product.Product_name ?? "") : "",
+                        Quantity = od.Quantity,
+                        Unit_price = od.Unit_price,
+                        Total_price = od.Total_price
+                    }).ToList()
+            });
+        }
+
         public async Task<Order?> GetByIdAsync(int id)
         {
             return await _context.Orders
@@ -27,14 +55,13 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .FirstOrDefaultAsync(o => o.Id == id && !o.Is_deleted);
         }
 
-        public async Task<IEnumerable<Order>> GetAllAsync()
+        public async Task<IEnumerable<OrderDTO>> GetAllAsync()
         {
-            return await _context.Orders
+            var query = _context.Orders
                 .AsNoTracking()
                 .Where(o => !o.Is_deleted)
-                .Include(o => o.Customer)
-                .Include(o => o.Order_Details).ThenInclude(od => od.Product)
-                .ToListAsync();
+                .OrderByDescending(o => o.Order_date);
+            return await ProjectToOrderDto(query).ToListAsync();
         }
 
         public async Task<PagedResult<Order>> GetPagedOrdersAsync(OrderFilterRequest request, IEnumerable<int>? customerIds = null)

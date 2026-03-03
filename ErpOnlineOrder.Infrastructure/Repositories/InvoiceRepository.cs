@@ -31,6 +31,17 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .FirstOrDefaultAsync(i => i.Id == id && !i.Is_deleted);
         }
 
+        public async Task<Invoice?> GetByIdForUpdateAsync(int id)
+        {
+            return await _context.Invoices
+                .Include(i => i.Customer)!.ThenInclude(c => c!.Customer_managements)
+                .ThenInclude(cm => cm.Province)
+                .Include(i => i.Staff)
+                .Include(i => i.Invoice_Details)
+                    .ThenInclude(d => d.Product)
+                .FirstOrDefaultAsync(i => i.Id == id && !i.Is_deleted);
+        }
+
         public async Task<Invoice?> GetByCodeAsync(string code)
         {
             return await _context.Invoices
@@ -41,29 +52,60 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .FirstOrDefaultAsync(i => i.Invoice_code == code && !i.Is_deleted);
         }
 
-        public async Task<IEnumerable<Invoice>> GetAllAsync()
+        private static IQueryable<InvoiceDto> ProjectToInvoiceDto(IQueryable<Invoice> query)
         {
-            return await _context.Invoices
-                .AsNoTracking()
-                .Include(i => i.Customer)!.ThenInclude(c => c!.Customer_managements)
-                .ThenInclude(cm => cm.Province)
-                .Include(i => i.Staff)
-                .Include(i => i.Invoice_Details)
-                    .ThenInclude(d => d.Product)
-                .Where(i => !i.Is_deleted)
-                .OrderByDescending(i => i.Created_at)
-                .ToListAsync();
+            return query.Select(i => new InvoiceDto
+            {
+                Id = i.Id,
+                Invoice_code = i.Invoice_code ?? "",
+                Invoice_date = i.Invoice_date,
+                Customer_id = i.Customer_id,
+                Customer_name = i.Customer != null ? (i.Customer.Full_name ?? "") : "",
+                Province_id = i.Customer != null
+                    ? i.Customer.Customer_managements
+                        .Where(cm => !cm.Is_deleted && cm.Province != null)
+                        .Select(cm => (int?)cm.Province_id)
+                        .FirstOrDefault()
+                    : null,
+                Province_name = i.Customer != null
+                    ? i.Customer.Customer_managements
+                        .Where(cm => !cm.Is_deleted && cm.Province != null)
+                        .Select(cm => cm.Province!.Province_name)
+                        .FirstOrDefault()
+                    : null,
+                Total_amount = i.Total_amount,
+                Tax_amount = i.Tax_amount,
+                Status = i.Status ?? "",
+                Parent_invoice_id = i.Parent_invoice_id,
+                Parent_invoice_code = i.Parent_invoice != null ? i.Parent_invoice.Invoice_code : null,
+                Details = i.Invoice_Details
+                    .Where(d => !d.Is_deleted)
+                    .Select(d => new InvoiceDetailDto
+                    {
+                        Id = d.Id,
+                        Product_id = d.Product_id,
+                        Product_name = d.Product != null ? (d.Product.Product_name ?? "") : "",
+                        Quantity = d.Quantity,
+                        Unit_price = d.Unit_price,
+                        Total_price = d.Total_price,
+                        Tax_rate = d.Tax_rate
+                    }).ToList()
+            });
         }
 
-        public async Task<PagedResult<Invoice>> GetPagedInvoicesAsync(InvoiceFilterRequest request, IEnumerable<int>? customerIds = null)
+        public async Task<IEnumerable<InvoiceDto>> GetAllAsync()
         {
             var query = _context.Invoices
                 .AsNoTracking()
-                .Include(i => i.Customer)!.ThenInclude(c => c!.Customer_managements)
-                .ThenInclude(cm => cm.Province)
-                .Include(i => i.Staff)
-                .Include(i => i.Invoice_Details)
-                    .ThenInclude(d => d.Product)
+                .Where(i => !i.Is_deleted)
+                .OrderByDescending(i => i.Created_at);
+            return await ProjectToInvoiceDto(query).ToListAsync();
+        }
+
+        public async Task<PagedResult<InvoiceDto>> GetPagedInvoicesAsync(InvoiceFilterRequest request, IEnumerable<int>? customerIds = null)
+        {
+            var query = _context.Invoices
+                .AsNoTracking()
                 .Where(i => !i.Is_deleted)
                 .AsQueryable();
 
@@ -73,13 +115,11 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 if (ids.Count > 0)
                     query = query.Where(i => ids.Contains(i.Customer_id));
                 else
-                    return new PagedResult<Invoice> { Items = new List<Invoice>(), Page = request.Page, PageSize = request.PageSize, TotalCount = 0 };
+                    return new PagedResult<InvoiceDto> { Items = new List<InvoiceDto>(), Page = request.Page, PageSize = request.PageSize, TotalCount = 0 };
             }
 
             if (!string.IsNullOrWhiteSpace(request.Status))
-            {
                 query = query.Where(i => i.Status == request.Status);
-            }
 
             if (!string.IsNullOrWhiteSpace(request.SearchTerm))
             {
@@ -91,55 +131,44 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             }
 
             query = query.OrderByDescending(i => i.Created_at);
-            return await query.ToPagedListAsync(request);
+            var projectedQuery = ProjectToInvoiceDto(query);
+            return await projectedQuery.ToPagedListAsync(request);
         }
 
-        public async Task<IEnumerable<Invoice>> GetByCustomerIdsAsync(IEnumerable<int> customerIds)
+        public async Task<IEnumerable<InvoiceDto>> GetByCustomerIdsAsync(IEnumerable<int> customerIds)
         {
             var ids = customerIds.ToList();
-            if (ids.Count == 0) return new List<Invoice>();
-            return await _context.Invoices
-                .AsNoTracking()
-                .Include(i => i.Customer)!.ThenInclude(c => c!.Customer_managements)
-                .ThenInclude(cm => cm.Province)
-                .Include(i => i.Staff)
-                .Include(i => i.Invoice_Details)
-                    .ThenInclude(d => d.Product)
-                .Where(i => ids.Contains(i.Customer_id) && !i.Is_deleted)
-                .OrderByDescending(i => i.Created_at)
-                .ToListAsync();
-        }
-
-        public async Task<IEnumerable<Invoice>> GetByCustomerIdAsync(int customerId)
-        {
-            return await _context.Invoices
-                .AsNoTracking()
-                .Include(i => i.Customer)
-                .Include(i => i.Invoice_Details)
-                    .ThenInclude(d => d.Product)
-                .Where(i => i.Customer_id == customerId && !i.Is_deleted)
-                .OrderByDescending(i => i.Created_at)
-                .ToListAsync();
-        }
-
-        public async Task<IEnumerable<Invoice>> GetByStatusAsync(string status)
-        {
-            return await _context.Invoices
-                .AsNoTracking()
-                .Include(i => i.Customer)
-                .Include(i => i.Invoice_Details)
-                .Where(i => i.Status == status && !i.Is_deleted)
-                .OrderByDescending(i => i.Created_at)
-                .ToListAsync();
-        }
-
-        public async Task<IEnumerable<Invoice>> GetForMergeAsync(IEnumerable<int>? customerIds = null)
-        {
-            var excludedStatuses = new[] { "Completed", "Cancelled", "Merged" };
+            if (ids.Count == 0) return new List<InvoiceDto>();
             var query = _context.Invoices
                 .AsNoTracking()
-                .Include(i => i.Customer)
-                .Include(i => i.Invoice_Details).ThenInclude(d => d.Product)
+                .Where(i => ids.Contains(i.Customer_id) && !i.Is_deleted)
+                .OrderByDescending(i => i.Created_at);
+            return await ProjectToInvoiceDto(query).ToListAsync();
+        }
+
+        public async Task<IEnumerable<InvoiceDto>> GetByCustomerIdAsync(int customerId)
+        {
+            var query = _context.Invoices
+                .AsNoTracking()
+                .Where(i => i.Customer_id == customerId && !i.Is_deleted)
+                .OrderByDescending(i => i.Created_at);
+            return await ProjectToInvoiceDto(query).ToListAsync();
+        }
+
+        public async Task<IEnumerable<InvoiceDto>> GetByStatusAsync(string status)
+        {
+            var query = _context.Invoices
+                .AsNoTracking()
+                .Where(i => i.Status == status && !i.Is_deleted)
+                .OrderByDescending(i => i.Created_at);
+            return await ProjectToInvoiceDto(query).ToListAsync();
+        }
+
+        public async Task<IEnumerable<InvoiceDto>> GetForMergeAsync(IEnumerable<int>? customerIds = null)
+        {
+            var excludedStatuses = new[] { "Completed", "Cancelled", "Merged", "Split" };
+            var query = _context.Invoices
+                .AsNoTracking()
                 .Where(i => !i.Is_deleted && !excludedStatuses.Contains(i.Status ?? ""));
 
             if (customerIds != null)
@@ -148,10 +177,11 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 if (ids.Count > 0)
                     query = query.Where(i => ids.Contains(i.Customer_id));
                 else
-                    return new List<Invoice>();
+                    return new List<InvoiceDto>();
             }
 
-            return await query.OrderByDescending(i => i.Created_at).ToListAsync();
+            query = query.OrderByDescending(i => i.Created_at);
+            return await ProjectToInvoiceDto(query).ToListAsync();
         }
 
         public async Task<IEnumerable<InvoiceSelectDto>> GetForWarehouseExportSelectAsync(IEnumerable<int>? customerIds = null)
@@ -183,6 +213,13 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .Include(i => i.Invoice_Details)
                     .ThenInclude(d => d.Product)
                 .Where(i => i.Parent_invoice_id == parentInvoiceId && !i.Is_deleted)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Invoice>> GetByMergedIntoInvoiceIdAsync(int mergedInvoiceId)
+        {
+            return await _context.Invoices
+                .Where(i => i.Merged_into_invoice_id == mergedInvoiceId && !i.Is_deleted)
                 .ToListAsync();
         }
 

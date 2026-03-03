@@ -51,7 +51,7 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<IEnumerable<InvoiceDto>> GetAllAsync(int? userId = null)
         {
-            IEnumerable<Invoice> invoices;
+            IEnumerable<InvoiceDto> invoices;
             if (userId.HasValue && userId.Value > 0 && !await _permissionService.IsAdminAsync(userId.Value))
             {
                 var staff = await _staffRepository.GetByUserIdAsync(userId.Value);
@@ -66,7 +66,7 @@ namespace ErpOnlineOrder.Application.Services
             else
                 invoices = await _invoiceRepository.GetAllAsync();
 
-            var list = invoices.Select(EntityMappers.ToInvoiceDto).ToList();
+            var list = invoices.ToList();
             if (userId.HasValue && userId.Value > 0)
             {
                 var userPermissions = (await _permissionService.GetUserPermissionsAsync(userId.Value)).ToHashSet();
@@ -86,8 +86,7 @@ namespace ErpOnlineOrder.Application.Services
                     customerIds = await _customerManagementRepository.GetCustomerIdsByStaffAsync(staff.Id);
             }
 
-            var invoices = await _invoiceRepository.GetForMergeAsync(customerIds);
-            var list = invoices.Select(EntityMappers.ToInvoiceDto).ToList();
+            var list = (await _invoiceRepository.GetForMergeAsync(customerIds)).ToList();
             if (userId.HasValue && userId.Value > 0)
             {
                 var userPermissions = (await _permissionService.GetUserPermissionsAsync(userId.Value)).ToHashSet();
@@ -123,7 +122,7 @@ namespace ErpOnlineOrder.Application.Services
             }
 
             var paged = await _invoiceRepository.GetPagedInvoicesAsync(request, customerIds);
-            var dtos = paged.Items.Select(EntityMappers.ToInvoiceDto).ToList();
+            var dtos = paged.Items.ToList();
             if (userId.HasValue && userId.Value > 0)
             {
                 var userPermissions = (await _permissionService.GetUserPermissionsAsync(userId.Value)).ToHashSet();
@@ -141,14 +140,13 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<IEnumerable<InvoiceDto>> GetByCustomerIdAsync(int customerId)
         {
-            var invoices = await _invoiceRepository.GetByCustomerIdAsync(customerId);
-            return invoices.Select(EntityMappers.ToInvoiceDto);
+            return await _invoiceRepository.GetByCustomerIdAsync(customerId);
         }
 
         public async Task<PagedResult<InvoiceDto>> GetByCustomerIdPagedAsync(int customerId, InvoiceFilterRequest request)
         {
             var paged = await _invoiceRepository.GetPagedInvoicesAsync(request, new[] { customerId });
-            var dtos = paged.Items.Select(EntityMappers.ToInvoiceDto).ToList();
+            var dtos = paged.Items.ToList();
             return new PagedResult<InvoiceDto>
             {
                 Items = dtos,
@@ -166,8 +164,7 @@ namespace ErpOnlineOrder.Application.Services
         {
             var result = new SplitInvoiceResultDto();
 
-            // 1. Lấy hóa đơn gốc
-            var sourceInvoice = await _invoiceRepository.GetByIdAsync(dto.Source_invoice_id);
+            var sourceInvoice = await _invoiceRepository.GetByIdForUpdateAsync(dto.Source_invoice_id);
             if (sourceInvoice == null)
             {
                 result.Success = false;
@@ -175,7 +172,6 @@ namespace ErpOnlineOrder.Application.Services
                 return result;
             }
 
-            // 2. Kiểm tra trạng thái
             if (sourceInvoice.Status == "Split" || sourceInvoice.Status == "Merged")
             {
                 result.Success = false;
@@ -183,11 +179,28 @@ namespace ErpOnlineOrder.Application.Services
                 return result;
             }
 
+            var validParts = (dto.Split_parts ?? new List<SplitInvoicePart>())
+                .Select(p => new SplitInvoicePart
+                {
+                    Items = (p.Items ?? new List<SplitInvoiceItem>())
+                        .Where(i => i != null && i.Invoice_detail_id > 0 && i.Quantity > 0)
+                        .ToList()
+                })
+                .Where(p => p.Items.Count > 0)
+                .ToList();
+
+            if (validParts.Count == 0)
+            {
+                result.Success = false;
+                result.Message = "Vui lòng chọn ít nhất một sản phẩm với số lượng > 0 để tách";
+                return result;
+            }
+
             var now = DateTime.UtcNow;
             var newInvoices = new List<Invoice>();
 
             // 3. Tạo các hóa đơn mới từ các phần tách
-            foreach (var (part, index) in dto.Split_parts.Select((p, i) => (p, i)))
+            foreach (var (part, index) in validParts.Select((p, i) => (p, i)))
             {
                 var newInvoice = new Invoice
                 {
@@ -212,9 +225,15 @@ namespace ErpOnlineOrder.Application.Services
                 foreach (var item in part.Items)
                 {
                     var sourceDetail = sourceInvoice.Invoice_Details
-                        .FirstOrDefault(d => d.Id == item.Invoice_detail_id);
+                        .FirstOrDefault(d => !d.Is_deleted && d.Id == item.Invoice_detail_id);
                     
                     if (sourceDetail == null) continue;
+                    if (item.Quantity > sourceDetail.Quantity)
+                    {
+                        result.Success = false;
+                        result.Message = $"Số lượng tách vượt quá số lượng gốc (sản phẩm ID: {sourceDetail.Product_id})";
+                        return result;
+                    }
 
                     var newDetail = new Invoice_detail
                     {
@@ -419,7 +438,7 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<bool> UndoSplitAsync(int parentInvoiceId, int userId)
         {
-            var parentInvoice = await _invoiceRepository.GetByIdAsync(parentInvoiceId);
+            var parentInvoice = await _invoiceRepository.GetByIdForUpdateAsync(parentInvoiceId);
             if (parentInvoice == null || parentInvoice.Status != "Split")
             {
                 return false;
@@ -484,8 +503,7 @@ namespace ErpOnlineOrder.Application.Services
             var now = DateTime.UtcNow;
 
             // Lấy các hóa đơn đã gộp vào
-            var allInvoices = await _invoiceRepository.GetAllAsync();
-            var sourceInvoices = allInvoices.Where(i => i.Merged_into_invoice_id == mergedInvoiceId).ToList();
+            var sourceInvoices = (await _invoiceRepository.GetByMergedIntoInvoiceIdAsync(mergedInvoiceId)).ToList();
 
             // Khôi phục trạng thái các hóa đơn gốc
             foreach (var invoice in sourceInvoices)
@@ -523,9 +541,8 @@ namespace ErpOnlineOrder.Application.Services
             ws.Range(1, 1, 1, 8).Style.Font.Bold = true;
 
             int row = 2;
-            foreach (var inv in invoices)
+            foreach (var dto in invoices)
             {
-                var dto = EntityMappers.ToInvoiceDto(inv);
                 ExcelHelper.SetCellValue(ws.Cell(row, 1), dto.Invoice_code);
                 ExcelHelper.SetCellValue(ws.Cell(row, 2), dto.Invoice_date.ToString("dd/MM/yyyy"));
                 ExcelHelper.SetCellValue(ws.Cell(row, 3), dto.Customer_name ?? "");
