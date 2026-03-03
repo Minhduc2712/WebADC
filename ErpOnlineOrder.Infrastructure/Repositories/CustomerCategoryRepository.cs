@@ -17,6 +17,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<Customer_category?> GetByIdAsync(int id)
         {
             return await _context.CustomerCategories
+                .AsNoTracking()
                 .Include(cc => cc.Customer)
                 .Include(cc => cc.Category)
                 .FirstOrDefaultAsync(cc => cc.Id == id && !cc.Is_deleted);
@@ -25,6 +26,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<Customer_category?> GetByCustomerAndCategoryAsync(int customerId, int categoryId)
         {
             return await _context.CustomerCategories
+                .AsNoTracking()
                 .Include(cc => cc.Customer)
                 .Include(cc => cc.Category)
                 .FirstOrDefaultAsync(cc => cc.Customer_id == customerId 
@@ -35,6 +37,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<IEnumerable<Customer_category>> GetByCustomerIdAsync(int customerId)
         {
             return await _context.CustomerCategories
+                .AsNoTracking()
                 .Include(cc => cc.Customer)
                 .Include(cc => cc.Category)
                 .Where(cc => cc.Customer_id == customerId && !cc.Is_deleted)
@@ -44,6 +47,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<IEnumerable<Customer_category>> GetByCategoryIdAsync(int categoryId)
         {
             return await _context.CustomerCategories
+                .AsNoTracking()
                 .Include(cc => cc.Customer)
                 .Include(cc => cc.Category)
                 .Where(cc => cc.Category_id == categoryId && !cc.Is_deleted)
@@ -53,6 +57,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<IEnumerable<Customer_category>> GetAllAsync()
         {
             return await _context.CustomerCategories
+                .AsNoTracking()
                 .Include(cc => cc.Customer)
                 .Include(cc => cc.Category)
                 .Where(cc => !cc.Is_deleted)

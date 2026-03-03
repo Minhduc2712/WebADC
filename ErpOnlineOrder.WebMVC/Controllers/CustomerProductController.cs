@@ -55,35 +55,46 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             }
         }
 
+        // [RequirePermission(PermissionCodes.CustomerProductAssign)]
+        // public async Task<IActionResult> AssignProducts(int customerId)
+        // {
+        //     try
+        //     {
+        //         var customer = await _customerApiClient.GetByIdAsync(customerId);
+        //         if (customer == null)
+        //         {
+        //             SetErrorMessage("Không tìm thấy khách hàng.");
+        //             return RedirectToAction("Index", "CustomerManagement");
+        //         }
+
+        //         var products = await _productApiClient.GetForOrderAsync();
+        //         var assignedProducts = await _customerProductApiClient.GetByCustomerIdAsync(customerId);
+        //         var assignedProductIds = assignedProducts.Select(cp => cp.Product_id).ToHashSet();
+
+        //         ViewBag.Customer = customer;
+        //         ViewBag.AllProducts = products.ToList();
+        //         ViewBag.AssignedProductIds = assignedProductIds;
+        //         ViewBag.Assignments = assignedProducts.ToList();
+        //         return View(new AssignProductsToCustomerDto { Customer_id = customerId });
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         _logger.LogError(ex, "Lỗi khi tải form gán sản phẩm cho khách hàng {CustomerId}", customerId);
+        //         SetErrorMessage(GetDetailedErrorMessage(ex));
+        //         return RedirectToAction("Index", new { customerId });
+        //     }
+        // }
         [RequirePermission(PermissionCodes.CustomerProductAssign)]
-        public async Task<IActionResult> AssignProducts(int customerId)
+        public async Task<IActionResult> AssignProducts(int customerId, string? querySearch = null, string? sortBy = null, string? category = null)
         {
-            try
-            {
-                var customer = await _customerApiClient.GetByIdAsync(customerId);
-                if (customer == null)
-                {
-                    SetErrorMessage("Không tìm thấy khách hàng.");
-                    return RedirectToAction("Index", "CustomerManagement");
-                }
+            ViewBag.Customer_id = customerId;
+            ViewBag.QuerySearch = querySearch;
+            ViewBag.Category = category;
+            ViewBag.SortBy = sortBy;
 
-                var products = await _productApiClient.GetForOrderAsync();
-                var assignedProducts = await _customerProductApiClient.GetByCustomerIdAsync(customerId);
-                var assignedProductIds = assignedProducts.Select(cp => cp.Product_id).ToHashSet();
-
-                ViewBag.Customer = customer;
-                ViewBag.AllProducts = products.ToList();
-                ViewBag.AssignedProductIds = assignedProductIds;
-                ViewBag.Assignments = assignedProducts.ToList();
-                return View(new AssignProductsToCustomerDto { Customer_id = customerId });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Lỗi khi tải form gán sản phẩm cho khách hàng {CustomerId}", customerId);
-                SetErrorMessage(GetDetailedErrorMessage(ex));
-                return RedirectToAction("Index", new { customerId });
-            }
+            return View("AssignProducts");
         }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]

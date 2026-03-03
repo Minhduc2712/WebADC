@@ -16,12 +16,28 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             _productService = productService;
         }
+        [HttpGet("for-select")]
+        [RequireAnyPermission(PermissionCodes.ProductView, PermissionCodes.OrderCreate, PermissionCodes.OrderUpdate, PermissionCodes.CustomerProductView, PermissionCodes.CustomerProductAssign)]
+        public async Task<IActionResult> GetForSelect()
+        {
+            var list = await _productService.GetForSelectAsync();
+            return Ok(list);
+        }
+
         [HttpGet]
         [RequirePermission(PermissionCodes.ProductView)]
         public async Task<IActionResult> GetProducts([FromQuery] string? search)
         {
             var products = await _productService.SearchByAllAsync(search, TryGetCurrentUserId());
             return Ok(products);
+        }
+
+        [HttpGet("paged")]
+        [RequirePermission(PermissionCodes.ProductView)]
+        public async Task<IActionResult> GetProductsPaged([FromQuery] ProductFilterRequest request)
+        {
+            var result = await _productService.GetAllPagedAsync(request, TryGetCurrentUserId());
+            return Ok(result);
         }
 
         [HttpGet("for-order")]

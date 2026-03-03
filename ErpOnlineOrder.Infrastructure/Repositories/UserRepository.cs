@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.Infrastructure.Persistence;
+using ErpOnlineOrder.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace ErpOnlineOrder.Infrastructure.Repositories
@@ -15,6 +16,42 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public UserRepository(ErpOnlineOrderDbContext context)
         {
             _context = context;
+        }
+
+        public async Task<PagedResult<User>> GetPagedStaffAsync(StaffFilterRequest request)
+        {
+            var query = _context.Users
+                .AsNoTracking()
+                .Include(u => u.User_roles)
+                    .ThenInclude(ur => ur.Role)
+                .Include(u => u.Staff)
+                .Include(u => u.Customer)
+                .Where(u => !u.Is_deleted && u.Staff != null)
+                .AsQueryable();
+
+            if (request.RoleId.HasValue)
+            {
+                query = query.Where(u => u.User_roles.Any(ur => !ur.Is_deleted && ur.Role_id == request.RoleId.Value));
+            }
+
+            if (request.IsActive.HasValue)
+            {
+                query = query.Where(u => u.Is_active == request.IsActive.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+            {
+                var search = request.SearchTerm.Trim().ToLowerInvariant();
+                query = query.Where(u =>
+                    (u.Username != null && u.Username.ToLower().Contains(search)) ||
+                    (u.Email != null && u.Email.ToLower().Contains(search)) ||
+                    (u.Staff != null && u.Staff.Full_name != null && u.Staff.Full_name.ToLower().Contains(search)) ||
+                    (u.Staff != null && u.Staff.Staff_code != null && u.Staff.Staff_code.ToLower().Contains(search))
+                );
+            }
+
+            query = query.OrderBy(u => u.Staff!.Full_name);
+            return await query.ToPagedListAsync(request);
         }
 
         public async Task AddAsync(User user)
@@ -37,6 +74,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<IEnumerable<User>> GetAllAsync()
         {
             return await _context.Users
+                .AsNoTracking()
                 .Include(u => u.User_roles)
                     .ThenInclude(ur => ur.Role)
                 .Include(u => u.Staff)
@@ -48,6 +86,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<User?> GetByIdAsync(int id)
         {
             return await _context.Users
+                .AsNoTracking()
                 .Include(u => u.User_roles)
                     .ThenInclude(ur => ur.Role)
                         .ThenInclude(r => r.Role_Permissions)
@@ -63,6 +102,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<User?> FindByIdentifierAsync(string identifier)
         {
             return await _context.Users
+                .AsNoTracking()
                 .Include(u => u.User_roles)
                     .ThenInclude(ur => ur.Role)
                         .ThenInclude(r => r.Role_Permissions)
@@ -75,6 +115,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<User?> GetByUsernameAsync(string username)
         {
             return await _context.Users
+                .AsNoTracking()
                 .Include(u => u.User_roles)
                     .ThenInclude(ur => ur.Role)
                 .Include(u => u.Staff)
@@ -85,6 +126,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<User?> GetByEmailAsync(string email)
         {
             return await _context.Users
+                .AsNoTracking()
                 .Include(u => u.User_roles)
                     .ThenInclude(ur => ur.Role)
                 .FirstOrDefaultAsync(u => u.Email == email && !u.Is_deleted);
@@ -100,6 +142,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<bool> AssignRoleAsync(int userId, int roleId)
         {
             var exists = await _context.UserRoles
+                .AsNoTracking()
                 .AnyAsync(ur => ur.User_id == userId && ur.Role_id == roleId && !ur.Is_deleted);
 
             if (exists) return true;

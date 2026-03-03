@@ -1,7 +1,8 @@
-@model IEnumerable<ErpOnlineOrder.Application.DTOs.ProductDTO>
+@model PagedResult<ErpOnlineOrder.Application.DTOs.ProductDTO>
 @{
     ViewData["Title"] = "Quản lý sản phẩm";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var items = Model?.Items ?? new List<ErpOnlineOrder.Application.DTOs.ProductDTO>();
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -28,20 +29,39 @@
         <i class="fas fa-filter me-2"></i>Bộ lọc tìm kiếm
     </div>
     <div class="card-body p-4">
-        <form asp-action="Index" method="get">
+        <form asp-action="Index" method="get" id="filterForm">
+            <input type="hidden" name="page" value="1" />
             <div class="row g-3 align-items-end">
-                <div class="col-md-8">
+                <div class="col-md-4">
                     <label class="form-label">Tìm kiếm</label>
                     <input type="text" name="search" value="@ViewBag.Search" class="form-control" placeholder="Tìm theo tên, mã, tác giả, nhà xuất bản..." />
                 </div>
-                <div class="col-md-4">
-                    <button type="submit" class="btn btn-primary me-2">
+                <div class="col-md-2">
+                    <label class="form-label">Thể loại</label>
+                    @Html.DropDownList("categoryId", ViewBag.Categories as SelectList, "-- Tất cả --", new { @class = "form-select", onchange = "this.form.submit()" })
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Nhà xuất bản</label>
+                    @Html.DropDownList("publisherId", ViewBag.Publishers as SelectList, "-- Tất cả --", new { @class = "form-select", onchange = "this.form.submit()" })
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Số dòng/trang</label>
+                    <select name="pageSize" class="form-select" onchange="this.form.submit()">
+                        <option value="10" selected="@(ViewBag.PageSize == 10)">10</option>
+                        <option value="20" selected="@(ViewBag.PageSize == 20)">20</option>
+                        <option value="50" selected="@(ViewBag.PageSize == 50)">50</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
                         <i class="fas fa-search me-1"></i>Tìm kiếm
                     </button>
-                    <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
-                        <i class="fas fa-redo me-1"></i>Reset
-                    </a>
                 </div>
+            </div>
+            <div class="mt-2">
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-redo me-1"></i>Reset
+                </a>
             </div>
         </form>
     </div>
@@ -50,7 +70,7 @@
 <!-- Danh sách sản phẩm -->
 <div class="table-card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <span><i class="fas fa-box me-2"></i>Danh sách sản phẩm (@Model.Count() sản phẩm)</span>
+        <span><i class="fas fa-box me-2"></i>Danh sách sản phẩm (@(Model?.TotalCount ?? 0) sản phẩm)</span>
         @if (Context.Session.HasPermission("PRODUCT_EXPORT"))
         {
             <a href="@Url.Action("Export", new { search = ViewBag.Search })" class="btn btn-sm btn-success">
@@ -74,7 +94,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @if (!Model.Any())
+                    @if (!items.Any())
                     {
                         <tr>
                             <td colspan="8" class="text-center py-4 text-muted">
@@ -85,7 +105,7 @@
                     }
                     else
                     {
-                        @foreach (var product in Model)
+                        @foreach (var product in items)
                         {
                             <tr>
                                 <td>
@@ -144,6 +164,11 @@
                 </tbody>
             </table>
         </div>
+        @if (Model != null && Model.TotalPages > 1)
+        {
+            ViewBag.PaginationItemLabel = "sản phẩm";
+            @await Html.PartialAsync("_Pagination", Model)
+        }
     </div>
 </div>
 

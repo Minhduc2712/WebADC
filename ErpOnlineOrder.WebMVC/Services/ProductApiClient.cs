@@ -41,6 +41,25 @@ namespace ErpOnlineOrder.WebMVC.Services
             return list ?? new List<ProductDTO>();
         }
 
+        public async Task<PagedResult<ProductDTO>> GetPagedAsync(int page = 1, int pageSize = 20, string? searchTerm = null, int? categoryId = null, int? publisherId = null, CancellationToken cancellationToken = default)
+        {
+            var query = new List<string> { $"page={page}", $"pageSize={pageSize}" };
+            if (!string.IsNullOrEmpty(searchTerm)) query.Add("searchTerm=" + Uri.EscapeDataString(searchTerm));
+            if (categoryId.HasValue) query.Add("categoryId=" + categoryId.Value);
+            if (publisherId.HasValue) query.Add("publisherId=" + publisherId.Value);
+            var path = "product/paged?" + string.Join("&", query);
+            var response = await _http.GetAsync(path, cancellationToken);
+            if (!response.IsSuccessStatusCode) return new PagedResult<ProductDTO>
+            {
+                Items = new List<ProductDTO>(),
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = 0
+            };
+            var result = await response.Content.ReadFromJsonAsync<PagedResult<ProductDTO>>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return result ?? new PagedResult<ProductDTO>();
+        }
+
         public async Task<ProductDTO?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
             var response = await _http.GetAsync("product/" + id, cancellationToken);

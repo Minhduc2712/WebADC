@@ -26,6 +26,11 @@ namespace ErpOnlineOrder.Application.Services
             return await _distributorRepository.GetAllAsync();
         }
 
+        public async Task<IEnumerable<DistributorSelectDto>> GetForSelectAsync()
+        {
+            return await _distributorRepository.GetForSelectAsync();
+        }
+
         public async Task<Distributor> CreateDistributorAsync(CreateDistributorDto dto, int createdBy)
         {
             var existingByCode = await _distributorRepository.GetByCodeAsync(dto.Distributor_code);

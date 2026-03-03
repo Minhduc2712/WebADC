@@ -1,6 +1,7 @@
 using ErpOnlineOrder.Application.DTOs.CustomerProductDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Application.Mappers;
 using ErpOnlineOrder.Domain.Models;
 
 namespace ErpOnlineOrder.Application.Services
@@ -17,24 +18,22 @@ namespace ErpOnlineOrder.Application.Services
         public async Task<IEnumerable<CustomerProductDto>> GetProductsByCustomerIdAsync(int customerId)
         {
             var customerProducts = await _customerProductRepository.GetByCustomerIdAsync(customerId);
-            return customerProducts.Select(MapToDto);
+            return customerProducts.Select(EntityMappers.ToCustomerProductDto);
         }
 
         public async Task<IEnumerable<CustomerProductDto>> GetCustomersByProductIdAsync(int productId)
         {
             var customerProducts = await _customerProductRepository.GetByProductIdAsync(productId);
-            return customerProducts.Select(MapToDto);
+            return customerProducts.Select(EntityMappers.ToCustomerProductDto);
         }
-
         public async Task<CustomerProductDto?> GetByIdAsync(int id)
         {
             var customerProduct = await _customerProductRepository.GetByIdAsync(id);
-            return customerProduct != null ? MapToDto(customerProduct) : null;
+            return customerProduct != null ? EntityMappers.ToCustomerProductDto(customerProduct) : null;
         }
 
         public async Task<CustomerProductDto?> AddProductToCustomerAsync(CreateCustomerProductDto dto, int createdBy)
         {
-            // Ki?m tra xem ?ã t?n t?i ch?a
             if (await _customerProductRepository.ExistsAsync(dto.Customer_id, dto.Product_id))
             {
                 return null;
@@ -56,7 +55,7 @@ namespace ErpOnlineOrder.Application.Services
             
             // Load l?i ?? l?y thông tin ??y ??
             var result = await _customerProductRepository.GetByIdAsync(created.Id);
-            return result != null ? MapToDto(result) : null;
+            return result != null ? EntityMappers.ToCustomerProductDto(result) : null;
         }
 
         public async Task<bool> AssignProductsToCustomerAsync(AssignProductsToCustomerDto dto, int createdBy)
@@ -127,29 +126,13 @@ namespace ErpOnlineOrder.Application.Services
             return customerProduct != null && customerProduct.Is_active;
         }
 
+        // public async Task<PagedResult<Cus
+
         public async Task<IEnumerable<CustomerProductDto>> GetAllAsync()
         {
             var customerProducts = await _customerProductRepository.GetAllAsync();
-            return customerProducts.Select(MapToDto);
+            return customerProducts.Select(EntityMappers.ToCustomerProductDto);
         }
 
-        private static CustomerProductDto MapToDto(Customer_product cp)
-        {
-            return new CustomerProductDto
-            {
-                Id = cp.Id,
-                Customer_id = cp.Customer_id,
-                Customer_name = cp.Customer?.Full_name ?? string.Empty,
-                Product_id = cp.Product_id,
-                Product_code = cp.Product?.Product_code ?? string.Empty,
-                Product_name = cp.Product?.Product_name ?? string.Empty,
-                Original_price = cp.Product?.Product_price ?? string.Empty,
-                Custom_price = cp.Custom_price,
-                Discount_percent = cp.Discount_percent,
-                Max_quantity = cp.Max_quantity,
-                Is_active = cp.Is_active,
-                Created_at = cp.Created_at
-            };
-        }
     }
 }

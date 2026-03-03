@@ -1,0 +1,89 @@
+@* Phân trang cho Admin - giao diện giống Shop
+   Pass route values via ViewBag: PageSize, PaginationItemLabel, PaginationAction, và các filter params *@
+@model dynamic
+@{
+    var m = Model;
+    if (m == null) { return; }
+    if (m.TotalPages <= 1) { return; }
+    var rv = new Dictionary<string, object?>
+    {
+        ["pageSize"] = ViewBag.PageSize ?? 20
+    };
+    if (ViewBag.Search != null) rv["search"] = ViewBag.Search;
+    if (ViewBag.Status != null) rv["status"] = ViewBag.Status;
+    if (ViewBag.CategoryId != null) rv["categoryId"] = ViewBag.CategoryId;
+    if (ViewBag.Category != null) rv["category"] = ViewBag.Category;
+    if (ViewBag.Sort != null) rv["sort"] = ViewBag.Sort;
+    if (ViewBag.PublisherId != null) rv["publisherId"] = ViewBag.PublisherId;
+    if (ViewBag.RegionId != null) rv["regionId"] = ViewBag.RegionId;
+    if (ViewBag.CustomerCategoryId != null) rv["customerCategoryId"] = ViewBag.CustomerCategoryId;
+    if (ViewBag.RoleId != null) rv["roleId"] = ViewBag.RoleId;
+    if (ViewBag.IsActive != null) rv["isActive"] = ViewBag.IsActive;
+    var itemLabel = ViewBag.PaginationItemLabel ?? "mục";
+    var actionName = ViewBag.PaginationAction as string ?? "Index";
+    var routeValues = new Microsoft.AspNetCore.Routing.RouteValueDictionary(rv);
+}
+<style>
+/* Admin Pagination - Giao diện compact */
+.admin-pagination {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 0.5rem;
+    padding: 0.5rem 1rem; background: #f8fafc;
+    border-top: 1px solid #e5e7eb;
+}
+.admin-pagination .admin-pagination-info {
+    font-size: 1.2rem; color: #6b7280; font-weight: 500;
+}
+.admin-pagination .admin-pagination-nav {
+    display: flex; align-items: center; gap: 4px;
+}
+.admin-pagination .admin-pagination-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 28px; height: 28px; padding: 0 6px;
+    font-size: 1.2rem; font-weight: 600;
+    color: #2563eb; background: #fff;
+    border: 1px solid #e5e7eb; border-radius: 6px;
+    text-decoration: none; transition: all 0.2s ease;
+}
+.admin-pagination .admin-pagination-btn:hover {
+    background: #eff6ff; border-color: #2563eb; color: #2563eb;
+}
+.admin-pagination .admin-pagination-btn.active {
+    background: #2563eb; border-color: #2563eb; color: #fff;
+}
+.admin-pagination .admin-pagination-btn.active:hover {
+    background: #1d4ed8; border-color: #1d4ed8; color: #fff;
+}
+span.admin-pagination-btn.active { cursor: default; }
+</style>
+<div class="admin-pagination">
+    <span class="admin-pagination-info">Trang @(m.Page) / @(m.TotalPages) (@(m.TotalCount) @itemLabel)</span>
+    <nav class="admin-pagination-nav" aria-label="Phân trang">
+        @if (m.HasPrevious)
+        {
+            routeValues["page"] = m.Page - 1;
+            <a class="admin-pagination-btn" href="@Url.Action(actionName, routeValues)" title="Trang trước">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+        }
+        @for (var i = Math.Max(1, m.Page - 2); i <= Math.Min(m.TotalPages, m.Page + 2); i++)
+        {
+            if (i == m.Page)
+            {
+                <span class="admin-pagination-btn active" aria-current="page">@i</span>
+            }
+            else
+            {
+                routeValues["page"] = i;
+                <a class="admin-pagination-btn" href="@Url.Action(actionName, routeValues)">@i</a>
+            }
+        }
+        @if (m.HasNext)
+        {
+            routeValues["page"] = m.Page + 1;
+            <a class="admin-pagination-btn" href="@Url.Action(actionName, routeValues)" title="Trang sau">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        }
+    </nav>
+</div>

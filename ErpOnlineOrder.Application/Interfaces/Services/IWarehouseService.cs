@@ -7,6 +7,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
     {
         Task<Warehouse?> GetByIdAsync(int id);
         Task<IEnumerable<Warehouse>> GetAllAsync();
+        Task<IEnumerable<WarehouseSelectDto>> GetForSelectAsync();
         Task<IEnumerable<Warehouse>> GetByProvinceIdAsync(int provinceId);
         Task<Warehouse> CreateAsync(CreateWarehouseDto dto, int createdBy);
         Task<bool> UpdateAsync(UpdateWarehouseDto dto, int updatedBy);

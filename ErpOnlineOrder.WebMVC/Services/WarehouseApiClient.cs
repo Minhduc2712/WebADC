@@ -20,6 +20,14 @@ namespace ErpOnlineOrder.WebMVC.Services
             return list ?? new List<WarehouseDto>();
         }
 
+        public async Task<IEnumerable<WarehouseSelectDto>> GetForSelectAsync(CancellationToken cancellationToken = default)
+        {
+            var response = await _http.GetAsync("warehouse/for-select", cancellationToken);
+            if (!response.IsSuccessStatusCode) return Array.Empty<WarehouseSelectDto>();
+            var list = await response.Content.ReadFromJsonAsync<List<WarehouseSelectDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return list ?? new List<WarehouseSelectDto>();
+        }
+
         public async Task<WarehouseDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
             var response = await _http.GetAsync($"warehouse/{id}", cancellationToken);

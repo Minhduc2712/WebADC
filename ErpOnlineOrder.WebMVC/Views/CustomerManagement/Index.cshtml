@@ -1,7 +1,8 @@
-@model IEnumerable<ErpOnlineOrder.Application.DTOs.CustomerDTO>
+@model PagedResult<ErpOnlineOrder.Application.DTOs.CustomerDTO>
 @{
     ViewData["Title"] = "Quản lý khách hàng";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var items = Model?.Items ?? new List<ErpOnlineOrder.Application.DTOs.CustomerDTO>();
     var assignments = ViewBag.Assignments as List<ErpOnlineOrder.Domain.Models.Customer_management> ?? new List<ErpOnlineOrder.Domain.Models.Customer_management>();
     var canAssign = (bool)(ViewBag.CanAssign ?? false);
     var canAssignProduct = (bool)(ViewBag.CanAssignProduct ?? false);
@@ -39,12 +40,21 @@
         <i class="fas fa-filter me-2"></i>Tìm kiếm
     </div>
     <div class="card-body p-4">
-        <form asp-action="Index" method="get">
+        <form asp-action="Index" method="get" id="filterForm">
+            <input type="hidden" name="page" value="1" />
             <div class="row g-3">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label class="form-label">Tìm kiếm</label>
                     <input type="text" name="search" value="@ViewBag.Search" class="form-control" 
                            placeholder="Nhập mã KH, tên, số điện thoại..." />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Số dòng/trang</label>
+                    <select name="pageSize" class="form-select" onchange="this.form.submit()">
+                        <option value="10" selected="@(ViewBag.PageSize == 10)">10</option>
+                        <option value="20" selected="@(ViewBag.PageSize == 20)">20</option>
+                        <option value="50" selected="@(ViewBag.PageSize == 50)">50</option>
+                    </select>
                 </div>
                 <div class="col-md-4 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary me-2">
@@ -62,7 +72,7 @@
 <!-- Danh sách khách hàng -->
 <div class="table-card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <span><i class="fas fa-users me-2"></i>Danh sách khách hàng (@Model.Count() khách hàng)</span>
+        <span><i class="fas fa-users me-2"></i>Danh sách khách hàng (@(Model?.TotalCount ?? 0) khách hàng)</span>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -79,7 +89,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @if (!Model.Any())
+                    @if (!items.Any())
                     {
                         <tr>
                             <td colspan="7" class="text-center py-4 text-muted">
@@ -90,7 +100,7 @@
                     }
                     else
                     {
-                        @foreach (var customer in Model)
+                        @foreach (var customer in items)
                         {
                             var customerAssignments = assignments.Where(a => a.Customer_id == customer.Id).ToList();
                             <tr>
@@ -187,6 +197,11 @@
                 </tbody>
             </table>
         </div>
+        @if (Model != null && Model.TotalPages > 1)
+        {
+            ViewBag.PaginationItemLabel = "khách hàng";
+            @await Html.PartialAsync("_Pagination", Model)
+        }
     </div>
 </div>
 

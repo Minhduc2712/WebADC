@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ErpOnlineOrder.Application.DTOs.AuthorDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Application.Mappers;
 using ErpOnlineOrder.Domain.Models;
 
 namespace ErpOnlineOrder.WebAPI.Controllers
@@ -20,7 +21,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         public async Task<IActionResult> GetAll()
         {
             var list = await _authorService.GetAllAsync();
-            return Ok(list.Select(MapToDto));
+            return Ok(list.Select(EntityMappers.ToAuthorDto));
         }
 
         [HttpGet("{id}")]
@@ -28,7 +29,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             var item = await _authorService.GetByIdAsync(id);
             if (item == null) return NotFound();
-            return Ok(MapToDto(item));
+            return Ok(EntityMappers.ToAuthorDto(item));
         }
 
         [HttpPost]
@@ -37,7 +38,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var created = await _authorService.CreateAsync(dto, GetCurrentUserId());
-                return Ok(MapToDto(created));
+                return Ok(EntityMappers.ToAuthorDto(created));
             }
             catch (Exception ex)
             {
@@ -58,25 +59,6 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             {
                 return BadRequest(new { message = ex.Message });
             }
-        }
-
-        private static AuthorDto MapToDto(Author a)
-        {
-            return new AuthorDto
-            {
-                Id = a.Id,
-                Author_code = a.Author_code,
-                Author_name = a.Author_name,
-                Pen_name = a.Pen_name,
-                Email_author = a.Email_author,
-                Phone_number = a.Phone_number,
-                birth_date = a.birth_date,
-                death_date = a.death_date,
-                Nationality = a.Nationality,
-                Biography = a.Biography,
-                Created_at = a.Created_at,
-                Updated_at = a.Updated_at
-            };
         }
 
         [HttpDelete("{id}")]

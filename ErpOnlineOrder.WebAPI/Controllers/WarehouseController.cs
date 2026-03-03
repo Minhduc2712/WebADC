@@ -3,6 +3,7 @@ using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.Application.DTOs.WarehouseDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.Services;
+using ErpOnlineOrder.Application.Mappers;
 using ErpOnlineOrder.Domain.Models;
 
 namespace ErpOnlineOrder.WebAPI.Controllers
@@ -20,16 +21,24 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             _permissionService = permissionService;
         }
 
+        [HttpGet("for-select")]
+        public async Task<IActionResult> GetForSelect()
+        {
+            var list = await _warehouseService.GetForSelectAsync();
+            return Ok(list);
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             var list = await _warehouseService.GetAllAsync();
-            var dtos = list.Select(MapToDto).ToList();
+            var dtos = list.Select(EntityMappers.ToWarehouseDto).ToList();
             var userId = TryGetCurrentUserId();
             if (userId.HasValue && userId.Value > 0)
             {
+                var permissions = (await _permissionService.GetUserPermissionsAsync(userId.Value)).ToHashSet();
                 foreach (var dto in dtos)
-                    await RecordPermissionEnricher.EnrichAsync(dto, userId.Value, _permissionService, PermissionCodes.WarehouseUpdate, PermissionCodes.WarehouseDelete);
+                    RecordPermissionEnricher.Enrich(dto, permissions, PermissionCodes.WarehouseUpdate, PermissionCodes.WarehouseDelete);
             }
             return Ok(dtos);
         }
@@ -39,7 +48,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             var item = await _warehouseService.GetByIdAsync(id);
             if (item == null) return NotFound();
-            var dto = MapToDto(item);
+            var dto = EntityMappers.ToWarehouseDto(item);
             var userId = TryGetCurrentUserId();
             if (userId.HasValue && userId.Value > 0)
                 await RecordPermissionEnricher.EnrichAsync(dto, userId.Value, _permissionService, PermissionCodes.WarehouseUpdate, PermissionCodes.WarehouseDelete);
@@ -50,12 +59,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         public async Task<IActionResult> GetByProvinceId(int provinceId)
         {
             var list = await _warehouseService.GetByProvinceIdAsync(provinceId);
-            var dtos = list.Select(MapToDto).ToList();
+            var dtos = list.Select(EntityMappers.ToWarehouseDto).ToList();
             var userId = TryGetCurrentUserId();
             if (userId.HasValue && userId.Value > 0)
             {
+                var permissions = (await _permissionService.GetUserPermissionsAsync(userId.Value)).ToHashSet();
                 foreach (var dto in dtos)
-                    await RecordPermissionEnricher.EnrichAsync(dto, userId.Value, _permissionService, PermissionCodes.WarehouseUpdate, PermissionCodes.WarehouseDelete);
+                    RecordPermissionEnricher.Enrich(dto, permissions, PermissionCodes.WarehouseUpdate, PermissionCodes.WarehouseDelete);
             }
             return Ok(dtos);
         }
@@ -66,7 +76,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var created = await _warehouseService.CreateAsync(dto, GetCurrentUserId());
-                return Ok(MapToDto(created));
+                return Ok(EntityMappers.ToWarehouseDto(created));
             }
             catch (Exception ex)
             {
@@ -87,21 +97,6 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             {
                 return BadRequest(new { message = ex.Message });
             }
-        }
-
-        private static WarehouseDto MapToDto(Warehouse w)
-        {
-            return new WarehouseDto
-            {
-                Id = w.Id,
-                Warehouse_code = w.Warehouse_code,
-                Warehouse_name = w.Warehouse_name,
-                Warehouse_address = w.Warehouse_address,
-                Province_id = w.Province_id,
-                Province_name = w.Province?.Province_name,
-                Created_at = w.Created_at,
-                Updated_at = w.Updated_at
-            };
         }
 
         [HttpDelete("{id}")]

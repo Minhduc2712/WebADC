@@ -1,6 +1,7 @@
 using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.Application.DTOs.InvoiceDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.WebAPI.Attributes;
 using Microsoft.AspNetCore.Mvc;
 
@@ -22,6 +23,27 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             var list = await _invoiceService.GetAllAsync(TryGetCurrentUserId());
             return Ok(list);
+        }
+
+        [HttpGet("for-merge")]
+        public async Task<IActionResult> GetForMerge()
+        {
+            var list = await _invoiceService.GetForMergeAsync(TryGetCurrentUserId());
+            return Ok(list);
+        }
+
+        [HttpGet("for-warehouse-export")]
+        public async Task<IActionResult> GetForWarehouseExport()
+        {
+            var list = await _invoiceService.GetForWarehouseExportSelectAsync(TryGetCurrentUserId());
+            return Ok(list);
+        }
+
+        [HttpGet("paged")]
+        public async Task<IActionResult> GetAllPaged([FromQuery] InvoiceFilterRequest request)
+        {
+            var result = await _invoiceService.GetAllPagedAsync(request, TryGetCurrentUserId());
+            return Ok(result);
         }
 
         [HttpGet("{id}")]

@@ -17,6 +17,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<Staff?> GetByIdAsync(int id)
         {
             return await _context.Staffs
+                .AsNoTracking()
                 .Include(s => s.User)
                 .FirstOrDefaultAsync(s => s.Id == id && !s.Is_deleted);
         }
@@ -24,12 +25,14 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<Staff?> GetByUserIdAsync(int userId)
         {
             return await _context.Staffs
+                .AsNoTracking()
                 .FirstOrDefaultAsync(s => s.User_id == userId && !s.Is_deleted);
         }
 
         public async Task<IEnumerable<Staff>> GetAllAsync()
         {
             return await _context.Staffs
+                .AsNoTracking()
                 .Where(s => !s.Is_deleted)
                 .Include(s => s.User)
                 .OrderBy(s => s.Full_name)

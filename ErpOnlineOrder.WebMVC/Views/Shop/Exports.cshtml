@@ -1,4 +1,4 @@
-@model List<ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs.WarehouseExportDto>
+@model PagedResult<ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs.WarehouseExportDto>
 @{
     ViewData["Title"] = "Phiếu xuất kho của tôi";
     Layout = "~/Views/Shared/_ShopLayout.cshtml";
@@ -32,7 +32,7 @@
             <div class="alert alert-warning">@err</div>
         }
 
-        @if (Model == null || !Model.Any())
+        @if (Model == null || Model.Items == null || !Model.Items.Any())
         {
             <div class="text-center py-5">
                 <div style="max-width: 150px; margin: 0 auto 20px;">
@@ -46,7 +46,7 @@
         else
         {
             <div class="row g-4">
-                @foreach (var exp in Model)
+                @foreach (var exp in Model.Items)
                 {
                     var statusClass = exp.Status switch
                     {
@@ -110,6 +110,10 @@
                     </div>
                 }
             </div>
+            @if (Model.TotalPages > 1)
+            {
+                @await Html.PartialAsync("_ShopPagination", Model)
+            }
         }
     </div>
 </section>

@@ -1,6 +1,7 @@
 using ErpOnlineOrder.Application.DTOs.CustomerCategoryDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Application.Mappers;
 using ErpOnlineOrder.Domain.Models;
 
 namespace ErpOnlineOrder.Application.Services
@@ -17,19 +18,19 @@ namespace ErpOnlineOrder.Application.Services
         public async Task<IEnumerable<CustomerCategoryDto>> GetCategoriesByCustomerIdAsync(int customerId)
         {
             var customerCategories = await _customerCategoryRepository.GetByCustomerIdAsync(customerId);
-            return customerCategories.Select(MapToDto);
+            return customerCategories.Select(EntityMappers.ToCustomerCategoryDto);
         }
 
         public async Task<IEnumerable<CustomerCategoryDto>> GetCustomersByCategoryIdAsync(int categoryId)
         {
             var customerCategories = await _customerCategoryRepository.GetByCategoryIdAsync(categoryId);
-            return customerCategories.Select(MapToDto);
+            return customerCategories.Select(EntityMappers.ToCustomerCategoryDto);
         }
 
         public async Task<CustomerCategoryDto?> GetByIdAsync(int id)
         {
             var customerCategory = await _customerCategoryRepository.GetByIdAsync(id);
-            return customerCategory != null ? MapToDto(customerCategory) : null;
+            return customerCategory != null ? EntityMappers.ToCustomerCategoryDto(customerCategory) : null;
         }
 
         public async Task<CustomerCategoryDto?> AddCategoryToCustomerAsync(CreateCustomerCategoryDto dto, int createdBy)
@@ -54,7 +55,7 @@ namespace ErpOnlineOrder.Application.Services
             
             // Load l?i ?? l?y thông tin ??y ??
             var result = await _customerCategoryRepository.GetByIdAsync(created.Id);
-            return result != null ? MapToDto(result) : null;
+            return result != null ? EntityMappers.ToCustomerCategoryDto(result) : null;
         }
 
         public async Task<bool> AssignCategoriesToCustomerAsync(AssignCategoriesToCustomerDto dto, int createdBy)
@@ -126,23 +127,8 @@ namespace ErpOnlineOrder.Application.Services
         public async Task<IEnumerable<CustomerCategoryDto>> GetAllAsync()
         {
             var customerCategories = await _customerCategoryRepository.GetAllAsync();
-            return customerCategories.Select(MapToDto);
+            return customerCategories.Select(EntityMappers.ToCustomerCategoryDto);
         }
 
-        private static CustomerCategoryDto MapToDto(Customer_category cc)
-        {
-            return new CustomerCategoryDto
-            {
-                Id = cc.Id,
-                Customer_id = cc.Customer_id,
-                Customer_name = cc.Customer?.Full_name ?? string.Empty,
-                Category_id = cc.Category_id,
-                Category_code = cc.Category?.Category_code ?? string.Empty,
-                Category_name = cc.Category?.Category_name ?? string.Empty,
-                Discount_percent = cc.Discount_percent,
-                Is_active = cc.Is_active,
-                Created_at = cc.Created_at
-            };
-        }
     }
 }

@@ -1,4 +1,5 @@
-﻿using ErpOnlineOrder.Application.Interfaces.Repositories;
+using ErpOnlineOrder.Application.DTOs.DistributorDTOs;
+using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -19,24 +20,46 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<Distributor?> GetByIdAsync(int id)
         {
-            return await _context.Distributors.FindAsync(id);
+            return await _context.Distributors
+                .AsNoTracking()
+                .FirstOrDefaultAsync(d => d.Id == id && !d.Is_deleted);
         }
 
         public async Task<Distributor?> GetByCodeAsync(string code)
         {
             return await _context.Distributors
+                .AsNoTracking()
                 .FirstOrDefaultAsync(d => d.Distributor_code == code && !d.Is_deleted);
         }
 
         public async Task<Distributor?> GetByNameAsync(string name)
         {
             return await _context.Distributors
+                .AsNoTracking()
                 .FirstOrDefaultAsync(d => d.Distributor_name == name && !d.Is_deleted);
         }
 
         public async Task<IEnumerable<Distributor>> GetAllAsync()
         {
-            return await _context.Distributors.Where(d => !d.Is_deleted).ToListAsync();
+            return await _context.Distributors
+                .AsNoTracking()
+                .Where(d => !d.Is_deleted)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<DistributorSelectDto>> GetForSelectAsync()
+        {
+            return await _context.Distributors
+                .AsNoTracking()
+                .Where(d => !d.Is_deleted)
+                .OrderBy(d => d.Distributor_name ?? d.Distributor_code ?? "")
+                .Select(d => new DistributorSelectDto
+                {
+                    Id = d.Id,
+                    Distributor_code = d.Distributor_code ?? "",
+                    Distributor_name = d.Distributor_name ?? ""
+                })
+                .ToListAsync();
         }
 
         public async Task AddAsync(Distributor distributor)

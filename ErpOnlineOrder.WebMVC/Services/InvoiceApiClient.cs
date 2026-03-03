@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using ErpOnlineOrder.Application.DTOs.InvoiceDTOs;
+using ErpOnlineOrder.Domain.Models;
 
 namespace ErpOnlineOrder.WebMVC.Services
 {
@@ -18,6 +19,34 @@ namespace ErpOnlineOrder.WebMVC.Services
             if (!response.IsSuccessStatusCode) return Array.Empty<InvoiceDto>();
             var list = await response.Content.ReadFromJsonAsync<List<InvoiceDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
             return list ?? new List<InvoiceDto>();
+        }
+
+        public async Task<IEnumerable<InvoiceDto>> GetForMergeAsync(CancellationToken cancellationToken = default)
+        {
+            var response = await _http.GetAsync("invoice/for-merge", cancellationToken);
+            if (!response.IsSuccessStatusCode) return Array.Empty<InvoiceDto>();
+            var list = await response.Content.ReadFromJsonAsync<List<InvoiceDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return list ?? new List<InvoiceDto>();
+        }
+
+        public async Task<IEnumerable<InvoiceSelectDto>> GetForWarehouseExportAsync(CancellationToken cancellationToken = default)
+        {
+            var response = await _http.GetAsync("invoice/for-warehouse-export", cancellationToken);
+            if (!response.IsSuccessStatusCode) return Array.Empty<InvoiceSelectDto>();
+            var list = await response.Content.ReadFromJsonAsync<List<InvoiceSelectDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return list ?? new List<InvoiceSelectDto>();
+        }
+
+        public async Task<PagedResult<InvoiceDto>> GetPagedAsync(int page = 1, int pageSize = 20, string? status = null, string? searchTerm = null, CancellationToken cancellationToken = default)
+        {
+            var query = new List<string> { $"page={page}", $"pageSize={pageSize}" };
+            if (!string.IsNullOrEmpty(status)) query.Add("status=" + Uri.EscapeDataString(status));
+            if (!string.IsNullOrEmpty(searchTerm)) query.Add("searchTerm=" + Uri.EscapeDataString(searchTerm));
+            var path = "invoice/paged?" + string.Join("&", query);
+            var response = await _http.GetAsync(path, cancellationToken);
+            if (!response.IsSuccessStatusCode) return new PagedResult<InvoiceDto> { Items = new List<InvoiceDto>(), Page = page, PageSize = pageSize, TotalCount = 0 };
+            var result = await response.Content.ReadFromJsonAsync<PagedResult<InvoiceDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return result ?? new PagedResult<InvoiceDto>();
         }
 
         public async Task<InvoiceDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)

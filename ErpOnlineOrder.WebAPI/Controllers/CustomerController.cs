@@ -3,6 +3,7 @@ using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.Services;
 using ErpOnlineOrder.Application.DTOs;
+using ErpOnlineOrder.Application.Mappers;
 using ErpOnlineOrder.Application.DTOs.CustomerDTOs;
 using ErpOnlineOrder.Domain.Models;
 
@@ -21,18 +22,40 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             _permissionService = permissionService;
         }
 
+        [HttpGet("for-select")]
+        public async Task<IActionResult> GetForSelect()
+        {
+            var list = await _customerService.GetForSelectAsync();
+            return Ok(list);
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetCustomers()
         {
             var customers = await _customerService.GetAllAsync();
-            var list = customers.Select(MapToDto).ToList();
+            var list = customers.Select(EntityMappers.ToCustomerDto).ToList();
             var userId = TryGetCurrentUserId();
             if (userId.HasValue && userId.Value > 0)
             {
+                var permissions = (await _permissionService.GetUserPermissionsAsync(userId.Value)).ToHashSet();
                 foreach (var dto in list)
-                    await RecordPermissionEnricher.EnrichAsync(dto, userId.Value, _permissionService, PermissionCodes.CustomerUpdate, PermissionCodes.CustomerDelete);
+                    RecordPermissionEnricher.Enrich(dto, permissions, PermissionCodes.CustomerUpdate, PermissionCodes.CustomerDelete);
             }
             return Ok(list);
+        }
+
+        [HttpGet("paged")]
+        public async Task<IActionResult> GetCustomersPaged([FromQuery] CustomerFilterRequest request)
+        {
+            var result = await _customerService.GetAllPagedAsync(request, TryGetCurrentUserId());
+            var userId = TryGetCurrentUserId();
+            if (userId.HasValue && userId.Value > 0)
+            {
+                var permissions = (await _permissionService.GetUserPermissionsAsync(userId.Value)).ToHashSet();
+                foreach (var dto in result.Items)
+                    RecordPermissionEnricher.Enrich(dto, permissions, PermissionCodes.CustomerUpdate, PermissionCodes.CustomerDelete);
+            }
+            return Ok(result);
         }
 
         [HttpGet("{id}")]
@@ -40,7 +63,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             var customer = await _customerService.GetByIdAsync(id);
             if (customer == null) return NotFound();
-            var dto = MapToDto(customer);
+            var dto = EntityMappers.ToCustomerDto(customer);
             var userId = TryGetCurrentUserId();
             if (userId.HasValue && userId.Value > 0)
                 await RecordPermissionEnricher.EnrichAsync(dto, userId.Value, _permissionService, PermissionCodes.CustomerUpdate, PermissionCodes.CustomerDelete);
@@ -53,7 +76,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var created = await _customerService.CreateCustomerAsync(dto, GetCurrentUserId());
-                return Ok(MapToDto(created));
+                return Ok(EntityMappers.ToCustomerDto(created));
             }
             catch (Exception ex)
             {
@@ -75,23 +98,6 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             {
                 return BadRequest(new { message = ex.Message });
             }
-        }
-
-        private static CustomerDTO MapToDto(Customer c)
-        {
-            return new CustomerDTO
-            {
-                Id = c.Id,
-                Customer_code = c.Customer_code ?? "",
-                Full_name = c.Full_name ?? "",
-                Phone_number = c.Phone_number ?? "",
-                Address = c.Address ?? "",
-                Created_at = c.Created_at,
-                Updated_at = c.Updated_at,
-                Is_deleted = c.Is_deleted,
-                Username = c.User?.Username,
-                Email = c.User?.Email
-            };
         }
 
         [HttpDelete("{id}")]

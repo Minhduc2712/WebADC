@@ -1,4 +1,4 @@
-@model List<ErpOnlineOrder.Application.DTOs.InvoiceDTOs.InvoiceDto>
+@model PagedResult<ErpOnlineOrder.Application.DTOs.InvoiceDTOs.InvoiceDto>
 @{
     ViewData["Title"] = "Hóa đơn của tôi";
     Layout = "~/Views/Shared/_ShopLayout.cshtml";
@@ -24,7 +24,7 @@
             <div class="alert alert-warning text-center">@err</div>
         }
 
-        @if (Model == null || !Model.Any())
+        @if (Model == null || Model.Items == null || !Model.Items.Any())
         {
             <div class="text-center py-5">
                 <div style="max-width: 150px; margin: 0 auto 20px;">
@@ -38,7 +38,7 @@
         else
         {
             <div class="row g-4">
-                @foreach (var inv in Model)
+                @foreach (var inv in Model.Items)
                 {
                     var statusColor = inv.Status switch
                     {
@@ -97,6 +97,10 @@
                     </div>
                 }
             </div>
+            @if (Model.TotalPages > 1)
+            {
+                @await Html.PartialAsync("_ShopPagination", Model)
+            }
         }
     </div>
 </section>

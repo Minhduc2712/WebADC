@@ -2,6 +2,7 @@ using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.DTOs.ProductDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Application.Mappers;
 using ErpOnlineOrder.Domain.Models;
 using ClosedXML.Excel;
 using ErpOnlineOrder.Application.Helpers;
@@ -31,7 +32,7 @@ namespace ErpOnlineOrder.Application.Services
         {
             var product = await _productRepository.GetByIdAsync(id);
             if (product == null) return null;
-            var dto = MapToDto(product);
+            var dto = EntityMappers.ToProductDto(product);
             if (userId.HasValue && userId.Value > 0)
                 await RecordPermissionEnricher.EnrichProductAsync(dto, userId.Value, _permissionService);
             return dto;
@@ -42,70 +43,89 @@ namespace ErpOnlineOrder.Application.Services
             return await _productRepository.GetByIdAsync(id);
         }
 
-        public async Task<IEnumerable<ProductDTO>> GetAllAsync(int? userId = null)
+        public async Task<PagedResult<ProductDTO>> GetAllPagedAsync(ProductFilterRequest request, int? userId = null)
         {
-            var products = await _productRepository.GetAllAsync();
-            var list = products.Select(p => MapToDto(p)).ToList();
+            var paged = await _productRepository.GetPagedProductAsync(request);
+            var dtos = paged.Items.Select(EntityMappers.ToProductDto).ToList();
             if (userId.HasValue && userId.Value > 0)
             {
+                var permissions = (await _permissionService.GetUserPermissionsAsync(userId.Value)).ToHashSet();
+                foreach (var dto in dtos)
+                    RecordPermissionEnricher.EnrichProduct(dto, permissions);
+            }
+            return new PagedResult<ProductDTO>
+            {
+                Items = dtos,
+                Page = paged.Page,
+                PageSize = paged.PageSize,
+                TotalCount = paged.TotalCount
+            };
+        }
+
+        public async Task<IEnumerable<ProductSelectDto>> GetForSelectAsync()
+        {
+            return await _productRepository.GetForSelectAsync();
+        }
+
+        public async Task<IEnumerable<ProductDTO>> GetAllAsync(int? userId = null)
+        {
+            var list = (await _productRepository.GetAllAsync()).ToList();
+            if (userId.HasValue && userId.Value > 0)
+            {
+                var permissions = (await _permissionService.GetUserPermissionsAsync(userId.Value)).ToHashSet();
                 foreach (var dto in list)
-                    await RecordPermissionEnricher.EnrichProductAsync(dto, userId.Value, _permissionService);
+                    RecordPermissionEnricher.EnrichProduct(dto, permissions);
             }
             return list;
         }
 
         public async Task<IEnumerable<ProductDTO>> SearchAsync(string? name, string? author, string? publisher, int? userId = null)
         {
-            var products = await _productRepository.SearchAsync(name, author, publisher);
-            var list = products.Select(p => MapToDto(p)).ToList();
+            var list = (await _productRepository.SearchAsync(name, author, publisher)).ToList();
             if (userId.HasValue && userId.Value > 0)
             {
+                var permissions = (await _permissionService.GetUserPermissionsAsync(userId.Value)).ToHashSet();
                 foreach (var dto in list)
-                    await RecordPermissionEnricher.EnrichProductAsync(dto, userId.Value, _permissionService);
+                    RecordPermissionEnricher.EnrichProduct(dto, permissions);
             }
             return list;
         }
 
         public async Task<IEnumerable<ProductDTO>> SearchByAllAsync(string? searchString, int? userId = null)
         {
-            var products = await _productRepository.SearchByAllAsync(searchString);
-            var list = products.Select(p => MapToDto(p)).ToList();
+            var list = (await _productRepository.SearchByAllAsync(searchString)).ToList();
             if (userId.HasValue && userId.Value > 0)
             {
+                var permissions = (await _permissionService.GetUserPermissionsAsync(userId.Value)).ToHashSet();
                 foreach (var dto in list)
-                    await RecordPermissionEnricher.EnrichProductAsync(dto, userId.Value, _permissionService);
+                    RecordPermissionEnricher.EnrichProduct(dto, permissions);
             }
             return list;
         }
 
         public async Task<IEnumerable<ProductDTO>> GetProductsForShopAsync(int? customerId = null)
         {
-            var products = await _productRepository.GetAllAsync();
-            var list = products.Select(p => MapToDto(p)).ToList();
-
-            if (customerId.HasValue && customerId.Value > 0)
-            {
-                var assigned = await _customerProductRepository.GetByCustomerIdAsync(customerId.Value);
-                var allowedProductIds = assigned.Where(cp => cp.Is_active).Select(cp => cp.Product_id).ToHashSet();
-                list = list.Where(p => allowedProductIds.Contains(p.Id)).ToList();
-            }
-
-            return list;
+            return (await _productRepository.GetProductsForShopAsync(customerId, new ProductForShopFilterRequest())).ToList();
         }
 
         public async Task<IEnumerable<ProductDTO>> SearchByAllForShopAsync(string? searchString, int? customerId = null)
         {
-            var products = await _productRepository.SearchByAllAsync(searchString);
-            var list = products.Select(p => MapToDto(p)).ToList();
+            return (await _productRepository.SearchByAllForShopAsync(searchString, customerId)).ToList();
+        }
 
-            if (customerId.HasValue && customerId.Value > 0)
-            {
-                var assigned = await _customerProductRepository.GetByCustomerIdAsync(customerId.Value);
-                var allowedProductIds = assigned.Where(cp => cp.Is_active).Select(cp => cp.Product_id).ToHashSet();
-                list = list.Where(p => allowedProductIds.Contains(p.Id)).ToList();
-            }
+        public async Task<PagedResult<ProductDTO>> GetProductsForShopPagedAsync(int? customerId, ProductForShopFilterRequest request)
+        {
+            return await _productRepository.GetPagedProductsForShopDisplayAsync(customerId, request);
+        }
 
-            return list;
+        public async Task<IEnumerable<ProductDTO>> GetRelatedProductsForShopAsync(int productId, IEnumerable<string> categoryNames, int? customerId, int limit = 4)
+        {
+            return await _productRepository.GetRelatedProductsForShopAsync(productId, categoryNames, customerId, limit);
+        }
+
+        public async Task<IEnumerable<string>> GetCategoriesForShopAsync(int? customerId)
+        {
+            return await _productRepository.GetCategoriesForShopAsync(customerId);
         }
 
         public async Task<bool> IsProductAssignedToCustomerAsync(int productId, int customerId)
@@ -156,7 +176,7 @@ namespace ErpOnlineOrder.Application.Services
                 }).ToList() ?? new List<Product_author>()
             };
             var created = await _productRepository.AddAsync(product);
-            return MapToDto(created);
+            return EntityMappers.ToProductDto(created);
         }
 
         public async Task<bool> UpdateProductAsync(int id, UpdateProductDto dto, int updatedBy)
@@ -224,7 +244,7 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<byte[]> ExportProductsToExcelAsync(string? search = null)
         {
-            var products = await _productRepository.GetAllAsync();
+            var products = (await _productRepository.GetAllAsync()).AsEnumerable();
             if (!string.IsNullOrWhiteSpace(search))
             {
                 var q = search.Trim().ToLowerInvariant();
@@ -232,9 +252,9 @@ namespace ErpOnlineOrder.Application.Services
                     (p.Product_name?.ToLowerInvariant().Contains(q) ?? false) ||
                     (p.Product_code?.ToLowerInvariant().Contains(q) ?? false) ||
                     (p.Product_description?.ToLowerInvariant().Contains(q) ?? false) ||
-                    (p.Publisher?.Publisher_name?.ToLowerInvariant().Contains(q) ?? false) ||
-                    (p.Product_Authors?.Any(pa => pa.Author?.Author_name?.ToLowerInvariant().Contains(q) ?? false) ?? false)
-                ).ToList();
+                    (p.Publisher_name?.ToLowerInvariant().Contains(q) ?? false) ||
+                    (p.Authors?.Any(a => a?.ToLowerInvariant().Contains(q) ?? false) ?? false)
+                );
             }
             using var workbook = new XLWorkbook();
             var ws = workbook.Worksheets.Add("Sản phẩm");
@@ -248,9 +268,8 @@ namespace ErpOnlineOrder.Application.Services
             ws.Range(1, 1, 1, 6).Style.Font.Bold = true;
 
             int row = 2;
-            foreach (var p in products)
+            foreach (var dto in products)
             {
-                var dto = MapToDto(p);
                 ExcelHelper.SetCellValue(ws.Cell(row, 1), dto.Product_code);
                 ExcelHelper.SetCellValue(ws.Cell(row, 2), dto.Product_name);
                 ExcelHelper.SetCellValue(ws.Cell(row, 3), string.Join(", ", dto.Authors ?? new List<string>()));
@@ -266,30 +285,5 @@ namespace ErpOnlineOrder.Application.Services
             return stream.ToArray();
         }
 
-        private static ProductDTO MapToDto(Product p)
-        {
-            return new ProductDTO
-            {
-                Id = p.Id,
-                Product_code = p.Product_code ?? "",
-                Product_name = p.Product_name ?? "",
-                Product_description = p.Product_description ?? "",
-                Product_price = p.Product_price ?? "",
-                Product_link = p.Product_link ?? "",
-                Publisher_name = p.Publisher?.Publisher_name ?? "",
-                Authors = p.Product_Authors?
-                    .Where(pa => pa?.Author != null)
-                    .Select(pa => pa.Author!.Author_name ?? "")
-                    .ToList() ?? new List<string>(),
-                Categories = p.Product_Categories?
-                    .Where(pc => pc?.Category != null)
-                    .Select(pc => pc.Category!.Category_name ?? "")
-                    .ToList() ?? new List<string>(),
-                Images = p.Product_Images?
-                    .Where(pi => pi != null)
-                    .Select(pi => pi.image_url ?? "")
-                    .ToList() ?? new List<string>()
-            };
-        }
     }
 }

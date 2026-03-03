@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs;
+using ErpOnlineOrder.Domain.Models;
 
 namespace ErpOnlineOrder.WebMVC.Services
 {
@@ -18,6 +19,18 @@ namespace ErpOnlineOrder.WebMVC.Services
             if (!response.IsSuccessStatusCode) return Array.Empty<WarehouseExportDto>();
             var list = await response.Content.ReadFromJsonAsync<List<WarehouseExportDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
             return list ?? new List<WarehouseExportDto>();
+        }
+
+        public async Task<PagedResult<WarehouseExportDto>> GetPagedAsync(int page = 1, int pageSize = 20, string? status = null, string? searchTerm = null, CancellationToken cancellationToken = default)
+        {
+            var query = new List<string> { $"page={page}", $"pageSize={pageSize}" };
+            if (!string.IsNullOrEmpty(status)) query.Add("status=" + Uri.EscapeDataString(status));
+            if (!string.IsNullOrEmpty(searchTerm)) query.Add("searchTerm=" + Uri.EscapeDataString(searchTerm));
+            var path = "warehouseexport/paged?" + string.Join("&", query);
+            var response = await _http.GetAsync(path, cancellationToken);
+            if (!response.IsSuccessStatusCode) return new PagedResult<WarehouseExportDto> { Items = new List<WarehouseExportDto>(), Page = page, PageSize = pageSize, TotalCount = 0 };
+            var result = await response.Content.ReadFromJsonAsync<PagedResult<WarehouseExportDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return result ?? new PagedResult<WarehouseExportDto>();
         }
 
         public async Task<WarehouseExportDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)

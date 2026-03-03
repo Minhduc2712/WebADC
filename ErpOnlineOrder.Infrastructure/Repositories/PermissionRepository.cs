@@ -17,18 +17,21 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<Permission?> GetByIdAsync(int id)
         {
             return await _context.Permissions
+                .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == id && !p.Is_deleted);
         }
 
         public async Task<Permission?> GetByCodeAsync(string permissionCode)
         {
             return await _context.Permissions
+                .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Permission_code == permissionCode && !p.Is_deleted);
         }
 
         public async Task<IEnumerable<Permission>> GetAllAsync()
         {
             return await _context.Permissions
+                .AsNoTracking()
                 .Where(p => !p.Is_deleted)
                 .ToListAsync();
         }
@@ -36,6 +39,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<IEnumerable<Permission>> GetByParentIdAsync(int? parentId)
         {
             return await _context.Permissions
+                .AsNoTracking()
                 .Where(p => !p.Is_deleted && p.Parent_id == parentId)
                 .OrderBy(p => p.Permission_code)
                 .ToListAsync();
@@ -44,6 +48,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<IEnumerable<Permission>> GetSpecialPermissionsAsync()
         {
             return await _context.Permissions
+                .AsNoTracking()
                 .Where(p => !p.Is_deleted && p.Is_special)
                 .OrderBy(p => p.Permission_code)
                 .ToListAsync();

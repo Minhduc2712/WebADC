@@ -10,6 +10,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
     {
         Task<OrderDTO?> GetByIdAsync(int id, int? userId = null);
         Task<IEnumerable<OrderDTO>> GetAllAsync(int? userId = null);
+        Task<PagedResult<OrderDTO>> GetAllPagedAsync(OrderFilterRequest request, int? userId = null);
         Task<Order?> GetByCodeAsync(string code);
         Task<CreateOrderResultDto> CreateOrderAsync(CreateOrderDto dto);
         Task<CreateOrderResultDto> CreateOrderWithoutValidationAsync(CreateOrderDto dto);
@@ -19,6 +20,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
         Task<Order> CopyOrderAsync(CopyOrderDto dto);
         Task<IEnumerable<OrderDTO>> GetOrdersByStaffAsync(int staffId);
         Task<IEnumerable<OrderDTO>> GetOrdersByCustomerAsync(int customerId);
+        Task<PagedResult<OrderDTO>> GetOrdersByCustomerPagedAsync(int customerId, OrderFilterRequest request);
         Task<bool> ConfirmOrderAsync(ConfirmOrderDto dto);
         Task<bool> CancelOrderAsync(CancelOrderDto dto);
         Task<byte[]> ExportOrdersToExcelAsync();

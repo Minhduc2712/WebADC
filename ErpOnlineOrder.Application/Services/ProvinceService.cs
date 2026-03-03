@@ -1,6 +1,7 @@
 using ErpOnlineOrder.Application.DTOs.ProvinceDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Application.Mappers;
 using ErpOnlineOrder.Domain.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -21,19 +22,19 @@ namespace ErpOnlineOrder.Application.Services
         public async Task<ProvinceDTO?> GetByIdAsync(int id)
         {
             var province = await _provinceRepository.GetByIdAsync(id);
-            return province != null ? MapToDto(province) : null;
+            return province != null ? EntityMappers.ToProvinceDto(province) : null;
         }
 
         public async Task<IEnumerable<ProvinceDTO>> GetAllAsync()
         {
             var provinces = await _provinceRepository.GetAllAsync();
-            return provinces.Select(MapToDto);
+            return provinces.Select(EntityMappers.ToProvinceDto);
         }
 
         public async Task<IEnumerable<ProvinceDTO>> GetByRegionIdAsync(int regionId)
         {
             var provinces = await _provinceRepository.GetByRegionIdAsync(regionId);
-            return provinces.Select(MapToDto);
+            return provinces.Select(EntityMappers.ToProvinceDto);
         }
 
         public async Task<ProvinceDTO?> CreateProvinceAsync(CreateProvinceDto dto, int createdBy)
@@ -75,7 +76,7 @@ namespace ErpOnlineOrder.Application.Services
             
             // Load lại để lấy thông tin Region
             var created = await _provinceRepository.GetByIdAsync(province.Id);
-            return created != null ? MapToDto(created) : null;
+            return created != null ? EntityMappers.ToProvinceDto(created) : null;
         }
 
         public async Task<bool> UpdateProvinceAsync(UpdateProvinceDto dto, int updatedBy)
@@ -133,20 +134,6 @@ namespace ErpOnlineOrder.Application.Services
 
             await _provinceRepository.DeleteAsync(id);
             return true;
-        }
-
-        private static ProvinceDTO MapToDto(Province province)
-        {
-            return new ProvinceDTO
-            {
-                Id = province.Id,
-                Province_code = province.Province_code,
-                Province_name = province.Province_name,
-                Region_id = province.Region_id,
-                Region_name = province.Region?.Region_name ?? string.Empty,
-                Created_at = province.Created_at,
-                Updated_at = province.Updated_at
-            };
         }
     }
 }

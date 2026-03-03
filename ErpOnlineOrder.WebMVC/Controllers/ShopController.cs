@@ -59,65 +59,37 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             return RedirectToAction(nameof(Products));
         }
 
-        public async Task<IActionResult> Products(string? search, string? category, string? sort)
+        public async Task<IActionResult> Products(string? search, string? category, string? sort, int page = 1, int pageSize = 12)
         {
             try
             {
                 var customerId = await GetCurrentCustomerIdAsync();
-                IEnumerable<ProductDTO> products;
+                var request = new ProductForShopFilterRequest
+                {
+                    Page = page,
+                    PageSize = pageSize,
+                    SearchTerm = search,
+                    Category = category,
+                    Sort = sort
+                };
 
-                if (!string.IsNullOrEmpty(search))
-                {
-                    products = await _productService.SearchByAllForShopAsync(search, customerId);
-                }
-                else
-                {
-                    products = await _productService.GetProductsForShopAsync(customerId);
-                }
-
-                if (!string.IsNullOrEmpty(category))
-                {
-                    products = products.Where(p => p.Categories.Contains(category));
-                }
-
-                switch (sort)
-                {
-                    case "price_asc":
-                        products = products.OrderBy(p => p.Product_price);
-                        break;
-                    case "price_desc":
-                        products = products.OrderByDescending(p => p.Product_price);
-                        break;
-                    case "name_asc":
-                        products = products.OrderBy(p => p.Product_name);
-                        break;
-                    case "newest":
-                        products = products.OrderByDescending(p => p.Id);
-                        break;
-                    default:
-                        break;
-                }
+                var paged = await _productService.GetProductsForShopPagedAsync(customerId, request);
+                var categories = (await _productService.GetCategoriesForShopAsync(customerId)).ToList();
 
                 ViewBag.Search = search;
                 ViewBag.Category = category;
                 ViewBag.Sort = sort;
-
-                var allProducts = await _productService.GetProductsForShopAsync(customerId);
-                var categories = allProducts
-                    .SelectMany(p => p.Categories)
-                    .Where(c => !string.IsNullOrEmpty(c))
-                    .Distinct()
-                    .OrderBy(c => c)
-                    .ToList();
+                ViewBag.PageSize = pageSize;
                 ViewBag.Categories = categories;
-                ViewBag.TotalCount = allProducts.Count();
+                ViewBag.TotalCount = paged.TotalCount;
+                ViewBag.PaginationAction = "Products";
 
-                return View(products);
+                return View(paged);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading products");
-                return View(Enumerable.Empty<ProductDTO>());
+                return View(new PagedResult<ProductDTO> { Items = new List<ProductDTO>() });
             }
         }
 
@@ -138,11 +110,8 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                         return NotFound();
                 }
 
-                var allProducts = await _productService.GetProductsForShopAsync(customerId);
-                ViewData["RelatedProducts"] = allProducts
-                    .Where(p => p.Categories.Intersect(product.Categories).Any() && p.Id != id)
-                    .Take(4)
-                    .ToList();
+                var relatedProducts = await _productService.GetRelatedProductsForShopAsync(id, product.Categories, customerId, 4);
+                ViewData["RelatedProducts"] = relatedProducts.ToList();
 
                 return View(product);
             }
@@ -163,7 +132,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             return View();
         }
 
-        public async Task<IActionResult> Orders()
+        public async Task<IActionResult> Orders(string? status, int page = 1, int pageSize = 10)
         {
             var userId = GetCurrentUserId();
             if (userId == 0)
@@ -177,16 +146,21 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (customer == null)
                 {
                     ViewData["ErrorMessage"] = "Không tìm thấy thông tin khách hàng.";
-                    return View(new List<OrderDTO>());
+                    return View(new PagedResult<OrderDTO> { Items = new List<OrderDTO>() });
                 }
 
-                var orders = await _orderService.GetOrdersByCustomerAsync(customer.Id);
-                return View(orders.OrderByDescending(o => o.Order_date).ToList());
+                var request = new OrderFilterRequest { Page = page, PageSize = pageSize, Status = status };
+                var paged = await _orderService.GetOrdersByCustomerPagedAsync(customer.Id, request);
+                ViewBag.Status = status;
+                ViewBag.PageSize = pageSize;
+                ViewBag.PaginationAction = "Orders";
+                ViewBag.PaginationItemLabel = "đơn hàng";
+                return View(paged);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading orders for user {UserId}", userId);
-                return View(new List<OrderDTO>());
+                return View(new PagedResult<OrderDTO> { Items = new List<OrderDTO>() });
             }
         }
 
@@ -305,7 +279,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         }
 
         /// <summary>Danh sách hóa đơn của khách hàng.</summary>
-        public async Task<IActionResult> Invoices()
+        public async Task<IActionResult> Invoices(string? status, int page = 1, int pageSize = 10)
         {
             var userId = GetCurrentUserId();
             if (userId == 0)
@@ -315,24 +289,28 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             if (customer == null)
             {
                 ViewData["ErrorMessage"] = "Không tìm thấy thông tin khách hàng.";
-                return View(new List<InvoiceDto>());
+                return View(new PagedResult<InvoiceDto> { Items = new List<InvoiceDto>() });
             }
 
             try
             {
-                var invoices = await _invoiceService.GetByCustomerIdAsync(customer.Id);
-                var list = invoices.OrderByDescending(i => i.Invoice_date).ToList();
-                return View(list);
+                var request = new InvoiceFilterRequest { Page = page, PageSize = pageSize, Status = status };
+                var paged = await _invoiceService.GetByCustomerIdPagedAsync(customer.Id, request);
+                ViewBag.Status = status;
+                ViewBag.PageSize = pageSize;
+                ViewBag.PaginationAction = "Invoices";
+                ViewBag.PaginationItemLabel = "hóa đơn";
+                return View(paged);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading invoices for customer {CustomerId}", customer.Id);
-                return View(new List<InvoiceDto>());
+                return View(new PagedResult<InvoiceDto> { Items = new List<InvoiceDto>() });
             }
         }
 
         /// <summary>Danh sách phiếu xuất kho của khách hàng.</summary>
-        public async Task<IActionResult> Exports()
+        public async Task<IActionResult> Exports(string? status, int page = 1, int pageSize = 10)
         {
             var userId = GetCurrentUserId();
             if (userId == 0)
@@ -342,22 +320,23 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             if (customer == null)
             {
                 ViewData["ErrorMessage"] = "Không tìm thấy thông tin khách hàng.";
-                return View(new List<WarehouseExportDto>());
+                return View(new PagedResult<WarehouseExportDto> { Items = new List<WarehouseExportDto>() });
             }
 
             try
             {
-                var exports = await _warehouseExportService.GetByCustomerIdAsync(customer.Id);
-                var list = exports
-                    .Where(e => e.Status != "Cancelled")
-                    .OrderByDescending(e => e.Export_date)
-                    .ToList();
-                return View(list);
+                var request = new WarehouseExportFilterRequest { Page = page, PageSize = pageSize, Status = status };
+                var paged = await _warehouseExportService.GetByCustomerIdPagedAsync(customer.Id, request);
+                ViewBag.Status = status;
+                ViewBag.PageSize = pageSize;
+                ViewBag.PaginationAction = "Exports";
+                ViewBag.PaginationItemLabel = "phiếu xuất";
+                return View(paged);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading exports for customer {CustomerId}", customer.Id);
-                return View(new List<WarehouseExportDto>());
+                return View(new PagedResult<WarehouseExportDto> { Items = new List<WarehouseExportDto>() });
             }
         }
 

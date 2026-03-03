@@ -22,6 +22,18 @@ namespace ErpOnlineOrder.WebMVC.Services
             return list ?? new List<OrderDTO>();
         }
 
+        public async Task<PagedResult<OrderDTO>> GetPagedAsync(int page = 1, int pageSize = 20, string? status = null, string? searchTerm = null, CancellationToken cancellationToken = default)
+        {
+            var query = new List<string> { $"page={page}", $"pageSize={pageSize}" };
+            if (!string.IsNullOrEmpty(status)) query.Add("status=" + Uri.EscapeDataString(status));
+            if (!string.IsNullOrEmpty(searchTerm)) query.Add("searchTerm=" + Uri.EscapeDataString(searchTerm));
+            var path = "order/paged?" + string.Join("&", query);
+            var response = await _http.GetAsync(path, cancellationToken);
+            if (!response.IsSuccessStatusCode) return new PagedResult<OrderDTO> { Items = new List<OrderDTO>(), Page = page, PageSize = pageSize, TotalCount = 0 };
+            var result = await response.Content.ReadFromJsonAsync<PagedResult<OrderDTO>>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return result ?? new PagedResult<OrderDTO>();
+        }
+
         public async Task<OrderDTO?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
             var response = await _http.GetAsync($"order/{id}", cancellationToken);

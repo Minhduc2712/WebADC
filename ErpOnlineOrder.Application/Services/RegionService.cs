@@ -1,6 +1,7 @@
 using ErpOnlineOrder.Application.DTOs.RegionDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Application.Mappers;
 using ErpOnlineOrder.Domain.Models;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,13 +21,13 @@ namespace ErpOnlineOrder.Application.Services
         public async Task<RegionDTO?> GetByIdAsync(int id)
         {
             var region = await _regionRepository.GetByIdAsync(id);
-            return region != null ? MapToDto(region) : null;
+            return region != null ? EntityMappers.ToRegionDto(region) : null;
         }
 
         public async Task<IEnumerable<RegionDTO>> GetAllAsync()
         {
             var regions = await _regionRepository.GetAllAsync();
-            return regions.Select(MapToDto);
+            return regions.Select(EntityMappers.ToRegionDto);
         }
 
         public async Task<RegionDTO?> CreateRegionAsync(CreateRegionDto dto, int createdBy)
@@ -57,7 +58,7 @@ namespace ErpOnlineOrder.Application.Services
             };
 
             await _regionRepository.AddAsync(region);
-            return MapToDto(region);
+            return EntityMappers.ToRegionDto(region);
         }
 
         public async Task<bool> UpdateRegionAsync(UpdateRegionDto dto, int updatedBy)
@@ -113,19 +114,6 @@ namespace ErpOnlineOrder.Application.Services
 
             await _regionRepository.DeleteAsync(id);
             return true;
-        }
-
-        private static RegionDTO MapToDto(Region region)
-        {
-            return new RegionDTO
-            {
-                Id = region.Id,
-                Region_code = region.Region_code,
-                Region_name = region.Region_name,
-                Province_count = region.Provinces?.Count(p => !p.Is_deleted) ?? 0,
-                Created_at = region.Created_at,
-                Updated_at = region.Updated_at
-            };
         }
     }
 }

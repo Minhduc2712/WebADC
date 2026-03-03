@@ -24,6 +24,11 @@ namespace ErpOnlineOrder.Application.Services
             return await _warehouseRepository.GetAllAsync();
         }
 
+        public async Task<IEnumerable<WarehouseSelectDto>> GetForSelectAsync()
+        {
+            return await _warehouseRepository.GetForSelectAsync();
+        }
+
         public async Task<IEnumerable<Warehouse>> GetByProvinceIdAsync(int provinceId)
         {
             return await _warehouseRepository.GetByProvinceIdAsync(provinceId);

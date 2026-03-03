@@ -1,4 +1,4 @@
-﻿using ErpOnlineOrder.Application.Interfaces.Repositories;
+using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -17,24 +17,28 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<Author?> GetByIdAsync(int id)
         {
             return await _context.Authors
+                .AsNoTracking()
                 .FirstOrDefaultAsync(a => a.Id == id && !a.Is_deleted);
         }
 
         public async Task<Author?> GetByCodeAsync(string code)
         {
             return await _context.Authors
+                .AsNoTracking()
                 .FirstOrDefaultAsync(a => a.Author_code == code && !a.Is_deleted);
         }
 
         public async Task<Author?> GetByNameAsync(string name)
         {
             return await _context.Authors
+                .AsNoTracking()
                 .FirstOrDefaultAsync(a => a.Author_name == name && !a.Is_deleted);
         }
 
         public async Task<IEnumerable<Author>> GetAllAsync()
         {
             return await _context.Authors
+                .AsNoTracking()
                 .Where(a => !a.Is_deleted)
                 .OrderBy(a => a.Author_name)
                 .ToListAsync();

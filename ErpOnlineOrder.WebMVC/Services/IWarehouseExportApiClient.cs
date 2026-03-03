@@ -5,6 +5,7 @@ namespace ErpOnlineOrder.WebMVC.Services
     public interface IWarehouseExportApiClient
     {
         Task<IEnumerable<WarehouseExportDto>> GetAllAsync(CancellationToken cancellationToken = default);
+        Task<PagedResult<WarehouseExportDto>> GetPagedAsync(int page = 1, int pageSize = 20, string? status = null, string? searchTerm = null, CancellationToken cancellationToken = default);
         Task<WarehouseExportDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
         Task<IEnumerable<WarehouseExportDto>> GetByInvoiceIdAsync(int invoiceId, CancellationToken cancellationToken = default);
         Task<IEnumerable<WarehouseExportDto>> GetByCustomerIdAsync(int customerId, CancellationToken cancellationToken = default);

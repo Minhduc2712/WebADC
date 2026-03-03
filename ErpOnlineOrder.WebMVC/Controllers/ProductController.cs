@@ -42,19 +42,24 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             _distributorApiClient = distributorApiClient;
             _logger = logger;
         }
-        public async Task<IActionResult> Index(string? search)
+        public async Task<IActionResult> Index(int page = 1, int pageSize = 20, string? search = null, int? categoryId = null, int? publisherId = null)
         {
             try
             {
-                var products = await _productApiClient.SearchAsync(search);
+                var result = await _productApiClient.GetPagedAsync(page, pageSize, search, categoryId, publisherId);
                 ViewBag.Search = search;
-                return View(products);
+                ViewBag.CategoryId = categoryId;
+                ViewBag.PublisherId = publisherId;
+                ViewBag.PageSize = pageSize;
+                ViewBag.Categories = new SelectList(await _categoryApiClient.GetAllAsync(), "Id", "Category_name", categoryId);
+                ViewBag.Publishers = new SelectList(await _publisherApiClient.GetAllAsync(), "Id", "Publisher_name", publisherId);
+                return View(result);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading products");
                 TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
-                return View(Enumerable.Empty<ProductDTO>());
+                return View(new PagedResult<ProductDTO> { Items = new List<ProductDTO>() });
             }
         }
         public async Task<IActionResult> Details(int id)

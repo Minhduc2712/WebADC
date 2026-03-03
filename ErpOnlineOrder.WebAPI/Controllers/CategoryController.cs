@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Application.Mappers;
 using ErpOnlineOrder.Domain.Models;
 
 namespace ErpOnlineOrder.WebAPI.Controllers
@@ -20,7 +21,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         public async Task<IActionResult> GetCategories()
         {
             var categories = await _categoryService.GetAllAsync();
-            return Ok(categories.Select(MapToDto));
+            return Ok(categories.Select(EntityMappers.ToCategoryDto));
         }
 
         [HttpGet("{id}")]
@@ -28,7 +29,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             var category = await _categoryService.GetByIdAsync(id);
             if (category == null) return NotFound();
-            return Ok(MapToDto(category));
+            return Ok(EntityMappers.ToCategoryDto(category));
         }
 
         [HttpPost]
@@ -37,7 +38,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var created = await _categoryService.CreateCategoryAsync(dto, GetCurrentUserId());
-                return Ok(MapToDto(created));
+                return Ok(EntityMappers.ToCategoryDto(created));
             }
             catch (Exception ex)
             {
@@ -59,18 +60,6 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             {
                 return BadRequest(new { message = ex.Message });
             }
-        }
-
-        private static CategoryDto MapToDto(Category c)
-        {
-            return new CategoryDto
-            {
-                Id = c.Id,
-                Category_code = c.Category_code,
-                Category_name = c.Category_name,
-                Created_at = c.Created_at,
-                Updated_at = c.Updated_at
-            };
         }
 
         [HttpDelete("{id}")]

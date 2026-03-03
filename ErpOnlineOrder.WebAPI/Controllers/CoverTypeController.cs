@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ErpOnlineOrder.Application.DTOs.CoverTypeDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Application.Mappers;
 using ErpOnlineOrder.Domain.Models;
 
 namespace ErpOnlineOrder.WebAPI.Controllers
@@ -20,7 +21,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         public async Task<IActionResult> GetAll()
         {
             var list = await _coverTypeService.GetAllAsync();
-            return Ok(list.Select(MapToDto));
+            return Ok(list.Select(EntityMappers.ToCoverTypeDto));
         }
 
         [HttpGet("{id}")]
@@ -28,7 +29,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             var item = await _coverTypeService.GetByIdAsync(id);
             if (item == null) return NotFound();
-            return Ok(MapToDto(item));
+            return Ok(EntityMappers.ToCoverTypeDto(item));
         }
 
         [HttpPost]
@@ -37,7 +38,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var created = await _coverTypeService.CreateAsync(dto, GetCurrentUserId());
-                return Ok(MapToDto(created));
+                return Ok(EntityMappers.ToCoverTypeDto(created));
             }
             catch (Exception ex)
             {
@@ -58,18 +59,6 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             {
                 return BadRequest(new { message = ex.Message });
             }
-        }
-
-        private static CoverTypeDto MapToDto(Cover_type c)
-        {
-            return new CoverTypeDto
-            {
-                Id = c.Id,
-                Cover_type_code = c.Cover_type_code,
-                Cover_type_name = c.Cover_type_name,
-                Created_at = c.Created_at,
-                Updated_at = c.Updated_at
-            };
         }
 
         [HttpDelete("{id}")]

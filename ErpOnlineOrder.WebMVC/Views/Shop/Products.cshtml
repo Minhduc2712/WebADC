@@ -1,4 +1,4 @@
-@model IEnumerable<ErpOnlineOrder.Application.DTOs.ProductDTO>
+@model PagedResult<ErpOnlineOrder.Application.DTOs.ProductDTO>
 @{
     ViewData["Title"] = "Sản phẩm";
     Layout = "~/Views/Shared/_ShopLayout.cshtml";
@@ -6,7 +6,7 @@
     var currentSearch = ViewBag.Search as string;
     var currentCategory = ViewBag.Category as string;
     var currentSort = ViewBag.Sort as string;
-    var productList = Model.ToList();
+    var productList = Model?.Items ?? new List<ErpOnlineOrder.Application.DTOs.ProductDTO>();
     var totalCount = ViewBag.TotalCount as int? ?? productList.Count;
 
     string FormatPrice(string price)
@@ -38,6 +38,7 @@
                             <form asp-action="Products" method="get">
                                 <input type="hidden" name="category" value="@currentCategory" />
                                 <input type="hidden" name="sort" value="@currentSort" />
+                                <input type="hidden" name="pageSize" value="@(ViewBag.PageSize ?? 12)" />
                                 <div class="search-box">
                                     <input type="text" name="search" placeholder="Tìm kiếm sản phẩm..." value="@currentSearch">
                                     <button type="submit" class="btn-search">
@@ -52,7 +53,7 @@
                                 <div class="filter-header" style="margin: 0 -1.8rem; padding: 1rem 1.8rem; font-size: 1.4rem;">Danh mục</div>
                                 <ul class="category-list">
                                     <li>
-                                        <a asp-action="Products" asp-route-search="@currentSearch" asp-route-sort="@currentSort"
+                                        <a asp-action="Products" asp-route-search="@currentSearch" asp-route-sort="@currentSort" asp-route-page="1" asp-route-pageSize="@(ViewBag.PageSize ?? 12)"
                                            class="@(string.IsNullOrEmpty(currentCategory) ? "active" : "")">
                                             <span>Tất cả</span>
                                             <span class="badge-count">@totalCount</span>
@@ -61,7 +62,7 @@
                                     @foreach (var cat in categories)
                                     {
                                         <li>
-                                            <a asp-action="Products" asp-route-category="@cat" asp-route-search="@currentSearch" asp-route-sort="@currentSort"
+                                            <a asp-action="Products" asp-route-category="@cat" asp-route-search="@currentSearch" asp-route-sort="@currentSort" asp-route-page="1" asp-route-pageSize="@(ViewBag.PageSize ?? 12)"
                                                class="@(currentCategory == cat ? "active" : "")">
                                                 <span>@cat</span>
                                             </a>
@@ -83,6 +84,7 @@
                         <form asp-action="Products" method="get" id="sortForm" class="d-inline">
                             <input type="hidden" name="search" value="@currentSearch" />
                             <input type="hidden" name="category" value="@currentCategory" />
+                            <input type="hidden" name="pageSize" value="@(ViewBag.PageSize ?? 12)" />
                             <select name="sort" id="sortSelect" class="form-select" onchange="document.getElementById('sortForm').submit()">
                                 <option value="" selected="@(string.IsNullOrEmpty(currentSort))">Mặc định</option>
                                 <option value="newest" selected="@(currentSort == "newest")">Mới nhất</option>
@@ -144,6 +146,10 @@
                             </article>
                         }
                     </div>
+                    @if (Model != null && Model.TotalPages > 1)
+                    {
+                        @await Html.PartialAsync("_ShopPagination", Model)
+                    }
                 }
             </div>
         </div>

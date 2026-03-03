@@ -1,4 +1,4 @@
-﻿using ErpOnlineOrder.Application.Interfaces.Repositories;
+using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -17,6 +17,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<User_permission?> GetByIdAsync(int id)
         {
             return await _context.UserPermissions
+                .AsNoTracking()
                 .Include(up => up.User)
                 .Include(up => up.Permission)
                 // .ThenInclude(p => p.Module)
@@ -27,6 +28,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<IEnumerable<User_permission>> GetByUserIdAsync(int userId)
         {
             return await _context.UserPermissions
+                .AsNoTracking()
                 .Include(up => up.Permission)
                 // .ThenInclude(p => p.Module)
                 // .ThenInclude(p => p.Action)
@@ -38,6 +40,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<IEnumerable<User_permission>> GetByPermissionIdAsync(int permissionId)
         {
             return await _context.UserPermissions
+                .AsNoTracking()
                 .Include(up => up.User)
                 .Where(up => up.PermissionId == permissionId && !up.IsDeleted)
                 .ToListAsync();
@@ -86,6 +89,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<bool> ExistsAsync(int userId, int permissionId)
         {
             return await _context.UserPermissions
+                .AsNoTracking()
                 .AnyAsync(up => up.UserId == userId && up.PermissionId == permissionId && !up.IsDeleted);
         }
     }

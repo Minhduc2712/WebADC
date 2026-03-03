@@ -17,6 +17,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<Customer_product?> GetByIdAsync(int id)
         {
             return await _context.CustomerProducts
+                .AsNoTracking()
                 .Include(cp => cp.Customer)
                 .Include(cp => cp.Product)
                 .FirstOrDefaultAsync(cp => cp.Id == id && !cp.Is_deleted);
@@ -25,6 +26,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<Customer_product?> GetByCustomerAndProductAsync(int customerId, int productId)
         {
             return await _context.CustomerProducts
+                .AsNoTracking()
                 .Include(cp => cp.Customer)
                 .Include(cp => cp.Product)
                 .FirstOrDefaultAsync(cp => cp.Customer_id == customerId 
@@ -35,6 +37,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<IEnumerable<Customer_product>> GetByCustomerIdAsync(int customerId)
         {
             return await _context.CustomerProducts
+                .AsNoTracking()
                 .Include(cp => cp.Customer)
                 .Include(cp => cp.Product)
                 .Where(cp => cp.Customer_id == customerId && !cp.Is_deleted)
@@ -44,6 +47,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<IEnumerable<Customer_product>> GetByProductIdAsync(int productId)
         {
             return await _context.CustomerProducts
+                .AsNoTracking()
                 .Include(cp => cp.Customer)
                 .Include(cp => cp.Product)
                 .Where(cp => cp.Product_id == productId && !cp.Is_deleted)
@@ -53,6 +57,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<IEnumerable<Customer_product>> GetAllAsync()
         {
             return await _context.CustomerProducts
+                .AsNoTracking()
                 .Include(cp => cp.Customer)
                 .Include(cp => cp.Product)
                 .Where(cp => !cp.Is_deleted)

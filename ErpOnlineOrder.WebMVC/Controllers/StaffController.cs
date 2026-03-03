@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using ErpOnlineOrder.Application.DTOs.AdminDTOs;
 using ErpOnlineOrder.Application.DTOs.PermissionDTOs;
 using ErpOnlineOrder.Application.Constants;
+using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.WebMVC.Attributes;
 using ErpOnlineOrder.WebMVC.Services;
 
@@ -27,22 +28,23 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         #region Danh sách nhân viên
         [HttpGet]
         [RequirePermission(PermissionCodes.StaffView)]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1, int pageSize = 20, int? roleId = null, bool? isActive = null, string? search = null)
         {
             try
             {
-                var staffList = await _adminApiClient.GetAllStaffAsync();
-
-                // Truyền quyền của user hiện tại để hiển thị/ẩn các nút
+                var result = await _adminApiClient.GetStaffPagedAsync(page, pageSize, roleId, isActive, search);
+                ViewBag.PageSize = pageSize;
+                ViewBag.RoleId = roleId;
+                ViewBag.IsActive = isActive;
+                ViewBag.Search = search;
                 await LoadCurrentUserPermissions();
-
-                return View(staffList);
+                return View(result);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Lỗi khi tải danh sách nhân viên");
                 SetErrorMessage(GetDetailedErrorMessage(ex));
-                return View(Enumerable.Empty<StaffAccountDto>());
+                return View(new PagedResult<StaffAccountDto> { Items = new List<StaffAccountDto>() });
             }
         }
 

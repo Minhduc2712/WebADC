@@ -2,6 +2,7 @@ using ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs;
 using ErpOnlineOrder.Application.DTOs.InvoiceDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Application.Mappers;
 using ErpOnlineOrder.Domain.Models;
 using ClosedXML.Excel;
 using ErpOnlineOrder.Application.Helpers;
@@ -27,13 +28,11 @@ namespace ErpOnlineOrder.Application.Services
             _permissionService = permissionService;
         }
 
-        #region CRUD c? b?n
-
         public async Task<WarehouseExportDto?> GetByIdAsync(int id, int? userId = null)
         {
             var export = await _exportRepository.GetByIdAsync(id);
             if (export == null) return null;
-            var dto = MapToDto(export);
+            var dto = EntityMappers.ToWarehouseExportDto(export);
             if (userId.HasValue && userId.Value > 0)
                 await RecordPermissionEnricher.EnrichWarehouseExportAsync(dto, userId.Value, _permissionService);
             return dto;
@@ -42,31 +41,64 @@ namespace ErpOnlineOrder.Application.Services
         public async Task<IEnumerable<WarehouseExportDto>> GetAllAsync(int? userId = null)
         {
             var exports = await _exportRepository.GetAllAsync();
-            var list = exports.Select(MapToDto).ToList();
+            var list = exports.Select(EntityMappers.ToWarehouseExportDto).ToList();
             if (userId.HasValue && userId.Value > 0)
             {
+                var userPermissions = (await _permissionService.GetUserPermissionsAsync(userId.Value)).ToHashSet();
                 foreach (var dto in list)
-                    await RecordPermissionEnricher.EnrichWarehouseExportAsync(dto, userId.Value, _permissionService);
+                    RecordPermissionEnricher.EnrichWarehouseExport(dto, userPermissions);
             }
             return list;
+        }
+
+        public async Task<PagedResult<WarehouseExportDto>> GetAllPagedAsync(WarehouseExportFilterRequest request, int? userId = null)
+        {
+            var paged = await _exportRepository.GetPagedWarehouseExportsAsync(request);
+            var dtos = paged.Items.Select(EntityMappers.ToWarehouseExportDto).ToList();
+            if (userId.HasValue && userId.Value > 0)
+            {
+                var userPermissions = (await _permissionService.GetUserPermissionsAsync(userId.Value)).ToHashSet();
+                foreach (var dto in dtos)
+                    RecordPermissionEnricher.EnrichWarehouseExport(dto, userPermissions);
+            }
+            return new PagedResult<WarehouseExportDto>
+            {
+                Items = dtos,
+                Page = paged.Page,
+                PageSize = paged.PageSize,
+                TotalCount = paged.TotalCount
+            };
         }
 
         public async Task<IEnumerable<WarehouseExportDto>> GetByInvoiceIdAsync(int invoiceId)
         {
             var exports = await _exportRepository.GetByInvoiceIdAsync(invoiceId);
-            return exports.Select(MapToDto);
+            return exports.Select(EntityMappers.ToWarehouseExportDto);
         }
 
         public async Task<IEnumerable<WarehouseExportDto>> GetByCustomerIdAsync(int customerId)
         {
             var exports = await _exportRepository.GetByCustomerIdAsync(customerId);
-            return exports.Select(MapToDto);
+            return exports.Select(EntityMappers.ToWarehouseExportDto);
+        }
+
+        public async Task<PagedResult<WarehouseExportDto>> GetByCustomerIdPagedAsync(int customerId, WarehouseExportFilterRequest request)
+        {
+            var paged = await _exportRepository.GetPagedWarehouseExportsAsync(request, new[] { customerId });
+            var dtos = paged.Items.Select(EntityMappers.ToWarehouseExportDto).ToList();
+            return new PagedResult<WarehouseExportDto>
+            {
+                Items = dtos,
+                Page = paged.Page,
+                PageSize = paged.PageSize,
+                TotalCount = paged.TotalCount
+            };
         }
 
         public async Task<IEnumerable<WarehouseExportDto>> GetByWarehouseIdAsync(int warehouseId)
         {
             var exports = await _exportRepository.GetByWarehouseIdAsync(warehouseId);
-            return exports.Select(MapToDto);
+            return exports.Select(EntityMappers.ToWarehouseExportDto);
         }
 
         public async Task<WarehouseExportDto?> CreateExportFromInvoiceAsync(CreateWarehouseExportDto dto, int userId)
@@ -158,7 +190,7 @@ namespace ErpOnlineOrder.Application.Services
             await _exportRepository.AddAsync(export);
 
             var created = await _exportRepository.GetByIdAsync(export.Id);
-            return created != null ? MapToDto(created) : null;
+            return created != null ? EntityMappers.ToWarehouseExportDto(created) : null;
         }
 
         public async Task<bool> UpdateDeliveryStatusAsync(int id, string status, int userId)
@@ -216,9 +248,6 @@ namespace ErpOnlineOrder.Application.Services
             return true;
         }
 
-        #endregion
-
-        #region Tách/G?p phi?u xu?t kho
 
         public async Task<SplitExportResultDto> SplitExportAsync(SplitWarehouseExportDto dto, int userId)
         {
@@ -363,8 +392,8 @@ namespace ErpOnlineOrder.Application.Services
 
             result.Success = true;
             result.Message = $"?ã tách thành công thành {newExports.Count} phi?u xu?t kho m?i";
-            result.Original_export = MapToDto(sourceExport);
-            result.New_exports = newExports.Select(e => MapToDto(e)).ToList();
+            result.Original_export = EntityMappers.ToWarehouseExportDto(sourceExport);
+            result.New_exports = newExports.Select(e => EntityMappers.ToWarehouseExportDto(e)).ToList();
             result.New_invoice_ids = newInvoiceIds;
 
             return result;
@@ -523,7 +552,7 @@ namespace ErpOnlineOrder.Application.Services
 
             result.Success = true;
             result.Message = $"?ã g?p thành công {exports.Count} phi?u xu?t kho";
-            result.Merged_export = MapToDto(mergedExport);
+            result.Merged_export = EntityMappers.ToWarehouseExportDto(mergedExport);
             result.Merged_export_ids = dto.Export_ids;
             result.Merged_invoice_id = mergedInvoiceId;
 
@@ -628,9 +657,6 @@ namespace ErpOnlineOrder.Application.Services
             return true;
         }
 
-        #endregion
-
-        #region Ki?m tra
 
         public async Task<bool> HasExportForInvoiceAsync(int invoiceId)
         {
@@ -641,7 +667,7 @@ namespace ErpOnlineOrder.Application.Services
         public async Task<IEnumerable<WarehouseExportDto>> GetChildExportsAsync(int parentExportId)
         {
             var childExports = await _exportRepository.GetChildExportsAsync(parentExportId);
-            return childExports.Select(MapToDto);
+            return childExports.Select(EntityMappers.ToWarehouseExportDto);
         }
 
         public async Task<byte[]> ExportWarehouseExportsToExcelAsync(string? status = null)
@@ -666,7 +692,7 @@ namespace ErpOnlineOrder.Application.Services
             int row = 2;
             foreach (var exp in exports)
             {
-                var dto = MapToDto(exp);
+                var dto = EntityMappers.ToWarehouseExportDto(exp);
                 ExcelHelper.SetCellValue(ws.Cell(row, 1), dto.Warehouse_export_code);
                 ExcelHelper.SetCellValue(ws.Cell(row, 2), dto.Export_date.ToString("dd/MM/yyyy"));
                 ExcelHelper.SetCellValue(ws.Cell(row, 3), dto.Invoice_code ?? "");
@@ -684,58 +710,5 @@ namespace ErpOnlineOrder.Application.Services
             workbook.SaveAs(stream, false);
             return stream.ToArray();
         }
-
-        #endregion
-
-        #region Mapping
-
-        private static WarehouseExportDto MapToDto(Warehouse_export export)
-        {
-            return new WarehouseExportDto
-            {
-                Id = export.Id,
-                Warehouse_export_code = export.Warehouse_export_code,
-                Export_date = export.Export_date,
-                Warehouse_id = export.Warehouse_id,
-                Warehouse_name = export.Warehouse?.Warehouse_name ?? "",
-                Invoice_id = export.Invoice_id,
-                Invoice_code = export.Invoice?.Invoice_code ?? "",
-                Order_id = export.Order_id,
-                Order_code = export.Order?.Order_code,
-                Customer_id = export.Customer_id,
-                Customer_name = export.Customer?.Full_name ?? "",
-                Staff_id = export.Staff_id,
-                Staff_name = export.Staff?.Full_name ?? "",
-                Carrier_name = export.Carrier_name,
-                Tracking_number = export.Tracking_number,
-                Delivery_status = export.Delivery_status,
-                Status = export.Status,
-                Parent_export_id = export.Parent_export_id,
-                Parent_export_code = export.Parent_export?.Warehouse_export_code,
-                Merged_into_export_id = export.Merged_into_export_id,
-                Merged_into_export_code = export.Merged_into_export?.Warehouse_export_code,
-                Split_merge_note = export.Split_merge_note,
-                Total_amount = export.Warehouse_Export_Details.Where(d => !d.Is_deleted).Sum(d => d.Total_price),
-                Total_quantity = export.Warehouse_Export_Details.Where(d => !d.Is_deleted).Sum(d => d.Quantity_shipped),
-                Created_at = export.Created_at,
-                Details = export.Warehouse_Export_Details
-                    .Where(d => !d.Is_deleted)
-                    .Select(d => new WarehouseExportDetailDto
-                    {
-                        Id = d.Id,
-                        Warehouse_export_id = d.Warehouse_export_id,
-                        Warehouse_id = d.Warehouse_id,
-                        Warehouse_name = d.Warehouse?.Warehouse_name ?? "",
-                        Product_id = d.Product_id,
-                        Product_code = d.Product?.Product_code ?? "",
-                        Product_name = d.Product?.Product_name ?? "",
-                        Quantity_shipped = d.Quantity_shipped,
-                        Unit_price = d.Unit_price,
-                        Total_price = d.Total_price
-                    }).ToList()
-            };
-        }
-
-        #endregion
     }
 }

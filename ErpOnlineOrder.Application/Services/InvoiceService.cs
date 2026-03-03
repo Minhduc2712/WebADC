@@ -1,5 +1,6 @@
 using ErpOnlineOrder.Application.DTOs.InvoiceDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
+using ErpOnlineOrder.Application.Mappers;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Models;
 using ClosedXML.Excel;
@@ -42,7 +43,7 @@ namespace ErpOnlineOrder.Application.Services
                 }
             }
 
-            var dto = MapToDto(invoice);
+            var dto = EntityMappers.ToInvoiceDto(invoice);
             if (userId.HasValue && userId.Value > 0)
                 await RecordPermissionEnricher.EnrichInvoiceAsync(dto, userId.Value, _permissionService);
             return dto;
@@ -65,19 +66,96 @@ namespace ErpOnlineOrder.Application.Services
             else
                 invoices = await _invoiceRepository.GetAllAsync();
 
-            var list = invoices.Select(MapToDto).ToList();
+            var list = invoices.Select(EntityMappers.ToInvoiceDto).ToList();
             if (userId.HasValue && userId.Value > 0)
             {
+                var userPermissions = (await _permissionService.GetUserPermissionsAsync(userId.Value)).ToHashSet();
                 foreach (var dto in list)
-                    await RecordPermissionEnricher.EnrichInvoiceAsync(dto, userId.Value, _permissionService);
+                    RecordPermissionEnricher.EnrichInvoice(dto, userPermissions);
             }
             return list;
+        }
+
+        public async Task<IEnumerable<InvoiceDto>> GetForMergeAsync(int? userId = null)
+        {
+            IEnumerable<int>? customerIds = null;
+            if (userId.HasValue && userId.Value > 0 && !await _permissionService.IsAdminAsync(userId.Value))
+            {
+                var staff = await _staffRepository.GetByUserIdAsync(userId.Value);
+                if (staff != null)
+                    customerIds = await _customerManagementRepository.GetCustomerIdsByStaffAsync(staff.Id);
+            }
+
+            var invoices = await _invoiceRepository.GetForMergeAsync(customerIds);
+            var list = invoices.Select(EntityMappers.ToInvoiceDto).ToList();
+            if (userId.HasValue && userId.Value > 0)
+            {
+                var userPermissions = (await _permissionService.GetUserPermissionsAsync(userId.Value)).ToHashSet();
+                foreach (var dto in list)
+                    RecordPermissionEnricher.EnrichInvoice(dto, userPermissions);
+            }
+            return list;
+        }
+
+        public async Task<IEnumerable<InvoiceSelectDto>> GetForWarehouseExportSelectAsync(int? userId = null)
+        {
+            IEnumerable<int>? customerIds = null;
+            if (userId.HasValue && userId.Value > 0 && !await _permissionService.IsAdminAsync(userId.Value))
+            {
+                var staff = await _staffRepository.GetByUserIdAsync(userId.Value);
+                if (staff != null)
+                    customerIds = await _customerManagementRepository.GetCustomerIdsByStaffAsync(staff.Id);
+            }
+
+            return await _invoiceRepository.GetForWarehouseExportSelectAsync(customerIds);
+        }
+
+        public async Task<PagedResult<InvoiceDto>> GetAllPagedAsync(InvoiceFilterRequest request, int? userId = null)
+        {
+            IEnumerable<int>? customerIds = null;
+            if (userId.HasValue && userId.Value > 0 && !await _permissionService.IsAdminAsync(userId.Value))
+            {
+                var staff = await _staffRepository.GetByUserIdAsync(userId.Value);
+                if (staff != null)
+                {
+                    customerIds = await _customerManagementRepository.GetCustomerIdsByStaffAsync(staff.Id);
+                }
+            }
+
+            var paged = await _invoiceRepository.GetPagedInvoicesAsync(request, customerIds);
+            var dtos = paged.Items.Select(EntityMappers.ToInvoiceDto).ToList();
+            if (userId.HasValue && userId.Value > 0)
+            {
+                var userPermissions = (await _permissionService.GetUserPermissionsAsync(userId.Value)).ToHashSet();
+                foreach (var dto in dtos)
+                    RecordPermissionEnricher.EnrichInvoice(dto, userPermissions);
+            }
+            return new PagedResult<InvoiceDto>
+            {
+                Items = dtos,
+                Page = paged.Page,
+                PageSize = paged.PageSize,
+                TotalCount = paged.TotalCount
+            };
         }
 
         public async Task<IEnumerable<InvoiceDto>> GetByCustomerIdAsync(int customerId)
         {
             var invoices = await _invoiceRepository.GetByCustomerIdAsync(customerId);
-            return invoices.Select(MapToDto);
+            return invoices.Select(EntityMappers.ToInvoiceDto);
+        }
+
+        public async Task<PagedResult<InvoiceDto>> GetByCustomerIdPagedAsync(int customerId, InvoiceFilterRequest request)
+        {
+            var paged = await _invoiceRepository.GetPagedInvoicesAsync(request, new[] { customerId });
+            var dtos = paged.Items.Select(EntityMappers.ToInvoiceDto).ToList();
+            return new PagedResult<InvoiceDto>
+            {
+                Items = dtos,
+                Page = paged.Page,
+                PageSize = paged.PageSize,
+                TotalCount = paged.TotalCount
+            };
         }
 
         #endregion
@@ -192,8 +270,8 @@ namespace ErpOnlineOrder.Application.Services
 
             result.Success = true;
             result.Message = $"Đã tách thành công thành {newInvoices.Count} hóa đơn mới";
-            result.Original_invoice = MapToDto(sourceInvoice);
-            result.New_invoices = newInvoices.Select(MapToDto).ToList();
+            result.Original_invoice = EntityMappers.ToInvoiceDto(sourceInvoice);
+            result.New_invoices = newInvoices.Select(EntityMappers.ToInvoiceDto).ToList();
 
             return result;
         }
@@ -333,7 +411,7 @@ namespace ErpOnlineOrder.Application.Services
 
             result.Success = true;
             result.Message = $"Đã gộp thành công {invoices.Count} hóa đơn";
-            result.Merged_invoice = MapToDto(mergedInvoice);
+            result.Merged_invoice = EntityMappers.ToInvoiceDto(mergedInvoice);
             result.Merged_invoice_ids = dto.Invoice_ids;
 
             return result;
@@ -447,7 +525,7 @@ namespace ErpOnlineOrder.Application.Services
             int row = 2;
             foreach (var inv in invoices)
             {
-                var dto = MapToDto(inv);
+                var dto = EntityMappers.ToInvoiceDto(inv);
                 ExcelHelper.SetCellValue(ws.Cell(row, 1), dto.Invoice_code);
                 ExcelHelper.SetCellValue(ws.Cell(row, 2), dto.Invoice_date.ToString("dd/MM/yyyy"));
                 ExcelHelper.SetCellValue(ws.Cell(row, 3), dto.Customer_name ?? "");
@@ -467,44 +545,5 @@ namespace ErpOnlineOrder.Application.Services
 
         #endregion
 
-        #region Mapping
-
-        private static InvoiceDto MapToDto(Invoice invoice)
-        {
-            var firstMgmt = invoice.Customer?.Customer_managements?
-                .FirstOrDefault(cm => !cm.Is_deleted && cm.Province != null);
-            var provinceId = firstMgmt?.Province_id;
-            var provinceName = firstMgmt?.Province?.Province_name;
-
-            return new InvoiceDto
-            {
-                Id = invoice.Id,
-                Invoice_code = invoice.Invoice_code,
-                Invoice_date = invoice.Invoice_date,
-                Customer_id = invoice.Customer_id,
-                Customer_name = invoice.Customer?.Full_name ?? "",
-                Province_id = provinceId,
-                Province_name = provinceName,
-                Total_amount = invoice.Total_amount,
-                Tax_amount = invoice.Tax_amount,
-                Status = invoice.Status,
-                Parent_invoice_id = invoice.Parent_invoice_id,
-                Parent_invoice_code = invoice.Parent_invoice?.Invoice_code,
-                Details = invoice.Invoice_Details
-                    .Where(d => !d.Is_deleted)
-                    .Select(d => new InvoiceDetailDto
-                    {
-                        Id = d.Id,
-                        Product_id = d.Product_id,
-                        Product_name = d.Product?.Product_name ?? "",
-                        Quantity = d.Quantity,
-                        Unit_price = d.Unit_price,
-                        Total_price = d.Total_price,
-                        Tax_rate = d.Tax_rate
-                    }).ToList()
-            };
-        }
-
-        #endregion
     }
 }

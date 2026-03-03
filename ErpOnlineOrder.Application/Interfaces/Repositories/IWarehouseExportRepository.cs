@@ -7,6 +7,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
         Task<Warehouse_export?> GetByIdAsync(int id);
         Task<Warehouse_export?> GetByCodeAsync(string code);
         Task<IEnumerable<Warehouse_export>> GetAllAsync();
+        Task<PagedResult<Warehouse_export>> GetPagedWarehouseExportsAsync(WarehouseExportFilterRequest request, IEnumerable<int>? customerIds = null);
         Task<IEnumerable<Warehouse_export>> GetByInvoiceIdAsync(int invoiceId);
         Task<IEnumerable<Warehouse_export>> GetByCustomerIdAsync(int customerId);
         Task<IEnumerable<Warehouse_export>> GetByWarehouseIdAsync(int warehouseId);

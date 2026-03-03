@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.Services;
+using ErpOnlineOrder.Application.Mappers;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.Application.DTOs.DistributorDTOs;
 namespace ErpOnlineOrder.WebAPI.Controllers
@@ -19,16 +20,24 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             _permissionService = permissionService;
         }
 
+        [HttpGet("for-select")]
+        public async Task<IActionResult> GetForSelect()
+        {
+            var list = await _distributorService.GetForSelectAsync();
+            return Ok(list);
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetDistributors()
         {
             var distributors = await _distributorService.GetAllAsync();
-            var list = distributors.Select(MapToDto).ToList();
+            var list = distributors.Select(EntityMappers.ToDistributorDto).ToList();
             var userId = TryGetCurrentUserId();
             if (userId.HasValue && userId.Value > 0)
             {
+                var permissions = (await _permissionService.GetUserPermissionsAsync(userId.Value)).ToHashSet();
                 foreach (var dto in list)
-                    await RecordPermissionEnricher.EnrichAsync(dto, userId.Value, _permissionService, PermissionCodes.DistributorUpdate, PermissionCodes.DistributorDelete);
+                    RecordPermissionEnricher.Enrich(dto, permissions, PermissionCodes.DistributorUpdate, PermissionCodes.DistributorDelete);
             }
             return Ok(list);
         }
@@ -38,7 +47,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             var distributor = await _distributorService.GetByIdAsync(id);
             if (distributor == null) return NotFound();
-            var dto = MapToDto(distributor);
+            var dto = EntityMappers.ToDistributorDto(distributor);
             var userId = TryGetCurrentUserId();
             if (userId.HasValue && userId.Value > 0)
                 await RecordPermissionEnricher.EnrichAsync(dto, userId.Value, _permissionService, PermissionCodes.DistributorUpdate, PermissionCodes.DistributorDelete);
@@ -51,7 +60,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var created = await _distributorService.CreateDistributorAsync(dto, GetCurrentUserId());
-                return Ok(MapToDto(created));
+                return Ok(EntityMappers.ToDistributorDto(created));
             }
             catch (Exception ex)
             {
@@ -73,21 +82,6 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             {
                 return BadRequest(new { message = ex.Message });
             }
-        }
-
-        private static DistributorDto MapToDto(Distributor d)
-        {
-            return new DistributorDto
-            {
-                Id = d.Id,
-                Distributor_code = d.Distributor_code ?? "",
-                Distributor_name = d.Distributor_name ?? "",
-                Distributor_address = d.Distributor_address ?? "",
-                Distributor_phone = d.Distributor_phone ?? "",
-                Distributor_email = d.Distributor_email ?? "",
-                Created_at = d.Created_at,
-                Updated_at = d.Updated_at
-            };
         }
 
         [HttpDelete("{id}")]

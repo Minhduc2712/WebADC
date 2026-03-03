@@ -1,6 +1,7 @@
 using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.Application.DTOs.AdminDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.WebAPI.Attributes;
 using Microsoft.AspNetCore.Mvc;
 
@@ -26,6 +27,14 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             var staff = await _adminService.GetAllStaffAsync(TryGetCurrentUserId());
             return Ok(staff);
+        }
+
+        [HttpGet("staff/paged")]
+        [RequirePermission(PermissionCodes.StaffView)]
+        public async Task<IActionResult> GetStaffPaged([FromQuery] StaffFilterRequest request)
+        {
+            var result = await _adminService.GetStaffPagedAsync(request, TryGetCurrentUserId());
+            return Ok(result);
         }
         [HttpGet("staff/{userId}")]
         [RequirePermission(PermissionCodes.StaffView)]

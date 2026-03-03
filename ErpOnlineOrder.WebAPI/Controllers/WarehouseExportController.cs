@@ -1,6 +1,7 @@
 using ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErpOnlineOrder.WebAPI.Controllers
@@ -24,6 +25,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             var exports = await _exportService.GetAllAsync(TryGetCurrentUserId());
             return Ok(exports);
+        }
+
+        [HttpGet("paged")]
+        public async Task<IActionResult> GetAllPaged([FromQuery] WarehouseExportFilterRequest request)
+        {
+            var result = await _exportService.GetAllPagedAsync(request, TryGetCurrentUserId());
+            return Ok(result);
         }
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)

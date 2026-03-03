@@ -56,32 +56,25 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         }
 
         #region CRUD Khách hàng
-        public async Task<IActionResult> Index(string? search)
+        public async Task<IActionResult> Index(int page = 1, int pageSize = 20, string? search = null, int? regionId = null, int? customerCategoryId = null)
         {
             try
             {
-                var customers = await _customerApiClient.GetAllAsync();
+                var result = await _customerApiClient.GetPagedAsync(page, pageSize, search, regionId, customerCategoryId);
                 var allAssignments = await _customerManagementApiClient.GetAllAsync(null, null);
                 ViewBag.Assignments = allAssignments.ToList();
-
-                if (!string.IsNullOrEmpty(search))
-                {
-                    customers = customers.Where(c =>
-                        (c.Full_name?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                        (c.Customer_code?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                        (c.Phone_number?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false)
-                    );
-                }
-
                 ViewBag.Search = search;
+                ViewBag.PageSize = pageSize;
+                ViewBag.RegionId = regionId;
+                ViewBag.CustomerCategoryId = customerCategoryId;
                 LoadCurrentUserPermissions();
-                return View(customers);
+                return View(result);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Lỗi khi tải danh sách khách hàng");
                 SetErrorMessage(GetDetailedErrorMessage(ex));
-                return View(Enumerable.Empty<CustomerDTO>());
+                return View(new PagedResult<CustomerDTO> { Items = new List<CustomerDTO>() });
             }
         }
         public async Task<IActionResult> Details(int id)

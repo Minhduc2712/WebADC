@@ -1,4 +1,4 @@
-﻿using ErpOnlineOrder.Application.Interfaces.Repositories;
+using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -19,24 +19,31 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<Category?> GetByIdAsync(int id)
         {
-            return await _context.Categories.FindAsync(id);
+            return await _context.Categories
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == id && !c.Is_deleted);
         }
 
         public async Task<Category?> GetByCodeAsync(string code)
         {
             return await _context.Categories
+                .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Category_code == code && !c.Is_deleted);
         }
 
         public async Task<Category?> GetByNameAsync(string name)
         {
             return await _context.Categories
+                .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Category_name == name && !c.Is_deleted);
         }
 
         public async Task<IEnumerable<Category>> GetAllAsync()
         {
-            return await _context.Categories.Where(c => !c.Is_deleted).ToListAsync();
+            return await _context.Categories
+                .AsNoTracking()
+                .Where(c => !c.Is_deleted)
+                .ToListAsync();
         }
 
         public async Task AddAsync(Category category)

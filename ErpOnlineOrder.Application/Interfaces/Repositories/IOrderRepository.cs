@@ -8,6 +8,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
     {
         Task<Order?> GetByIdAsync(int id);
         Task<IEnumerable<Order>> GetAllAsync();
+        Task<PagedResult<Order>> GetPagedOrdersAsync(OrderFilterRequest request, IEnumerable<int>? customerIds = null);
         Task<IEnumerable<Order>> GetByCustomerIdsAsync(IEnumerable<int> customerIds);
         Task<Order?> GetByCodeAsync(string code);
         Task AddAsync(Order order);

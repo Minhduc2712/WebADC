@@ -6,6 +6,7 @@ namespace ErpOnlineOrder.WebMVC.Services
     public interface IOrderApiClient
     {
         Task<IEnumerable<OrderDTO>> GetAllAsync(CancellationToken cancellationToken = default);
+        Task<PagedResult<OrderDTO>> GetPagedAsync(int page = 1, int pageSize = 20, string? status = null, string? searchTerm = null, CancellationToken cancellationToken = default);
         Task<OrderDTO?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
         Task<IEnumerable<OrderDTO>> GetByStatusAsync(string status, CancellationToken cancellationToken = default);
         Task<(bool Success, string? Message, int? Order_id)> CreateOrderAdminAsync(CreateOrderDto model, CancellationToken cancellationToken = default);

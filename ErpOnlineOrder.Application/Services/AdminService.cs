@@ -1,6 +1,7 @@
 using ErpOnlineOrder.Application.DTOs.AdminDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Application.Mappers;
 using ErpOnlineOrder.Domain.Models;
 using BCrypt.Net;
 
@@ -37,13 +38,33 @@ namespace ErpOnlineOrder.Application.Services
         {
             var users = await _userRepository.GetAllAsync();
             var staffUsers = users.Where(u => u.Staff != null && !u.Is_deleted);
-            var list = staffUsers.Select(u => MapToStaffAccountDto(u)).ToList();
+            var list = staffUsers.Select(u => EntityMappers.ToStaffAccountDto(u)).ToList();
             if (currentUserId.HasValue && currentUserId.Value > 0)
             {
+                var userPermissions = (await _permissionService.GetUserPermissionsAsync(currentUserId.Value)).ToHashSet();
                 foreach (var dto in list)
-                    await RecordPermissionEnricher.EnrichStaffAsync(dto, currentUserId.Value, _permissionService);
+                    RecordPermissionEnricher.EnrichStaff(dto, userPermissions);
             }
             return list;
+        }
+
+        public async Task<PagedResult<StaffAccountDto>> GetStaffPagedAsync(StaffFilterRequest request, int? currentUserId = null)
+        {
+            var paged = await _userRepository.GetPagedStaffAsync(request);
+            var list = paged.Items.Select(u => EntityMappers.ToStaffAccountDto(u)).ToList();
+            if (currentUserId.HasValue && currentUserId.Value > 0)
+            {
+                var userPermissions = (await _permissionService.GetUserPermissionsAsync(currentUserId.Value)).ToHashSet();
+                foreach (var dto in list)
+                    RecordPermissionEnricher.EnrichStaff(dto, userPermissions);
+            }
+            return new PagedResult<StaffAccountDto>
+            {
+                Items = list,
+                Page = paged.Page,
+                PageSize = paged.PageSize,
+                TotalCount = paged.TotalCount
+            };
         }
 
         public async Task<StaffAccountDto?> GetStaffByIdAsync(int userId, int? currentUserId = null)
@@ -51,7 +72,7 @@ namespace ErpOnlineOrder.Application.Services
             var user = await _userRepository.GetByIdAsync(userId);
             if (user == null || user.Staff == null)
                 return null;
-            var dto = MapToStaffAccountDto(user);
+            var dto = EntityMappers.ToStaffAccountDto(user);
             if (currentUserId.HasValue && currentUserId.Value > 0)
                 await RecordPermissionEnricher.EnrichStaffAsync(dto, currentUserId.Value, _permissionService);
             return dto;
@@ -116,7 +137,7 @@ namespace ErpOnlineOrder.Application.Services
 
             // L?y l?i user ?? tr? v?
             var createdUser = await _userRepository.GetByUsernameAsync(dto.Username);
-            return createdUser != null ? MapToStaffAccountDto(createdUser) : null;
+            return createdUser != null ? EntityMappers.ToStaffAccountDto(createdUser) : null;
         }
 
         public async Task<bool> UpdateStaffAccountAsync(UpdateStaffAccountDto dto, int updatedBy)
@@ -247,30 +268,6 @@ namespace ErpOnlineOrder.Application.Services
         {
             var orders = await _orderRepository.GetAllAsync();
             return orders.Count();
-        }
-
-        #endregion
-
-        #region Private Methods
-
-        private static StaffAccountDto MapToStaffAccountDto(User user)
-        {
-            return new StaffAccountDto
-            {
-                User_id = user.Id,
-                Staff_id = user.Staff?.Id ?? 0,
-                Staff_code = user.Staff?.Staff_code ?? string.Empty,
-                Username = user.Username,
-                Email = user.Email,
-                Full_name = user.Staff?.Full_name ?? string.Empty,
-                Phone_number = user.Staff?.Phone_number,
-                Is_active = user.Is_active,
-                Roles = user.User_roles
-                    .Where(ur => !ur.Is_deleted && !ur.Role.Is_deleted)
-                    .Select(ur => ur.Role.Role_name)
-                    .ToList(),
-                Created_at = user.Created_at
-            };
         }
 
         #endregion

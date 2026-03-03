@@ -22,6 +22,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<Organization_information?> GetByIdAsync(int id)
         {
             return await _context.OrganizationInformations
+                .AsNoTracking()
                 .Include(o => o.Customer)
                 .FirstOrDefaultAsync(o => o.Id == id && !o.Is_deleted);
         }
@@ -29,12 +30,14 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<Organization_information?> GetByCodeAsync(string organizationCode)
         {
             return await _context.OrganizationInformations
+                .AsNoTracking()
                 .FirstOrDefaultAsync(o => o.Organization_code == organizationCode && !o.Is_deleted);
         }
 
         public async Task<IEnumerable<Organization_information>> GetAllAsync()
         {
             return await _context.OrganizationInformations
+                .AsNoTracking()
                 .Include(o => o.Customer)
                 .Where(o => !o.Is_deleted)
                 .OrderBy(o => o.Organization_name)
@@ -44,6 +47,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<Organization_information?> GetByCustomerIdAsync(int customerId)
         {
             return await _context.OrganizationInformations
+                .AsNoTracking()
                 .Include(o => o.Customer)
                 .FirstOrDefaultAsync(o => o.Customer_id == customerId && !o.Is_deleted);
         }
@@ -51,6 +55,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<IEnumerable<Organization_information>> SearchAsync(string? keyword)
         {
             var query = _context.OrganizationInformations
+                .AsNoTracking()
                 .Include(o => o.Customer)
                 .Where(o => !o.Is_deleted);
 

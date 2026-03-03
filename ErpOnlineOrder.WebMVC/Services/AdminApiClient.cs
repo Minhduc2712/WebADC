@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using ErpOnlineOrder.Application.DTOs.AdminDTOs;
+using ErpOnlineOrder.Domain.Models;
 
 namespace ErpOnlineOrder.WebMVC.Services
 {
@@ -18,6 +19,19 @@ namespace ErpOnlineOrder.WebMVC.Services
             if (!response.IsSuccessStatusCode) return Array.Empty<StaffAccountDto>();
             var list = await response.Content.ReadFromJsonAsync<List<StaffAccountDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
             return list ?? new List<StaffAccountDto>();
+        }
+
+        public async Task<PagedResult<StaffAccountDto>> GetStaffPagedAsync(int page = 1, int pageSize = 20, int? roleId = null, bool? isActive = null, string? searchTerm = null, CancellationToken cancellationToken = default)
+        {
+            var query = new List<string> { $"page={page}", $"pageSize={pageSize}" };
+            if (roleId.HasValue) query.Add("roleId=" + roleId.Value);
+            if (isActive.HasValue) query.Add("isActive=" + isActive.Value.ToString().ToLowerInvariant());
+            if (!string.IsNullOrEmpty(searchTerm)) query.Add("searchTerm=" + Uri.EscapeDataString(searchTerm));
+            var path = "admin/staff/paged?" + string.Join("&", query);
+            var response = await _http.GetAsync(path, cancellationToken);
+            if (!response.IsSuccessStatusCode) return new PagedResult<StaffAccountDto> { Items = new List<StaffAccountDto>(), Page = page, PageSize = pageSize, TotalCount = 0 };
+            var result = await response.Content.ReadFromJsonAsync<PagedResult<StaffAccountDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return result ?? new PagedResult<StaffAccountDto>();
         }
 
         public async Task<StaffAccountDto?> GetStaffByIdAsync(int userId, CancellationToken cancellationToken = default)

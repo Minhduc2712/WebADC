@@ -1,7 +1,8 @@
-@model IEnumerable<ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs.WarehouseExportDto>
+@model PagedResult<ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs.WarehouseExportDto>
 @{
     ViewData["Title"] = "Quản lý xuất kho";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var items = Model?.Items ?? new List<ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs.WarehouseExportDto>();
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -39,11 +40,12 @@
         <i class="fas fa-filter me-2"></i>Bộ lọc
     </div>
     <div class="card-body p-4">
-        <form asp-action="Index" method="get">
+        <form asp-action="Index" method="get" id="filterForm">
+            <input type="hidden" name="page" value="1" />
             <div class="row g-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-label">Trạng thái</label>
-                    <select name="status" class="form-select">
+                    <select name="status" class="form-select" onchange="this.form.submit()">
                         <option value="">-- Tất cả --</option>
                         <option value="Draft" selected="@(ViewBag.Status == "Draft")">Nháp</option>
                         <option value="Pending" selected="@(ViewBag.Status == "Pending")">Chờ xuất</option>
@@ -51,6 +53,14 @@
                         <option value="Shipping" selected="@(ViewBag.Status == "Shipping")">Đang giao</option>
                         <option value="Completed" selected="@(ViewBag.Status == "Completed")">Hoàn thành</option>
                         <option value="Cancelled" selected="@(ViewBag.Status == "Cancelled")">Đã hủy</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Số dòng/trang</label>
+                    <select name="pageSize" class="form-select" onchange="this.form.submit()">
+                        <option value="10" selected="@(ViewBag.PageSize == 10)">10</option>
+                        <option value="20" selected="@(ViewBag.PageSize == 20)">20</option>
+                        <option value="50" selected="@(ViewBag.PageSize == 50)">50</option>
                     </select>
                 </div>
                 <div class="col-md-4 d-flex align-items-end">
@@ -69,17 +79,17 @@
 <!-- Thống kê nhanh - Compact -->
 <div class="row mb-2 g-2">
     @{
-        var pending = Model.Count(e => e.Status == "Pending");
-        var shipping = Model.Count(e => e.Status == "Shipping");
-        var completed = Model.Count(e => e.Status == "Completed");
-        var totalQuantity = Model.Sum(e => e.Total_quantity);
+        var pending = items.Count(e => e.Status == "Pending");
+        var shipping = items.Count(e => e.Status == "Shipping");
+        var completed = items.Count(e => e.Status == "Completed");
+        var totalQuantity = items.Sum(e => e.Total_quantity);
     }
     <div class="col-md-3">
         <div class="card stat-card-compact shadow-sm">
             <div class="card-body d-flex align-items-center justify-content-between py-1 px-2">
                 <div>
                     <div class="stat-label">Tổng phiếu</div>
-                    <div class="stat-value">@Model.Count()</div>
+                    <div class="stat-value">@(Model?.TotalCount ?? 0)</div>
                 </div>
                 <div class="stat-icon-sm blue"><i class="fas fa-warehouse"></i></div>
             </div>
@@ -123,7 +133,7 @@
 <!-- Danh sách phiếu xuất kho -->
 <div class="table-card">
     <div class="card-header">
-        <i class="fas fa-warehouse me-2"></i>Danh sách phiếu xuất kho (@Model.Count() phiếu)
+        <i class="fas fa-warehouse me-2"></i>Danh sách phiếu xuất kho (@(Model?.TotalCount ?? 0) phiếu)
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -142,7 +152,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @if (!Model.Any())
+                    @if (!items.Any())
                     {
                         <tr>
                             <td colspan="9" class="text-center py-4 text-muted">
@@ -153,7 +163,7 @@
                     }
                     else
                     {
-                        @foreach (var export in Model.OrderByDescending(e => e.Export_date))
+                        @foreach (var export in items.OrderByDescending(e => e.Export_date))
                         {
                             var statusClass = export.Status switch
                             {
@@ -232,6 +242,11 @@
                 </tbody>
             </table>
         </div>
+        @if (Model != null && Model.TotalPages > 1)
+        {
+            ViewBag.PaginationItemLabel = "phiếu";
+            @await Html.PartialAsync("_Pagination", Model)
+        }
     </div>
 </div>
 

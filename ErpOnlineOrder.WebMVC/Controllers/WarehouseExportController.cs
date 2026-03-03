@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.WebMVC.Attributes;
 using ErpOnlineOrder.WebMVC.Services;
 
@@ -39,26 +40,22 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             return HttpContext.Session.GetInt32("UserId") ?? 0;
         }
 
-        public async Task<IActionResult> Index(string? status)
+        public async Task<IActionResult> Index(int page = 1, int pageSize = 20, string? status = null, string? search = null)
         {
             try
             {
-                var exports = await _warehouseExportApiClient.GetAllAsync();
-
-                if (!string.IsNullOrEmpty(status))
-                {
-                    exports = exports.Where(e => e.Status == status);
-                }
-
+                var result = await _warehouseExportApiClient.GetPagedAsync(page, pageSize, status, search);
                 ViewBag.Status = status;
+                ViewBag.PageSize = pageSize;
+                ViewBag.Search = search;
                 await LoadCurrentUserPermissions();
-                return View(exports);
+                return View(result);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading exports");
                 SetErrorMessage(GetDetailedErrorMessage(ex));
-                return View(Enumerable.Empty<WarehouseExportDto>());
+                return View(new PagedResult<WarehouseExportDto> { Items = new List<WarehouseExportDto>() });
             }
         }
 
@@ -86,13 +83,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var invoices = await _invoiceApiClient.GetAllAsync();
-                var warehouses = await _warehouseApiClient.GetAllAsync();
+                var invoices = await _invoiceApiClient.GetForWarehouseExportAsync();
+                var warehouses = await _warehouseApiClient.GetForSelectAsync();
 
-                ViewBag.Invoices = new SelectList(
-                    invoices.Where(i => i.Status != "Cancelled"),
-                    "Id",
-                    "Invoice_code");
+                ViewBag.Invoices = new SelectList(invoices, "Id", "Invoice_code");
                 ViewBag.Warehouses = new SelectList(warehouses, "Id", "Warehouse_name");
 
                 return View();
@@ -122,8 +116,8 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 else
                 {
                     SetErrorMessage("Không thể tạo phiếu xuất kho!");
-                    var invoices = await _invoiceApiClient.GetAllAsync();
-                    var warehouses = await _warehouseApiClient.GetAllAsync();
+                    var invoices = await _invoiceApiClient.GetForWarehouseExportAsync();
+                    var warehouses = await _warehouseApiClient.GetForSelectAsync();
                     ViewBag.Invoices = new SelectList(invoices, "Id", "Invoice_code");
                     ViewBag.Warehouses = new SelectList(warehouses, "Id", "Warehouse_name");
                     return View(model);

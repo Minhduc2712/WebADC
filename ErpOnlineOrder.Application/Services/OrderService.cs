@@ -1,5 +1,6 @@
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Application.Mappers;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.DTOs.OrderDTOs;
@@ -58,7 +59,7 @@ namespace ErpOnlineOrder.Application.Services
                 }
             }
 
-            var dto = MapToOrderDTO(order);
+            var dto = EntityMappers.ToOrderDto(order);
             if (userId.HasValue && userId.Value > 0)
                 await RecordPermissionEnricher.EnrichOrderAsync(dto, userId.Value, _permissionService);
             return dto;
@@ -81,13 +82,43 @@ namespace ErpOnlineOrder.Application.Services
             else
                 orders = await _orderRepository.GetAllAsync();
 
-            var list = orders.Select(MapToOrderDTO).ToList();
+            var list = orders.Select(EntityMappers.ToOrderDto).ToList();
             if (userId.HasValue && userId.Value > 0)
             {
+                var permissions = (await _permissionService.GetUserPermissionsAsync(userId.Value)).ToHashSet();
                 foreach (var dto in list)
-                    await RecordPermissionEnricher.EnrichOrderAsync(dto, userId.Value, _permissionService);
+                    RecordPermissionEnricher.EnrichOrder(dto, permissions);
             }
             return list;
+        }
+
+        public async Task<PagedResult<OrderDTO>> GetAllPagedAsync(OrderFilterRequest request, int? userId = null)
+        {
+            IEnumerable<int>? customerIds = null;
+            if (userId.HasValue && userId.Value > 0 && !await _permissionService.IsAdminAsync(userId.Value))
+            {
+                var staff = await _staffRepository.GetByUserIdAsync(userId.Value);
+                if (staff != null)
+                {
+                    customerIds = await _customerManagementRepository.GetCustomerIdsByStaffAsync(staff.Id);
+                }
+            }
+
+            var paged = await _orderRepository.GetPagedOrdersAsync(request, customerIds);
+            var dtos = paged.Items.Select(EntityMappers.ToOrderDto).ToList();
+            if (userId.HasValue && userId.Value > 0)
+            {
+                var permissions = (await _permissionService.GetUserPermissionsAsync(userId.Value)).ToHashSet();
+                foreach (var dto in dtos)
+                    RecordPermissionEnricher.EnrichOrder(dto, permissions);
+            }
+            return new PagedResult<OrderDTO>
+            {
+                Items = dtos,
+                Page = paged.Page,
+                PageSize = paged.PageSize,
+                TotalCount = paged.TotalCount
+            };
         }
 
         public async Task<Order?> GetByCodeAsync(string code)
@@ -336,14 +367,27 @@ namespace ErpOnlineOrder.Application.Services
             var customerIds = managedCustomers.Select(cm => cm.Customer_id).Distinct();
             var orders = await _orderRepository.GetAllAsync();
             var filteredOrders = orders.Where(o => customerIds.Contains(o.Customer_id));
-            return filteredOrders.Select(MapToOrderDTO);
+            return filteredOrders.Select(EntityMappers.ToOrderDto);
         }
 
         public async Task<IEnumerable<OrderDTO>> GetOrdersByCustomerAsync(int customerId)
         {
             var orders = await _orderRepository.GetAllAsync();
             var customerOrders = orders.Where(o => o.Customer_id == customerId);
-            return customerOrders.Select(MapToOrderDTO);
+            return customerOrders.Select(EntityMappers.ToOrderDto);
+        }
+
+        public async Task<PagedResult<OrderDTO>> GetOrdersByCustomerPagedAsync(int customerId, OrderFilterRequest request)
+        {
+            var paged = await _orderRepository.GetPagedOrdersAsync(request, new[] { customerId });
+            var dtos = paged.Items.Select(EntityMappers.ToOrderDto).ToList();
+            return new PagedResult<OrderDTO>
+            {
+                Items = dtos,
+                Page = paged.Page,
+                PageSize = paged.PageSize,
+                TotalCount = paged.TotalCount
+            };
         }
 
         public async Task<bool> ConfirmOrderAsync(ConfirmOrderDto dto)
@@ -449,7 +493,7 @@ namespace ErpOnlineOrder.Application.Services
                 orders = await _orderRepository.GetAllAsync();
 
             var filtered = orders.Where(o => o.Order_status == status);
-            return filtered.Select(MapToOrderDTO);
+            return filtered.Select(EntityMappers.ToOrderDto);
         }
 
         public async Task<bool> DeletePendingOrderAsync(int id)
@@ -582,34 +626,6 @@ namespace ErpOnlineOrder.Application.Services
             }
 
             return originalPrice;
-        }
-
-        private static OrderDTO MapToOrderDTO(Order order)
-        {
-            var customer = order.Customer;
-            var customerName = customer != null
-                ? (!string.IsNullOrWhiteSpace(customer.Full_name) ? customer.Full_name : customer.Customer_code ?? "—")
-                : "—";
-
-            return new OrderDTO
-            {
-                Id = order.Id,
-                Order_code = order.Order_code,
-                Order_date = order.Order_date,
-                Total_price = order.Total_price,
-                Order_status = order.Order_status ?? "",
-                Customer_name = customerName,
-                Shipping_address = order.Shipping_address,
-                note = order.note,
-                Order_details = order.Order_Details.Select(od => new OrderDetailDTO
-                {
-                    Product_id = od.Product_id,
-                    Product_name = od.Product?.Product_name ?? "",
-                    Quantity = od.Quantity,
-                    Unit_price = od.Unit_price,
-                    Total_price = od.Total_price
-                }).ToList()
-            };
         }
     }
 }

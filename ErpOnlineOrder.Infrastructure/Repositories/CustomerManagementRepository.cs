@@ -20,6 +20,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<Customer_management?> GetByIdAsync(int id)
         {
             return await _context.CustomerManagements
+                .AsNoTracking()
                 .Include(cm => cm.Customer)
                 .Include(cm => cm.Staff)
                 .Include(cm => cm.Province)
@@ -29,6 +30,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<IEnumerable<Customer_management>> GetAllAsync()
         {
             return await _context.CustomerManagements
+                .AsNoTracking()
                 .Where(cm => !cm.Is_deleted)
                 .Include(cm => cm.Customer)
                 .Include(cm => cm.Staff)
@@ -40,6 +42,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<IEnumerable<Customer_management>> GetByStaffAsync(int staffId)
         {
             return await _context.CustomerManagements
+                .AsNoTracking()
                 .Where(cm => !cm.Is_deleted && cm.Staff_id == staffId)
                 .Include(cm => cm.Customer)
                 .Include(cm => cm.Staff)
@@ -51,6 +54,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<IEnumerable<int>> GetCustomerIdsByStaffAsync(int staffId)
         {
             return await _context.CustomerManagements
+                .AsNoTracking()
                 .Where(cm => !cm.Is_deleted && cm.Staff_id == staffId)
                 .Select(cm => cm.Customer_id)
                 .Distinct()
@@ -60,6 +64,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<IEnumerable<Customer_management>> GetByCustomerAsync(int customerId)
         {
             return await _context.CustomerManagements
+                .AsNoTracking()
                 .Where(cm => !cm.Is_deleted && cm.Customer_id == customerId)
                 .Include(cm => cm.Customer)
                 .Include(cm => cm.Staff)
@@ -71,6 +76,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<Customer_management?> GetByStaffAndCustomerAsync(int staffId, int customerId)
         {
             return await _context.CustomerManagements
+                .AsNoTracking()
                 .Include(cm => cm.Customer)
                 .Include(cm => cm.Staff)
                 .Include(cm => cm.Province)
@@ -80,6 +86,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<IEnumerable<Customer_management>> GetByProvinceAsync(int provinceId)
         {
             return await _context.CustomerManagements
+                .AsNoTracking()
                 .Where(cm => !cm.Is_deleted && cm.Province_id == provinceId)
                 .Include(cm => cm.Customer)
                 .Include(cm => cm.Staff)

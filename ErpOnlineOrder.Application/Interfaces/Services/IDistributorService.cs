@@ -9,6 +9,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
     {
         Task<Distributor?> GetByIdAsync(int id);
         Task<IEnumerable<Distributor>> GetAllAsync();
+        Task<IEnumerable<DistributorSelectDto>> GetForSelectAsync();
         Task<Distributor> CreateDistributorAsync(CreateDistributorDto dto, int createdBy);
         Task<bool> UpdateDistributorAsync(UpdateDistributorDto dto, int updatedBy);
         Task<bool> DeleteDistributorAsync(int id);

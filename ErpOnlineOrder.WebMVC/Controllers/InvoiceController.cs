@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.Application.DTOs.InvoiceDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.WebMVC.Attributes;
 using ErpOnlineOrder.WebMVC.Services;
 
@@ -32,26 +33,22 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             return HttpContext.Session.GetInt32("UserId") ?? 0;
         }
 
-        public async Task<IActionResult> Index(string? status)
+        public async Task<IActionResult> Index(int page = 1, int pageSize = 20, string? status = null, string? search = null)
         {
             try
             {
-                var invoices = await _invoiceApiClient.GetAllAsync();
-
-                if (!string.IsNullOrEmpty(status))
-                {
-                    invoices = invoices.Where(i => i.Status == status);
-                }
-
+                var result = await _invoiceApiClient.GetPagedAsync(page, pageSize, status, search);
                 ViewBag.Status = status;
+                ViewBag.PageSize = pageSize;
+                ViewBag.Search = search;
                 await LoadCurrentUserPermissions();
-                return View(invoices);
+                return View(result);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading invoices");
                 SetErrorMessage(GetDetailedErrorMessage(ex));
-                return View(Enumerable.Empty<InvoiceDto>());
+                return View(new PagedResult<InvoiceDto> { Items = new List<InvoiceDto>() });
             }
         }
 
@@ -129,8 +126,8 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var invoices = await _invoiceApiClient.GetAllAsync();
-                return View(invoices.Where(i => i.Status != "Completed" && i.Status != "Cancelled" && i.Status != "Merged"));
+                var invoices = await _invoiceApiClient.GetForMergeAsync();
+                return View(invoices);
             }
             catch (Exception ex)
             {

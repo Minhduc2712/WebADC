@@ -8,6 +8,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
     {
         Task<User?> GetByIdAsync(int id);
         Task<IEnumerable<User>> GetAllAsync();
+        Task<PagedResult<User>> GetPagedStaffAsync(StaffFilterRequest request);
         Task<User?> FindByIdentifierAsync(string identifier);
         Task<User?> GetByUsernameAsync(string username);
         Task<User?> GetByEmailAsync(string email);

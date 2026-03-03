@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ErpOnlineOrder.Application\ErpOnlineOrder.Application.csproj" />
+    <ProjectReference Include="..\ErpOnlineOrder.Domain\ErpOnlineOrder.Domain.csproj" />
     <ProjectReference Include="..\ErpOnlineOrder.Infrastructure\ErpOnlineOrder.Infrastructure.csproj" />
   </ItemGroup>
 

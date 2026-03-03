@@ -1,4 +1,4 @@
-﻿using ErpOnlineOrder.Application.Interfaces.Repositories;
+using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +20,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<Region?> GetByIdAsync(int id)
         {
             return await _context.Regions
+                .AsNoTracking()
                 .Include(r => r.Provinces)
                 .FirstOrDefaultAsync(r => r.Id == id && !r.Is_deleted);
         }
@@ -27,18 +28,21 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<Region?> GetByCodeAsync(string regionCode)
         {
             return await _context.Regions
+                .AsNoTracking()
                 .FirstOrDefaultAsync(r => r.Region_code == regionCode && !r.Is_deleted);
         }
 
         public async Task<Region?> GetByNameAsync(string regionName)
         {
             return await _context.Regions
+                .AsNoTracking()
                 .FirstOrDefaultAsync(r => r.Region_name == regionName && !r.Is_deleted);
         }
 
         public async Task<IEnumerable<Region>> GetAllAsync()
         {
             return await _context.Regions
+                .AsNoTracking()
                 .Include(r => r.Provinces)
                 .Where(r => !r.Is_deleted)
                 .OrderBy(r => r.Region_name)

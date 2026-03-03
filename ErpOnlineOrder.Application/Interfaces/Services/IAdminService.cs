@@ -1,3 +1,4 @@
+using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.DTOs.AdminDTOs;
 
 namespace ErpOnlineOrder.Application.Interfaces.Services
@@ -6,6 +7,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
     {
         #region Qu?n lý tài kho?n nhân viên
         Task<IEnumerable<StaffAccountDto>> GetAllStaffAsync(int? currentUserId = null);
+        Task<PagedResult<StaffAccountDto>> GetStaffPagedAsync(StaffFilterRequest request, int? currentUserId = null);
         Task<StaffAccountDto?> GetStaffByIdAsync(int userId, int? currentUserId = null);
         Task<StaffAccountDto?> CreateStaffAccountAsync(CreateStaffAccountDto dto, int createdBy);
         Task<bool> UpdateStaffAccountAsync(UpdateStaffAccountDto dto, int updatedBy);

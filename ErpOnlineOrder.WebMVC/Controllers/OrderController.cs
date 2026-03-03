@@ -4,6 +4,7 @@ using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.DTOs.OrderDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.WebMVC.Attributes;
 using ErpOnlineOrder.WebMVC.Services;
 
@@ -37,12 +38,8 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         private async Task<SelectList> GetCustomerSelectListAsync(int? selectedId = null)
         {
-            var customers = await _customerApiClient.GetAllAsync();
-            var items = customers
-                .Where(c => !c.Is_deleted)
-                .Select(c => new { c.Id, DisplayText = string.IsNullOrEmpty(c.Full_name) ? (c.Customer_code ?? $"Khách hàng #{c.Id}") : $"{c.Customer_code} - {c.Full_name}" })
-                .ToList();
-            return new SelectList(items, "Id", "DisplayText", selectedId);
+            var customers = await _customerApiClient.GetForSelectAsync();
+            return new SelectList(customers, "Id", "Display_text", selectedId);
         }
 
         private int GetCurrentUserId()
@@ -50,26 +47,22 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             return HttpContext.Session.GetInt32("UserId") ?? 0;
         }
 
-        public async Task<IActionResult> Index(string? status)
+        public async Task<IActionResult> Index(int page = 1, int pageSize = 20, string? status = null, string? search = null)
         {
             try
             {
-                IEnumerable<OrderDTO> orders;
-
-                if (!string.IsNullOrEmpty(status))
-                    orders = await _orderApiClient.GetByStatusAsync(status);
-                else
-                    orders = await _orderApiClient.GetAllAsync();
-
+                var result = await _orderApiClient.GetPagedAsync(page, pageSize, status, search);
                 ViewBag.Status = status;
+                ViewBag.PageSize = pageSize;
+                ViewBag.Search = search;
                 await LoadCurrentUserPermissions();
-                return View(orders);
+                return View(result);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading orders");
                 SetErrorMessage(GetDetailedErrorMessage(ex));
-                return View(Enumerable.Empty<OrderDTO>());
+                return View(new PagedResult<OrderDTO> { Items = new List<OrderDTO>() });
             }
         }
 

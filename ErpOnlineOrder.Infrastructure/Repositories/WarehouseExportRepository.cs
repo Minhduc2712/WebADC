@@ -1,6 +1,7 @@
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.Infrastructure.Persistence;
+using ErpOnlineOrder.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace ErpOnlineOrder.Infrastructure.Repositories
@@ -17,6 +18,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<Warehouse_export?> GetByIdAsync(int id)
         {
             return await _context.WarehouseExports
+                .AsNoTracking()
                 .Include(e => e.Warehouse)
                 .Include(e => e.Invoice)
                 .Include(e => e.Order)
@@ -34,6 +36,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<Warehouse_export?> GetByCodeAsync(string code)
         {
             return await _context.WarehouseExports
+                .AsNoTracking()
                 .Include(e => e.Warehouse)
                 .Include(e => e.Invoice)
                 .Include(e => e.Customer)
@@ -43,6 +46,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<IEnumerable<Warehouse_export>> GetAllAsync()
         {
             return await _context.WarehouseExports
+                .AsNoTracking()
                 .Include(e => e.Warehouse)
                 .Include(e => e.Invoice)
                 .Include(e => e.Customer)
@@ -54,9 +58,48 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        public async Task<PagedResult<Warehouse_export>> GetPagedWarehouseExportsAsync(WarehouseExportFilterRequest request, IEnumerable<int>? customerIds = null)
+        {
+            var query = _context.WarehouseExports
+                .AsNoTracking()
+                .Include(e => e.Warehouse)
+                .Include(e => e.Invoice)
+                .Include(e => e.Customer)
+                .Include(e => e.Staff)
+                .Include(e => e.Warehouse_Export_Details)
+                    .ThenInclude(d => d.Product)
+                .Where(e => !e.Is_deleted)
+                .AsQueryable();
+
+            if (customerIds != null)
+            {
+                var ids = customerIds.ToList();
+                if (ids.Count > 0)
+                    query = query.Where(e => ids.Contains(e.Customer_id));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Status))
+            {
+                query = query.Where(e => e.Status == request.Status);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+            {
+                var search = request.SearchTerm.Trim().ToLowerInvariant();
+                query = query.Where(e =>
+                    (e.Warehouse_export_code != null && e.Warehouse_export_code.ToLower().Contains(search)) ||
+                    (e.Customer != null && e.Customer.Full_name != null && e.Customer.Full_name.ToLower().Contains(search))
+                );
+            }
+
+            query = query.OrderByDescending(e => e.Created_at);
+            return await query.ToPagedListAsync(request);
+        }
+
         public async Task<IEnumerable<Warehouse_export>> GetByInvoiceIdAsync(int invoiceId)
         {
             return await _context.WarehouseExports
+                .AsNoTracking()
                 .Include(e => e.Warehouse)
                 .Include(e => e.Invoice)
                 .Include(e => e.Warehouse_Export_Details)
@@ -68,6 +111,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<IEnumerable<Warehouse_export>> GetByCustomerIdAsync(int customerId)
         {
             return await _context.WarehouseExports
+                .AsNoTracking()
                 .Include(e => e.Warehouse)
                 .Include(e => e.Invoice)
                 .Include(e => e.Warehouse_Export_Details)
@@ -80,6 +124,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<IEnumerable<Warehouse_export>> GetByWarehouseIdAsync(int warehouseId)
         {
             return await _context.WarehouseExports
+                .AsNoTracking()
                 .Include(e => e.Invoice)
                 .Include(e => e.Customer)
                 .Include(e => e.Warehouse_Export_Details)
@@ -92,6 +137,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<IEnumerable<Warehouse_export>> GetByStatusAsync(string status)
         {
             return await _context.WarehouseExports
+                .AsNoTracking()
                 .Include(e => e.Warehouse)
                 .Include(e => e.Invoice)
                 .Include(e => e.Customer)
@@ -103,6 +149,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<IEnumerable<Warehouse_export>> GetChildExportsAsync(int parentExportId)
         {
             return await _context.WarehouseExports
+                .AsNoTracking()
                 .Include(e => e.Warehouse)
                 .Include(e => e.Invoice)
                 .Include(e => e.Warehouse_Export_Details)

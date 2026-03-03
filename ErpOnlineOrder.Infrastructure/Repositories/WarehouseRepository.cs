@@ -1,4 +1,5 @@
-﻿using ErpOnlineOrder.Application.Interfaces.Repositories;
+using ErpOnlineOrder.Application.DTOs.WarehouseDTOs;
+using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -17,6 +18,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<Warehouse?> GetByIdAsync(int id)
         {
             return await _context.Warehouses
+                .AsNoTracking()
                 .Include(w => w.Province)
                 .FirstOrDefaultAsync(w => w.Id == id && !w.Is_deleted);
         }
@@ -24,18 +26,21 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<Warehouse?> GetByCodeAsync(string code)
         {
             return await _context.Warehouses
+                .AsNoTracking()
                 .FirstOrDefaultAsync(w => w.Warehouse_code == code && !w.Is_deleted);
         }
 
         public async Task<Warehouse?> GetByNameAsync(string name)
         {
             return await _context.Warehouses
+                .AsNoTracking()
                 .FirstOrDefaultAsync(w => w.Warehouse_name == name && !w.Is_deleted);
         }
 
         public async Task<IEnumerable<Warehouse>> GetAllAsync()
         {
             return await _context.Warehouses
+                .AsNoTracking()
                 .Include(w => w.Province)
                 .Where(w => !w.Is_deleted)
                 .OrderBy(w => w.Warehouse_name)
@@ -45,9 +50,20 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<IEnumerable<Warehouse>> GetByProvinceIdAsync(int provinceId)
         {
             return await _context.Warehouses
+                .AsNoTracking()
                 .Include(w => w.Province)
                 .Where(w => !w.Is_deleted && w.Province_id == provinceId)
                 .OrderBy(w => w.Warehouse_name)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<WarehouseSelectDto>> GetForSelectAsync()
+        {
+            return await _context.Warehouses
+                .AsNoTracking()
+                .Where(w => !w.Is_deleted)
+                .OrderBy(w => w.Warehouse_name)
+                .Select(w => new WarehouseSelectDto { Id = w.Id, Warehouse_name = w.Warehouse_name ?? "" })
                 .ToListAsync();
         }
 

@@ -42,8 +42,9 @@ namespace ErpOnlineOrder.Application.Services
             }).ToList();
             if (userId.HasValue && userId.Value > 0)
             {
+                var userPermissions = (await _permissionService.GetUserPermissionsAsync(userId.Value)).ToHashSet();
                 foreach (var dto in list)
-                    await RecordPermissionEnricher.EnrichSettingAsync(dto, userId.Value, _permissionService);
+                    RecordPermissionEnricher.EnrichSetting(dto, userPermissions);
             }
             return list;
         }

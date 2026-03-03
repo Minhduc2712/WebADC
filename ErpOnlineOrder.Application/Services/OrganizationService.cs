@@ -1,6 +1,7 @@
 using ErpOnlineOrder.Application.DTOs.OrganizationDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Application.Mappers;
 using ErpOnlineOrder.Domain.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -23,25 +24,25 @@ namespace ErpOnlineOrder.Application.Services
         public async Task<OrganizationDTO?> GetByIdAsync(int id)
         {
             var org = await _organizationRepository.GetByIdAsync(id);
-            return org != null ? MapToDto(org) : null;
+            return org != null ? EntityMappers.ToOrganizationDto(org) : null;
         }
 
         public async Task<IEnumerable<OrganizationDTO>> GetAllAsync()
         {
             var orgs = await _organizationRepository.GetAllAsync();
-            return orgs.Select(MapToDto);
+            return orgs.Select(EntityMappers.ToOrganizationDto);
         }
 
         public async Task<OrganizationDTO?> GetByCustomerIdAsync(int customerId)
         {
             var org = await _organizationRepository.GetByCustomerIdAsync(customerId);
-            return org != null ? MapToDto(org) : null;
+            return org != null ? EntityMappers.ToOrganizationDto(org) : null;
         }
 
         public async Task<IEnumerable<OrganizationDTO>> SearchAsync(string? keyword)
         {
             var orgs = await _organizationRepository.SearchAsync(keyword);
-            return orgs.Select(MapToDto);
+            return orgs.Select(EntityMappers.ToOrganizationDto);
         }
 
         public async Task<OrganizationDTO?> CreateOrganizationAsync(CreateOrganizationDto dto, int createdBy)
@@ -81,7 +82,7 @@ namespace ErpOnlineOrder.Application.Services
 
             // Load l?i ?? l?y thông tin Customer
             var created = await _organizationRepository.GetByIdAsync(org.Id);
-            return created != null ? MapToDto(created) : null;
+            return created != null ? EntityMappers.ToOrganizationDto(created) : null;
         }
 
         public async Task<bool> UpdateOrganizationAsync(UpdateOrganizationDto dto, int updatedBy)
@@ -128,23 +129,5 @@ namespace ErpOnlineOrder.Application.Services
             return true;
         }
 
-        private static OrganizationDTO MapToDto(Organization_information org)
-        {
-            return new OrganizationDTO
-            {
-                Id = org.Id,
-                Organization_code = org.Organization_code,
-                Organization_name = org.Organization_name,
-                Address = org.Address,
-                Tax_number = org.Tax_number,
-                Recipient_name = org.Recipient_name,
-                Recipient_phone = org.Recipient_phone,
-                Recipient_address = org.Recipient_address,
-                Customer_id = org.Customer_id,
-                Customer_name = org.Customer?.Full_name ?? string.Empty,
-                Created_at = org.Created_at,
-                Updated_at = org.Updated_at
-            };
-        }
     }
 }

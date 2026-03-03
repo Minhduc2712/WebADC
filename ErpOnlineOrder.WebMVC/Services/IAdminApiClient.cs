@@ -5,6 +5,7 @@ namespace ErpOnlineOrder.WebMVC.Services
     public interface IAdminApiClient
     {
         Task<IEnumerable<StaffAccountDto>> GetAllStaffAsync(CancellationToken cancellationToken = default);
+        Task<PagedResult<StaffAccountDto>> GetStaffPagedAsync(int page = 1, int pageSize = 20, int? roleId = null, bool? isActive = null, string? searchTerm = null, CancellationToken cancellationToken = default);
         Task<StaffAccountDto?> GetStaffByIdAsync(int userId, CancellationToken cancellationToken = default);
         Task<StaffAccountDto?> CreateStaffAsync(CreateStaffAccountDto dto, CancellationToken cancellationToken = default);
         Task<(bool Success, string? Error)> UpdateStaffAsync(int userId, UpdateStaffAccountDto dto, CancellationToken cancellationToken = default);

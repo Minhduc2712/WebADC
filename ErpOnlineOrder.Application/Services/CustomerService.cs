@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using ErpOnlineOrder.Application.Interfaces;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Application.Mappers;
+using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.DTOs.CustomerDTOs;
 using ErpOnlineOrder.Domain.Models;
 
@@ -32,6 +34,24 @@ namespace ErpOnlineOrder.Application.Services
         public async Task<IEnumerable<Customer>> GetAllAsync()
         {
             return await _customerRepository.GetAllAsync();
+        }
+
+        public async Task<IEnumerable<CustomerSelectDto>> GetForSelectAsync()
+        {
+            return await _customerRepository.GetForSelectAsync();
+        }
+
+        public async Task<PagedResult<CustomerDTO>> GetAllPagedAsync(CustomerFilterRequest request, int? userId = null)
+        {
+            var paged = await _customerRepository.GetPagedCustomersAsync(request);
+            var dtos = paged.Items.Select(EntityMappers.ToCustomerDto).ToList();
+            return new PagedResult<CustomerDTO>
+            {
+                Items = dtos,
+                Page = paged.Page,
+                PageSize = paged.PageSize,
+                TotalCount = paged.TotalCount
+            };
         }
 
         public async Task<Customer> CreateCustomerAsync(CreateCustomerDto dto, int createdBy)

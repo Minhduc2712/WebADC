@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.DTOs.OrderDTOs;
 using ErpOnlineOrder.Domain.Models;
@@ -21,6 +21,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             var orders = await _orderService.GetAllAsync(TryGetCurrentUserId());
             return Ok(orders);
+        }
+
+        [HttpGet("paged")]
+        public async Task<IActionResult> GetOrdersPaged([FromQuery] OrderFilterRequest request)
+        {
+            var result = await _orderService.GetAllPagedAsync(request, TryGetCurrentUserId());
+            return Ok(result);
         }
 
         [HttpGet("{id}")]
