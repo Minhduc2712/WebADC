@@ -1,0 +1,84 @@
+@model UpdateOrganizationByCustomerDto
+
+@{
+    ViewData["Title"] = "Chỉnh sửa thông tin đơn vị";
+    Layout = "~/Views/Shared/_ShopLayout.cshtml";
+}
+
+<!-- Breadcrumb -->
+<section class="blog about-blog">
+    <div class="container">
+        <div class="blog-bradcrum">
+            <span><a asp-controller="Shop" asp-action="Account">Tài khoản</a></span>
+            <span class="devider">/</span>
+            <span>Thông tin đơn vị</span>
+        </div>
+        <div class="blog-heading about-heading">
+            <h1 class="heading">Chỉnh sửa thông tin đơn vị</h1>
+        </div>
+    </div>
+</section>
+
+<section class="product footer-padding">
+    <div class="container">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+        }
+
+        <div class="checkout-section">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="account-section billing-section" style="padding: 30px;">
+                        <form asp-controller="Shop" asp-action="UpdateOrganization" method="post">
+                            <input type="hidden" asp-for="Customer_id" />
+                            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                            <div class="mb-3">
+                                <label asp-for="Organization_name" class="form-label">Tên đơn vị <span class="text-danger">*</span></label>
+                                <input asp-for="Organization_name" class="form-control" placeholder="Tên công ty / đơn vị" />
+                                <span asp-validation-for="Organization_name" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Address" class="form-label">Địa chỉ đơn vị <span class="text-danger">*</span></label>
+                                <input asp-for="Address" class="form-control" placeholder="Địa chỉ trụ sở" />
+                                <span asp-validation-for="Address" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Tax_number" class="form-label">Mã số thuế</label>
+                                <input asp-for="Tax_number" class="form-control" type="text" placeholder="Ví dụ: 0123456789" />
+                                <span asp-validation-for="Tax_number" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Recipient_name" class="form-label">Người nhận hàng</label>
+                                <input asp-for="Recipient_name" class="form-control" placeholder="Họ tên người nhận" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Recipient_phone" class="form-label">Số điện thoại người nhận</label>
+                                <input asp-for="Recipient_phone" class="form-control" type="text" placeholder="Ví dụ: 0901234567" />
+                            </div>
+
+                            <div class="mb-4">
+                                <label asp-for="Recipient_address" class="form-label">Địa chỉ nhận hàng</label>
+                                <input asp-for="Recipient_address" class="form-control" placeholder="Địa chỉ giao hàng" />
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="shop-btn">Cập nhật</button>
+                                <a asp-controller="Shop" asp-action="Account" class="btn btn-outline-secondary">Quay lại</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

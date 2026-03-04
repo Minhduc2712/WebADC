@@ -1,0 +1,189 @@
+/* ========== Shop Layout Override - Giao diện cải tiến ========== */
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
+
+body {
+  font-family: 'Be Vietnam Pro', 'Poppins', sans-serif;
+  scroll-behavior: smooth;
+}
+
+/* Header - Gọn gàng hơn */
+#header .header-top-section {
+  background: linear-gradient(135deg, #f8faf9 0%, #f0f9f4 100%);
+  border-bottom: 1px solid rgba(26, 127, 55, 0.12);
+}
+
+#header .header-top a {
+  color: #4b5563;
+  font-size: 1.3rem;
+  transition: color 0.2s;
+}
+
+#header .header-top a:hover {
+  color: #1a7f37;
+}
+
+#header .header-center-section {
+  background: #fff;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+#header .header-bottom {
+  background: linear-gradient(135deg, #0d5c2e 0%, #1a7f37 50%, #228b45 100%);
+  padding: 12px 0;
+}
+
+#header .header-nav .menu-list a {
+  color: rgba(255,255,255,0.95);
+  font-weight: 500;
+}
+
+#header .header-nav .menu-list a:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.12);
+}
+
+/* Inline Search - Hiển thị ô tìm ngay trên header (desktop) */
+.header-search-inline {
+  flex: 1;
+  max-width: 400px;
+  margin: 0 24px;
+}
+
+.header-search-inline form {
+  display: flex;
+  background: #f8faf9;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.header-search-inline form:focus-within {
+  border-color: #1a7f37;
+  box-shadow: 0 0 0 3px rgba(26, 127, 55, 0.15);
+}
+
+.header-search-inline input {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  font-size: 1.4rem;
+}
+
+.header-search-inline input::placeholder {
+  color: #9ca3af;
+}
+
+.header-search-inline button {
+  padding: 10px 16px;
+  background: #1a7f37;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.header-search-inline button:hover {
+  background: #16602d;
+  color: #fff;
+}
+
+/* Footer - Cân bằng màu sắc */
+.product.footer {
+  background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+}
+
+.product.footer .footer-section .footer-link a {
+  color: rgba(255,255,255,0.8);
+}
+
+.product.footer .footer-section .footer-link a:hover {
+  color: #4ade80;
+}
+
+/* Ngăn nhảy layout khi load */
+#header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: #fff;
+}
+
+/* Mobile - Cải thiện offcanvas */
+.offcanvas-start {
+  box-shadow: 4px 0 24px rgba(0,0,0,0.12);
+}
+
+.offcanvas-body .input-group .form-control {
+  border-radius: 10px 0 0 10px;
+}
+
+.offcanvas-body .input-group .btn {
+  border-radius: 0 10px 10px 0;
+  background: #1a7f37;
+  color: #fff;
+  border-color: #1a7f37;
+}
+
+/* ========== Shop Pagination ========== */
+.shop-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  margin-top: 2rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.shop-pagination-info {
+  font-size: 1.25rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.shop-pagination-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.shop-pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2563eb;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.shop-pagination-btn:hover {
+  background: #eff6ff;
+  border-color: #2563eb;
+  color: #2563eb;
+}
+
+.shop-pagination-btn.active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+
+.shop-pagination-btn.active:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  color: #fff;
+}

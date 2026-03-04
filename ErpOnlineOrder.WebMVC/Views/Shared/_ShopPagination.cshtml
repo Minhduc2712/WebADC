@@ -1,0 +1,83 @@
+@* Phân trang cho Shop - giao diện khách hàng *@
+@model dynamic
+@{
+    var m = Model;
+    if (m == null) { return; }
+    if (m.TotalPages <= 1) { return; }
+    var rv = new Dictionary<string, object?>
+    {
+        ["pageSize"] = ViewBag.PageSize ?? 12
+    };
+    if (ViewBag.Search != null) rv["search"] = ViewBag.Search;
+    if (ViewBag.Status != null) rv["status"] = ViewBag.Status;
+    if (ViewBag.Category != null) rv["category"] = ViewBag.Category;
+    if (ViewBag.Sort != null) rv["sort"] = ViewBag.Sort;
+    var itemLabel = ViewBag.PaginationItemLabel ?? "sản phẩm";
+    var actionName = ViewBag.PaginationAction as string ?? "Products";
+    var routeValues = new Microsoft.AspNetCore.Routing.RouteValueDictionary(rv);
+}
+<style>
+/* Shop Pagination - Giao diện compact */
+div.shop-pagination {
+    display: flex !important; justify-content: space-between !important; align-items: center !important;
+    flex-wrap: wrap !important; gap: 0.5rem !important;
+    padding: 0.75rem 1.25rem !important; background: #fff !important;
+    border-radius: 10px !important; border: 1px solid #e5e7eb !important;
+    margin-top: 2rem !important; box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
+}
+div.shop-pagination .shop-pagination-info {
+    font-size: 1.25rem !important; color: #6b7280 !important; font-weight: 500 !important;
+}
+div.shop-pagination .shop-pagination-nav {
+    display: flex !important; align-items: center !important; gap: 6px !important;
+}
+div.shop-pagination .shop-pagination-btn {
+    display: inline-flex !important; align-items: center !important; justify-content: center !important;
+    min-width: 32px !important; height: 32px !important; padding: 0 8px !important;
+    font-size: 1.25rem !important; font-weight: 600 !important;
+    color: #2563eb !important; background: #fff !important;
+    border: 1px solid #e5e7eb !important; border-radius: 6px !important;
+    text-decoration: none !important; transition: all 0.2s ease !important;
+}
+div.shop-pagination .shop-pagination-btn:hover {
+    background: #eff6ff !important; border-color: #2563eb !important; color: #2563eb !important;
+}
+div.shop-pagination .shop-pagination-btn.active {
+    background: #2563eb !important; border-color: #2563eb !important; color: #fff !important;
+}
+div.shop-pagination .shop-pagination-btn.active:hover {
+    background: #1d4ed8 !important; border-color: #1d4ed8 !important; color: #fff !important;
+}
+span.shop-pagination-btn.active { cursor: default !important; }
+</style>
+<div class="shop-pagination">
+    <span class="shop-pagination-info">Trang @(m.Page) / @(m.TotalPages) (@(m.TotalCount) @itemLabel)</span>
+    <nav class="shop-pagination-nav" aria-label="Phân trang">
+        @if (m.HasPrevious)
+        {
+            routeValues["page"] = m.Page - 1;
+            <a class="shop-pagination-btn" href="@Url.Action(actionName, "Shop", routeValues)" title="Trang trước">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+        }
+        @for (var i = Math.Max(1, m.Page - 2); i <= Math.Min(m.TotalPages, m.Page + 2); i++)
+        {
+            if (i == m.Page)
+            {
+                <span class="shop-pagination-btn active" aria-current="page">@i</span>
+            }
+            else
+            {
+                routeValues["page"] = i;
+                <a class="shop-pagination-btn" href="@Url.Action(actionName, "Shop", routeValues)">@i</a>
+            }
+        }
+        @if (m.HasNext)
+        {
+            routeValues["page"] = m.Page + 1;
+            <a class="shop-pagination-btn" href="@Url.Action(actionName, "Shop", routeValues)" title="Trang sau">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        }
+    </nav>
+</div>

@@ -1,0 +1,476 @@
+@*
+    Partial View: _NotificationPartial
+    Mục đích: Hiển thị thông báo (toast) tự động từ TempData
+    Hỗ trợ: SuccessMessage, ErrorMessage, WarningMessage, InfoMessage, ErrorDetails (danh sách lỗi)
+    
+    Cách sử dụng trong Controller:
+    - TempData["SuccessMessage"] = "Thao tác thành công!";
+    - TempData["ErrorMessage"] = "Đã xảy ra lỗi!";
+    - TempData["WarningMessage"] = "Cảnh báo!";
+    - TempData["InfoMessage"] = "Thông tin!";
+    - TempData["ErrorDetails"] = JsonSerializer.Serialize(new List<string> { "Lỗi 1", "Lỗi 2" });
+*@
+
+<!-- Toast Container -->
+<div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999; margin-top: 10px;">
+</div>
+
+<!-- Alert Container cho các thông báo dạng banner (trong content) -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-notification alert-success-custom alert-dismissible fade show" role="alert">
+        <div class="alert-icon-wrapper alert-icon-success">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="alert-content">
+            <strong class="alert-title">Thành công!</strong>
+            <p class="alert-text mb-0">@TempData["SuccessMessage"]</p>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <div class="alert-progress alert-progress-success"></div>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null || TempData["ErrorDetails"] != null)
+{
+    <div class="alert alert-notification alert-danger-custom alert-dismissible fade show" role="alert">
+        <div class="alert-icon-wrapper alert-icon-danger">
+            <i class="fas fa-exclamation-circle"></i>
+        </div>
+        <div class="alert-content">
+            <strong class="alert-title">Lỗi!</strong>
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <p class="alert-text mb-0">@TempData["ErrorMessage"]</p>
+            }
+            @if (TempData["ErrorDetails"] != null)
+            {
+                var errorDetailsJson = TempData["ErrorDetails"]?.ToString();
+                if (!string.IsNullOrEmpty(errorDetailsJson))
+                {
+                    try
+                    {
+                        var errors = System.Text.Json.JsonSerializer.Deserialize<List<string>>(errorDetailsJson);
+                        if (errors != null && errors.Count > 0)
+                        {
+                            <div class="error-details-wrapper mt-2">
+                                <div class="error-details-toggle" onclick="toggleErrorDetails(this)">
+                                    <i class="fas fa-chevron-down me-1"></i>
+                                    Chi tiết lỗi (@errors.Count lỗi)
+                                </div>
+                                <ul class="error-details-list mt-2" style="display: none;">
+                                    @foreach (var error in errors)
+                                    {
+                                        <li>
+                                            <i class="fas fa-arrow-right me-1 text-danger"></i>
+                                            @error
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+                    }
+                    catch
+                    {
+                        <p class="alert-text mb-0">@errorDetailsJson</p>
+                    }
+                }
+            }
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["WarningMessage"] != null)
+{
+    <div class="alert alert-notification alert-warning-custom alert-dismissible fade show" role="alert">
+        <div class="alert-icon-wrapper alert-icon-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <div class="alert-content">
+            <strong class="alert-title">Cảnh báo!</strong>
+            <p class="alert-text mb-0">@TempData["WarningMessage"]</p>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <div class="alert-progress alert-progress-warning"></div>
+    </div>
+}
+
+@if (TempData["InfoMessage"] != null)
+{
+    <div class="alert alert-notification alert-info-custom alert-dismissible fade show" role="alert">
+        <div class="alert-icon-wrapper alert-icon-info">
+            <i class="fas fa-info-circle"></i>
+        </div>
+        <div class="alert-content">
+            <strong class="alert-title">Thông tin</strong>
+            <p class="alert-text mb-0">@TempData["InfoMessage"]</p>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <div class="alert-progress alert-progress-info"></div>
+    </div>
+}
+
+<style>
+    /* ============================================
+       NOTIFICATION ALERTS - Kiểu dáng hiện đại
+       ============================================ */
+    .alert-notification {
+        display: flex;
+        align-items: flex-start;
+        padding: 16px 20px;
+        border: none;
+        border-radius: 12px;
+        margin-bottom: 16px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        position: relative;
+        overflow: hidden;
+        animation: slideInDown 0.4s ease-out;
+    }
+
+    .alert-notification .btn-close {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        opacity: 0.5;
+        font-size: 0.7rem;
+        padding: 8px;
+    }
+
+    .alert-notification .btn-close:hover {
+        opacity: 1;
+    }
+
+    /* Icon wrapper */
+    .alert-icon-wrapper {
+        flex-shrink: 0;
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 14px;
+        font-size: 18px;
+    }
+
+    .alert-icon-success {
+        background: rgba(25, 135, 84, 0.15);
+        color: #198754;
+    }
+
+    .alert-icon-danger {
+        background: rgba(220, 53, 69, 0.15);
+        color: #dc3545;
+    }
+
+    .alert-icon-warning {
+        background: rgba(255, 193, 7, 0.2);
+        color: #cc9a06;
+    }
+
+    .alert-icon-info {
+        background: rgba(13, 110, 253, 0.15);
+        color: #0d6efd;
+    }
+
+    /* Content */
+    .alert-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .alert-title {
+        font-size: 0.9rem;
+        display: block;
+        margin-bottom: 2px;
+    }
+
+    .alert-text {
+        font-size: 0.85rem;
+        opacity: 0.85;
+        line-height: 1.5;
+    }
+
+    /* Alert variants */
+    .alert-success-custom {
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        border-left: 4px solid #198754;
+        color: #15532f;
+    }
+
+    .alert-danger-custom {
+        background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+        border-left: 4px solid #dc3545;
+        color: #7f1d1d;
+    }
+
+    .alert-warning-custom {
+        background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+        border-left: 4px solid #ffc107;
+        color: #78350f;
+    }
+
+    .alert-info-custom {
+        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+        border-left: 4px solid #0d6efd;
+        color: #1e3a5f;
+    }
+
+    /* Progress bar (auto-dismiss timer) */
+    .alert-progress {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 3px;
+        width: 100%;
+        animation: progressShrink 5s linear forwards;
+    }
+
+    .alert-progress-success { background: #198754; }
+    .alert-progress-warning { background: #ffc107; }
+    .alert-progress-info { background: #0d6efd; }
+
+    /* Error Details */
+    .error-details-wrapper {
+        border-top: 1px solid rgba(220, 53, 69, 0.15);
+        padding-top: 8px;
+    }
+
+    .error-details-toggle {
+        cursor: pointer;
+        font-size: 0.8rem;
+        color: #dc3545;
+        font-weight: 600;
+        transition: color 0.2s;
+        user-select: none;
+    }
+
+    .error-details-toggle:hover {
+        color: #a71d2a;
+    }
+
+    .error-details-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .error-details-list li {
+        font-size: 0.82rem;
+        padding: 6px 0;
+        border-bottom: 1px solid rgba(220, 53, 69, 0.08);
+        color: #7f1d1d;
+    }
+
+    .error-details-list li:last-child {
+        border-bottom: none;
+    }
+
+    /* ============================================
+       TOAST NOTIFICATIONS 
+       ============================================ */
+    .toast-custom {
+        min-width: 320px;
+        max-width: 420px;
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        overflow: hidden;
+        animation: slideInRight 0.4s ease-out;
+    }
+
+    .toast-custom .toast-header {
+        border-bottom: none;
+        padding: 12px 16px 4px;
+        background: transparent;
+    }
+
+    .toast-custom .toast-body {
+        padding: 4px 16px 12px;
+        font-size: 0.88rem;
+    }
+
+    .toast-custom.toast-success {
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        border-left: 4px solid #198754;
+    }
+
+    .toast-custom.toast-error {
+        background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+        border-left: 4px solid #dc3545;
+    }
+
+    .toast-custom.toast-warning {
+        background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+        border-left: 4px solid #ffc107;
+    }
+
+    .toast-custom.toast-info {
+        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+        border-left: 4px solid #0d6efd;
+    }
+
+    /* Animations */
+    @@keyframes slideInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @@keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(100px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @@keyframes progressShrink {
+        from { width: 100%; }
+        to { width: 0%; }
+    }
+
+    @@keyframes fadeOut {
+        from { opacity: 1; transform: translateY(0); }
+        to { opacity: 0; transform: translateY(-10px); }
+    }
+
+    /* ModelState Validation Summary Enhancement */
+    .validation-summary-errors {
+        background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+        border: none;
+        border-left: 4px solid #dc3545;
+        border-radius: 12px;
+        padding: 16px 20px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    }
+
+    .validation-summary-errors ul {
+        margin-bottom: 0;
+        padding-left: 0;
+        list-style: none;
+    }
+
+    .validation-summary-errors ul li {
+        padding: 4px 0;
+        font-size: 0.85rem;
+        color: #7f1d1d;
+        position: relative;
+        padding-left: 20px;
+    }
+
+    .validation-summary-errors ul li::before {
+        content: "\f071";
+        font-family: "Font Awesome 6 Free";
+        font-weight: 900;
+        position: absolute;
+        left: 0;
+        color: #dc3545;
+        font-size: 0.75rem;
+    }
+
+    /* Responsive */
+    @@media (max-width: 576px) {
+        .alert-notification {
+            padding: 12px 14px;
+        }
+        .alert-icon-wrapper {
+            width: 36px;
+            height: 36px;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        .toast-custom {
+            min-width: 280px;
+            max-width: 95vw;
+        }
+    }
+</style>
+
+<script>
+    // ============================================
+    // NOTIFICATION SYSTEM
+    // ============================================
+
+    // Auto-dismiss alerts sau 5 giây (trừ error)
+    document.addEventListener('DOMContentLoaded', function () {
+        // Auto-dismiss success, warning, info alerts
+        document.querySelectorAll('.alert-success-custom, .alert-warning-custom, .alert-info-custom').forEach(function (alert) {
+            setTimeout(function () {
+                alert.style.animation = 'fadeOut 0.3s ease-out forwards';
+                setTimeout(function () {
+                    var bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+                    if (bsAlert) bsAlert.close();
+                }, 300);
+            }, 5000);
+        });
+    });
+
+    // Toggle Error Details
+    function toggleErrorDetails(element) {
+        var list = element.nextElementSibling;
+        var icon = element.querySelector('i');
+        if (list.style.display === 'none') {
+            list.style.display = 'block';
+            icon.className = 'fas fa-chevron-up me-1';
+        } else {
+            list.style.display = 'none';
+            icon.className = 'fas fa-chevron-down me-1';
+        }
+    }
+
+    // ============================================
+    // JS Toast API - Dùng từ JavaScript
+    // ============================================
+    // Cách dùng: showToast('success', 'Tiêu đề', 'Nội dung');
+    //            showToast('error', 'Lỗi', 'Nội dung lỗi', ['Chi tiết 1', 'Chi tiết 2']);
+    function showToast(type, title, message, details) {
+        var container = document.getElementById('toastContainer');
+        var toastId = 'toast-' + Date.now();
+        var icons = {
+            'success': 'fas fa-check-circle text-success',
+            'error': 'fas fa-exclamation-circle text-danger',
+            'warning': 'fas fa-exclamation-triangle text-warning',
+            'info': 'fas fa-info-circle text-primary'
+        };
+
+        var detailsHtml = '';
+        if (details && details.length > 0) {
+            detailsHtml = '<div class="mt-2 pt-2" style="border-top: 1px solid rgba(0,0,0,0.1);">';
+            detailsHtml += '<small class="fw-bold d-block mb-1"><i class="fas fa-list me-1"></i>Chi tiết:</small>';
+            details.forEach(function (d) {
+                detailsHtml += '<small class="d-block text-muted"><i class="fas fa-arrow-right me-1"></i>' + d + '</small>';
+            });
+            detailsHtml += '</div>';
+        }
+
+        var toastHtml = '<div id="' + toastId + '" class="toast toast-custom toast-' + type + '" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="' + (type !== 'error' ? 'true' : 'false') + '" data-bs-delay="5000">' +
+            '<div class="toast-header">' +
+            '<i class="' + (icons[type] || icons['info']) + ' me-2"></i>' +
+            '<strong class="me-auto">' + title + '</strong>' +
+            '<small class="text-muted">Vừa xong</small>' +
+            '<button type="button" class="btn-close btn-close-sm" data-bs-dismiss="toast" aria-label="Close"></button>' +
+            '</div>' +
+            '<div class="toast-body">' + message + detailsHtml + '</div>' +
+            '</div>';
+
+        container.insertAdjacentHTML('beforeend', toastHtml);
+        var toastElement = document.getElementById(toastId);
+        var toast = new bootstrap.Toast(toastElement);
+        toast.show();
+
+        // Remove DOM element after hidden
+        toastElement.addEventListener('hidden.bs.toast', function () {
+            toastElement.remove();
+        });
+    }
+</script>

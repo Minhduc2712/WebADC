@@ -1,0 +1,157 @@
+@model PagedResult<ErpOnlineOrder.Application.DTOs.ProductDTO>
+@{
+    ViewData["Title"] = "Sản phẩm";
+    Layout = "~/Views/Shared/_ShopLayout.cshtml";
+    var categories = ViewBag.Categories as List<string> ?? new List<string>();
+    var currentSearch = ViewBag.Search as string;
+    var currentCategory = ViewBag.Category as string;
+    var currentSort = ViewBag.Sort as string;
+    var productList = Model?.Items ?? new List<ErpOnlineOrder.Application.DTOs.ProductDTO>();
+    var totalCount = ViewBag.TotalCount as int? ?? productList.Count;
+
+    string FormatPrice(string price)
+    {
+        if (string.IsNullOrEmpty(price)) return "0 đ";
+        var cleaned = new string(price.Where(c => char.IsDigit(c)).ToArray());
+        if (string.IsNullOrEmpty(cleaned) || !long.TryParse(cleaned, out var num)) return price;
+        return num.ToString("N0", new System.Globalization.CultureInfo("vi-VN")) + " đ";
+    }
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/shop/css/products.css">
+}
+
+<!-- Main Content -->
+<section class="products-main products-page">
+    <div class="container">
+        <div class="row">
+            <!-- Sidebar Filter -->
+            <div class="col-lg-3">
+                <aside class="products-sidebar">
+                    <div class="filter-card">
+                        <div class="filter-header">
+                            <i class="fas fa-filter me-2"></i> Bộ lọc
+                        </div>
+                        <div class="filter-body">
+                            <!-- Search -->
+                            <form asp-action="Products" method="get">
+                                <input type="hidden" name="category" value="@currentCategory" />
+                                <input type="hidden" name="sort" value="@currentSort" />
+                                <input type="hidden" name="pageSize" value="@(ViewBag.PageSize ?? 12)" />
+                                <div class="search-box">
+                                    <input type="text" name="search" placeholder="Tìm kiếm sản phẩm..." value="@currentSearch">
+                                    <button type="submit" class="btn-search">
+                                        <i class="fas fa-search"></i> Tìm
+                                    </button>
+                                </div>
+                            </form>
+
+                            <!-- Categories -->
+                            @if (categories.Any())
+                            {
+                                <div class="filter-header" style="margin: 0 -1.8rem; padding: 1rem 1.8rem; font-size: 1.4rem;">Danh mục</div>
+                                <ul class="category-list">
+                                    <li>
+                                        <a asp-action="Products" asp-route-search="@currentSearch" asp-route-sort="@currentSort" asp-route-page="1" asp-route-pageSize="@(ViewBag.PageSize ?? 12)"
+                                           class="@(string.IsNullOrEmpty(currentCategory) ? "active" : "")">
+                                            <span>Tất cả</span>
+                                            <span class="badge-count">@totalCount</span>
+                                        </a>
+                                    </li>
+                                    @foreach (var cat in categories)
+                                    {
+                                        <li>
+                                            <a asp-action="Products" asp-route-category="@cat" asp-route-search="@currentSearch" asp-route-sort="@currentSort" asp-route-page="1" asp-route-pageSize="@(ViewBag.PageSize ?? 12)"
+                                               class="@(currentCategory == cat ? "active" : "")">
+                                                <span>@cat</span>
+                                            </a>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                        </div>
+                    </div>
+                </aside>
+            </div>
+
+            <!-- Product Grid -->
+            <div class="col-lg-9">
+                <div class="products-toolbar">
+                    <p class="product-count mb-0">Hiển thị <strong>@productList.Count</strong> sản phẩm</p>
+                    <div class="sort-group">
+                        <label for="sortSelect">Sắp xếp:</label>
+                        <form asp-action="Products" method="get" id="sortForm" class="d-inline">
+                            <input type="hidden" name="search" value="@currentSearch" />
+                            <input type="hidden" name="category" value="@currentCategory" />
+                            <input type="hidden" name="pageSize" value="@(ViewBag.PageSize ?? 12)" />
+                            <select name="sort" id="sortSelect" class="form-select" onchange="document.getElementById('sortForm').submit()">
+                                <option value="" selected="@(string.IsNullOrEmpty(currentSort))">Mặc định</option>
+                                <option value="newest" selected="@(currentSort == "newest")">Mới nhất</option>
+                                <option value="price_asc" selected="@(currentSort == "price_asc")">Giá tăng dần</option>
+                                <option value="price_desc" selected="@(currentSort == "price_desc")">Giá giảm dần</option>
+                                <option value="name_asc" selected="@(currentSort == "name_asc")">Tên A-Z</option>
+                            </select>
+                        </form>
+                    </div>
+                </div>
+
+                @if (!productList.Any())
+                {
+                    <div class="products-empty">
+                        <h5>Không tìm thấy sản phẩm nào</h5>
+                        <p>Vui lòng thử lại với từ khóa hoặc danh mục khác.</p>
+                        <a asp-action="Products" class="shop-btn">Xem tất cả sản phẩm</a>
+                    </div>
+                }
+                else
+                {
+                    <div class="products-grid">
+                        @foreach (var product in productList)
+                        {
+                            <article class="product-card">
+                                <a asp-action="ProductDetail" asp-route-id="@product.Id" class="card-image-wrap">
+                                    @if (product.Images.Any())
+                                    {
+                                        <img src="@product.Images.First()" alt="@product.Product_name">
+                                    }
+                                    else
+                                    {
+                                        <img src="~/shop/images/homepage-one/product-img/product-img-1.webp" alt="@product.Product_name">
+                                    }
+                                </a>
+                                <div class="card-body">
+                                    <a asp-action="ProductDetail" asp-route-id="@product.Id" class="card-title">@product.Product_name</a>
+                                    @if (product.Authors.Any())
+                                    {
+                                        <p class="card-author">@string.Join(", ", product.Authors)</p>
+                                    }
+                                    @if (product.Categories.Any())
+                                    {
+                                        <div class="card-categories">
+                                            @foreach (var cat in product.Categories)
+                                            {
+                                                <span class="cat-tag">@cat</span>
+                                            }
+                                        </div>
+                                    }
+                                    <div class="card-price">@FormatPrice(product.Product_price)</div>
+                                    <div class="card-action">
+                                        <a href="javascript:void(0)" class="btn-order"
+                                           onclick="addToCart(@product.Id, '@Html.Raw(product.Product_name.Replace("'", "\\'"))', parsePrice('@product.Product_price'), '@product.Product_price', '@(product.Images.Any() ? product.Images.First() : "")', 1)">
+                                            <i class="fas fa-shopping-cart"></i> Đặt hàng
+                                        </a>
+                                    </div>
+                                </div>
+                            </article>
+                        }
+                    </div>
+                    @if (Model != null && Model.TotalPages > 1)
+                    {
+                        @await Html.PartialAsync("_ShopPagination", Model)
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</section>

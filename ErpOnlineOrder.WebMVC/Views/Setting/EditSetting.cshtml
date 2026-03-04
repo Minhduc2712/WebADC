@@ -1,0 +1,53 @@
+@model ErpOnlineOrder.Application.DTOs.SettingsDTOs.UpdateSettingDto
+@{
+    ViewData["Title"] = "Sửa cài đặt";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var settingKey = ViewBag.SettingKey as string ?? "";
+    var settingId = ViewBag.SettingId as int? ?? 0;
+}
+
+<div class="container-fluid py-4">
+    <div class="mb-4">
+        <h1 class="h4 mb-1 fw-bold text-dark">
+            <i class="fas fa-edit text-indigo me-2"></i>Sửa cài đặt: <code>@settingKey</code>
+        </h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-controller="Order" asp-action="Index">Trang chủ</a></li>
+                <li class="breadcrumb-item"><a asp-controller="Setting" asp-action="Index">Cài đặt</a></li>
+                <li class="breadcrumb-item active">Sửa @settingKey</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <form asp-action="EditSetting" asp-route-id="@settingId" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label">Mã cài đặt</label>
+                        <input type="text" class="form-control" value="@settingKey" readonly disabled />
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="SettingValue" class="form-label">Giá trị</label>
+                        <input asp-for="SettingValue" class="form-control" placeholder="Giá trị" />
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Description" class="form-label">Mô tả</label>
+                        <input asp-for="Description" class="form-control" placeholder="Mô tả" />
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Lưu</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary ms-2">Hủy</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,15 @@
+# Visual Studio cache
+.vs/
+
+# Build output
+bin/
+obj/
+
+# User files
+*.user
+*.suo
+*.userosscache
+
+# OS
+Thumbs.db
+.DS_Store

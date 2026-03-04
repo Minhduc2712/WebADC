@@ -1,0 +1,119 @@
+@model PagedResult<ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs.WarehouseExportDto>
+@{
+    ViewData["Title"] = "Phiếu xuất kho của tôi";
+    Layout = "~/Views/Shared/_ShopLayout.cshtml";
+}
+
+<section class="blog about-blog">
+    <div class="container">
+        <div class="blog-bradcrum">
+            <span><a asp-action="Products">Sản phẩm</a></span>
+            <span class="devider">/</span>
+            <span><a asp-action="Exports">Phiếu xuất kho</a></span>
+        </div>
+        <div class="blog-heading about-heading">
+            <h1 class="heading">Phiếu xuất kho của tôi</h1>
+        </div>
+    </div>
+</section>
+
+<section class="product footer-padding">
+    <div class="container">
+        @if (TempData["Success"] is string successMsg)
+        {
+            <div class="alert alert-success">@successMsg</div>
+        }
+        @if (TempData["Error"] is string errorMsg)
+        {
+            <div class="alert alert-danger">@errorMsg</div>
+        }
+        @if (ViewData["ErrorMessage"] is string err)
+        {
+            <div class="alert alert-warning">@err</div>
+        }
+
+        @if (Model == null || Model.Items == null || !Model.Items.Any())
+        {
+            <div class="text-center py-5">
+                <div style="max-width: 150px; margin: 0 auto 20px;">
+                    <i class="fas fa-truck-loading fa-5x" style="opacity: 0.3;"></i>
+                </div>
+                <h5>Chưa có phiếu xuất kho nào</h5>
+                <p style="color: #888;">Bạn chưa có phiếu xuất kho nào. Đơn hàng sau khi được xác nhận và xuất kho sẽ hiển thị tại đây.</p>
+                <a asp-action="Orders" class="shop-btn">Xem đơn hàng</a>
+            </div>
+        }
+        else
+        {
+            <div class="row g-4">
+                @foreach (var exp in Model.Items)
+                {
+                    var statusClass = exp.Status switch
+                    {
+                        "Draft" => "#888",
+                        "Pending" => "#ff9800",
+                        "Confirmed" => "#4CAF50",
+                        "Shipping" => "#2196F3",
+                        "Completed" => "#4CAF50",
+                        _ => "#888"
+                    };
+                    var statusText = exp.Status switch
+                    {
+                        "Draft" => "Nháp",
+                        "Pending" => "Chờ xuất",
+                        "Confirmed" => "Đã xác nhận",
+                        "Shipping" => "Đang giao",
+                        "Completed" => "Hoàn thành",
+                        _ => exp.Status
+                    };
+                    <div class="col-12">
+                        <div style="border: 1px solid #eee; border-radius: 8px; overflow: hidden; background: #fff;">
+                            <div style="background: #f8f8f8; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                                <div>
+                                    <span style="font-weight: 600; font-size: 15px;">
+                                        <i class="fas fa-warehouse" style="margin-right: 8px; color: #1a7f37;"></i>
+                                        @exp.Warehouse_export_code
+                                    </span>
+                                    <span style="color: #888; font-size: 13px; margin-left: 15px;">@exp.Export_date.ToString("dd/MM/yyyy")</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <span style="padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 500; background: @(statusClass)20; color: @statusClass;">@statusText</span>
+                                    <span style="color: #888; font-size: 13px;">Hóa đơn: @exp.Invoice_code</span>
+                                    @if (exp.Details != null && exp.Details.Count > 1 && exp.Status != "Cancelled")
+                                    {
+                                        <a asp-action="RequestInvoiceSplit" asp-route-exportId="@exp.Id" class="btn btn-sm btn-outline-primary" title="Yêu cầu tách hóa đơn">
+                                            <i class="fas fa-expand-arrows-alt"></i> Tách hóa đơn
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                            <div style="padding: 15px 20px;">
+                                @if (exp.Details != null && exp.Details.Any())
+                                {
+                                    @foreach (var d in exp.Details)
+                                    {
+                                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f0f0f0;">
+                                            <div>
+                                                <span style="font-weight: 500;">@d.Product_name</span>
+                                                <span style="color: #888; font-size: 13px; margin-left: 10px;">SL: @d.Quantity_shipped</span>
+                                            </div>
+                                            <div style="font-weight: 500;">@d.Total_price.ToString("N0")</div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                            <div style="padding: 12px 20px; background: #fafafa; display: flex; justify-content: flex-end; align-items: center; gap: 10px;">
+                                <span style="color: #888;">Tổng:</span>
+                                <span style="font-size: 18px; font-weight: 600; color: #1a7f37;">@exp.Total_amount.ToString("N0") VNĐ</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+            @if (Model.TotalPages > 1)
+            {
+                @await Html.PartialAsync("_ShopPagination", Model)
+            }
+        }
+    </div>
+</section>

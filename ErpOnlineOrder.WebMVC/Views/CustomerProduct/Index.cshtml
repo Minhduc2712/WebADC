@@ -1,0 +1,167 @@
+@model List<ErpOnlineOrder.Application.DTOs.CustomerProductDTOs.CustomerProductDto>
+@{
+    ViewData["Title"] = "Sản phẩm được phép đặt";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var customer = ViewBag.Customer as ErpOnlineOrder.Application.DTOs.CustomerDTO;
+    var canAssign = (bool)(ViewBag.CanAssign ?? false);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1"><i class="fas fa-box me-2 text-primary"></i>Sản phẩm được phép đặt</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "Order")">Trang chủ</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "CustomerManagement")">Khách hàng</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Details", "CustomerManagement", new { id = customer?.Id })">@(customer?.Full_name ?? "")</a></li>
+                <li class="breadcrumb-item active">Sản phẩm</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        @if (canAssign)
+        {
+            <a href="@Url.Action("AssignProducts", new { customerId = customer?.Id })" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>Gán sản phẩm
+            </a>
+        }
+        <a href="@Url.Action("Details", "CustomerManagement", new { id = customer?.Id })" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Quay lại
+        </a>
+    </div>
+</div>
+
+@if (customer != null)
+{
+    <div class="table-card mb-4">
+        <div class="card-body p-3">
+            <div class="d-flex align-items-center">
+                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
+                     style="width: 50px; height: 50px; font-size: 20px;">
+                    @(customer.Full_name?.Length > 0 ? customer.Full_name.Substring(0, 1).ToUpper() : "?")
+                </div>
+                <div>
+                    <strong>@customer.Full_name</strong>
+                    <span class="badge bg-secondary ms-2">@customer.Customer_code</span>
+                    <div class="small text-muted">@(customer.Phone_number ?? "")</div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="table-card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-list me-2"></i>Danh sách sản phẩm (@Model.Count)</span>
+    </div>
+    <div class="card-body p-0">
+        @if (!Model.Any())
+        {
+            <div class="text-center py-5 text-muted">
+                <i class="fas fa-box-open fa-3x mb-3 d-block opacity-50"></i>
+                <p class="mb-2">Chưa có sản phẩm nào được gán</p>
+                <p class="small mb-0">Khách hàng chỉ có thể đặt những sản phẩm đã được gán. Gán sản phẩm để cho phép khách hàng đặt hàng.</p>
+                @if (canAssign)
+                {
+                    <a href="@Url.Action("AssignProducts", new { customerId = customer?.Id })" class="btn btn-primary mt-3">
+                        <i class="fas fa-plus me-1"></i>Gán sản phẩm
+                    </a>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>STT</th>
+                            <th>Mã SP</th>
+                            <th>Tên sản phẩm</th>
+                            <th>Giá gốc</th>
+                            <th>Giá riêng</th>
+                            <th>Chiết khấu %</th>
+                            <th>SL tối đa</th>
+                            <th>Trạng thái</th>
+                            @if (canAssign)
+                            {
+                                <th style="width: 120px;">Thao tác</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (var i = 0; i < Model.Count; i++)
+                        {
+                            var item = Model[i];
+                            <tr>
+                                <td>@(i + 1)</td>
+                                <td><span class="badge bg-secondary">@item.Product_code</span></td>
+                                <td>@item.Product_name</td>
+                                <td>@item.Original_price</td>
+                                <td>@(item.Custom_price.HasValue ? item.Custom_price.Value.ToString("N0") + " đ" : "-")</td>
+                                <td>@(item.Discount_percent.HasValue ? item.Discount_percent.Value + "%" : "-")</td>
+                                <td>@(item.Max_quantity ?? (object)"-")</td>
+                                <td>
+                                    @if (item.Is_active)
+                                    {
+                                        <span class="badge bg-success">Hoạt động</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Tạm khóa</span>
+                                    }
+                                </td>
+                                @if (canAssign)
+                                {
+                                    <td>
+                                        <a href="@Url.Action("Edit", new { id = item.Id })" class="btn btn-sm btn-outline-primary" title="Sửa">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" title="Xóa gán"
+                                                onclick="confirmDelete(@item.Id, '@item.Product_name')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Modal xác nhận xóa -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle text-warning me-2"></i>Xác nhận xóa gán</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xóa sản phẩm "<strong id="deleteProductName"></strong>" khỏi danh sách sản phẩm được phép đặt?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <form id="deleteForm" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>Xóa gán
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function confirmDelete(id, productName) {
+        document.getElementById('deleteProductName').textContent = productName;
+        document.getElementById('deleteForm').action = '@Url.Action("Delete")/' + id;
+        new bootstrap.Modal(document.getElementById('deleteModal')).show();
+    }
+</script>
+}

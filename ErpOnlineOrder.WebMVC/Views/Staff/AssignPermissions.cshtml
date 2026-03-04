@@ -1,0 +1,375 @@
+@{
+    ViewData["Title"] = "Gán quyền trực tiếp cho nhân viên";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var staff = ViewBag.Staff as ErpOnlineOrder.Application.DTOs.AdminDTOs.StaffAccountDto;
+    var permissionTree = ViewBag.PermissionTree as List<ErpOnlineOrder.Application.DTOs.PermissionDTOs.PermissionDto> ?? new List<ErpOnlineOrder.Application.DTOs.PermissionDTOs.PermissionDto>();
+    var specialPermissions = ViewBag.SpecialPermissions as List<ErpOnlineOrder.Application.DTOs.PermissionDTOs.PermissionDto> ?? new List<ErpOnlineOrder.Application.DTOs.PermissionDTOs.PermissionDto>();
+    var currentDirectPermissionIds = ViewBag.CurrentDirectPermissionIds as List<int> ?? new List<int>();
+    var userFullPermissions = ViewBag.UserFullPermissions as ErpOnlineOrder.Application.DTOs.PermissionDTOs.UserFullPermissionDto;
+    var rolePermissionCodes = userFullPermissions?.RolePermissions.SelectMany(r => r.Permission_codes).Distinct().ToList() ?? new List<string>();
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h4 mb-1 fw-bold text-dark">
+                <i class="fas fa-key text-indigo me-2"></i>Gán quyền trực tiếp cho nhân viên
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0 small">
+                    <li class="breadcrumb-item"><a asp-controller="Order" asp-action="Index">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a asp-action="Index">Quản lý nhân sự</a></li>
+                    <li class="breadcrumb-item active">Gán quyền trực tiếp</li>
+                </ol>
+            </nav>
+        </div>
+        <span class="badge rounded-pill px-3 py-2 fs-6" style="background: #4f46e5; color: white;">
+            <i class="fas fa-check-double me-1"></i>@currentDirectPermissionIds.Count quyền trực tiếp
+        </span>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4 overflow-hidden">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-4">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:56px;height:56px; background: rgba(79, 70, 229, 0.1);">
+                            <i class="fas fa-user text-indigo fs-5"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h5 class="mb-0 fw-semibold">@staff?.Full_name</h5>
+                            <p class="mb-0 text-muted small">
+                                <span class="badge bg-secondary me-2">@staff?.Staff_code</span>
+                                <i class="fas fa-at me-1"></i>@staff?.Username
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm overflow-hidden">
+                <div class="card-header bg-white border-0 py-3 px-4 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-semibold"><i class="fas fa-shield-alt text-indigo me-2"></i>Gán quyền trực tiếp</h5>
+                    <span class="badge" id="directPermCount" style="background: #4f46e5;">@currentDirectPermissionIds.Count</span>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="AssignPermissions" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@staff?.User_id" />
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label small text-muted"><i class="fas fa-calendar-alt me-1"></i>Ngày hết hạn (tùy chọn)</label>
+                                <input type="datetime-local" name="ExpiresAt" class="form-control form-control-sm" />
+                                <small class="text-muted">Để trống = vĩnh viễn</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-muted"><i class="fas fa-sticky-note me-1"></i>Ghi chú</label>
+                                <input type="text" name="Note" class="form-control form-control-sm" placeholder="Lý do gán quyền..." />
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 mb-3">
+                            <button type="button" class="btn btn-sm" id="selectAll" style="background: #4f46e5; color: white; border: none;">
+                                <i class="fas fa-check-double me-1"></i>Chọn tất cả
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="deselectAll">
+                                <i class="fas fa-times me-1"></i>Bỏ chọn tất cả
+                            </button>
+                        </div>
+
+                        <div class="alert alert-warning small py-2 mb-4 border-0" style="background: rgba(245, 158, 11, 0.12);">
+                            <i class="fas fa-info-circle me-1 text-warning"></i>
+                            <strong>Lưu ý:</strong> Quyền có <i class="fas fa-check-circle text-success me-1"></i> xanh lá là đã có từ vai trò. Tick để gán thêm quyền trực tiếp.
+                        </div>
+
+                        <div class="permission-tree" style="max-height: 420px; overflow-y: auto;">
+                            @if (permissionTree.Any())
+                            {
+                                <div class="accordion accordion-flush" id="permAccordion">
+                                    @for (var i = 0; i < permissionTree.Count; i++)
+                                    {
+                                        var parent = permissionTree[i];
+                                        var childPerms = parent.Children ?? new List<ErpOnlineOrder.Application.DTOs.PermissionDTOs.PermissionDto>();
+                                        var leafPerms = GetLeafPermissions(parent);
+                                        var checkedCount = leafPerms.Count(p => currentDirectPermissionIds.Contains(p.Id));
+                                        var allChecked = leafPerms.Count > 0 && checkedCount == leafPerms.Count;
+                                        var groupKey = (parent.Module_name ?? parent.Permission_code).Replace(" ", "_");
+                                        var isNested = childPerms.Any(c => c.Children?.Any() == true);
+
+                                        <div class="accordion-item border rounded-3 mb-2 overflow-hidden">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed py-3 px-4 bg-light border-0" type="button"
+                                                        data-bs-toggle="collapse" data-bs-target="#sa_@i">
+                                                    <div class="d-flex align-items-center w-100">
+                                                        <input type="checkbox" class="form-check-input me-3 module-checkbox flex-shrink-0"
+                                                               id="mod_@groupKey" data-module="@(parent.Module_name ?? parent.Permission_code)"
+                                                               onclick="event.stopPropagation()" @(allChecked ? "checked" : "")>
+                                                        <span class="fw-semibold text-dark flex-grow-1">
+                                                            <i class="fas fa-folder text-indigo me-2"></i>@parent.Module_name
+                                                        </span>
+                                                        <span class="badge bg-secondary rounded-pill module-count" data-module="@(parent.Module_name ?? parent.Permission_code)">@checkedCount/@leafPerms.Count</span>
+                                                    </div>
+                                                </button>
+                                            </h2>
+                                            <div id="sa_@i" class="accordion-collapse collapse" data-bs-parent="#permAccordion">
+                                                <div class="accordion-body pt-0 pb-3 px-4">
+                                                    @if (isNested)
+                                                    {
+                                                        @foreach (var sub in childPerms.Where(c => c.Children?.Any() == true))
+                                                        {
+                                                            <div class="mb-3">
+                                                                <h6 class="text-muted small mb-2">@sub.Module_name</h6>
+                                                                <div class="row g-2">
+                                                                    @foreach (var p in sub.Children!)
+                                                                    {
+                                                                        var isDirect = currentDirectPermissionIds.Contains(p.Id);
+                                                                        var hasFromRole = rolePermissionCodes.Contains(p.Permission_code);
+                                                                        <div class="col-md-6 col-lg-4">
+                                                                            <label class="perm-item d-flex align-items-center gap-2 p-2 rounded-2 border cursor-pointer @(isDirect ? "border-indigo perm-checked" : "border-light") @(hasFromRole ? "border-success border-opacity-50" : "")" onclick="event.stopPropagation()">
+                                                                                <input type="checkbox" class="form-check-input flex-shrink-0 permission-checkbox"
+                                                                                       name="Permission_ids" value="@p.Id" data-module="@(parent.Module_name ?? parent.Permission_code)"
+                                                                                       @(isDirect ? "checked" : "")>
+                                                                                @if (hasFromRole) { <i class="fas fa-check-circle text-success small" title="Có từ vai trò"></i> }
+                                                                                <span class="small flex-grow-1">
+                                                                                    <span class="d-block">@p.Action_name</span>
+                                                                                    <small class="text-muted">@p.Permission_code</small>
+                                                                                </span>
+                                                                            </label>
+                                                                        </div>
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="row g-2">
+                                                            @foreach (var p in childPerms)
+                                                            {
+                                                                var isDirect = currentDirectPermissionIds.Contains(p.Id);
+                                                                var hasFromRole = rolePermissionCodes.Contains(p.Permission_code);
+                                                                <div class="col-md-6 col-lg-4">
+                                                                    <label class="perm-item d-flex align-items-center gap-2 p-2 rounded-2 border cursor-pointer @(isDirect ? "border-indigo perm-checked" : "border-light") @(hasFromRole ? "border-success border-opacity-50" : "")" onclick="event.stopPropagation()">
+                                                                        <input type="checkbox" class="form-check-input flex-shrink-0 permission-checkbox"
+                                                                               name="Permission_ids" value="@p.Id" data-module="@(parent.Module_name ?? parent.Permission_code)"
+                                                                               @(isDirect ? "checked" : "")>
+                                                                        @if (hasFromRole) { <i class="fas fa-check-circle text-success small" title="Có từ vai trò"></i> }
+                                                                        <span class="small flex-grow-1">
+                                                                            <span class="d-block">@p.Action_name</span>
+                                                                            <small class="text-muted">@p.Permission_code</small>
+                                                                        </span>
+                                                                    </label>
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-center py-5 text-muted">
+                                    <i class="fas fa-inbox fa-3x mb-3 opacity-50"></i>
+                                    <p class="mb-0">Chưa có quyền nào trong hệ thống</p>
+                                </div>
+                            }
+                        </div>
+
+                        @if (specialPermissions.Any())
+                        {
+                            <div class="mt-4 p-4 rounded-3" style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3);">
+                                <h6 class="fw-semibold mb-3" style="color: #b45309;"><i class="fas fa-star me-2"></i>Quyền đặc thù</h6>
+                                <div class="row g-2">
+                                    @foreach (var sp in specialPermissions)
+                                    {
+                                        var isDirect = currentDirectPermissionIds.Contains(sp.Id);
+                                        var hasFromRole = rolePermissionCodes.Contains(sp.Permission_code);
+                                        <div class="col-md-6 col-lg-4">
+                                            <label class="perm-item d-flex align-items-center gap-2 p-2 rounded-2 border cursor-pointer @(isDirect ? "border-indigo perm-checked" : "")" style="border-color: rgba(245, 158, 11, 0.4);" onclick="event.stopPropagation()">
+                                                <input type="checkbox" class="form-check-input flex-shrink-0 permission-checkbox"
+                                                       name="Permission_ids" value="@sp.Id" data-module="SPECIAL" @(isDirect ? "checked" : "")>
+                                                @if (hasFromRole) { <i class="fas fa-check-circle text-success small"></i> }
+                                                <span class="small flex-grow-1">@(sp.Action_name ?? sp.Permission_code)</span>
+                                            </label>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <hr class="my-4">
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Quay lại
+                            </a>
+                            <button type="submit" class="btn text-white" style="background: #4f46e5;">
+                                <i class="fas fa-save me-1"></i>Lưu thay đổi
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h6 class="fw-semibold text-muted mb-3"><i class="fas fa-info-circle me-2"></i>Thông tin</h6>
+                    <div class="d-flex justify-content-between py-2 border-bottom"><span class="text-muted">Mã NV</span><strong>@staff?.Staff_code</strong></div>
+                    <div class="d-flex justify-content-between py-2 border-bottom"><span class="text-muted">Họ tên</span><strong>@staff?.Full_name</strong></div>
+                    <div class="d-flex justify-content-between py-2"><span class="text-muted">Username</span><strong>@staff?.Username</strong></div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h6 class="fw-semibold text-success mb-3"><i class="fas fa-user-tag me-2"></i>Quyền từ vai trò</h6>
+                    @if (userFullPermissions?.RolePermissions.Any() == true)
+                    {
+                        @foreach (var rp in userFullPermissions.RolePermissions)
+                        {
+                            <div class="mb-3 pb-3 border-bottom">
+                                <span class="badge me-2" style="background: #4f46e5;">@rp.Role_name</span>
+                                <small class="text-muted">@rp.Permission_codes.Count quyền</small>
+                                <div class="mt-2">
+                                    @foreach (var code in rp.Permission_codes.Take(3))
+                                    { <small class="d-block text-muted"><i class="fas fa-check text-success me-1"></i>@code</small> }
+                                    @if (rp.Permission_codes.Count > 3)
+                                    { <small class="text-indigo">+@(rp.Permission_codes.Count - 3) quyền khác</small> }
+                                </div>
+                            </div>
+                        }
+                    }
+                    else { <p class="text-muted small mb-0">Chưa có vai trò</p> }
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h6 class="fw-semibold text-warning mb-3"><i class="fas fa-key me-2"></i>Quyền trực tiếp hiện tại</h6>
+                    @if (userFullPermissions?.DirectPermissions.Any() == true)
+                    {
+                        <ul class="list-unstyled small mb-0">
+                            @foreach (var dp in userFullPermissions.DirectPermissions)
+                            {
+                                <li class="mb-1 @(!dp.IsValid ? "text-decoration-line-through text-muted" : "")">
+                                    <i class="fas fa-@(dp.IsValid ? "check text-success" : "times text-danger") me-1"></i>@dp.Permission_code
+                                    @if (dp.ExpiresAt.HasValue) { <small class="text-muted">(@dp.ExpiresAt.Value.ToString("dd/MM/yyyy"))</small> }
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else { <p class="text-muted small mb-0">Chưa có quyền trực tiếp nào</p> }
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h6 class="fw-semibold text-muted mb-3"><i class="fas fa-chart-pie me-2"></i>Tổng hợp</h6>
+                    <div class="d-flex justify-content-between py-2 border-bottom"><span class="text-muted">Từ vai trò</span><span class="badge bg-success">@rolePermissionCodes.Count</span></div>
+                    <div class="d-flex justify-content-between py-2 border-bottom"><span class="text-muted">Trực tiếp</span><span class="badge bg-warning">@(userFullPermissions?.DirectPermissions.Count(d => d.IsValid) ?? 0)</span></div>
+                    <div class="d-flex justify-content-between py-2"><span class="text-muted fw-semibold">Tổng</span><span class="badge" style="background: #4f46e5;">@(userFullPermissions?.AllPermissionCodes.Count ?? 0)</span></div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h6 class="fw-semibold text-muted mb-3"><i class="fas fa-cog me-2"></i>Thao tác khác</h6>
+                    <div class="d-grid gap-2">
+                        <a asp-action="AssignRoles" asp-route-id="@staff?.User_id" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-user-tag me-1"></i>Gán vai trò
+                        </a>
+                        <a asp-controller="Permission" asp-action="UserPermissionDetails" asp-route-id="@staff?.User_id" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-list me-1"></i>Quản lý quyền chi tiết
+                        </a>
+                        <a asp-action="Details" asp-route-id="@staff?.User_id" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-eye me-1"></i>Xem chi tiết
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    List<ErpOnlineOrder.Application.DTOs.PermissionDTOs.PermissionDto> GetLeafPermissions(ErpOnlineOrder.Application.DTOs.PermissionDTOs.PermissionDto node)
+    {
+        var list = new List<ErpOnlineOrder.Application.DTOs.PermissionDTOs.PermissionDto>();
+        if (node.Children == null || !node.Children.Any()) return list;
+        foreach (var c in node.Children)
+        {
+            if (c.Children?.Any() == true)
+                list.AddRange(GetLeafPermissions(c));
+            else if (c.Id != 0)
+                list.Add(c);
+        }
+        return list;
+    }
+}
+<style>
+    .perm-item { transition: all 0.2s; cursor: pointer; }
+    .perm-item:hover { background: rgba(79, 70, 229, 0.06) !important; }
+    .perm-checked { background: rgba(79, 70, 229, 0.08) !important; }
+    .text-indigo { color: #4f46e5; }
+    .accordion-button:not(.collapsed) { box-shadow: none; }
+    .accordion-button:focus { box-shadow: none; }
+    .accordion-item { border-radius: 12px !important; }
+</style>
+
+@section Scripts {
+<script>
+(function() {
+    var selectAll = document.getElementById('selectAll');
+    var deselectAll = document.getElementById('deselectAll');
+    if (selectAll) selectAll.onclick = function() {
+        document.querySelectorAll('.permission-checkbox, .module-checkbox').forEach(function(c) { c.checked = true; });
+        updateCounts();
+    };
+    if (deselectAll) deselectAll.onclick = function() {
+        document.querySelectorAll('.permission-checkbox, .module-checkbox').forEach(function(c) { c.checked = false; });
+        updateCounts();
+    };
+
+    document.querySelectorAll('.module-checkbox').forEach(function(m) {
+        m.onclick = function(e) { e.stopPropagation(); };
+        m.addEventListener('change', function() {
+            var mod = this.dataset.module;
+            document.querySelectorAll('.permission-checkbox[data-module="' + mod + '"]').forEach(function(p) { p.checked = this.checked; }.bind(this));
+            updateCounts();
+        });
+    });
+
+    document.querySelectorAll('.permission-checkbox').forEach(function(p) {
+        p.addEventListener('change', function() {
+            var mod = this.dataset.module;
+            if (mod !== 'SPECIAL') {
+                var all = document.querySelectorAll('.permission-checkbox[data-module="' + mod + '"]');
+                var checked = document.querySelectorAll('.permission-checkbox[data-module="' + mod + '"]:checked');
+                var mcb = document.querySelector('.module-checkbox[data-module="' + mod + '"]');
+                if (mcb) { mcb.checked = all.length === checked.length; mcb.indeterminate = checked.length > 0 && checked.length < all.length; }
+            }
+            updateCounts();
+        });
+    });
+
+    function updateCounts() {
+        var total = document.querySelectorAll('.permission-checkbox:checked').length;
+        var el = document.getElementById('directPermCount');
+        if (el) el.textContent = total;
+        document.querySelectorAll('.module-count').forEach(function(b) {
+            var mod = b.dataset.module;
+            if (mod) {
+                var checked = document.querySelectorAll('.permission-checkbox[data-module="' + mod + '"]:checked').length;
+                var all = document.querySelectorAll('.permission-checkbox[data-module="' + mod + '"]').length;
+                b.textContent = checked + '/' + all;
+            }
+        });
+    }
+})();
+</script>
+}

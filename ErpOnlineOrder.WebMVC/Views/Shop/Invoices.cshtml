@@ -1,0 +1,106 @@
+@model PagedResult<ErpOnlineOrder.Application.DTOs.InvoiceDTOs.InvoiceDto>
+@{
+    ViewData["Title"] = "Hóa đơn của tôi";
+    Layout = "~/Views/Shared/_ShopLayout.cshtml";
+}
+
+<section class="blog about-blog">
+    <div class="container">
+        <div class="blog-bradcrum">
+            <span><a asp-action="Products">Sản phẩm</a></span>
+            <span class="devider">/</span>
+            <span><a href="#">Hóa đơn</a></span>
+        </div>
+        <div class="blog-heading about-heading">
+            <h1 class="heading">Hóa đơn của tôi</h1>
+        </div>
+    </div>
+</section>
+
+<section class="product footer-padding">
+    <div class="container">
+        @if (ViewData["ErrorMessage"] is string err)
+        {
+            <div class="alert alert-warning text-center">@err</div>
+        }
+
+        @if (Model == null || Model.Items == null || !Model.Items.Any())
+        {
+            <div class="text-center py-5">
+                <div style="max-width: 150px; margin: 0 auto 20px;">
+                    <i class="fas fa-file-invoice fa-5x" style="opacity: 0.3;"></i>
+                </div>
+                <h5>Chưa có hóa đơn nào</h5>
+                <p style="color: #888;">Bạn chưa có hóa đơn nào. Hóa đơn sẽ được tạo sau khi đơn hàng được xác nhận và xuất kho.</p>
+                <a asp-action="Orders" class="shop-btn">Xem đơn hàng</a>
+            </div>
+        }
+        else
+        {
+            <div class="row g-4">
+                @foreach (var inv in Model.Items)
+                {
+                    var statusColor = inv.Status switch
+                    {
+                        "Draft" => "#888",
+                        "Pending" => "#ff9800",
+                        "Confirmed" => "#2196F3",
+                        "Completed" => "#4CAF50",
+                        "Cancelled" => "#f44336",
+                        _ => "#888"
+                    };
+                    var statusText = inv.Status switch
+                    {
+                        "Draft" => "Nháp",
+                        "Pending" => "Chờ xử lý",
+                        "Confirmed" => "Đã xác nhận",
+                        "Completed" => "Hoàn thành",
+                        "Cancelled" => "Đã hủy",
+                        "Split" => "Đã tách",
+                        "Merged" => "Đã gộp",
+                        _ => inv.Status
+                    };
+                    <div class="col-12">
+                        <div style="border: 1px solid #eee; border-radius: 8px; overflow: hidden; background: #fff;">
+                            <div style="background: #f8f8f8; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                                <div>
+                                    <span style="font-weight: 600; font-size: 15px;">
+                                        <i class="fas fa-file-invoice" style="margin-right: 8px; color: #1a7f37;"></i>
+                                        @inv.Invoice_code
+                                    </span>
+                                    <span style="color: #888; font-size: 13px; margin-left: 15px;">@inv.Invoice_date.ToString("dd/MM/yyyy")</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <span style="padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 500; background: @(statusColor)20; color: @statusColor;">@statusText</span>
+                                </div>
+                            </div>
+                            <div style="padding: 15px 20px;">
+                                @if (inv.Details != null && inv.Details.Any())
+                                {
+                                    @foreach (var d in inv.Details)
+                                    {
+                                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f0f0f0;">
+                                            <div>
+                                                <span style="font-weight: 500;">@d.Product_name</span>
+                                                <span style="color: #888; font-size: 13px; margin-left: 10px;">SL: @d.Quantity</span>
+                                            </div>
+                                            <div style="font-weight: 500;">@d.Total_price.ToString("N0")</div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                            <div style="padding: 12px 20px; background: #fafafa; display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: #888;">Tổng cộng:</span>
+                                <span style="font-size: 18px; font-weight: 600; color: #1a7f37;">@inv.Grand_total.ToString("N0") VNĐ</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+            @if (Model.TotalPages > 1)
+            {
+                @await Html.PartialAsync("_ShopPagination", Model)
+            }
+        }
+    </div>
+</section>
