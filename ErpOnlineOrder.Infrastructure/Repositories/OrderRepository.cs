@@ -1,3 +1,5 @@
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.Infrastructure.Persistence;
@@ -13,36 +15,17 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
     public class OrderRepository : IOrderRepository
     {
         private readonly ErpOnlineOrderDbContext _context;
+        private readonly IMapper _mapper;
 
-        public OrderRepository(ErpOnlineOrderDbContext context)
+        public OrderRepository(ErpOnlineOrderDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
-        private static IQueryable<OrderDTO> ProjectToOrderDto(IQueryable<Order> query)
+        private IQueryable<OrderDTO> ProjectToOrderDto(IQueryable<Order> query)
         {
-            return query.Select(o => new OrderDTO
-            {
-                Id = o.Id,
-                Order_code = o.Order_code ?? "",
-                Order_date = o.Order_date,
-                Total_price = o.Total_price,
-                Order_status = o.Order_status ?? "",
-                Customer_name = o.Customer != null
-                    ? (!string.IsNullOrWhiteSpace(o.Customer.Full_name) ? o.Customer.Full_name : o.Customer.Customer_code ?? "—")
-                    : "—",
-                Shipping_address = o.Shipping_address,
-                note = o.note,
-                Order_details = o.Order_Details
-                    .Select(od => new OrderDetailDTO
-                    {
-                        Product_id = od.Product_id,
-                        Product_name = od.Product != null ? (od.Product.Product_name ?? "") : "",
-                        Quantity = od.Quantity,
-                        Unit_price = od.Unit_price,
-                        Total_price = od.Total_price
-                    }).ToList()
-            });
+            return query.ProjectTo<OrderDTO>(_mapper.ConfigurationProvider);
         }
 
         public async Task<Order?> GetByIdAsync(int id)

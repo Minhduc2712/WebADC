@@ -508,7 +508,7 @@ namespace ErpOnlineOrder.Application.Services
             {
                 if (cp.Product == null) continue;
                 
-                var originalPrice = decimal.TryParse(cp.Product.Product_price, out var price) ? price : 0;
+                var originalPrice = cp.Product?.Product_price ?? 0;
                 var finalPrice = CalculateFinalPrice(originalPrice, cp.Custom_price, cp.Discount_percent);
                 
                 allowedProducts.Add(new CustomerAllowedProductDto
@@ -537,7 +537,7 @@ namespace ErpOnlineOrder.Application.Services
                     // Bỏ qua nếu sản phẩm đã có trong danh sách (ưu tiên cấu hình trực tiếp)
                     if (allowedProducts.Any(p => p.Product_id == product.Id)) continue;
 
-                    var originalPrice = decimal.TryParse(product.Product_price, out var price) ? price : 0;
+                    var originalPrice = product.Product_price ?? 0;
                     var finalPrice = CalculateFinalPrice(originalPrice, null, cc.Discount_percent);
 
                     allowedProducts.Add(new CustomerAllowedProductDto
@@ -582,7 +582,7 @@ namespace ErpOnlineOrder.Application.Services
             var product = await _productRepository.GetByIdAsync(productId);
             if (product == null) return 0;
 
-            var originalPrice = decimal.TryParse(product.Product_price, out var price) ? price : 0;
+            var originalPrice = product.Product_price ?? 0;
 
             // Ưu tiên 1: Giá được cấu hình trực tiếp cho khách hàng
             var customerProduct = await _customerProductRepository.GetByCustomerAndProductAsync(customerId, productId);

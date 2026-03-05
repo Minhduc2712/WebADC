@@ -53,7 +53,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<IEnumerable<Organization_information>> SearchAsync(string? keyword)
         {
-            var query = _context.OrganizationInformations
+            IQueryable<Organization_information> query = _context.OrganizationInformations
                 .AsNoTracking()
                 .Include(o => o.Customer);
 

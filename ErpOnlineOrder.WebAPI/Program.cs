@@ -51,6 +51,9 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Add AutoMapper
+builder.Services.AddAutoMapper(typeof(ErpOnlineOrder.Infrastructure.Mappers.RepositoryMappingProfile).Assembly);
+
 // Add DbContext
 builder.Services.AddDbContext<ErpOnlineOrderDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

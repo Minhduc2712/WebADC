@@ -9,6 +9,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
     public interface IProductService
     {
         Task<ProductDTO?> GetByIdAsync(int id, int? userId = null);
+        Task<ProductDTO?> GetByProductIdAsync(int id, int? userId = null);
         Task<Product?> GetEntityByIdAsync(int id);
         Task<PagedResult<ProductDTO>> GetAllPagedAsync(ProductFilterRequest request, int? userId = null);
         Task<IEnumerable<ProductDTO>> GetAllAsync(int? userId = null);

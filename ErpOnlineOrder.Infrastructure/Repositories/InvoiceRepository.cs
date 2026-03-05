@@ -1,3 +1,5 @@
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using ErpOnlineOrder.Application.DTOs.InvoiceDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Domain.Models;
@@ -10,59 +12,22 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
     public class InvoiceRepository : IInvoiceRepository
     {
         private readonly ErpOnlineOrderDbContext _context;
+        private readonly IMapper _mapper;
 
-        public InvoiceRepository(ErpOnlineOrderDbContext context)
+        public InvoiceRepository(ErpOnlineOrderDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
-        private static IQueryable<InvoiceSelectDto> ProjectToInvoiceSelectDto(IQueryable<Invoice> query)
+        private IQueryable<InvoiceSelectDto> ProjectToInvoiceSelectDto(IQueryable<Invoice> query)
         {
-            return query.Select(i => new InvoiceSelectDto
-            {
-                Id = i.Id,
-                Invoice_code = i.Invoice_code ?? ""
-            });
+            return query.ProjectTo<InvoiceSelectDto>(_mapper.ConfigurationProvider);
         }
 
-        private static IQueryable<InvoiceDto> ProjectToInvoiceDto(IQueryable<Invoice> query)
+        private IQueryable<InvoiceDto> ProjectToInvoiceDto(IQueryable<Invoice> query)
         {
-            return query.Select(i => new InvoiceDto
-            {
-                Id = i.Id,
-                Invoice_code = i.Invoice_code ?? "",
-                Invoice_date = i.Invoice_date,
-                Customer_id = i.Customer_id,
-                Customer_name = i.Customer != null ? (i.Customer.Full_name ?? "") : "",
-                Province_id = i.Customer != null
-                    ? i.Customer.Customer_managements
-                        .Where(cm => cm.Province != null)
-                        .Select(cm => (int?)cm.Province_id)
-                        .FirstOrDefault()
-                    : null,
-                Province_name = i.Customer != null
-                    ? i.Customer.Customer_managements
-                        .Where(cm => cm.Province != null)
-                        .Select(cm => cm.Province!.Province_name)
-                        .FirstOrDefault()
-                    : null,
-                Total_amount = i.Total_amount,
-                Tax_amount = i.Tax_amount,
-                Status = i.Status ?? "",
-                Parent_invoice_id = i.Parent_invoice_id,
-                Parent_invoice_code = i.Parent_invoice != null ? i.Parent_invoice.Invoice_code : null,
-                Details = i.Invoice_Details
-                    .Select(d => new InvoiceDetailDto
-                    {
-                        Id = d.Id,
-                        Product_id = d.Product_id,
-                        Product_name = d.Product != null ? (d.Product.Product_name ?? "") : "",
-                        Quantity = d.Quantity,
-                        Unit_price = d.Unit_price,
-                        Total_price = d.Total_price,
-                        Tax_rate = d.Tax_rate
-                    }).ToList()
-            });
+            return query.ProjectTo<InvoiceDto>(_mapper.ConfigurationProvider);
         }
         
         public async Task<Invoice?> GetByIdAsync(int id)

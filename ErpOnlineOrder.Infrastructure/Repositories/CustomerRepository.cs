@@ -1,3 +1,5 @@
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using ErpOnlineOrder.Application.DTOs.CustomerDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Domain.Models;
@@ -15,10 +17,12 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
     public class CustomerRepository : ICustomerRepository
     {
         private readonly ErpOnlineOrderDbContext _context;
+        private readonly IMapper _mapper;
 
-        public CustomerRepository(ErpOnlineOrderDbContext context)
+        public CustomerRepository(ErpOnlineOrderDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         public async Task<Customer?> GetByIdAsync(int id)
@@ -77,14 +81,9 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             return await query.ToPagedListAsync(request);
         }
 
-        private static IQueryable<CustomerSelectDto> ProjectToCustomerSelectDto(IQueryable<Customer> query)
+        private IQueryable<CustomerSelectDto> ProjectToCustomerSelectDto(IQueryable<Customer> query)
         {
-            return query.Select(c => new CustomerSelectDto
-            {
-                Id = c.Id,
-                Customer_code = c.Customer_code ?? "",
-                Full_name = c.Full_name ?? ""
-            });
+            return query.ProjectTo<CustomerSelectDto>(_mapper.ConfigurationProvider);
         }
 
         public async Task<IEnumerable<CustomerSelectDto>> GetForSelectAsync()

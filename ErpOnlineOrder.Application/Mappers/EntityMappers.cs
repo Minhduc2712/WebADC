@@ -96,17 +96,17 @@ namespace ErpOnlineOrder.Application.Mappers
 
         #region Product
 
+        private static readonly System.Globalization.CultureInfo ViCulture = System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
+
         public static ProductDTO ToProductDto(Product p)
         {
-            var priceDecimal = decimal.TryParse(p.Product_price, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : (decimal?)null;
             return new ProductDTO
             {
                 Id = p.Id,
                 Product_code = p.Product_code ?? "",
                 Product_name = p.Product_name ?? "",
                 Product_description = p.Product_description ?? "",
-                Product_price_decimal = priceDecimal,
-                Product_price = priceDecimal?.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN")) ?? p.Product_price ?? "",
+                Product_price = p.Product_price,
                 Product_link = p.Product_link ?? "",
                 Publisher_name = p.Publisher?.Publisher_name ?? "",
                 Authors = p.Product_Authors?
@@ -133,16 +133,15 @@ namespace ErpOnlineOrder.Application.Mappers
                 if (cp?.Custom_price.HasValue == true)
                     priceDecimal = cp.Custom_price;
             }
-            if (!priceDecimal.HasValue && decimal.TryParse(p.Product_price, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var v))
-                priceDecimal = v;
+            if (!priceDecimal.HasValue)
+                priceDecimal = p.Product_price;
             return new ProductDTO
             {
                 Id = p.Id,
                 Product_code = p.Product_code ?? "",
                 Product_name = p.Product_name ?? "",
                 Product_description = p.Product_description ?? "",
-                Product_price_decimal = priceDecimal,
-                Product_price = priceDecimal?.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN")) ?? p.Product_price ?? "",
+                Product_price = priceDecimal,
                 Product_link = p.Product_link ?? "",
                 Publisher_name = p.Publisher?.Publisher_name ?? "",
                 Authors = p.Product_Authors?
@@ -358,7 +357,7 @@ namespace ErpOnlineOrder.Application.Mappers
                 Product_id = cp.Product_id,
                 Product_code = cp.Product?.Product_code ?? string.Empty,
                 Product_name = cp.Product?.Product_name ?? string.Empty,
-                Original_price = cp.Product?.Product_price ?? string.Empty,
+                Original_price = cp.Product?.Product_price,
                 Custom_price = cp.Custom_price,
                 Discount_percent = cp.Discount_percent,
                 Max_quantity = cp.Max_quantity,

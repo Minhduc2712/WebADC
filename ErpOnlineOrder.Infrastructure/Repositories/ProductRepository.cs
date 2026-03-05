@@ -1,3 +1,5 @@
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.DTOs.ProductDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
@@ -9,35 +11,36 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using ErpOnlineOrder.Infrastructure.Extensions;
+using Microsoft.EntityFrameworkCore.Query;
 
 namespace ErpOnlineOrder.Infrastructure.Repositories
 {
     public class ProductRepository : IProductRepository
     {
         private readonly ErpOnlineOrderDbContext _context;
-
-        public ProductRepository(ErpOnlineOrderDbContext context)
-        {
-            _context = context;
-        }
+        private readonly IMapper _mapper;
 
         private static readonly CultureInfo ViCulture = CultureInfo.GetCultureInfo("vi-VN");
 
-        private static IQueryable<ProductDTO> ProjectToProductDto(IQueryable<Product> query, int? customerId, bool includePublisherAndAuthors = true)
+        public ProductRepository(ErpOnlineOrderDbContext context, IMapper mapper)
         {
-            var hasCustomer = customerId.HasValue && customerId.Value > 0;
+            _context = context;
+            _mapper = mapper;
+        }
+
+        
+        private static IQueryable<ProductDTO> ProjectToProductDtoWithCustomer(IQueryable<Product> query, int customerId, bool includePublisherAndAuthors = true)
+        {
             return query.Select(p => new ProductDTO
             {
                 Id = p.Id,
                 Product_code = p.Product_code ?? "",
                 Product_name = p.Product_name ?? "",
                 Product_description = p.Product_description ?? "",
-                Product_price = hasCustomer
-                    ? (p.Customer_Products
-                        .Where(cp => cp.Customer_id == customerId && cp.Is_active && cp.Custom_price.HasValue)
-                        .Select(cp => cp.Custom_price!.Value.ToString("N0", ViCulture))
-                        .FirstOrDefault()) ?? p.Product_price ?? ""
-                    : (p.Product_price ?? ""),
+                Product_price = (p.Customer_Products
+                    .Where(cp => cp.Customer_id == customerId && cp.Is_active && cp.Custom_price.HasValue)
+                    .Select(cp => (decimal?)cp.Custom_price!.Value)
+                    .FirstOrDefault()) ?? p.Product_price,
                 Product_link = p.Product_link ?? "",
                 Publisher_name = includePublisherAndAuthors ? (p.Publisher != null ? (p.Publisher.Publisher_name ?? "") : "") : "",
                 Authors = includePublisherAndAuthors
@@ -48,14 +51,14 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             });
         }
 
-        private static IQueryable<ProductSelectDto> ProjectToProductSelectDto(IQueryable<Product> query)
+        private IQueryable<ProductDTO> ProjectToProductDto(IQueryable<Product> query)
         {
-            return query.Select(p => new ProductSelectDto
-            {
-                Id = p.Id,
-                Product_code = p.Product_code ?? "",
-                Product_name = p.Product_name ?? ""
-            });
+            return query.ProjectTo<ProductDTO>(_mapper.ConfigurationProvider);
+        }
+
+        private IQueryable<ProductSelectDto> ProjectToProductSelectDto(IQueryable<Product> query)
+        {
+            return query.ProjectTo<ProductSelectDto>(_mapper.ConfigurationProvider);
         }
 
         public async Task<Product?> GetByIdAsync(int id)
@@ -70,6 +73,13 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .Include(p => p.Product_Images)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(p => p.Id == id);
+        }
+
+        public IQueryable<Product?> GetByProductId(int id)
+        {
+            return _context.Products
+                .AsNoTracking()
+                .Where(p => p.Id == id);
         }
 
         public async Task<Product?> GetByCodeAsync(string code)
@@ -98,7 +108,10 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                     cp.Customer_id == customerId.Value && cp.Is_active));
             }
 
-            return await ProjectToProductDto(query, customerId).OrderByDescending(p => p.Id).ToListAsync();
+            var projected = customerId.HasValue && customerId.Value > 0
+                ? ProjectToProductDtoWithCustomer(query, customerId.Value)
+                : ProjectToProductDto(query);
+            return await projected.OrderByDescending(p => p.Id).ToListAsync();
         }
 
         public async Task<PagedResult<Product>> GetPagedProductAsync(ProductFilterRequest request)
@@ -176,14 +189,16 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
             query = request.Sort switch
             {
-                "price_asc" => query.OrderBy(p => p.Product_price ?? "0"),
-                "price_desc" => query.OrderByDescending(p => p.Product_price ?? "0"),
+                "price_asc" => query.OrderBy(p => p.Product_price ?? 0),
+                "price_desc" => query.OrderByDescending(p => p.Product_price ?? 0),
                 "name_asc" => query.OrderBy(p => p.Product_name ?? ""),
                 "newest" => query.OrderByDescending(p => p.Id),
                 _ => query.OrderByDescending(p => p.Id)
             };
 
-            var projectedQuery = ProjectToProductDto(query, customerId);
+            var projectedQuery = customerId.HasValue && customerId.Value > 0
+                ? ProjectToProductDtoWithCustomer(query, customerId.Value)
+                : ProjectToProductDto(query);
             return await projectedQuery.ToPagedListAsync(request);
         }
 
@@ -205,11 +220,12 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                     cp.Customer_id == customerId.Value && cp.Is_active));
             }
 
-            var projectedQuery = ProjectToProductDto(
-                query.OrderByDescending(p => p.Id).Take(limit),
-                customerId,
-                includePublisherAndAuthors: false
-            );
+            var projectedQuery = customerId.HasValue && customerId.Value > 0
+                ? ProjectToProductDtoWithCustomer(
+                    query.OrderByDescending(p => p.Id).Take(limit),
+                    customerId.Value,
+                    includePublisherAndAuthors: false)
+                : ProjectToProductDto(query.OrderByDescending(p => p.Id).Take(limit));
 
             return await projectedQuery.ToListAsync();
         }
@@ -244,7 +260,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .AsNoTracking()
                 .OrderByDescending(p => p.Id);
 
-            return await ProjectToProductDto(query, null).ToListAsync();
+            return await ProjectToProductDto(query).ToListAsync();
         }
 
         public async Task<IEnumerable<ProductDTO>> SearchAsync(string? name, string? author, string? publisher)
@@ -260,7 +276,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             if (!string.IsNullOrEmpty(publisher))
                 query = query.Where(p => p.Publisher != null && p.Publisher.Publisher_name != null && p.Publisher.Publisher_name.Contains(publisher));
 
-            return await ProjectToProductDto(query.OrderByDescending(p => p.Id), null).ToListAsync();
+            return await ProjectToProductDto(query.OrderByDescending(p => p.Id)).ToListAsync();
         }
 
         public async Task<IEnumerable<ProductDTO>> SearchByAllAsync(string? searchString)
@@ -278,7 +294,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                      (p.Publisher != null && p.Publisher.Publisher_name != null && p.Publisher.Publisher_name.ToLower().Contains(search)) ||
                      p.Product_Authors.Any(pa => pa.Author != null && pa.Author.Author_name != null && pa.Author.Author_name.ToLower().Contains(search))));
 
-            return await ProjectToProductDto(query.OrderByDescending(p => p.Id), null).ToListAsync();
+            return await ProjectToProductDto(query.OrderByDescending(p => p.Id)).ToListAsync();
         }
 
         public async Task<IEnumerable<ProductDTO>> SearchByAllForShopAsync(string? searchString, int? customerId)
@@ -304,7 +320,10 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                     p.Product_Authors.Any(pa => pa.Author != null && pa.Author.Author_name != null && pa.Author.Author_name.ToLower().Contains(search)));
             }
 
-            return await ProjectToProductDto(query, customerId).OrderByDescending(p => p.Id).ToListAsync();
+            var projected = customerId.HasValue && customerId.Value > 0
+                ? ProjectToProductDtoWithCustomer(query, customerId.Value)
+                : ProjectToProductDto(query);
+            return await projected.OrderByDescending(p => p.Id).ToListAsync();
         }
 
         public async Task<IEnumerable<ProductDTO>> GetByCategoryIdAsync(int categoryId)
@@ -313,7 +332,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .AsNoTracking()
                 .Where(p => p.Product_Categories.Any(pc => pc.Category_id == categoryId))
                 .OrderByDescending(p => p.Id);
-            return await ProjectToProductDto(query, null).ToListAsync();
+            return await ProjectToProductDto(query).ToListAsync();
         }
 
         public async Task<IEnumerable<ProductSelectDto>> GetForSelectAsync()

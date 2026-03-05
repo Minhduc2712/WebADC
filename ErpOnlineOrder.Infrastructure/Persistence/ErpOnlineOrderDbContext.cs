@@ -309,7 +309,7 @@ namespace ErpOnlineOrder.Infrastructure.Persistence
                 entity.HasQueryFilter(p => !p.Is_deleted);
                 entity.Property(x => x.Product_code).HasMaxLength(50).IsRequired();
                 entity.Property(x => x.Product_name).HasMaxLength(200).IsRequired();
-                entity.Property(x => x.Product_price).HasMaxLength(50);
+                entity.Property(x => x.Product_price).HasColumnType("decimal(18,0)").HasComment("Giá VND");
                 entity.Property(x => x.Tax_rate).HasColumnType("decimal(5,2)");
                 entity.Property(x => x.Cover_type_id).HasColumnName("Cover_type_id");
                 entity.Property(x => x.Publisher_id).HasColumnName("Publisher_id");

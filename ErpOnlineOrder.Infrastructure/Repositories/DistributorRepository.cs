@@ -1,3 +1,5 @@
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using ErpOnlineOrder.Application.DTOs.DistributorDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Domain.Models;
@@ -12,10 +14,12 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
     public class DistributorRepository : IDistributorRepository
     {
         private readonly ErpOnlineOrderDbContext _context;
+        private readonly IMapper _mapper;
 
-        public DistributorRepository(ErpOnlineOrderDbContext context)
+        public DistributorRepository(ErpOnlineOrderDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         public async Task<Distributor?> GetByIdAsync(int id)
@@ -46,14 +50,9 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        private static IQueryable<DistributorSelectDto> ProjectToDistributorSelectDto(IQueryable<Distributor> query)
+        private IQueryable<DistributorSelectDto> ProjectToDistributorSelectDto(IQueryable<Distributor> query)
         {
-            return query.Select(d => new DistributorSelectDto
-            {
-                Id = d.Id,
-                Distributor_code = d.Distributor_code ?? "",
-                Distributor_name = d.Distributor_name ?? ""
-            });
+            return query.ProjectTo<DistributorSelectDto>(_mapper.ConfigurationProvider);
         }
 
         public async Task<IEnumerable<DistributorSelectDto>> GetForSelectAsync()

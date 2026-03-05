@@ -11,19 +11,15 @@
         .OrderBy(g => g.Key == "Chưa phân loại" ? "zzz" : g.Key)
         .ToList();
 
-    string FormatPrice(string price)
+    string FormatPrice(decimal? price)
     {
-        if (string.IsNullOrEmpty(price)) return "0";
-        var cleaned = new string(price.Where(c => char.IsDigit(c)).ToArray());
-        if (string.IsNullOrEmpty(cleaned) || !long.TryParse(cleaned, out var num)) return price;
-        return num.ToString("N0", new System.Globalization.CultureInfo("vi-VN"));
+        if (!price.HasValue) return "0";
+        return price.Value.ToString("N0", new System.Globalization.CultureInfo("vi-VN"));
     }
 
-    decimal GetPriceNum(string price)
+    decimal GetPriceNum(decimal? price)
     {
-        if (string.IsNullOrEmpty(price)) return 0;
-        var cleaned = new string(price.Where(c => char.IsDigit(c)).ToArray());
-        return decimal.TryParse(cleaned, out var n) ? n : 0;
+        return price ?? 0;
     }
 }
 

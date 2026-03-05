@@ -127,7 +127,7 @@
                                 </td>
                                 <td>@string.Join(", ", product.Authors)</td>
                                 <td>@product.Publisher_name</td>
-                                <td><span class="text-success fw-bold">@product.Product_price VNĐ</span></td>
+                                <td><span class="text-success fw-bold">@product.Product_price_formatted</span></td>
                                 <td>
                                     @foreach (var cat in product.Categories.Take(2))
                                     {

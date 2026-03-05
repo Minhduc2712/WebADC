@@ -9,6 +9,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
     public interface IProductRepository
     {
         Task<Product?> GetByIdAsync(int id);
+        public IQueryable<Product?> GetByProductId(int id);
         Task<Product?> GetByCodeAsync(string code);
         Task<Product?> GetByNameAsync(string name);
         Task<PagedResult<Product>> GetPagedProductAsync(ProductFilterRequest request);

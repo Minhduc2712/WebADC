@@ -1,3 +1,5 @@
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using ErpOnlineOrder.Application.DTOs.WarehouseDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Domain.Models;
@@ -9,10 +11,12 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
     public class WarehouseRepository : IWarehouseRepository
     {
         private readonly ErpOnlineOrderDbContext _context;
+        private readonly IMapper _mapper;
 
-        public WarehouseRepository(ErpOnlineOrderDbContext context)
+        public WarehouseRepository(ErpOnlineOrderDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         public async Task<Warehouse?> GetByIdAsync(int id)
@@ -56,9 +60,9 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        private static IQueryable<WarehouseSelectDto> ProjectToWarehouseSelectDto(IQueryable<Warehouse> query)
+        private IQueryable<WarehouseSelectDto> ProjectToWarehouseSelectDto(IQueryable<Warehouse> query)
         {
-            return query.Select(w => new WarehouseSelectDto { Id = w.Id, Warehouse_name = w.Warehouse_name ?? "" });
+            return query.ProjectTo<WarehouseSelectDto>(_mapper.ConfigurationProvider);
         }
 
         public async Task<IEnumerable<WarehouseSelectDto>> GetForSelectAsync()

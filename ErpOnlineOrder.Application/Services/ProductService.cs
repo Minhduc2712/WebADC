@@ -6,9 +6,11 @@ using ErpOnlineOrder.Application.Mappers;
 using ErpOnlineOrder.Domain.Models;
 using ClosedXML.Excel;
 using ErpOnlineOrder.Application.Helpers;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using DocumentFormat.OpenXml.Office2010.Excel;
 
 namespace ErpOnlineOrder.Application.Services
 {
@@ -38,6 +40,37 @@ namespace ErpOnlineOrder.Application.Services
             return dto;
         }
 
+        public async Task<ProductDTO?> GetByProductIdAsync(int id, int? userId = null)
+        {
+            var query = _productRepository.GetByProductId(id);
+
+            var dto = await query.Select(p => new ProductDTO
+            {
+                Id = p.Id,
+                Product_code = p.Product_code,
+                Product_name = p.Product_name ?? "",
+                Product_description = p.Product_description ?? "",
+                Product_price = p.Product_price,
+                Product_link = p.Product_link ?? "",
+                Publisher_name = p.Publisher != null ? p.Publisher.Publisher_name : "",
+
+                Authors = p.Product_Authors
+                    .Select(pa => pa.Author.Author_name ?? "")
+                    .ToList(),
+
+                Categories = p.Product_Categories
+                    .Select(pc => pc.Category.Category_name ?? "")
+                    .ToList(),
+
+                Images = p.Product_Images
+                    .Select(pi => pi.image_url ?? "")
+                    .ToList()
+            }).FirstOrDefaultAsync();
+
+            if (userId.HasValue && userId.Value > 0)
+                await RecordPermissionEnricher.EnrichProductAsync(dto, userId.Value, _permissionService);
+            return dto;
+        }
         public async Task<Product?> GetEntityByIdAsync(int id)
         {
             return await _productRepository.GetByIdAsync(id);
@@ -145,7 +178,7 @@ namespace ErpOnlineOrder.Application.Services
             {
                 Product_code = dto.Product_code,
                 Product_name = dto.Product_name,
-                Product_price = dto.Product_price ?? "",
+                Product_price = dto.Product_price,
                 Product_link = dto.Product_link,
                 Product_description = dto.Product_description,
                 Tax_rate = dto.Tax_rate ?? 0,
@@ -190,7 +223,7 @@ namespace ErpOnlineOrder.Application.Services
 
             existing.Product_code = dto.Product_code;
             existing.Product_name = dto.Product_name;
-            existing.Product_price = dto.Product_price ?? "";
+            existing.Product_price = dto.Product_price;
             existing.Product_link = dto.Product_link;
             existing.Product_description = dto.Product_description;
             existing.Tax_rate = dto.Tax_rate ?? 0;
@@ -256,6 +289,7 @@ namespace ErpOnlineOrder.Application.Services
                     (p.Authors?.Any(a => a?.ToLowerInvariant().Contains(q) ?? false) ?? false)
                 );
             }
+            var viCulture = System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
             using var workbook = new XLWorkbook();
             var ws = workbook.Worksheets.Add("Sản phẩm");
 
@@ -274,7 +308,7 @@ namespace ErpOnlineOrder.Application.Services
                 ExcelHelper.SetCellValue(ws.Cell(row, 2), dto.Product_name);
                 ExcelHelper.SetCellValue(ws.Cell(row, 3), string.Join(", ", dto.Authors ?? new List<string>()));
                 ExcelHelper.SetCellValue(ws.Cell(row, 4), dto.Publisher_name ?? "");
-                ExcelHelper.SetCellValue(ws.Cell(row, 5), dto.Product_price ?? "");
+                ExcelHelper.SetCellValue(ws.Cell(row, 5), dto.Product_price.HasValue ? dto.Product_price.Value.ToString("N0", viCulture) : "");
                 ExcelHelper.SetCellValue(ws.Cell(row, 6), string.Join(", ", dto.Categories ?? new List<string>()));
                 row++;
             }

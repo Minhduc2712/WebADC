@@ -65,7 +65,7 @@
                         <h5>@Model.Product_name</h5>
 
                         <div class="price">
-                            <span class="new-price">@Model.Product_price</span>
+                            <span class="new-price">@Model.Product_price_formatted</span>
                         </div>
 
                         @if (!string.IsNullOrEmpty(Model.Product_description))
@@ -200,7 +200,7 @@
                                     {
                                         <tr><td>Danh mục</td><td>@string.Join(", ", Model.Categories)</td></tr>
                                     }
-                                    <tr><td>Giá</td><td>@Model.Product_price</td></tr>
+                                    <tr><td>Giá</td><td>@Model.Product_price_formatted</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -242,13 +242,13 @@
                                     <div class="product-description">
                                         <a asp-action="ProductDetail" asp-route-id="@product.Id" class="product-details">@product.Product_name</a>
                                         <div class="price">
-                                            <span class="new-price">@product.Product_price</span>
+                                            <span class="new-price">@product.Product_price_formatted</span>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="product-cart-btn">
                                     <a href="javascript:void(0)" class="product-btn"
-                                       onclick="addToCart(@product.Id, '@Html.Raw(product.Product_name.Replace("'", "\\'"))', parsePrice('@product.Product_price'), '@product.Product_price', '@(product.Images.Any() ? product.Images.First() : "")', 1)">
+                                       onclick="addToCart(@product.Id, '@Html.Raw(product.Product_name.Replace("'", "\\'"))', @(product.Product_price ?? 0), '@product.Product_price_formatted', '@(product.Images.Any() ? product.Images.First() : "")', 1)">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right:5px;">
                                             <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
                                         </svg>
@@ -286,8 +286,8 @@
         addToCart(
             @Model.Id,
             '@Html.Raw(Model.Product_name.Replace("'", "\\'"))',
-            parsePrice('@Model.Product_price'),
-            '@Model.Product_price',
+            @(Model.Product_price ?? 0),
+            '@Model.Product_price_formatted',
             '@(Model.Images.Any() ? Model.Images.First() : "")',
             qty
         );
