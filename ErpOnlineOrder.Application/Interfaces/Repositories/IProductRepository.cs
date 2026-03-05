@@ -12,7 +12,6 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
         Task<Product?> GetByCodeAsync(string code);
         Task<Product?> GetByNameAsync(string name);
         Task<PagedResult<Product>> GetPagedProductAsync(ProductFilterRequest request);
-        Task<PagedResult<Product>> GetPagedProductsForShopAsync(int? customerId, ProductForShopFilterRequest request);
         Task<PagedResult<ProductDTO>> GetPagedProductsForShopDisplayAsync(int? customerId, ProductForShopFilterRequest request);
         Task<IEnumerable<ProductDTO>> GetProductsForShopAsync(int? customerId, ProductForShopFilterRequest request);
         Task<IEnumerable<ProductDTO>> GetRelatedProductsForShopAsync(int productId, IEnumerable<string> categoryNames, int? customerId, int limit = 4);

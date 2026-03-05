@@ -77,18 +77,22 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             return await query.ToPagedListAsync(request);
         }
 
+        private static IQueryable<CustomerSelectDto> ProjectToCustomerSelectDto(IQueryable<Customer> query)
+        {
+            return query.Select(c => new CustomerSelectDto
+            {
+                Id = c.Id,
+                Customer_code = c.Customer_code ?? "",
+                Full_name = c.Full_name ?? ""
+            });
+        }
+
         public async Task<IEnumerable<CustomerSelectDto>> GetForSelectAsync()
         {
-            return await _context.Customers
+            var query = _context.Customers
                 .AsNoTracking()
-                .OrderBy(c => c.Full_name ?? c.Customer_code ?? "")
-                .Select(c => new CustomerSelectDto
-                {
-                    Id = c.Id,
-                    Customer_code = c.Customer_code ?? "",
-                    Full_name = c.Full_name ?? ""
-                })
-                .ToListAsync();
+                .OrderBy(c => c.Full_name ?? c.Customer_code ?? "");
+            return await ProjectToCustomerSelectDto(query).ToListAsync();
         }
 
         public async Task AddAsync(Customer customer)

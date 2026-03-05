@@ -16,40 +16,13 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<Invoice?> GetByIdAsync(int id)
+        private static IQueryable<InvoiceSelectDto> ProjectToInvoiceSelectDto(IQueryable<Invoice> query)
         {
-            return await _context.Invoices
-                .AsNoTracking()
-                .Include(i => i.Customer)!.ThenInclude(c => c!.Customer_managements)
-                .ThenInclude(cm => cm.Province)
-                .Include(i => i.Staff)
-                .Include(i => i.Order)
-                .Include(i => i.Parent_invoice)
-                .Include(i => i.Merged_into_invoice)
-                .Include(i => i.Invoice_Details)
-                    .ThenInclude(d => d.Product)
-                .FirstOrDefaultAsync(i => i.Id == id);
-        }
-
-        public async Task<Invoice?> GetByIdForUpdateAsync(int id)
-        {
-            return await _context.Invoices
-                .Include(i => i.Customer)!.ThenInclude(c => c!.Customer_managements)
-                .ThenInclude(cm => cm.Province)
-                .Include(i => i.Staff)
-                .Include(i => i.Invoice_Details)
-                    .ThenInclude(d => d.Product)
-                .FirstOrDefaultAsync(i => i.Id == id);
-        }
-
-        public async Task<Invoice?> GetByCodeAsync(string code)
-        {
-            return await _context.Invoices
-                .AsNoTracking()
-                .Include(i => i.Customer)
-                .Include(i => i.Invoice_Details)
-                    .ThenInclude(d => d.Product)
-                .FirstOrDefaultAsync(i => i.Invoice_code == code);
+            return query.Select(i => new InvoiceSelectDto
+            {
+                Id = i.Id,
+                Invoice_code = i.Invoice_code ?? ""
+            });
         }
 
         private static IQueryable<InvoiceDto> ProjectToInvoiceDto(IQueryable<Invoice> query)
@@ -91,6 +64,42 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                     }).ToList()
             });
         }
+        
+        public async Task<Invoice?> GetByIdAsync(int id)
+        {
+            return await _context.Invoices
+                .AsNoTracking()
+                .Include(i => i.Customer)!.ThenInclude(c => c!.Customer_managements)
+                .ThenInclude(cm => cm.Province)
+                .Include(i => i.Staff)
+                .Include(i => i.Order)
+                .Include(i => i.Parent_invoice)
+                .Include(i => i.Merged_into_invoice)
+                .Include(i => i.Invoice_Details)
+                    .ThenInclude(d => d.Product)
+                .FirstOrDefaultAsync(i => i.Id == id);
+        }
+
+        public async Task<Invoice?> GetByIdForUpdateAsync(int id)
+        {
+            return await _context.Invoices
+                .Include(i => i.Customer)!.ThenInclude(c => c!.Customer_managements)
+                .ThenInclude(cm => cm.Province)
+                .Include(i => i.Staff)
+                .Include(i => i.Invoice_Details)
+                    .ThenInclude(d => d.Product)
+                .FirstOrDefaultAsync(i => i.Id == id);
+        }
+
+        public async Task<Invoice?> GetByCodeAsync(string code)
+        {
+            return await _context.Invoices
+                .AsNoTracking()
+                .Include(i => i.Customer)
+                .Include(i => i.Invoice_Details)
+                    .ThenInclude(d => d.Product)
+                .FirstOrDefaultAsync(i => i.Invoice_code == code);
+        }
 
         public async Task<IEnumerable<InvoiceDto>> GetAllAsync()
         {
@@ -106,29 +115,18 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .AsNoTracking()
                 .AsQueryable();
 
-            if (customerIds != null)
+            if (customerIds != null && customerIds.Any())
             {
-                var ids = customerIds.ToList();
-                if (ids.Count > 0)
-                    query = query.Where(i => ids.Contains(i.Customer_id));
-                else
-                    return new PagedResult<InvoiceDto> { Items = new List<InvoiceDto>(), Page = request.Page, PageSize = request.PageSize, TotalCount = 0 };
+                query = query.Where(i => customerIds.Contains(i.Customer_id));
             }
-
-            if (!string.IsNullOrWhiteSpace(request.Status))
-                query = query.Where(i => i.Status == request.Status);
 
             if (!string.IsNullOrWhiteSpace(request.SearchTerm))
             {
-                var search = request.SearchTerm.Trim().ToLowerInvariant();
-                query = query.Where(i =>
-                    (i.Invoice_code != null && i.Invoice_code.ToLower().Contains(search)) ||
-                    (i.Customer != null && i.Customer.Full_name != null && i.Customer.Full_name.ToLower().Contains(search))
-                );
+                var search = request.SearchTerm.Trim();
+                query = query.Where(i => i.Invoice_code.Contains(search) || i.Customer.Full_name.Contains(search));
             }
 
-            query = query.OrderByDescending(i => i.Created_at);
-            var projectedQuery = ProjectToInvoiceDto(query);
+            var projectedQuery = ProjectToInvoiceDto(query.OrderByDescending(i => i.Created_at));
             return await projectedQuery.ToPagedListAsync(request);
         }
 
@@ -197,10 +195,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                     return new List<InvoiceSelectDto>();
             }
 
-            return await query
-                .OrderByDescending(i => i.Created_at)
-                .Select(i => new InvoiceSelectDto { Id = i.Id, Invoice_code = i.Invoice_code ?? "" })
-                .ToListAsync();
+            return await ProjectToInvoiceSelectDto(query.OrderByDescending(i => i.Created_at)).ToListAsync();
         }
 
         public async Task<IEnumerable<Invoice>> GetChildInvoicesAsync(int parentInvoiceId)

@@ -46,18 +46,22 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        private static IQueryable<DistributorSelectDto> ProjectToDistributorSelectDto(IQueryable<Distributor> query)
+        {
+            return query.Select(d => new DistributorSelectDto
+            {
+                Id = d.Id,
+                Distributor_code = d.Distributor_code ?? "",
+                Distributor_name = d.Distributor_name ?? ""
+            });
+        }
+
         public async Task<IEnumerable<DistributorSelectDto>> GetForSelectAsync()
         {
-            return await _context.Distributors
+            var query = _context.Distributors
                 .AsNoTracking()
-                .OrderBy(d => d.Distributor_name ?? d.Distributor_code ?? "")
-                .Select(d => new DistributorSelectDto
-                {
-                    Id = d.Id,
-                    Distributor_code = d.Distributor_code ?? "",
-                    Distributor_name = d.Distributor_name ?? ""
-                })
-                .ToListAsync();
+                .OrderBy(d => d.Distributor_name ?? d.Distributor_code ?? "");
+            return await ProjectToDistributorSelectDto(query).ToListAsync();
         }
 
         public async Task AddAsync(Distributor distributor)

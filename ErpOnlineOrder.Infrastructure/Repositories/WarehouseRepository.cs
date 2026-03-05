@@ -56,13 +56,17 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        private static IQueryable<WarehouseSelectDto> ProjectToWarehouseSelectDto(IQueryable<Warehouse> query)
+        {
+            return query.Select(w => new WarehouseSelectDto { Id = w.Id, Warehouse_name = w.Warehouse_name ?? "" });
+        }
+
         public async Task<IEnumerable<WarehouseSelectDto>> GetForSelectAsync()
         {
-            return await _context.Warehouses
+            var query = _context.Warehouses
                 .AsNoTracking()
-                .OrderBy(w => w.Warehouse_name)
-                .Select(w => new WarehouseSelectDto { Id = w.Id, Warehouse_name = w.Warehouse_name ?? "" })
-                .ToListAsync();
+                .OrderBy(w => w.Warehouse_name);
+            return await ProjectToWarehouseSelectDto(query).ToListAsync();
         }
 
         public async Task<Warehouse> AddAsync(Warehouse warehouse)

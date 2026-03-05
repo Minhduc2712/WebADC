@@ -12,9 +12,6 @@ namespace ErpOnlineOrder.Application.DTOs
         public string Product_code { get; set; } = null!;
         public string Product_name { get; set; } = null!;
         public string Product_description { get; set; } = null!;
-        /// <summary>Giá số - dùng cho sắp xếp, tính toán. Format hiển thị tại UI (ToString("N0")).</summary>
-        public decimal? Product_price_decimal { get; set; }
-        /// <summary>Giá đã format - giữ cho tương thích. Nên dùng Product_price_decimal + format tại UI.</summary>
         public string Product_price { get; set; } = null!;
         public string Product_link { get; set; } = null!;
         public string Publisher_name { get; set; } = null!;
