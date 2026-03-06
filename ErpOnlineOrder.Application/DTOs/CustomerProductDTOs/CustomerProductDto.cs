@@ -8,9 +8,8 @@ namespace ErpOnlineOrder.Application.DTOs.CustomerProductDTOs
         public int Product_id { get; set; }
         public string Product_code { get; set; } = string.Empty;
         public string Product_name { get; set; } = string.Empty;
-        /// <summary>Giá gốc sản phẩm (VND)</summary>
-        public decimal? Original_price { get; set; }
-        public decimal? Custom_price { get; set; }
+        public decimal Original_price { get; set; }
+        public decimal Custom_price { get; set; }
         public decimal? Discount_percent { get; set; }
         public int? Max_quantity { get; set; }
         public bool Is_active { get; set; }

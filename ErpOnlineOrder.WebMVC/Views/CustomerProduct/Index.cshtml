@@ -98,7 +98,7 @@
                                 <td><span class="badge bg-secondary">@item.Product_code</span></td>
                                 <td>@item.Product_name</td>
                                 <td>@item.Original_price</td>
-                                <td>@(item.Custom_price.HasValue ? item.Custom_price.Value.ToString("N0") + " đ" : "-")</td>
+                                <td>@(item.Custom_price != 0 ? item.Custom_price.ToString("N0") + " đ" : "-")</td>
                                 <td>@(item.Discount_percent.HasValue ? item.Discount_percent.Value + "%" : "-")</td>
                                 <td>@(item.Max_quantity ?? (object)"-")</td>
                                 <td>

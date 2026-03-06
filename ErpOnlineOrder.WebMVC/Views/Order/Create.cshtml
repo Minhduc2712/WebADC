@@ -31,7 +31,7 @@
                                 <option value="">-- Chọn sản phẩm --</option>
                                 @foreach (var p in products)
                                 {
-                                    var price = p.Product_price ?? 0;
+                                    var price = p.Product_price;
                                     <option value="@p.Id" data-name="@p.Product_name" data-price="@price">
                                         @p.Product_code - @p.Product_name (@p.Product_price_formatted)
                                     </option>

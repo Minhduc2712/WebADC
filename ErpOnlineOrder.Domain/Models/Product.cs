@@ -13,8 +13,7 @@ namespace ErpOnlineOrder.Domain.Models
         [Required]
         public string Product_name { get; set; } = string.Empty;
         
-        /// <summary>Giá sản phẩm (VND)</summary>
-        public decimal? Product_price { get; set; }
+        public decimal Product_price { get; set; }
         
         public string? Product_link { get; set; }
         

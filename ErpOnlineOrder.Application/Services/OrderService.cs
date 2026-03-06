@@ -516,7 +516,7 @@ namespace ErpOnlineOrder.Application.Services
             return customerProducts
                 .Where(cp => cp.Is_active && cp.Product != null)
                 .Select(cp => {
-                    var originalPrice = cp.Product!.Product_price ?? 0;
+                    var originalPrice = cp.Product!.Product_price;
                     return new CustomerAllowedProductDto {
                         Product_id = cp.Product_id,
                         Product_code = cp.Product.Product_code,
@@ -538,16 +538,10 @@ namespace ErpOnlineOrder.Application.Services
 
         private static decimal CalculateFinalPrice(decimal originalPrice, decimal? customPrice, decimal? discountPercent)
         {
-            if (customPrice.HasValue)
-            {
+            if (customPrice.HasValue && customPrice.Value != 0)
                 return customPrice.Value;
-            }
-
             if (discountPercent.HasValue && discountPercent.Value > 0)
-            {
                 return originalPrice * (1 - discountPercent.Value / 100);
-            }
-
             return originalPrice;
         }
     }

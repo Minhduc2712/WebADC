@@ -131,7 +131,7 @@
                                     <div class="card-price">@product.Product_price_formatted</div>
                                     <div class="card-action">
                                         <a href="javascript:void(0)" class="btn-order"
-                                           onclick="addToCart(@product.Id, '@Html.Raw(product.Product_name.Replace("'", "\\'"))', @(product.Product_price ?? 0), '@product.Product_price_formatted', '@(product.Images.Any() ? product.Images.First() : "")', 1)">
+                                           onclick="addToCart(@product.Id, '@Html.Raw(product.Product_name.Replace("'", "\\'"))', @(product.Product_price), '@product.Product_price_formatted', '@(product.Images.Any() ? product.Images.First() : "")', 1)">
                                             <i class="fas fa-shopping-cart"></i> Đặt hàng
                                         </a>
                                     </div>

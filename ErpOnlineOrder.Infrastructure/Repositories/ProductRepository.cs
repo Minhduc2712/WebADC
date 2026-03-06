@@ -38,9 +38,11 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 Product_name = p.Product_name ?? "",
                 Product_description = p.Product_description ?? "",
                 Product_price = (p.Customer_Products
-                    .Where(cp => cp.Customer_id == customerId && cp.Is_active && cp.Custom_price.HasValue)
-                    .Select(cp => (decimal?)cp.Custom_price!.Value)
-                    .FirstOrDefault()) ?? p.Product_price,
+                    .Where(cp => cp.Customer_id == customerId && cp.Is_active && cp.Custom_price != 0)
+                    .Select(cp => cp.Custom_price)
+                    .FirstOrDefault()) != 0
+                    ? p.Customer_Products.Where(cp => cp.Customer_id == customerId && cp.Is_active).Select(cp => cp.Custom_price).FirstOrDefault()
+                    : p.Product_price,
                 Product_link = p.Product_link ?? "",
                 Publisher_name = includePublisherAndAuthors ? (p.Publisher != null ? (p.Publisher.Publisher_name ?? "") : "") : "",
                 Authors = includePublisherAndAuthors
@@ -70,10 +72,16 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 {
                     Id = p.Id,
                     Product_name = p.Product_name ?? "Unknown",
-                    OriginalPrice = p.Product_price ?? 0,
+                    OriginalPrice = p.Product_price,
                     CustomerSetting = _context.CustomerProducts
                         .Where(cp => cp.Customer_id == customerId && cp.Product_id == p.Id && !cp.Is_deleted)
-                        .Select(cp => new { cp.Custom_price, cp.Discount_percent, cp.Max_quantity, cp.Is_active })
+                        .Select(cp => new ProductValidationCustomerSetting
+                        {
+                            Custom_price = cp.Custom_price,
+                            Discount_percent = cp.Discount_percent,
+                            Max_quantity = cp.Max_quantity,
+                            Is_active = cp.Is_active
+                        })
                         .FirstOrDefault()
                 })
                 .ToDictionaryAsync(x => x.Id, x => new ProductValidationInfo {
@@ -85,6 +93,15 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                         ? CalculateFinalPrice(x.OriginalPrice, x.CustomerSetting.Custom_price, x.CustomerSetting.Discount_percent)
                         : x.OriginalPrice
                 });
+        }
+
+        private static decimal CalculateFinalPrice(decimal originalPrice, decimal customPrice, decimal? discountPercent)
+        {
+            if (customPrice != 0)
+                return customPrice;
+            if (discountPercent.HasValue && discountPercent.Value > 0)
+                return originalPrice * (1 - discountPercent.Value / 100);
+            return originalPrice;
         }
 
         public async Task<Product?> GetByIdAsync(int id)
@@ -236,8 +253,8 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
             query = request.Sort switch
             {
-                "price_asc" => query.OrderBy(p => p.Product_price ?? 0),
-                "price_desc" => query.OrderByDescending(p => p.Product_price ?? 0),
+                "price_asc" => query.OrderBy(p => p.Product_price),
+                "price_desc" => query.OrderByDescending(p => p.Product_price),
                 "name_asc" => query.OrderBy(p => p.Product_name ?? ""),
                 "newest" => query.OrderByDescending(p => p.Id),
                 _ => query.OrderByDescending(p => p.Id)

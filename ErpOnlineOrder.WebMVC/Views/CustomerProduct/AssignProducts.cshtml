@@ -11,15 +11,14 @@
         .OrderBy(g => g.Key == "Chưa phân loại" ? "zzz" : g.Key)
         .ToList();
 
-    string FormatPrice(decimal? price)
+    string FormatPrice(decimal price)
     {
-        if (!price.HasValue) return "0";
-        return price.Value.ToString("N0", new System.Globalization.CultureInfo("vi-VN"));
+        return price.ToString("N0", new System.Globalization.CultureInfo("vi-VN"));
     }
 
-    decimal GetPriceNum(decimal? price)
+    decimal GetPriceNum(decimal price)
     {
-        return price ?? 0;
+        return price;
     }
 }
 
@@ -125,7 +124,7 @@
                                          data-product-id="@p.Id"
                                          data-name="@p.Product_name"
                                          data-code="@p.Product_code"
-                                         data-price="@GetPriceNum(p.Product_price)"
+                                         data-price="@GetPriceNum(p.Product_price).ToString(System.Globalization.CultureInfo.InvariantCulture)"
                                          data-search="@searchText">
                                         <div class="d-flex align-items-start gap-2">
                                             @if (!isAssigned)

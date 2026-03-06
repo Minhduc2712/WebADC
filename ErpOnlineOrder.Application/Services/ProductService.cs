@@ -307,7 +307,7 @@ namespace ErpOnlineOrder.Application.Services
                 ExcelHelper.SetCellValue(ws.Cell(row, 2), dto.Product_name);
                 ExcelHelper.SetCellValue(ws.Cell(row, 3), string.Join(", ", dto.Authors ?? new List<string>()));
                 ExcelHelper.SetCellValue(ws.Cell(row, 4), dto.Publisher_name ?? "");
-                ExcelHelper.SetCellValue(ws.Cell(row, 5), dto.Product_price.HasValue ? dto.Product_price.Value.ToString("N0", viCulture) : "");
+                ExcelHelper.SetCellValue(ws.Cell(row, 5), dto.Product_price.ToString("N0", viCulture));
                 ExcelHelper.SetCellValue(ws.Cell(row, 6), string.Join(", ", dto.Categories ?? new List<string>()));
                 row++;
             }

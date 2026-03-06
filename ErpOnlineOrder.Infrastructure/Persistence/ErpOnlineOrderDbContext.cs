@@ -183,7 +183,8 @@ namespace ErpOnlineOrder.Infrastructure.Persistence
                 entity.HasQueryFilter(cp => !cp.Is_deleted);
                 entity.Property(x => x.Customer_id).HasColumnName("Customer_id");
                 entity.Property(x => x.Product_id).HasColumnName("Product_id");
-                entity.Property(x => x.Custom_price).HasColumnType("decimal(18,2)");
+                entity.Property(x => x.Custom_price).HasColumnType("decimal(18,2)")
+                    .HasConversion(v => (decimal?)v, v => v ?? 0);
                 entity.Property(x => x.Discount_percent).HasColumnType("decimal(5,2)");
                 entity.HasOne(x => x.Customer)
                     .WithMany(x => x.Customer_Products)
@@ -288,7 +289,8 @@ namespace ErpOnlineOrder.Infrastructure.Persistence
                 entity.HasQueryFilter(p => !p.Is_deleted);
                 entity.Property(x => x.Product_code).HasMaxLength(50).IsRequired();
                 entity.Property(x => x.Product_name).HasMaxLength(200).IsRequired();
-                entity.Property(x => x.Product_price).HasColumnType("decimal(18,0)").HasComment("Giá VND");
+                entity.Property(x => x.Product_price).HasColumnType("decimal(18,0)").HasComment("Giá VND")
+                    .HasConversion(v => (decimal?)v, v => v ?? 0);
                 entity.Property(x => x.Tax_rate).HasColumnType("decimal(5,2)");
                 entity.Property(x => x.Cover_type_id).HasColumnName("Cover_type_id");
                 entity.Property(x => x.Publisher_id).HasColumnName("Publisher_id");

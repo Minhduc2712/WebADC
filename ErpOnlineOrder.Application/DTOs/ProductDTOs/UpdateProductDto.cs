@@ -5,7 +5,7 @@ namespace ErpOnlineOrder.Application.DTOs.ProductDTOs
         public int Id { get; set; }
         public string Product_code { get; set; } = null!;
         public string Product_name { get; set; } = null!;
-        public decimal? Product_price { get; set; }
+        public decimal Product_price { get; set; }
         public string? Product_link { get; set; }
         public string? Product_description { get; set; }
         public decimal? Tax_rate { get; set; }
