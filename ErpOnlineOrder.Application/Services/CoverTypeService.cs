@@ -26,8 +26,8 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<Cover_type> CreateAsync(CreateCoverTypeDto dto, int createdBy)
         {
-            var existingByCode = await _coverTypeRepository.GetByCodeAsync(dto.Cover_type_code);
-            if (existingByCode != null)
+            var codeExists = await _coverTypeRepository.ExistsByCodeAsync(dto.Cover_type_code);
+            if (codeExists)
                 throw new InvalidOperationException($"Loại bìa với mã '{dto.Cover_type_code}' đã tồn tại.");
 
             var existingByName = await _coverTypeRepository.GetByNameAsync(dto.Cover_type_name);
@@ -51,8 +51,8 @@ namespace ErpOnlineOrder.Application.Services
             var existing = await _coverTypeRepository.GetByIdAsync(id);
             if (existing == null) return false;
 
-            var existingByCode = await _coverTypeRepository.GetByCodeAsync(dto.Cover_type_code);
-            if (existingByCode != null && existingByCode.Id != id)
+            var codeExists = await _coverTypeRepository.ExistsByCodeAsync(dto.Cover_type_code, id);
+            if (codeExists)
                 throw new InvalidOperationException($"Loại bìa với mã '{dto.Cover_type_code}' đã tồn tại.");
 
             var existingByName = await _coverTypeRepository.GetByNameAsync(dto.Cover_type_name);

@@ -18,7 +18,7 @@ namespace ErpOnlineOrder.Domain.Models
 
         [ForeignKey("Product_id")]
         public virtual Product? Product { get; set; }
-        public decimal? Custom_price { get; set; }
+        public decimal Custom_price { get; set; }
         public decimal? Discount_percent { get; set; }
         public int? Max_quantity { get; set; }
         public bool Is_active { get; set; } = true;

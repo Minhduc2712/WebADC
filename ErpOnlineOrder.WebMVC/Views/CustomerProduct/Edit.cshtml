@@ -34,18 +34,6 @@
                     <input type="hidden" asp-for="Id" />
 
                     <div class="mb-3">
-                        <label asp-for="Custom_price" class="form-label">Giá riêng (VNĐ)</label>
-                        <input asp-for="Custom_price" type="number" class="form-control" min="0" step="0.01" placeholder="Để trống dùng giá gốc" />
-                        <span asp-validation-for="Custom_price" class="text-danger"></span>
-                    </div>
-
-                    <div class="mb-3">
-                        <label asp-for="Discount_percent" class="form-label">Chiết khấu (%)</label>
-                        <input asp-for="Discount_percent" type="number" class="form-control" min="0" max="100" step="0.01" placeholder="0" />
-                        <span asp-validation-for="Discount_percent" class="text-danger"></span>
-                    </div>
-
-                    <div class="mb-3">
                         <label asp-for="Max_quantity" class="form-label">Số lượng tối đa mỗi đơn</label>
                         <input asp-for="Max_quantity" type="number" class="form-control" min="0" placeholder="Không giới hạn" />
                         <span asp-validation-for="Max_quantity" class="text-danger"></span>

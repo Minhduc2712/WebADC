@@ -15,10 +15,14 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             _context = context;
         }
 
+        private IQueryable<Warehouse_export> GetBaseQuery()
+        {
+            return _context.WarehouseExports.AsNoTracking();
+        }
+
         public async Task<Warehouse_export?> GetByIdAsync(int id)
         {
-            return await _context.WarehouseExports
-                .AsNoTracking()
+            return await GetBaseQuery()
                 .Include(e => e.Warehouse)
                 .Include(e => e.Invoice)
                 .Include(e => e.Order)
@@ -35,8 +39,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<Warehouse_export?> GetByCodeAsync(string code)
         {
-            return await _context.WarehouseExports
-                .AsNoTracking()
+            return await GetBaseQuery()
                 .Include(e => e.Warehouse)
                 .Include(e => e.Invoice)
                 .Include(e => e.Customer)
@@ -45,8 +48,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<IEnumerable<Warehouse_export>> GetAllAsync()
         {
-            return await _context.WarehouseExports
-                .AsNoTracking()
+            return await GetBaseQuery()
                 .Include(e => e.Warehouse)
                 .Include(e => e.Invoice)
                 .Include(e => e.Customer)
@@ -59,8 +61,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<PagedResult<Warehouse_export>> GetPagedWarehouseExportsAsync(WarehouseExportFilterRequest request, IEnumerable<int>? customerIds = null)
         {
-            var query = _context.WarehouseExports
-                .AsNoTracking()
+            var query = GetBaseQuery()
                 .Include(e => e.Warehouse)
                 .Include(e => e.Invoice)
                 .Include(e => e.Customer)
@@ -96,8 +97,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<IEnumerable<Warehouse_export>> GetByInvoiceIdAsync(int invoiceId)
         {
-            return await _context.WarehouseExports
-                .AsNoTracking()
+            return await GetBaseQuery()
                 .Include(e => e.Warehouse)
                 .Include(e => e.Invoice)
                 .Include(e => e.Warehouse_Export_Details)
@@ -108,8 +108,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<IEnumerable<Warehouse_export>> GetByCustomerIdAsync(int customerId)
         {
-            return await _context.WarehouseExports
-                .AsNoTracking()
+            return await GetBaseQuery()
                 .Include(e => e.Warehouse)
                 .Include(e => e.Invoice)
                 .Include(e => e.Warehouse_Export_Details)
@@ -121,8 +120,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<IEnumerable<Warehouse_export>> GetByWarehouseIdAsync(int warehouseId)
         {
-            return await _context.WarehouseExports
-                .AsNoTracking()
+            return await GetBaseQuery()
                 .Include(e => e.Invoice)
                 .Include(e => e.Customer)
                 .Include(e => e.Warehouse_Export_Details)
@@ -134,8 +132,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<IEnumerable<Warehouse_export>> GetByStatusAsync(string status)
         {
-            return await _context.WarehouseExports
-                .AsNoTracking()
+            return await GetBaseQuery()
                 .Include(e => e.Warehouse)
                 .Include(e => e.Invoice)
                 .Include(e => e.Customer)
@@ -146,8 +143,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<IEnumerable<Warehouse_export>> GetChildExportsAsync(int parentExportId)
         {
-            return await _context.WarehouseExports
-                .AsNoTracking()
+            return await GetBaseQuery()
                 .Include(e => e.Warehouse)
                 .Include(e => e.Invoice)
                 .Include(e => e.Warehouse_Export_Details)
@@ -158,12 +154,15 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task AddAsync(Warehouse_export export)
         {
+            export.Created_at = DateTime.Now;
+            export.Updated_at = DateTime.Now;
             await _context.WarehouseExports.AddAsync(export);
             await _context.SaveChangesAsync();
         }
 
         public async Task UpdateAsync(Warehouse_export export)
         {
+            export.Updated_at = DateTime.Now;
             _context.WarehouseExports.Update(export);
             await _context.SaveChangesAsync();
         }
@@ -174,7 +173,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             if (export != null)
             {
                 export.Is_deleted = true;
-                export.Updated_at = DateTime.UtcNow;
+                export.Updated_at = DateTime.Now;
                 await _context.SaveChangesAsync();
             }
         }

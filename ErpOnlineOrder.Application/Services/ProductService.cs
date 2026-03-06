@@ -168,8 +168,8 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<ProductDTO> CreateProductAsync(CreateProductDto dto, int createdBy)
         {
-            var existingByCode = await _productRepository.GetByCodeAsync(dto.Product_code);
-            if (existingByCode != null)
+            var codeExists = await _productRepository.ExistsByCodeAsync(dto.Product_code);
+            if (codeExists)
                 throw new InvalidOperationException($"Sản phẩm với mã '{dto.Product_code}' đã tồn tại.");
 
             var now = DateTime.UtcNow;
@@ -216,8 +216,8 @@ namespace ErpOnlineOrder.Application.Services
             var existing = await _productRepository.GetByIdAsync(id);
             if (existing == null) return false;
 
-            var existingByCode = await _productRepository.GetByCodeAsync(dto.Product_code);
-            if (existingByCode != null && existingByCode.Id != id)
+            var codeExists = await _productRepository.ExistsByCodeAsync(dto.Product_code, id);
+            if (codeExists)
                 throw new InvalidOperationException($"Sản phẩm với mã '{dto.Product_code}' đã tồn tại.");
 
             existing.Product_code = dto.Product_code;

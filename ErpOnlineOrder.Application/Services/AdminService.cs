@@ -206,19 +206,17 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<bool> DeleteStaffAccountAsync(int userId, int deletedBy)
         {
-            var user = await _userRepository.GetByIdAsync(userId);
-            if (user == null || user.Staff == null)
+            var user = await _userRepository.GetByIdBasicAsync(userId);            if (user == null || user.Staff == null)
             {
                 return false;
             }
-
             await _userRepository.DeleteAsync(userId);
             return true;
         }
 
         public async Task<bool> ToggleStaffStatusAsync(int userId, bool isActive, int updatedBy)
         {
-            var user = await _userRepository.GetByIdAsync(userId);
+            var user = await _userRepository.GetByIdBasicAsync(userId);
             if (user == null || user.Staff == null)
             {
                 return false;
@@ -234,7 +232,7 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<bool> ResetPasswordAsync(ResetPasswordDto dto, int updatedBy)
         {
-            var user = await _userRepository.GetByIdAsync(dto.User_id);
+            var user = await _userRepository.GetByIdBasicAsync(dto.User_id);
             if (user == null)
             {
                 return false;
@@ -254,20 +252,17 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<int> GetActiveStaffCountAsync()
         {
-            var users = await _userRepository.GetAllAsync();
-            return users.Count(u => u.Staff != null && !u.Is_deleted && u.Is_active);
+            return await _userRepository.CountActiveStaffAsync();
         }
 
         public async Task<int> GetCustomerCountAsync()
         {
-            var customers = await _customerRepository.GetAllAsync();
-            return customers.Count();
+            return await _customerRepository.CountAsync();
         }
 
         public async Task<int> GetOrderCountAsync()
         {
-            var orders = await _orderRepository.GetAllAsync();
-            return orders.Count();
+            return await _orderRepository.CountAsync();
         }
 
         #endregion

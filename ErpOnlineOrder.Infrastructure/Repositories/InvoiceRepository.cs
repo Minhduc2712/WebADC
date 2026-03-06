@@ -29,11 +29,15 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         {
             return query.ProjectTo<InvoiceDto>(_mapper.ConfigurationProvider);
         }
+
+        private IQueryable<Invoice> GetBaseQuery()
+        {
+            return _context.Invoices.AsNoTracking();
+        }
         
         public async Task<Invoice?> GetByIdAsync(int id)
         {
-            return await _context.Invoices
-                .AsNoTracking()
+            return await GetBaseQuery()
                 .Include(i => i.Customer)!.ThenInclude(c => c!.Customer_managements)
                 .ThenInclude(cm => cm.Province)
                 .Include(i => i.Staff)
@@ -58,8 +62,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<Invoice?> GetByCodeAsync(string code)
         {
-            return await _context.Invoices
-                .AsNoTracking()
+            return await GetBaseQuery()
                 .Include(i => i.Customer)
                 .Include(i => i.Invoice_Details)
                     .ThenInclude(d => d.Product)
@@ -68,16 +71,14 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<IEnumerable<InvoiceDto>> GetAllAsync()
         {
-            var query = _context.Invoices
-                .AsNoTracking()
+            var query = GetBaseQuery()
                 .OrderByDescending(i => i.Created_at);
             return await ProjectToInvoiceDto(query).ToListAsync();
         }
 
         public async Task<PagedResult<InvoiceDto>> GetPagedInvoicesAsync(InvoiceFilterRequest request, IEnumerable<int>? customerIds = null)
         {
-            var query = _context.Invoices
-                .AsNoTracking()
+            var query = GetBaseQuery()
                 .AsQueryable();
 
             if (customerIds != null && customerIds.Any())
@@ -99,8 +100,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         {
             var ids = customerIds.ToList();
             if (ids.Count == 0) return new List<InvoiceDto>();
-            var query = _context.Invoices
-                .AsNoTracking()
+            var query = GetBaseQuery()
                 .Where(i => ids.Contains(i.Customer_id))
                 .OrderByDescending(i => i.Created_at);
             return await ProjectToInvoiceDto(query).ToListAsync();
@@ -108,8 +108,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<IEnumerable<InvoiceDto>> GetByCustomerIdAsync(int customerId)
         {
-            var query = _context.Invoices
-                .AsNoTracking()
+            var query = GetBaseQuery()
                 .Where(i => i.Customer_id == customerId)
                 .OrderByDescending(i => i.Created_at);
             return await ProjectToInvoiceDto(query).ToListAsync();
@@ -117,8 +116,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<IEnumerable<InvoiceDto>> GetByStatusAsync(string status)
         {
-            var query = _context.Invoices
-                .AsNoTracking()
+            var query = GetBaseQuery()
                 .Where(i => i.Status == status)
                 .OrderByDescending(i => i.Created_at);
             return await ProjectToInvoiceDto(query).ToListAsync();
@@ -127,8 +125,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<IEnumerable<InvoiceDto>> GetForMergeAsync(IEnumerable<int>? customerIds = null)
         {
             var excludedStatuses = new[] { "Completed", "Cancelled", "Merged", "Split" };
-            var query = _context.Invoices
-                .AsNoTracking()
+            var query = GetBaseQuery()
                 .Where(i => !excludedStatuses.Contains(i.Status ?? ""));
 
             if (customerIds != null)
@@ -146,8 +143,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<IEnumerable<InvoiceSelectDto>> GetForWarehouseExportSelectAsync(IEnumerable<int>? customerIds = null)
         {
-            var query = _context.Invoices
-                .AsNoTracking()
+            var query = GetBaseQuery()
                 .Where(i => i.Status != "Cancelled")
                 .AsQueryable();
 
@@ -165,8 +161,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<IEnumerable<Invoice>> GetChildInvoicesAsync(int parentInvoiceId)
         {
-            return await _context.Invoices
-                .AsNoTracking()
+            return await GetBaseQuery()
                 .Include(i => i.Invoice_Details)
                     .ThenInclude(d => d.Product)
                 .Where(i => i.Parent_invoice_id == parentInvoiceId)
@@ -182,12 +177,15 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task AddAsync(Invoice invoice)
         {
+            invoice.Created_at = DateTime.Now;
+            invoice.Updated_at = DateTime.Now;
             await _context.Invoices.AddAsync(invoice);
             await _context.SaveChangesAsync();
         }
 
         public async Task UpdateAsync(Invoice invoice)
         {
+            invoice.Updated_at = DateTime.Now;
             _context.Invoices.Update(invoice);
             await _context.SaveChangesAsync();
         }
@@ -198,7 +196,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             if (invoice != null)
             {
                 invoice.Is_deleted = true;
-                invoice.Updated_at = DateTime.UtcNow;
+                invoice.Updated_at = DateTime.Now;
                 await _context.SaveChangesAsync();
             }
         }

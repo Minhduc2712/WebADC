@@ -125,22 +125,13 @@ namespace ErpOnlineOrder.Application.Mappers
 
         public static ProductDTO ToProductDtoForShop(Product p, int? customerId)
         {
-            decimal priceDecimal = 0;
-            if (customerId.HasValue && p.Customer_Products != null)
-            {
-                var cp = p.Customer_Products.FirstOrDefault(c => c.Customer_id == customerId.Value && c.Is_active && !c.Is_deleted);
-                if (cp != null && cp.Custom_price != 0)
-                    priceDecimal = cp.Custom_price;
-            }
-            if (priceDecimal == 0)
-                priceDecimal = p.Product_price;
             return new ProductDTO
             {
                 Id = p.Id,
                 Product_code = p.Product_code ?? "",
                 Product_name = p.Product_name ?? "",
                 Product_description = p.Product_description ?? "",
-                Product_price = priceDecimal,
+                Product_price = p.Product_price,
                 Product_link = p.Product_link ?? "",
                 Publisher_name = p.Publisher?.Publisher_name ?? "",
                 Authors = p.Product_Authors?
@@ -357,8 +348,6 @@ namespace ErpOnlineOrder.Application.Mappers
                 Product_code = cp.Product?.Product_code ?? string.Empty,
                 Product_name = cp.Product?.Product_name ?? string.Empty,
                 Original_price = cp.Product?.Product_price ?? 0,
-                Custom_price = cp.Custom_price,
-                Discount_percent = cp.Discount_percent,
                 Max_quantity = cp.Max_quantity,
                 Is_active = cp.Is_active,
                 Created_at = cp.Created_at

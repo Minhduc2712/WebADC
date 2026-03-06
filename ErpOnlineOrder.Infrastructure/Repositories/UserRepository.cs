@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.Infrastructure.Persistence;
@@ -18,14 +17,29 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             _context = context;
         }
 
+        private IQueryable<User> GetBaseQuery(bool includeDetails = false)
+        {
+            var query = _context.Users.AsNoTracking().Where(u => !u.Is_deleted);
+            if (includeDetails)
+            {
+                query = query
+                    .Include(u => u.User_roles)
+                        .ThenInclude(ur => ur.Role)
+                    .Include(u => u.Staff)
+                    .Include(u => u.Customer);
+            }
+            return query;
+        }
+
+        public async Task<int> CountActiveStaffAsync()
+        {
+            return await _context.Users
+                .CountAsync(u => u.Staff != null && !u.Is_deleted && u.Is_active);
+        }
+
         public async Task<PagedResult<User>> GetPagedStaffAsync(StaffFilterRequest request)
         {
-            var query = _context.Users
-                .AsNoTracking()
-                .Include(u => u.User_roles)
-                    .ThenInclude(ur => ur.Role)
-                .Include(u => u.Staff)
-                .Include(u => u.Customer)
+            var query = GetBaseQuery(true)
                 .Where(u => u.Staff != null)
                 .AsQueryable();
 
@@ -56,14 +70,15 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task AddAsync(User user)
         {
+            user.Created_at = DateTime.Now;
+            user.Updated_at = DateTime.Now;
             await _context.Users.AddAsync(user);
             await _context.SaveChangesAsync();
         }
 
         public async Task DeleteAsync(int id)
         {
-            var user = await _context.Users.FindAsync(id);
-            if (user != null)
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);               if (user != null)
             {
                 user.Is_deleted = true;
                 user.Updated_at = DateTime.Now;
@@ -73,35 +88,30 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<IEnumerable<User>> GetAllAsync()
         {
-            return await _context.Users
-                .AsNoTracking()
-                .Include(u => u.User_roles)
-                    .ThenInclude(ur => ur.Role)
-                .Include(u => u.Staff)
-                .Include(u => u.Customer)
-                .ToListAsync();
+            return await GetBaseQuery(true).ToListAsync();
         }
 
         public async Task<User?> GetByIdAsync(int id)
         {
-            return await _context.Users
-                .AsNoTracking()
+            return await GetBaseQuery()
                 .Include(u => u.User_roles)
                     .ThenInclude(ur => ur.Role)
                         .ThenInclude(r => r.Role_Permissions)
                             .ThenInclude(rp => rp.Permission)
-                // .ThenInclude(p => p.Module)
-                // .ThenInclude(p => p.Action)
                 .Include(u => u.Staff)
                 .Include(u => u.Customer)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(u => u.Id == id);
         }
 
+        public async Task<User?> GetByIdBasicAsync(int id)
+        {
+            return await GetBaseQuery().FirstOrDefaultAsync(u => u.Id == id);
+        }
+
         public async Task<User?> FindByIdentifierAsync(string identifier)
         {
-            return await _context.Users
-                .AsNoTracking()
+            return await GetBaseQuery()
                 .Include(u => u.User_roles)
                     .ThenInclude(ur => ur.Role)
                         .ThenInclude(r => r.Role_Permissions)
@@ -113,19 +123,13 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<User?> GetByUsernameAsync(string username)
         {
-            return await _context.Users
-                .AsNoTracking()
-                .Include(u => u.User_roles)
-                    .ThenInclude(ur => ur.Role)
-                .Include(u => u.Staff)
-                .Include(u => u.Customer)
+            return await GetBaseQuery(true)
                 .FirstOrDefaultAsync(u => u.Username == username);
         }
 
         public async Task<User?> GetByEmailAsync(string email)
         {
-            return await _context.Users
-                .AsNoTracking()
+            return await GetBaseQuery()
                 .Include(u => u.User_roles)
                     .ThenInclude(ur => ur.Role)
                 .FirstOrDefaultAsync(u => u.Email == email);
@@ -177,11 +181,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<IEnumerable<User>> GetUsersByRoleAsync(int roleId)
         {
-            return await _context.Users
-                .Include(u => u.User_roles)
-                    .ThenInclude(ur => ur.Role)
-                .Include(u => u.Staff)
-                .Include(u => u.Customer)
+            return await GetBaseQuery(true)
                 .Where(u => u.User_roles.Any(ur => ur.Role_id == roleId))
                 .ToListAsync();
         }

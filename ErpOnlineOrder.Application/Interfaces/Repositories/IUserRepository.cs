@@ -7,6 +7,8 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
     public interface IUserRepository
     {
         Task<User?> GetByIdAsync(int id);
+        Task<int> CountActiveStaffAsync();
+        Task<User?> GetByIdBasicAsync(int id);
         Task<IEnumerable<User>> GetAllAsync();
         Task<PagedResult<User>> GetPagedStaffAsync(StaffFilterRequest request);
         Task<User?> FindByIdentifierAsync(string identifier);

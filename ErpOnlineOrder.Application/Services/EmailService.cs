@@ -114,14 +114,14 @@ namespace ErpOnlineOrder.Application.Services
                 }
             }
 
-            var managementStaff = await _customerManagementRepository.GetByCustomerAsync(customerId);
+            var managementStaff = await _customerManagementRepository.GetByCustomerBasicAsync(customerId);
             if (managementStaff != null)
             {
                 foreach (var mgmt in managementStaff)
                 {
                     if (mgmt.Staff != null && !mgmt.Staff.Is_deleted)
                     {
-                        var staffUser = await _userRepository.GetByIdAsync(mgmt.Staff.User_id);
+                        var staffUser = await _userRepository.GetByIdBasicAsync(mgmt.Staff.User_id);
                         if (staffUser != null && staffUser.Is_active && !staffUser.Is_deleted && !string.IsNullOrWhiteSpace(staffUser.Email))
                             emails.Add(staffUser.Email.Trim());
                     }

@@ -26,8 +26,8 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<Author> CreateAsync(CreateAuthorDto dto, int createdBy)
         {
-            var existingByCode = await _authorRepository.GetByCodeAsync(dto.Author_code);
-            if (existingByCode != null)
+            var codeExists = await _authorRepository.ExistsByCodeAsync(dto.Author_code);
+            if (codeExists)
                 throw new InvalidOperationException($"Tác giả với mã '{dto.Author_code}' đã tồn tại.");
 
             var existingByName = await _authorRepository.GetByNameAsync(dto.Author_name);
@@ -58,8 +58,8 @@ namespace ErpOnlineOrder.Application.Services
             var existing = await _authorRepository.GetByIdAsync(id);
             if (existing == null) return false;
 
-            var existingByCode = await _authorRepository.GetByCodeAsync(dto.Author_code);
-            if (existingByCode != null && existingByCode.Id != id)
+            var codeExists = await _authorRepository.ExistsByCodeAsync(dto.Author_code, id);
+            if (codeExists)
                 throw new InvalidOperationException($"Tác giả với mã '{dto.Author_code}' đã tồn tại.");
 
             var existingByName = await _authorRepository.GetByNameAsync(dto.Author_name);

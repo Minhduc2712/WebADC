@@ -47,7 +47,7 @@ namespace ErpOnlineOrder.Application.Services
             var staff = await _staffRepository.GetByUserIdAsync(userId.Value);
             if (staff == null) return false;
 
-            return await _customerManagementRepository.IsStaffManagingCustomerAsync(staff.Id, customerId);
+            return (await _customerManagementRepository.GetByStaffAndCustomerAsync(staff.Id, customerId)) != null;
         }
 
         public async Task<OrderDTO?> GetByIdAsync(int id, int? userId = null)
@@ -148,14 +148,6 @@ namespace ErpOnlineOrder.Application.Services
                     continue;
                 }
 
-                if (!info.HasSetting)
-                {
-                    invalidProducts.Add(new ProductValidationError {
-                        Product_id = detail.Product_id, Product_name = info.Product_name, Error_message = "Khách hàng không được phép đặt sản phẩm này"
-                    });
-                    continue;
-                }
-
                 if (info.Max_quantity != null && detail.Quantity > info.Max_quantity)
                 {
                     invalidProducts.Add(new ProductValidationError {
@@ -172,7 +164,7 @@ namespace ErpOnlineOrder.Application.Services
 
             var orderDetails = dto.Order_details.Select(detail => {
                 var info = productDataMap[detail.Product_id];
-                var finalPrice = info.Price ?? 0;
+                var finalPrice = info.Price;
                 return new Order_detail {
                     Product_id = detail.Product_id,
                     Quantity = detail.Quantity,
@@ -275,7 +267,7 @@ namespace ErpOnlineOrder.Application.Services
         {
             var result = new UpdateOrderResultDto();
 
-            var order = await _orderRepository.GetByIdAsync(dto.Id);
+            var order = await _orderRepository.GetByIdForCopyAsync(dto.Id);
             if (order == null)
                  return new UpdateOrderResultDto { Success = false, Message = "Đơn hàng không tồn tại." };
 
@@ -326,7 +318,7 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<Order> CopyOrderAsync(CopyOrderDto dto)
         {
-            var original = await _orderRepository.GetByIdAsync(dto.SourceOrderId);
+            var original = await _orderRepository.GetByIdForCopyAsync(dto.SourceOrderId);
             if (original == null) throw new Exception("Order not found");
 
             var orderDetails = original.Order_Details.Select(od => new Order_detail
@@ -364,8 +356,7 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<IEnumerable<OrderDTO>> GetOrdersByStaffAsync(int staffId)
         {
-            var managedCustomers = await _customerManagementRepository.GetByStaffAsync(staffId);
-            var customerIds = managedCustomers.Select(cm => cm.Customer_id).Distinct().ToList();
+            var customerIds = (await _customerManagementRepository.GetCustomerIdsByStaffAsync(staffId)).ToList();
             if (customerIds.Count == 0) return new List<OrderDTO>();
             return await _orderRepository.GetByCustomerIdsDTOAsync(customerIds);
         }
@@ -395,7 +386,7 @@ namespace ErpOnlineOrder.Application.Services
             var staff = await _staffRepository.GetByUserIdAsync(userId);
             if (staff == null) return false;
 
-            return await _customerManagementRepository.IsStaffManagingCustomerAsync(staff.Id, orderCustomerId);
+            return (await _customerManagementRepository.GetByStaffAndCustomerAsync(staff.Id, orderCustomerId)) != null;
         }
 
         public async Task<bool> ConfirmOrderAsync(ConfirmOrderDto dto)
@@ -409,7 +400,7 @@ namespace ErpOnlineOrder.Application.Services
                 var staff = await _staffRepository.GetByUserIdAsync(dto.Updated_by);
                 if (staff != null)
                 {
-                    var isManaged = await _customerManagementRepository.IsStaffManagingCustomerAsync(staff.Id, order.Customer_id);
+                    var isManaged = (await _customerManagementRepository.GetByStaffAndCustomerAsync(staff.Id, order.Customer_id)) != null;
                     if (!isManaged) return false;
                 }
             }
@@ -434,7 +425,7 @@ namespace ErpOnlineOrder.Application.Services
                 var staff = await _staffRepository.GetByUserIdAsync(dto.Updated_by);
                 if (staff == null) return false;
 
-                bool isManaged = await _customerManagementRepository.IsStaffManagingCustomerAsync(staff.Id, order.Customer_id);
+                bool isManaged = (await _customerManagementRepository.GetByStaffAndCustomerAsync(staff.Id, order.Customer_id)) != null;
                 if (!isManaged) return false;
             }
 
@@ -515,19 +506,13 @@ namespace ErpOnlineOrder.Application.Services
             
             return customerProducts
                 .Where(cp => cp.Is_active && cp.Product != null)
-                .Select(cp => {
-                    var originalPrice = cp.Product!.Product_price;
-                    return new CustomerAllowedProductDto {
-                        Product_id = cp.Product_id,
-                        Product_code = cp.Product.Product_code,
-                        Product_name = cp.Product.Product_name,
-                        Original_price = originalPrice,
-                        Custom_price = cp.Custom_price,
-                        Discount_percent = cp.Discount_percent,
-                        Final_price = CalculateFinalPrice(originalPrice, cp.Custom_price, cp.Discount_percent),
-                        Max_quantity = cp.Max_quantity,
-                        Category_name = cp.Product.Product_Categories?.FirstOrDefault()?.Category?.Category_name ?? ""
-                    };
+                .Select(cp => new CustomerAllowedProductDto {
+                    Product_id = cp.Product_id,
+                    Product_code = cp.Product!.Product_code,
+                    Product_name = cp.Product.Product_name,
+                    Original_price = cp.Product.Product_price,
+                    Max_quantity = cp.Max_quantity,
+                    Category_name = cp.Product.Product_Categories?.FirstOrDefault()?.Category?.Category_name ?? ""
                 });
         }
 
@@ -536,13 +521,10 @@ namespace ErpOnlineOrder.Application.Services
             return await _customerProductRepository.ExistsAsync(customerId, productId);
         }
 
-        private static decimal CalculateFinalPrice(decimal originalPrice, decimal? customPrice, decimal? discountPercent)
+        public async Task<decimal> GetProductPriceForCustomerAsync(int customerId, int productId)
         {
-            if (customPrice.HasValue && customPrice.Value != 0)
-                return customPrice.Value;
-            if (discountPercent.HasValue && discountPercent.Value > 0)
-                return originalPrice * (1 - discountPercent.Value / 100);
-            return originalPrice;
+            var product = await _productRepository.GetByIdAsync(productId);
+            return product?.Product_price ?? 0;
         }
     }
 }

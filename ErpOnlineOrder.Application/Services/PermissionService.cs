@@ -465,8 +465,8 @@ namespace ErpOnlineOrder.Application.Services
         public async Task<bool> CreatePermissionAsync(string permissionCode, int createdBy)
         {
             // Kiểm tra trùng
-            var existing = await _permissionRepository.GetByCodeAsync(permissionCode);
-            if (existing != null) return false;
+            var codeExists = await _permissionRepository.ExistsByCodeAsync(permissionCode);
+            if (codeExists) return false;
 
             var permission = new Permission
             {
@@ -506,10 +506,7 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<bool> IsPermissionCodeExistsAsync(string permissionCode, int? excludeId = null)
         {
-            var existing = await _permissionRepository.GetByCodeAsync(permissionCode.ToUpper());
-            if (existing == null) return false;
-            if (excludeId.HasValue && existing.Id == excludeId.Value) return false;
-            return true;
+            return await _permissionRepository.ExistsByCodeAsync(permissionCode.ToUpper(), excludeId);
         }
 
         #endregion

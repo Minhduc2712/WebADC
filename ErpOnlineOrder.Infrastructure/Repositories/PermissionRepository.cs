@@ -28,6 +28,14 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .FirstOrDefaultAsync(p => p.Permission_code == permissionCode);
         }
 
+        public async Task<bool> ExistsByCodeAsync(string code, int? excludeId = null)
+        {
+            var query = _context.Permissions.AsNoTracking().Where(p => p.Permission_code == code);
+            if (excludeId.HasValue)
+                query = query.Where(p => p.Id != excludeId.Value);
+            return await query.AnyAsync();
+        }
+
         public async Task<IEnumerable<Permission>> GetAllAsync()
         {
             return await _context.Permissions

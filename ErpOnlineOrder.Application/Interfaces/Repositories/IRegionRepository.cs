@@ -8,6 +8,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
     {
         Task<Region?> GetByIdAsync(int id);
         Task<Region?> GetByCodeAsync(string regionCode);
+        Task<bool> ExistsByCodeAsync(string code, int? excludeId = null);
         Task<Region?> GetByNameAsync(string regionName);
         Task<IEnumerable<Region>> GetAllAsync();
         Task AddAsync(Region region);

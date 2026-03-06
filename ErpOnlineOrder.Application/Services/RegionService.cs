@@ -33,8 +33,8 @@ namespace ErpOnlineOrder.Application.Services
         public async Task<RegionDTO?> CreateRegionAsync(CreateRegionDto dto, int createdBy)
         {
             // Kiểm tra mã khu vực đã tồn tại
-            var existingByCode = await _regionRepository.GetByCodeAsync(dto.Region_code);
-            if (existingByCode != null)
+            var codeExists = await _regionRepository.ExistsByCodeAsync(dto.Region_code);
+            if (codeExists)
             {
                 throw new InvalidOperationException($"Khu vực với mã '{dto.Region_code}' đã tồn tại.");
             }
@@ -72,8 +72,8 @@ namespace ErpOnlineOrder.Application.Services
             // Kiểm tra mã khu vực đã tồn tại (nếu thay đổi)
             if (region.Region_code != dto.Region_code)
             {
-                var existingByCode = await _regionRepository.GetByCodeAsync(dto.Region_code);
-                if (existingByCode != null)
+                var codeExists = await _regionRepository.ExistsByCodeAsync(dto.Region_code);
+                if (codeExists)
                 {
                     throw new InvalidOperationException($"Khu vực với mã '{dto.Region_code}' đã tồn tại.");
                 }

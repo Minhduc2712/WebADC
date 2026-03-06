@@ -33,8 +33,8 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<Distributor> CreateDistributorAsync(CreateDistributorDto dto, int createdBy)
         {
-            var existingByCode = await _distributorRepository.GetByCodeAsync(dto.Distributor_code);
-            if (existingByCode != null)
+            var codeExists = await _distributorRepository.ExistsByCodeAsync(dto.Distributor_code);
+            if (codeExists)
                 throw new InvalidOperationException($"Nhà phân phối với mã '{dto.Distributor_code}' đã tồn tại.");
 
             var existingByName = await _distributorRepository.GetByNameAsync(dto.Distributor_name);
@@ -63,8 +63,8 @@ namespace ErpOnlineOrder.Application.Services
             var existing = await _distributorRepository.GetByIdAsync(dto.Id);
             if (existing == null) return false;
 
-            var existingByCode = await _distributorRepository.GetByCodeAsync(dto.Distributor_code);
-            if (existingByCode != null && existingByCode.Id != dto.Id)
+            var codeExists = await _distributorRepository.ExistsByCodeAsync(dto.Distributor_code, dto.Id);
+            if (codeExists)
                 throw new InvalidOperationException($"Nhà phân phối với mã '{dto.Distributor_code}' đã tồn tại.");
 
             var existingByName = await _distributorRepository.GetByNameAsync(dto.Distributor_name);

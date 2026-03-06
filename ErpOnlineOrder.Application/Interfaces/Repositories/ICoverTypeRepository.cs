@@ -6,6 +6,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
     {
         Task<Cover_type?> GetByIdAsync(int id);
         Task<Cover_type?> GetByCodeAsync(string code);
+        Task<bool> ExistsByCodeAsync(string code, int? excludeId = null);
         Task<Cover_type?> GetByNameAsync(string name);
         Task<IEnumerable<Cover_type>> GetAllAsync();
         Task<Cover_type> AddAsync(Cover_type coverType);

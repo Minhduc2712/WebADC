@@ -14,37 +14,45 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             _context = context;
         }
 
+        private IQueryable<Cover_type> GetBaseQuery()
+        {
+            return _context.CoverTypes.AsNoTracking();
+        }
+
         public async Task<Cover_type?> GetByIdAsync(int id)
         {
-            return await _context.CoverTypes
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Id == id);
+            return await GetBaseQuery().FirstOrDefaultAsync(c => c.Id == id);
         }
 
         public async Task<Cover_type?> GetByCodeAsync(string code)
         {
-            return await _context.CoverTypes
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Cover_type_code == code);
+            return await GetBaseQuery().FirstOrDefaultAsync(c => c.Cover_type_code == code);
+        }
+
+        public async Task<bool> ExistsByCodeAsync(string code, int? excludeId = null)
+        {
+            var query = GetBaseQuery().Where(c => c.Cover_type_code == code);
+            if (excludeId.HasValue)
+                query = query.Where(c => c.Id != excludeId.Value);
+            return await query.AnyAsync();
         }
 
         public async Task<Cover_type?> GetByNameAsync(string name)
         {
-            return await _context.CoverTypes
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Cover_type_name == name);
+            return await GetBaseQuery().FirstOrDefaultAsync(c => c.Cover_type_name == name);
         }
 
         public async Task<IEnumerable<Cover_type>> GetAllAsync()
         {
-            return await _context.CoverTypes
-                .AsNoTracking()
+            return await GetBaseQuery()
                 .OrderBy(c => c.Cover_type_name)
                 .ToListAsync();
         }
 
         public async Task<Cover_type> AddAsync(Cover_type coverType)
         {
+            coverType.Created_at = DateTime.Now;
+            coverType.Updated_at = DateTime.Now;
             _context.CoverTypes.Add(coverType);
             await _context.SaveChangesAsync();
             return coverType;
@@ -52,6 +60,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task UpdateAsync(Cover_type coverType)
         {
+            coverType.Updated_at = DateTime.Now;
             _context.CoverTypes.Update(coverType);
             await _context.SaveChangesAsync();
         }
@@ -62,6 +71,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             if (coverType != null)
             {
                 coverType.Is_deleted = true;
+                coverType.Updated_at = DateTime.Now;
                 await _context.SaveChangesAsync();
             }
         }

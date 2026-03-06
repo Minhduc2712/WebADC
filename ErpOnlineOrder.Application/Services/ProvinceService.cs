@@ -40,8 +40,8 @@ namespace ErpOnlineOrder.Application.Services
         public async Task<ProvinceDTO?> CreateProvinceAsync(CreateProvinceDto dto, int createdBy)
         {
             // Kiểm tra mã tỉnh thành đã tồn tại
-            var existingByCode = await _provinceRepository.GetByCodeAsync(dto.Province_code);
-            if (existingByCode != null)
+            var codeExists = await _provinceRepository.ExistsByCodeAsync(dto.Province_code);
+            if (codeExists)
             {
                 throw new InvalidOperationException($"Tỉnh thành với mã '{dto.Province_code}' đã tồn tại.");
             }
@@ -90,8 +90,8 @@ namespace ErpOnlineOrder.Application.Services
             // Kiểm tra mã tỉnh thành đã tồn tại (nếu thay đổi)
             if (province.Province_code != dto.Province_code)
             {
-                var existingByCode = await _provinceRepository.GetByCodeAsync(dto.Province_code);
-                if (existingByCode != null)
+                var codeExists = await _provinceRepository.ExistsByCodeAsync(dto.Province_code);
+                if (codeExists)
                 {
                     throw new InvalidOperationException($"Tỉnh thành với mã '{dto.Province_code}' đã tồn tại.");
                 }

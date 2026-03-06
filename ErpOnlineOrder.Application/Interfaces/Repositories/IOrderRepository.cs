@@ -1,6 +1,7 @@
 using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Domain.Models;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 namespace ErpOnlineOrder.Application.Interfaces.Repositories
@@ -9,8 +10,10 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
     {
         Task<Order?> GetByIdAsync(int id);
         Task<Order?> GetByIdForStatusCheckAsync(int id);
+        Task<Order?> GetByIdForCopyAsync(int id);
         IQueryable<Order?> GetByOrderIdAsync(int id);
         Task<IEnumerable<OrderDTO>> GetAllAsync(); 
+        Task<int> CountAsync(Expression<Func<Order, bool>>? predicate = null);        
         Task<PagedResult<Order>> GetPagedOrdersAsync(OrderFilterRequest request, IEnumerable<int>? customerIds = null);
         Task<PagedResult<OrderDTO>> GetPagedOrdersDTOAsync(OrderFilterRequest request, IEnumerable<int>? customerIds = null);
         Task<IEnumerable<Order>> GetByCustomerIdsAsync(IEnumerable<int> customerIds);

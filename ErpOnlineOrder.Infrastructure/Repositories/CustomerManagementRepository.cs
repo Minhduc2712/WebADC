@@ -17,43 +17,41 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             _context = context;
         }
 
+        private IQueryable<Customer_management> GetBaseQuery(bool includeDetails = false)
+        {
+            var query = _context.CustomerManagements.AsNoTracking();
+            if (includeDetails)
+            {
+                query = query.Include(cm => cm.Customer)
+                             .Include(cm => cm.Staff)
+                             .Include(cm => cm.Province);
+            }
+            return query;
+        }
+
         public async Task<Customer_management?> GetByIdAsync(int id)
         {
-            return await _context.CustomerManagements
-                .AsNoTracking()
-                .Include(cm => cm.Customer)
-                .Include(cm => cm.Staff)
-                .Include(cm => cm.Province)
-                .FirstOrDefaultAsync(cm => cm.Id == id);
+            return await GetBaseQuery(true).FirstOrDefaultAsync(cm => cm.Id == id);
         }
 
         public async Task<IEnumerable<Customer_management>> GetAllAsync()
         {
-            return await _context.CustomerManagements
-                .AsNoTracking()
-                .Include(cm => cm.Customer)
-                .Include(cm => cm.Staff)
-                .Include(cm => cm.Province)
+            return await GetBaseQuery(true)
                 .OrderByDescending(cm => cm.Created_at)
                 .ToListAsync();
         }
 
         public async Task<IEnumerable<Customer_management>> GetByStaffAsync(int staffId)
         {
-            return await _context.CustomerManagements
-                .AsNoTracking()
+            return await GetBaseQuery(true)
                 .Where(cm => cm.Staff_id == staffId)
-                .Include(cm => cm.Customer)
-                .Include(cm => cm.Staff)
-                .Include(cm => cm.Province)
                 .OrderByDescending(cm => cm.Created_at)
                 .ToListAsync();
         }
 
         public async Task<IEnumerable<int>> GetCustomerIdsByStaffAsync(int staffId)
         {
-            return await _context.CustomerManagements
-                .AsNoTracking()
+            return await GetBaseQuery()
                 .Where(cm => cm.Staff_id == staffId)
                 .Select(cm => cm.Customer_id)
                 .Distinct()
@@ -62,46 +60,45 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<IEnumerable<Customer_management>> GetByCustomerAsync(int customerId)
         {
-            return await _context.CustomerManagements
-                .AsNoTracking()
+            return await GetBaseQuery(true)
                 .Where(cm => cm.Customer_id == customerId)
-                .Include(cm => cm.Customer)
-                .Include(cm => cm.Staff)
-                .Include(cm => cm.Province)
                 .OrderByDescending(cm => cm.Created_at)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Customer_management>> GetByCustomerBasicAsync(int customerId)
+        {
+            return await GetBaseQuery()
+                .Include(cm => cm.Staff)
+                .Where(cm => cm.Customer_id == customerId)
                 .ToListAsync();
         }
 
         public async Task<Customer_management?> GetByStaffAndCustomerAsync(int staffId, int customerId)
         {
-            return await _context.CustomerManagements
-                .AsNoTracking()
-                .Include(cm => cm.Customer)
-                .Include(cm => cm.Staff)
-                .Include(cm => cm.Province)
+            return await GetBaseQuery(true)
                 .FirstOrDefaultAsync(cm => cm.Staff_id == staffId && cm.Customer_id == customerId);
         }
 
         public async Task<IEnumerable<Customer_management>> GetByProvinceAsync(int provinceId)
         {
-            return await _context.CustomerManagements
-                .AsNoTracking()
+            return await GetBaseQuery(true)
                 .Where(cm => cm.Province_id == provinceId)
-                .Include(cm => cm.Customer)
-                .Include(cm => cm.Staff)
-                .Include(cm => cm.Province)
                 .OrderByDescending(cm => cm.Created_at)
                 .ToListAsync();
         }
 
         public async Task AddAsync(Customer_management customerManagement)
         {
+            customerManagement.Created_at = DateTime.Now;
+            customerManagement.Updated_at = DateTime.Now;
             await _context.CustomerManagements.AddAsync(customerManagement);
             await _context.SaveChangesAsync();
         }
 
         public async Task UpdateAsync(Customer_management customerManagement)
         {
+            customerManagement.Updated_at = DateTime.Now;
             _context.CustomerManagements.Update(customerManagement);
             await _context.SaveChangesAsync();
         }
@@ -112,6 +109,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             if (customerManagement != null)
             {
                 customerManagement.Is_deleted = true;
+                customerManagement.Updated_at = DateTime.Now;
                 await _context.SaveChangesAsync();
             }
         }

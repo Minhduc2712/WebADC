@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Linq.Expressions;
 
 namespace ErpOnlineOrder.Infrastructure.Repositories
 {
@@ -25,27 +26,41 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             _mapper = mapper;
         }
 
+        private IQueryable<Customer> GetBaseQuery(bool includeDetails = false)
+        {
+            var query = _context.Customers.AsNoTracking();
+            if (includeDetails)
+            {
+                query = query.Include(c => c.User);
+            }
+            return query;
+        }
+
         public async Task<Customer?> GetByIdAsync(int id)
         {
-            return await _context.Customers
-                .AsNoTracking()
-                .Include(c => c.User)
-                .FirstOrDefaultAsync(c => c.Id == id);
+            return await GetBaseQuery(true).FirstOrDefaultAsync(c => c.Id == id);
         }
 
         public async Task<Customer?> GetByUserIdAsync(int userId)
         {
-            return await _context.Customers
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.User_id == userId);
+            return await GetBaseQuery().FirstOrDefaultAsync(c => c.User_id == userId);
         }
 
         public async Task<IEnumerable<Customer>> GetAllAsync()
         {
-            return await _context.Customers
-                .AsNoTracking()
-                .Include(c => c.User)
-                .ToListAsync();
+            return await GetBaseQuery(true).ToListAsync();
+        }
+
+        public async Task<int> CountAsync(Expression<Func<Customer, bool>>? predicate = null)
+        {
+            var query = _context.Customers.AsNoTracking().Where(c => !c.Is_deleted);
+            
+            if (predicate != null)
+            {
+                query = query.Where(predicate);
+            }
+            
+            return await query.CountAsync();
         }
 
         public async Task<PagedResult<Customer>> GetPagedCustomersAsync(CustomerFilterRequest request)
@@ -82,20 +97,21 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<IEnumerable<CustomerSelectDto>> GetForSelectAsync()
         {
-            var query = _context.Customers
-                .AsNoTracking()
-                .OrderBy(c => c.Full_name ?? c.Customer_code ?? "");
+            var query = GetBaseQuery().OrderBy(c => c.Full_name ?? c.Customer_code ?? "");
             return await ProjectToCustomerSelectDto(query).ToListAsync();
         }
 
         public async Task AddAsync(Customer customer)
         {
+            customer.Created_at = DateTime.Now;
+            customer.Updated_at = DateTime.Now;
             await _context.Customers.AddAsync(customer);
             await _context.SaveChangesAsync();
         }
 
         public async Task UpdateAsync(Customer customer)
         {
+            customer.Updated_at = DateTime.Now;
             _context.Customers.Update(customer);
             await _context.SaveChangesAsync();
         }
@@ -105,7 +121,8 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             var customer = await _context.Customers.FindAsync(id);
             if (customer != null)
             {
-                _context.Customers.Remove(customer);
+                customer.Is_deleted = true;
+                customer.Updated_at = DateTime.Now;
                 await _context.SaveChangesAsync();
             }
         }

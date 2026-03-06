@@ -11,6 +11,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
         Task<Product?> GetByIdAsync(int id);
         public IQueryable<Product?> GetByProductId(int id);
         Task<Product?> GetByCodeAsync(string code);
+        Task<bool> ExistsByCodeAsync(string code, int? excludeId = null);
         Task<Product?> GetByNameAsync(string name);
         Task<Dictionary<int, ProductValidationInfoDto>> GetProductValidationMapAsync(int customerId, List<int> productIds);
         Task<PagedResult<Product>> GetPagedProductAsync(ProductFilterRequest request);

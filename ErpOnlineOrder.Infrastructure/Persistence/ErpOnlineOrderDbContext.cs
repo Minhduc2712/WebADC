@@ -183,8 +183,7 @@ namespace ErpOnlineOrder.Infrastructure.Persistence
                 entity.HasQueryFilter(cp => !cp.Is_deleted);
                 entity.Property(x => x.Customer_id).HasColumnName("Customer_id");
                 entity.Property(x => x.Product_id).HasColumnName("Product_id");
-                entity.Property(x => x.Custom_price).HasColumnType("decimal(18,2)")
-                    .HasConversion(v => (decimal?)v, v => v ?? 0);
+                entity.Property(x => x.Custom_price).HasColumnType("decimal(18,2)");
                 entity.Property(x => x.Discount_percent).HasColumnType("decimal(5,2)");
                 entity.HasOne(x => x.Customer)
                     .WithMany(x => x.Customer_Products)

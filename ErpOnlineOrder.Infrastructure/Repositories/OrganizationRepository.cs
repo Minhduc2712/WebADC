@@ -19,43 +19,49 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             _context = context;
         }
 
+        private IQueryable<Organization_information> GetBaseQuery(bool includeDetails = false)
+        {
+            var query = _context.OrganizationInformations.AsNoTracking();
+            if (includeDetails)
+            {
+                query = query.Include(o => o.Customer);
+            }
+            return query;
+        }
+
         public async Task<Organization_information?> GetByIdAsync(int id)
         {
-            return await _context.OrganizationInformations
-                .AsNoTracking()
-                .Include(o => o.Customer)
-                .FirstOrDefaultAsync(o => o.Id == id);
+            return await GetBaseQuery(true).FirstOrDefaultAsync(o => o.Id == id);
         }
 
         public async Task<Organization_information?> GetByCodeAsync(string organizationCode)
         {
-            return await _context.OrganizationInformations
-                .AsNoTracking()
-                .FirstOrDefaultAsync(o => o.Organization_code == organizationCode);
+            return await GetBaseQuery().FirstOrDefaultAsync(o => o.Organization_code == organizationCode);
+        }
+
+        public async Task<bool> ExistsByCodeAsync(string code, int? excludeId = null)
+        {
+            var query = GetBaseQuery().Where(o => o.Organization_code == code);
+            if (excludeId.HasValue)
+                query = query.Where(o => o.Id != excludeId.Value);
+            return await query.AnyAsync();
         }
 
         public async Task<IEnumerable<Organization_information>> GetAllAsync()
         {
-            return await _context.OrganizationInformations
-                .AsNoTracking()
-                .Include(o => o.Customer)
+            return await GetBaseQuery(true)
                 .OrderBy(o => o.Organization_name)
                 .ToListAsync();
         }
 
         public async Task<Organization_information?> GetByCustomerIdAsync(int customerId)
         {
-            return await _context.OrganizationInformations
-                .AsNoTracking()
-                .Include(o => o.Customer)
-                .FirstOrDefaultAsync(o => o.Customer_id == customerId);
+            return await GetBaseQuery(true).FirstOrDefaultAsync(o => o.Customer_id == customerId);
         }
 
         public async Task<IEnumerable<Organization_information>> SearchAsync(string? keyword)
         {
-            IQueryable<Organization_information> query = _context.OrganizationInformations
-                .AsNoTracking()
-                .Include(o => o.Customer);
+            var query = GetBaseQuery(true);
 
             if (!string.IsNullOrEmpty(keyword))
             {
@@ -70,12 +76,15 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task AddAsync(Organization_information organization)
         {
+            organization.Created_at = DateTime.Now;
+            organization.Updated_at = DateTime.Now;
             await _context.OrganizationInformations.AddAsync(organization);
             await _context.SaveChangesAsync();
         }
 
         public async Task UpdateAsync(Organization_information organization)
         {
+            organization.Updated_at = DateTime.Now;
             _context.OrganizationInformations.Update(organization);
             await _context.SaveChangesAsync();
         }

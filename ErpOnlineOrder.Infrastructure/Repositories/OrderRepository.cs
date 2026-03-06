@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ErpOnlineOrder.Application.DTOs;
+using System.Linq.Expressions;
 
 namespace ErpOnlineOrder.Infrastructure.Repositories
 {
@@ -28,10 +29,14 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             return query.ProjectTo<OrderDTO>(_mapper.ConfigurationProvider);
         }
 
+        private IQueryable<Order> GetBaseQuery()
+        {
+            return _context.Orders.AsNoTracking();
+        }
+
         public async Task<Order?> GetByIdAsync(int id)
         {
-            return await _context.Orders
-                .AsNoTracking()
+            return await GetBaseQuery()
                 .Include(o => o.Customer).ThenInclude(c => c!.User)
                 .Include(o => o.Order_Details).ThenInclude(od => od.Product)
                 .FirstOrDefaultAsync(o => o.Id == id);
@@ -39,30 +44,45 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<Order?> GetByIdForStatusCheckAsync(int id)
         {
-            return await _context.Orders
-                .AsNoTracking()
+            return await GetBaseQuery()
+                .FirstOrDefaultAsync(o => o.Id == id);
+        }
+
+        public async Task<Order?> GetByIdForCopyAsync(int id)
+        {
+            return await GetBaseQuery()
+                .Include(o => o.Order_Details)
                 .FirstOrDefaultAsync(o => o.Id == id);
         }
 
         public IQueryable<Order?> GetByOrderIdAsync(int id)
         {
-            return _context.Orders
-                .AsNoTracking()
+            return GetBaseQuery()
                 .Where(o => o.Id == id);
         }
 
         public async Task<IEnumerable<OrderDTO>> GetAllAsync()
         {
-            var query = _context.Orders
-                .AsNoTracking()
+            var query = GetBaseQuery()
                 .OrderByDescending(o => o.Order_date);
             return await ProjectToOrderDto(query).ToListAsync();
         }
 
+        public async Task<int> CountAsync(Expression<Func<Order, bool>>? predicate = null)
+        {
+            var query = _context.Orders.AsNoTracking().Where(o => !o.Is_deleted);
+            
+            if (predicate != null)
+            {
+                query = query.Where(predicate);
+            }
+            
+            return await query.CountAsync();
+        }
+
         public async Task<PagedResult<Order>> GetPagedOrdersAsync(OrderFilterRequest request, IEnumerable<int>? customerIds = null)
         {
-            var query = _context.Orders
-                .AsNoTracking()
+            var query = GetBaseQuery()
                 .Include(o => o.Customer)
                 .Include(o => o.Order_Details).ThenInclude(od => od.Product)
                 .AsQueryable();
@@ -107,8 +127,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<PagedResult<OrderDTO>> GetPagedOrdersDTOAsync(OrderFilterRequest request, IEnumerable<int>? customerIds = null)
         {
-            var query = _context.Orders
-                .AsNoTracking()
+            var query = GetBaseQuery()
                 .AsQueryable();
 
             if (customerIds != null)
@@ -150,8 +169,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         {
             var ids = customerIds.ToList();
             if (ids.Count == 0) return new List<Order>();
-            return await _context.Orders
-                .AsNoTracking()
+            return await GetBaseQuery()
                 .Where(o => ids.Contains(o.Customer_id))
                 .Include(o => o.Customer)
                 .Include(o => o.Order_Details).ThenInclude(od => od.Product)
@@ -163,8 +181,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         {
             var ids = customerIds.ToList();
             if (ids.Count == 0) return new List<OrderDTO>();
-            var query = _context.Orders
-                .AsNoTracking()
+            var query = GetBaseQuery()
                 .Where(o => ids.Contains(o.Customer_id))
                 .OrderByDescending(o => o.Order_date);
             return await ProjectToOrderDto(query).ToListAsync();
@@ -172,8 +189,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<Order?> GetByCodeAsync(string code)
         {
-            return await _context.Orders
-                .AsNoTracking()
+            return await GetBaseQuery()
                 .Include(o => o.Customer)
                 .Include(o => o.Order_Details).ThenInclude(od => od.Product)
                 .FirstOrDefaultAsync(o => o.Order_code == code);
@@ -181,12 +197,15 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task AddAsync(Order order)
         {
+            order.Created_at = DateTime.Now;
+            order.Updated_at = DateTime.Now;
             await _context.Orders.AddAsync(order);
             await _context.SaveChangesAsync();
         }
 
         public async Task UpdateAsync(Order order)
         {
+            order.Updated_at = DateTime.Now;
             _context.Orders.Update(order);
             await _context.SaveChangesAsync();
         }
@@ -197,6 +216,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             if (order != null)
             {
                 order.Is_deleted = true;
+                order.Updated_at = DateTime.Now;
                 await _context.SaveChangesAsync();
             }
         }

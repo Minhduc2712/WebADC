@@ -19,42 +19,49 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             _mapper = mapper;
         }
 
+        private IQueryable<Warehouse> GetBaseQuery(bool includeDetails = false)
+        {
+            var query = _context.Warehouses.AsNoTracking();
+            if (includeDetails)
+            {
+                query = query.Include(w => w.Province);
+            }
+            return query;
+        }
+
         public async Task<Warehouse?> GetByIdAsync(int id)
         {
-            return await _context.Warehouses
-                .AsNoTracking()
-                .Include(w => w.Province)
-                .FirstOrDefaultAsync(w => w.Id == id);
+            return await GetBaseQuery(true).FirstOrDefaultAsync(w => w.Id == id);
         }
 
         public async Task<Warehouse?> GetByCodeAsync(string code)
         {
-            return await _context.Warehouses
-                .AsNoTracking()
-                .FirstOrDefaultAsync(w => w.Warehouse_code == code);
+            return await GetBaseQuery().FirstOrDefaultAsync(w => w.Warehouse_code == code);
+        }
+
+        public async Task<bool> ExistsByCodeAsync(string code, int? excludeId = null)
+        {
+            var query = GetBaseQuery().Where(w => w.Warehouse_code == code);
+            if (excludeId.HasValue)
+                query = query.Where(w => w.Id != excludeId.Value);
+            return await query.AnyAsync();
         }
 
         public async Task<Warehouse?> GetByNameAsync(string name)
         {
-            return await _context.Warehouses
-                .AsNoTracking()
-                .FirstOrDefaultAsync(w => w.Warehouse_name == name);
+            return await GetBaseQuery().FirstOrDefaultAsync(w => w.Warehouse_name == name);
         }
 
         public async Task<IEnumerable<Warehouse>> GetAllAsync()
         {
-            return await _context.Warehouses
-                .AsNoTracking()
-                .Include(w => w.Province)
+            return await GetBaseQuery(true)
                 .OrderBy(w => w.Warehouse_name)
                 .ToListAsync();
         }
 
         public async Task<IEnumerable<Warehouse>> GetByProvinceIdAsync(int provinceId)
         {
-            return await _context.Warehouses
-                .AsNoTracking()
-                .Include(w => w.Province)
+            return await GetBaseQuery(true)
                 .Where(w => w.Province_id == provinceId)
                 .OrderBy(w => w.Warehouse_name)
                 .ToListAsync();
@@ -67,14 +74,14 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<IEnumerable<WarehouseSelectDto>> GetForSelectAsync()
         {
-            var query = _context.Warehouses
-                .AsNoTracking()
-                .OrderBy(w => w.Warehouse_name);
+            var query = GetBaseQuery().OrderBy(w => w.Warehouse_name);
             return await ProjectToWarehouseSelectDto(query).ToListAsync();
         }
 
         public async Task<Warehouse> AddAsync(Warehouse warehouse)
         {
+            warehouse.Created_at = DateTime.Now;
+            warehouse.Updated_at = DateTime.Now;
             _context.Warehouses.Add(warehouse);
             await _context.SaveChangesAsync();
             return warehouse;
@@ -82,6 +89,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task UpdateAsync(Warehouse warehouse)
         {
+            warehouse.Updated_at = DateTime.Now;
             _context.Warehouses.Update(warehouse);
             await _context.SaveChangesAsync();
         }
@@ -92,6 +100,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             if (warehouse != null)
             {
                 warehouse.Is_deleted = true;
+                warehouse.Updated_at = DateTime.Now;
                 await _context.SaveChangesAsync();
             }
         }

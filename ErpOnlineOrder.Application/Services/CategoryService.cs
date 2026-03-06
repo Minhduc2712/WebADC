@@ -28,8 +28,8 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<Category> CreateCategoryAsync(CreateCategoryDto dto, int createdBy)
         {
-            var existingByCode = await _categoryRepository.GetByCodeAsync(dto.Category_code);
-            if (existingByCode != null)
+            var codeExists = await _categoryRepository.ExistsByCodeAsync(dto.Category_code);
+            if (codeExists)
                 throw new InvalidOperationException($"Danh mục với mã '{dto.Category_code}' đã tồn tại.");
 
             var existingByName = await _categoryRepository.GetByNameAsync(dto.Category_name);
@@ -55,8 +55,8 @@ namespace ErpOnlineOrder.Application.Services
             var existing = await _categoryRepository.GetByIdAsync(id);
             if (existing == null) return false;
 
-            var existingByCode = await _categoryRepository.GetByCodeAsync(dto.Category_code);
-            if (existingByCode != null && existingByCode.Id != id)
+            var codeExists = await _categoryRepository.ExistsByCodeAsync(dto.Category_code, id);
+            if (codeExists)
                 throw new InvalidOperationException($"Danh mục với mã '{dto.Category_code}' đã tồn tại.");
 
             var existingByName = await _categoryRepository.GetByNameAsync(dto.Category_name);

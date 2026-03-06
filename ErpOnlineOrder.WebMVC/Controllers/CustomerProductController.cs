@@ -143,8 +143,6 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 return View(new UpdateCustomerProductDto
                 {
                     Id = cp.Id,
-                    Custom_price = cp.Custom_price,
-                    Discount_percent = cp.Discount_percent,
                     Max_quantity = cp.Max_quantity,
                     Is_active = cp.Is_active
                 });

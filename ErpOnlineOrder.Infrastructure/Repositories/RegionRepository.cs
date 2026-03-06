@@ -17,45 +17,57 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             _context = context;
         }
 
+        private IQueryable<Region> GetBaseQuery(bool includeDetails = false)
+        {
+            var query = _context.Regions.AsNoTracking();
+            if (includeDetails)
+            {
+                query = query.Include(r => r.Provinces);
+            }
+            return query;
+        }
+
         public async Task<Region?> GetByIdAsync(int id)
         {
-            return await _context.Regions
-                .AsNoTracking()
-                .Include(r => r.Provinces)
-                .FirstOrDefaultAsync(r => r.Id == id);
+            return await GetBaseQuery(true).FirstOrDefaultAsync(r => r.Id == id);
         }
 
         public async Task<Region?> GetByCodeAsync(string regionCode)
         {
-            return await _context.Regions
-                .AsNoTracking()
-                .FirstOrDefaultAsync(r => r.Region_code == regionCode);
+            return await GetBaseQuery().FirstOrDefaultAsync(r => r.Region_code == regionCode);
+        }
+
+        public async Task<bool> ExistsByCodeAsync(string code, int? excludeId = null)
+        {
+            var query = GetBaseQuery().Where(r => r.Region_code == code);
+            if (excludeId.HasValue)
+                query = query.Where(r => r.Id != excludeId.Value);
+            return await query.AnyAsync();
         }
 
         public async Task<Region?> GetByNameAsync(string regionName)
         {
-            return await _context.Regions
-                .AsNoTracking()
-                .FirstOrDefaultAsync(r => r.Region_name == regionName);
+            return await GetBaseQuery().FirstOrDefaultAsync(r => r.Region_name == regionName);
         }
 
         public async Task<IEnumerable<Region>> GetAllAsync()
         {
-            return await _context.Regions
-                .AsNoTracking()
-                .Include(r => r.Provinces)
+            return await GetBaseQuery(true)
                 .OrderBy(r => r.Region_name)
                 .ToListAsync();
         }
 
         public async Task AddAsync(Region region)
         {
+            region.Created_at = DateTime.Now;
+            region.Updated_at = DateTime.Now;
             await _context.Regions.AddAsync(region);
             await _context.SaveChangesAsync();
         }
 
         public async Task UpdateAsync(Region region)
         {
+            region.Updated_at = DateTime.Now;
             _context.Regions.Update(region);
             await _context.SaveChangesAsync();
         }

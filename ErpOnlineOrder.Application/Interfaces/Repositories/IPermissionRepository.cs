@@ -6,6 +6,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
     {
         Task<Permission?> GetByIdAsync(int id);
         Task<Permission?> GetByCodeAsync(string permissionCode);
+        Task<bool> ExistsByCodeAsync(string code, int? excludeId = null);
         Task<IEnumerable<Permission>> GetAllAsync();
         Task<IEnumerable<Permission>> GetByParentIdAsync(int? parentId);
         Task<IEnumerable<Permission>> GetSpecialPermissionsAsync();

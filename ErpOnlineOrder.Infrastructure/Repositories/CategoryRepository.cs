@@ -17,42 +17,50 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             _context = context;
         }
 
+        private IQueryable<Category> GetBaseQuery()
+        {
+            return _context.Categories.AsNoTracking();
+        }
+
         public async Task<Category?> GetByIdAsync(int id)
         {
-            return await _context.Categories
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Id == id);
+            return await GetBaseQuery().FirstOrDefaultAsync(c => c.Id == id);
         }
 
         public async Task<Category?> GetByCodeAsync(string code)
         {
-            return await _context.Categories
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Category_code == code);
+            return await GetBaseQuery().FirstOrDefaultAsync(c => c.Category_code == code);
+        }
+
+        public async Task<bool> ExistsByCodeAsync(string code, int? excludeId = null)
+        {
+            var query = GetBaseQuery().Where(c => c.Category_code == code);
+            if (excludeId.HasValue)
+                query = query.Where(c => c.Id != excludeId.Value);
+            return await query.AnyAsync();
         }
 
         public async Task<Category?> GetByNameAsync(string name)
         {
-            return await _context.Categories
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Category_name == name);
+            return await GetBaseQuery().FirstOrDefaultAsync(c => c.Category_name == name);
         }
 
         public async Task<IEnumerable<Category>> GetAllAsync()
         {
-            return await _context.Categories
-                .AsNoTracking()
-                .ToListAsync();
+            return await GetBaseQuery().ToListAsync();
         }
 
         public async Task AddAsync(Category category)
         {
+            category.Created_at = DateTime.Now;
+            category.Updated_at = DateTime.Now;
             await _context.Categories.AddAsync(category);
             await _context.SaveChangesAsync();
         }
 
         public async Task UpdateAsync(Category category)
         {
+            category.Updated_at = DateTime.Now;
             _context.Categories.Update(category);
             await _context.SaveChangesAsync();
         }
@@ -63,6 +71,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             if (category != null)
             {
                 category.Is_deleted = true;
+                category.Updated_at = DateTime.Now;
                 await _context.SaveChangesAsync();
             }
         }

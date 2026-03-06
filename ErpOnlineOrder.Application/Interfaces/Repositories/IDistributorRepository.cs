@@ -9,6 +9,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
     {
         Task<Distributor?> GetByIdAsync(int id);
         Task<Distributor?> GetByCodeAsync(string code);
+        Task<bool> ExistsByCodeAsync(string code, int? excludeId = null);
         Task<Distributor?> GetByNameAsync(string name);
         Task<IEnumerable<Distributor>> GetAllAsync();
         Task<IEnumerable<DistributorSelectDto>> GetForSelectAsync();

@@ -1,3 +1,4 @@
+using DocumentFormat.OpenXml.VariantTypes;
 using ErpOnlineOrder.Application.DTOs.CustomerProductDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
@@ -17,8 +18,7 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<IEnumerable<CustomerProductDto>> GetProductsByCustomerIdAsync(int customerId)
         {
-            var customerProducts = await _customerProductRepository.GetByCustomerIdAsync(customerId);
-            return customerProducts.Select(EntityMappers.ToCustomerProductDto);
+            return await _customerProductRepository.GetDtosByCustomerIdAsync(customerId);
         }
 
         public async Task<IEnumerable<CustomerProductDto>> GetCustomersByProductIdAsync(int productId)
@@ -34,55 +34,64 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<CustomerProductDto?> AddProductToCustomerAsync(CreateCustomerProductDto dto, int createdBy)
         {
-            if (await _customerProductRepository.ExistsAsync(dto.Customer_id, dto.Product_id))
+            var existing = await _customerProductRepository.GetWithFiltersAsync(dto.Customer_id, dto.Product_id);
+
+            if (existing != null)
             {
-                return null;
+                existing.Is_active = dto.Is_active;
+                existing.Is_deleted = false; 
+                existing.Max_quantity = dto.Max_quantity;
+                existing.Updated_by = createdBy;
+
+                await _customerProductRepository.UpdateAsync(existing);
+                
+                var updatedResult = await _customerProductRepository.GetByIdAsync(existing.Id);
+                return updatedResult != null ? EntityMappers.ToCustomerProductDto(updatedResult) : null;
             }
 
             var customerProduct = new Customer_product
             {
                 Customer_id = dto.Customer_id,
                 Product_id = dto.Product_id,
-                Custom_price = dto.Custom_price,
-                Discount_percent = dto.Discount_percent,
                 Max_quantity = dto.Max_quantity,
                 Is_active = dto.Is_active,
+                Is_deleted = false,
                 Created_by = createdBy,
                 Updated_by = createdBy
             };
 
             var created = await _customerProductRepository.AddAsync(customerProduct);
             
-            // Load l?i ?? l?y thông tin ??y ??
             var result = await _customerProductRepository.GetByIdAsync(created.Id);
             return result != null ? EntityMappers.ToCustomerProductDto(result) : null;
         }
 
         public async Task<bool> AssignProductsToCustomerAsync(AssignProductsToCustomerDto dto, int createdBy)
         {
-            var customerProducts = new List<Customer_product>();
-
-            foreach (var productId in dto.Product_ids)
+            var requestedProductIds = dto.Product_ids.Distinct().ToList();
+            if (requestedProductIds.Count == 0)
             {
-                // B? qua n?u ?ã t?n t?i
-                if (await _customerProductRepository.ExistsAsync(dto.Customer_id, productId))
-                {
-                    continue;
-                }
+                return false;
+            }
 
-                customerProducts.Add(new Customer_product
+            var existingProductIds = await _customerProductRepository.GetExistingProductIdsAsync(dto.Customer_id, requestedProductIds);
+
+            var newProductIds = requestedProductIds.Except(existingProductIds).ToList();
+            
+            if (newProductIds.Any())
+            {
+                var now = DateTime.Now;
+                var customerProducts = newProductIds.Select(productId => new Customer_product
                 {
                     Customer_id = dto.Customer_id,
                     Product_id = productId,
-                    Discount_percent = dto.Default_discount_percent,
                     Is_active = true,
                     Created_by = createdBy,
-                    Updated_by = createdBy
-                });
-            }
+                    Updated_by = createdBy,
+                    Created_at = now, // Gán trực tiếp ở đây hoặc để AddRangeAsync xử lý
+                    Updated_at = now
+                }).ToList();
 
-            if (customerProducts.Any())
-            {
                 await _customerProductRepository.AddRangeAsync(customerProducts);
             }
 
@@ -91,14 +100,12 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<bool> UpdateCustomerProductAsync(UpdateCustomerProductDto dto, int updatedBy)
         {
-            var customerProduct = await _customerProductRepository.GetByIdAsync(dto.Id);
+            var customerProduct = await _customerProductRepository.GetByIdBasicAsync(dto.Id);
             if (customerProduct == null)
             {
                 return false;
             }
 
-            customerProduct.Custom_price = dto.Custom_price;
-            customerProduct.Discount_percent = dto.Discount_percent;
             customerProduct.Max_quantity = dto.Max_quantity;
             customerProduct.Is_active = dto.Is_active;
             customerProduct.Updated_by = updatedBy;
@@ -109,7 +116,7 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<bool> RemoveProductFromCustomerAsync(int id, int deletedBy)
         {
-            var customerProduct = await _customerProductRepository.GetByIdAsync(id);
+            var customerProduct = await _customerProductRepository.GetByIdBasicAsync(id);
             if (customerProduct == null)
             {
                 return false;
@@ -122,11 +129,9 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<bool> CanCustomerOrderProductAsync(int customerId, int productId)
         {
-            var customerProduct = await _customerProductRepository.GetByCustomerAndProductAsync(customerId, productId);
-            return customerProduct != null && customerProduct.Is_active;
+            return await _customerProductRepository.ExistsAsync(customerId, productId, onlyActive: true);
         }
 
-        // public async Task<PagedResult<Cus
 
         public async Task<IEnumerable<CustomerProductDto>> GetAllAsync()
         {

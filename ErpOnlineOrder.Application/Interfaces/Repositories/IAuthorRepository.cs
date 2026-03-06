@@ -6,6 +6,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
     {
         Task<Author?> GetByIdAsync(int id);
         Task<Author?> GetByCodeAsync(string code);
+        Task<bool> ExistsByCodeAsync(string code, int? excludeId = null);
         Task<Author?> GetByNameAsync(string name);
         Task<IEnumerable<Author>> GetAllAsync();
         Task<Author> AddAsync(Author author);

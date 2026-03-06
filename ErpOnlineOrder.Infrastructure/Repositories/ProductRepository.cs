@@ -37,12 +37,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 Product_code = p.Product_code ?? "",
                 Product_name = p.Product_name ?? "",
                 Product_description = p.Product_description ?? "",
-                Product_price = (p.Customer_Products
-                    .Where(cp => cp.Customer_id == customerId && cp.Is_active && cp.Custom_price != 0)
-                    .Select(cp => cp.Custom_price)
-                    .FirstOrDefault()) != 0
-                    ? p.Customer_Products.Where(cp => cp.Customer_id == customerId && cp.Is_active).Select(cp => cp.Custom_price).FirstOrDefault()
-                    : p.Product_price,
+                Product_price = p.Product_price,
                 Product_link = p.Product_link ?? "",
                 Publisher_name = includePublisherAndAuthors ? (p.Publisher != null ? (p.Publisher.Publisher_name ?? "") : "") : "",
                 Authors = includePublisherAndAuthors
@@ -63,54 +58,28 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             return query.ProjectTo<ProductSelectDto>(_mapper.ConfigurationProvider);
         }
 
-        public async Task<Dictionary<int, ProductValidationInfo>> GetProductValidationMapAsync(int customerId, List<int> productIds)
+        private IQueryable<Product> GetBaseQuery()
         {
-            return await _context.Products
-                .AsNoTracking()
+            return _context.Products.AsNoTracking();
+        }
+
+        public async Task<Dictionary<int, ProductValidationInfoDto>> GetProductValidationMapAsync(int customerId, List<int> productIds)
+        {
+            return await GetBaseQuery()
                 .Where(p => productIds.Contains(p.Id))
-                .Select(p => new ProductValidationInfo
+                .ToDictionaryAsync(p => p.Id, p => new ProductValidationInfoDto
                 {
                     Id = p.Id,
                     Product_name = p.Product_name ?? "Unknown",
-                    OriginalPrice = p.Product_price,
-                    CustomerSetting = _context.CustomerProducts
-                        .Where(cp => cp.Customer_id == customerId && cp.Product_id == p.Id && !cp.Is_deleted)
-                        .Select(cp => new ProductValidationCustomerSetting
-                        {
-                            Custom_price = cp.Custom_price,
-                            Discount_percent = cp.Discount_percent,
-                            Max_quantity = cp.Max_quantity,
-                            Is_active = cp.Is_active
-                        })
-                        .FirstOrDefault()
-                })
-                .ToDictionaryAsync(x => x.Id, x => new ProductValidationInfo {
-                    Id = x.Id,
-                    Product_name = x.Product_name,
-                    Max_quantity = x.CustomerSetting?.Max_quantity,
-                    HasSetting = x.CustomerSetting != null && x.CustomerSetting.Is_active,
-                    FinalPrice = x.CustomerSetting != null && x.CustomerSetting.Is_active 
-                        ? CalculateFinalPrice(x.OriginalPrice, x.CustomerSetting.Custom_price, x.CustomerSetting.Discount_percent)
-                        : x.OriginalPrice
+                    Price = p.Product_price,
+                    HasSetting = true
                 });
-        }
-
-        private static decimal CalculateFinalPrice(decimal originalPrice, decimal customPrice, decimal? discountPercent)
-        {
-            if (customPrice != 0)
-                return customPrice;
-            if (discountPercent.HasValue && discountPercent.Value > 0)
-                return originalPrice * (1 - discountPercent.Value / 100);
-            return originalPrice;
         }
 
         public async Task<Product?> GetByIdAsync(int id)
         {
-            return await _context.Products
-                .AsNoTracking()
+            return await GetBaseQuery()
                 .Include(p => p.Publisher)
-                .Include(p => p.Cover_type)
-                .Include(p => p.Distributor)
                 .Include(p => p.Product_Categories).ThenInclude(pc => pc.Category)
                 .Include(p => p.Product_Authors).ThenInclude(pa => pa.Author)
                 .Include(p => p.Product_Images)
@@ -120,15 +89,13 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public IQueryable<Product?> GetByProductId(int id)
         {
-            return _context.Products
-                .AsNoTracking()
+            return GetBaseQuery()
                 .Where(p => p.Id == id);
         }
 
         public async Task<ProductDTO?> GetNameByProductId(int id)
         {
-            return await _context.Products
-                .AsNoTracking()
+            return await GetBaseQuery()
                 .Where(p => p.Id == id)
                 .Select(p => new ProductDTO
                 {
@@ -137,10 +104,9 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<ProductDTO?> GetCategeoryIdsByProductIdAsync(int id)
+        public async Task<List<int>> GetCategeoryIdsByProductIdAsync(int id)
         {
-            return await _context.Products
-                .AsNoTracking()
+            return await GetBaseQuery()
                 .Where(p => p.Id == id)
                 .SelectMany(p => p.Product_Categories.Select(pc => pc.Category_id))
                 .ToListAsync();
@@ -148,22 +114,27 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<Product?> GetByCodeAsync(string code)
         {
-            return await _context.Products
-                .AsNoTracking()
+            return await GetBaseQuery()
                 .FirstOrDefaultAsync(p => p.Product_code == code);
+        }
+
+        public async Task<bool> ExistsByCodeAsync(string code, int? excludeId = null)
+        {
+            var query = GetBaseQuery().Where(p => p.Product_code == code);
+            if (excludeId.HasValue)
+                query = query.Where(p => p.Id != excludeId.Value);
+            return await query.AnyAsync();
         }
 
         public async Task<Product?> GetByNameAsync(string name)
         {
-            return await _context.Products
-                .AsNoTracking()
+            return await GetBaseQuery()
                 .FirstOrDefaultAsync(p => p.Product_name == name);
         }
 
         public async Task<IEnumerable<ProductDTO>> GetProductsForShopAsync(int? customerId, ProductForShopFilterRequest request)
         {
-            var query = _context.Products
-                .AsNoTracking()
+            var query = GetBaseQuery()
                 .AsQueryable();
 
             if (customerId.HasValue && customerId.Value > 0)
@@ -180,11 +151,8 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<PagedResult<Product>> GetPagedProductAsync(ProductFilterRequest request)
         {
-            var query = _context.Products
-                .AsNoTracking()
+            var query = GetBaseQuery()
                 .Include(p => p.Publisher)
-                .Include(p => p.Cover_type)
-                .Include(p => p.Distributor)
                 .Include(p => p.Product_Categories).ThenInclude(pc => pc.Category)
                 .Include(p => p.Product_Authors).ThenInclude(pa => pa.Author)
                 .Include(p => p.Product_Images)
@@ -223,8 +191,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<PagedResult<ProductDTO>> GetPagedProductsForShopDisplayAsync(int? customerId, ProductForShopFilterRequest request)
         {
-            var query = _context.Products
-                .AsNoTracking()
+            var query = GetBaseQuery()
                 .AsQueryable();
 
             if (customerId.HasValue && customerId.Value > 0)
@@ -272,8 +239,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             if (catList.Count == 0)
                 return new List<ProductDTO>();
 
-            var query = _context.Products
-                .AsNoTracking()
+            var query = GetBaseQuery()
                 .Where(p => p.Id != productId
                     && p.Product_Categories.Any(pc => pc.Category != null && catList.Contains(pc.Category.Category_name)))
                 .AsQueryable();
@@ -296,8 +262,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<IEnumerable<string>> GetCategoriesForShopAsync(int? customerId)
         {
-            var query = _context.Products
-                .AsNoTracking()
+            var query = GetBaseQuery()
                 .AsQueryable();
 
             if (customerId.HasValue && customerId.Value > 0)
@@ -320,8 +285,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<IEnumerable<ProductDTO>> GetAllAsync()
         {
-            var query = _context.Products
-                .AsNoTracking()
+            var query = GetBaseQuery()
                 .OrderByDescending(p => p.Id);
 
             return await ProjectToProductDto(query).ToListAsync();
@@ -329,8 +293,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<IEnumerable<ProductDTO>> SearchAsync(string? name, string? author, string? publisher)
         {
-            var query = _context.Products
-                .AsNoTracking()
+            var query = GetBaseQuery()
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(name))
@@ -349,8 +312,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 return await GetAllAsync();
 
             var search = searchString.Trim().ToLowerInvariant();
-            var query = _context.Products
-                .AsNoTracking()
+            var query = GetBaseQuery()
                 .Where(p =>
                     ((p.Product_name != null && p.Product_name.ToLower().Contains(search)) ||
                      (p.Product_code != null && p.Product_code.ToLower().Contains(search)) ||
@@ -363,8 +325,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<IEnumerable<ProductDTO>> SearchByAllForShopAsync(string? searchString, int? customerId)
         {
-            var query = _context.Products
-                .AsNoTracking()
+            var query = GetBaseQuery()
                 .AsQueryable();
 
             if (customerId.HasValue && customerId.Value > 0)
@@ -392,8 +353,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<IEnumerable<ProductDTO>> GetByCategoryIdAsync(int categoryId)
         {
-            var query = _context.Products
-                .AsNoTracking()
+            var query = GetBaseQuery()
                 .Where(p => p.Product_Categories.Any(pc => pc.Category_id == categoryId))
                 .OrderByDescending(p => p.Id);
             return await ProjectToProductDto(query).ToListAsync();
@@ -401,14 +361,15 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<IEnumerable<ProductSelectDto>> GetForSelectAsync()
         {
-            var query = _context.Products
-                .AsNoTracking()
+            var query = GetBaseQuery()
                 .OrderBy(p => p.Product_name ?? p.Product_code ?? "");
             return await ProjectToProductSelectDto(query).ToListAsync();
         }
 
         public async Task<Product> AddAsync(Product product)
         {
+            product.Created_at = DateTime.Now;
+            product.Updated_at = DateTime.Now;
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
             return product;
@@ -420,12 +381,14 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             if (product != null)
             {
                 product.Is_deleted = true;
+                product.Updated_at = DateTime.Now;
                 await _context.SaveChangesAsync();
             }
         }
 
         public async Task UpdateAsync(Product product)
         {
+            product.Updated_at = DateTime.Now;
             _context.Products.Update(product);
             await _context.SaveChangesAsync();
         }

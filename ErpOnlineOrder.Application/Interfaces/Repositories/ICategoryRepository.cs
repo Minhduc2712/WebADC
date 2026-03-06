@@ -8,6 +8,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
     {
         Task<Category?> GetByIdAsync(int id);
         Task<Category?> GetByCodeAsync(string code);
+        Task<bool> ExistsByCodeAsync(string code, int? excludeId = null);
         Task<Category?> GetByNameAsync(string name);
         Task<IEnumerable<Category>> GetAllAsync();
         Task AddAsync(Category category);

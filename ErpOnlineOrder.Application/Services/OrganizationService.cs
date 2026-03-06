@@ -48,8 +48,8 @@ namespace ErpOnlineOrder.Application.Services
         public async Task<OrganizationDTO?> CreateOrganizationAsync(CreateOrganizationDto dto, int createdBy)
         {
             // Ki?m tra mã t? ch?c ?ã t?n t?i
-            var existing = await _organizationRepository.GetByCodeAsync(dto.Organization_code);
-            if (existing != null)
+            var codeExists = await _organizationRepository.ExistsByCodeAsync(dto.Organization_code);
+            if (codeExists)
             {
                 throw new Exception("Mã t? ch?c ?ã t?n t?i");
             }
@@ -96,8 +96,8 @@ namespace ErpOnlineOrder.Application.Services
             // Ki?m tra mã t? ch?c ?ã t?n t?i (n?u thay ??i)
             if (org.Organization_code != dto.Organization_code)
             {
-                var existing = await _organizationRepository.GetByCodeAsync(dto.Organization_code);
-                if (existing != null)
+                var codeExists = await _organizationRepository.ExistsByCodeAsync(dto.Organization_code);
+                if (codeExists)
                 {
                     throw new Exception("Mã t? ch?c ?ã t?n t?i");
                 }

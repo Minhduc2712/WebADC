@@ -22,32 +22,37 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             _mapper = mapper;
         }
 
+        private IQueryable<Distributor> GetBaseQuery()
+        {
+            return _context.Distributors.AsNoTracking();
+        }
+
         public async Task<Distributor?> GetByIdAsync(int id)
         {
-            return await _context.Distributors
-                .AsNoTracking()
-                .FirstOrDefaultAsync(d => d.Id == id);
+            return await GetBaseQuery().FirstOrDefaultAsync(d => d.Id == id);
         }
 
         public async Task<Distributor?> GetByCodeAsync(string code)
         {
-            return await _context.Distributors
-                .AsNoTracking()
-                .FirstOrDefaultAsync(d => d.Distributor_code == code);
+            return await GetBaseQuery().FirstOrDefaultAsync(d => d.Distributor_code == code);
+        }
+
+        public async Task<bool> ExistsByCodeAsync(string code, int? excludeId = null)
+        {
+            var query = GetBaseQuery().Where(d => d.Distributor_code == code);
+            if (excludeId.HasValue)
+                query = query.Where(d => d.Id != excludeId.Value);
+            return await query.AnyAsync();
         }
 
         public async Task<Distributor?> GetByNameAsync(string name)
         {
-            return await _context.Distributors
-                .AsNoTracking()
-                .FirstOrDefaultAsync(d => d.Distributor_name == name);
+            return await GetBaseQuery().FirstOrDefaultAsync(d => d.Distributor_name == name);
         }
 
         public async Task<IEnumerable<Distributor>> GetAllAsync()
         {
-            return await _context.Distributors
-                .AsNoTracking()
-                .ToListAsync();
+            return await GetBaseQuery().ToListAsync();
         }
 
         private IQueryable<DistributorSelectDto> ProjectToDistributorSelectDto(IQueryable<Distributor> query)
@@ -57,20 +62,21 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<IEnumerable<DistributorSelectDto>> GetForSelectAsync()
         {
-            var query = _context.Distributors
-                .AsNoTracking()
-                .OrderBy(d => d.Distributor_name ?? d.Distributor_code ?? "");
+            var query = GetBaseQuery().OrderBy(d => d.Distributor_name ?? d.Distributor_code ?? "");
             return await ProjectToDistributorSelectDto(query).ToListAsync();
         }
 
         public async Task AddAsync(Distributor distributor)
         {
+            distributor.Created_at = DateTime.Now;
+            distributor.Updated_at = DateTime.Now;
             await _context.Distributors.AddAsync(distributor);
             await _context.SaveChangesAsync();
         }
 
         public async Task UpdateAsync(Distributor distributor)
         {
+            distributor.Updated_at = DateTime.Now;
             _context.Distributors.Update(distributor);
             await _context.SaveChangesAsync();
         }
@@ -81,6 +87,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             if (distributor != null)
             {
                 distributor.Is_deleted = true;
+                distributor.Updated_at = DateTime.Now;
                 await _context.SaveChangesAsync();
             }
         }

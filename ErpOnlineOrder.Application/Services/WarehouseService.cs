@@ -36,8 +36,8 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<Warehouse> CreateAsync(CreateWarehouseDto dto, int createdBy)
         {
-            var existingByCode = await _warehouseRepository.GetByCodeAsync(dto.Warehouse_code);
-            if (existingByCode != null)
+            var codeExists = await _warehouseRepository.ExistsByCodeAsync(dto.Warehouse_code);
+            if (codeExists)
                 throw new InvalidOperationException($"Kho hàng với mã '{dto.Warehouse_code}' đã tồn tại.");
 
             var existingByName = await _warehouseRepository.GetByNameAsync(dto.Warehouse_name);
@@ -64,8 +64,8 @@ namespace ErpOnlineOrder.Application.Services
             var existing = await _warehouseRepository.GetByIdAsync(dto.Id);
             if (existing == null) return false;
 
-            var existingByCode = await _warehouseRepository.GetByCodeAsync(dto.Warehouse_code);
-            if (existingByCode != null && existingByCode.Id != dto.Id)
+            var codeExists = await _warehouseRepository.ExistsByCodeAsync(dto.Warehouse_code, dto.Id);
+            if (codeExists)
                 throw new InvalidOperationException($"Kho hàng với mã '{dto.Warehouse_code}' đã tồn tại.");
 
             var existingByName = await _warehouseRepository.GetByNameAsync(dto.Warehouse_name);
