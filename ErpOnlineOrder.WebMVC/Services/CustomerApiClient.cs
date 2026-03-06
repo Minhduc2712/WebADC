@@ -30,12 +30,11 @@ namespace ErpOnlineOrder.WebMVC.Services
             return list ?? new List<CustomerSelectDto>();
         }
 
-        public async Task<PagedResult<CustomerDTO>> GetPagedAsync(int page = 1, int pageSize = 20, string? searchTerm = null, int? regionId = null, int? customerCategoryId = null, CancellationToken cancellationToken = default)
+        public async Task<PagedResult<CustomerDTO>> GetPagedAsync(int page = 1, int pageSize = 20, string? searchTerm = null, int? regionId = null, CancellationToken cancellationToken = default)
         {
             var query = new List<string> { $"page={page}", $"pageSize={pageSize}" };
             if (!string.IsNullOrEmpty(searchTerm)) query.Add("searchTerm=" + Uri.EscapeDataString(searchTerm));
             if (regionId.HasValue) query.Add("regionId=" + regionId.Value);
-            if (customerCategoryId.HasValue) query.Add("customerCategoryId=" + customerCategoryId.Value);
             var path = "customer/paged?" + string.Join("&", query);
             var response = await _http.GetAsync(path, cancellationToken);
             if (!response.IsSuccessStatusCode) return new PagedResult<CustomerDTO> { Items = new List<CustomerDTO>(), Page = page, PageSize = pageSize, TotalCount = 0 };

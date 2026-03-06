@@ -42,6 +42,17 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<Customer_product>> GetByCustomerIdWithDetailsAsync(int customerId)
+        {
+            return await _context.CustomerProducts
+                .AsNoTracking()
+                .Include(cp => cp.Product)
+                    .ThenInclude(p => p.Product_Categories)
+                        .ThenInclude(pc => pc.Category)
+                .Where(cp => cp.Customer_id == customerId && cp.Is_active && !cp.Is_deleted)
+                .ToListAsync();
+        }
+
         public async Task<IEnumerable<Customer_product>> GetByProductIdAsync(int productId)
         {
             return await _context.CustomerProducts
@@ -103,7 +114,10 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<bool> ExistsAsync(int customerId, int productId)
         {
             return await _context.CustomerProducts
-                .AnyAsync(cp => cp.Customer_id == customerId && cp.Product_id == productId);
+                .AnyAsync(cp => cp.Customer_id == customerId 
+                            && cp.Product_id == productId 
+                            && cp.Is_active
+                            && !cp.Is_deleted);
         }
     }
 }

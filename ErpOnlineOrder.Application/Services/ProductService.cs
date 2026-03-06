@@ -163,8 +163,7 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<bool> IsProductAssignedToCustomerAsync(int productId, int customerId)
         {
-            var cp = await _customerProductRepository.GetByCustomerAndProductAsync(customerId, productId);
-            return cp != null && !cp.Is_deleted && cp.Is_active;
+            return await _customerProductRepository.ExistsAsync(customerId, productId);
         }
 
         public async Task<ProductDTO> CreateProductAsync(CreateProductDto dto, int createdBy)

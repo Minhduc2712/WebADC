@@ -54,7 +54,6 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .AsNoTracking()
                 .Include(c => c.User)
                 .Include(c => c.Customer_managements).ThenInclude(cm => cm.Province)
-                .Include(c => c.Customer_Categories)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(request.SearchTerm))
@@ -70,11 +69,6 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             if (request.RegionId.HasValue)
             {
                 query = query.Where(c => c.Customer_managements.Any(cm => cm.Province != null && cm.Province.Region_id == request.RegionId.Value));
-            }
-
-            if (request.CustomerCategoryId.HasValue)
-            {
-                query = query.Where(c => c.Customer_Categories.Any(cc => cc.Category_id == request.CustomerCategoryId.Value));
             }
 
             query = query.OrderByDescending(c => c.Created_at);

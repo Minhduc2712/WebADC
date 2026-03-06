@@ -12,6 +12,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
         public IQueryable<Product?> GetByProductId(int id);
         Task<Product?> GetByCodeAsync(string code);
         Task<Product?> GetByNameAsync(string name);
+        Task<Dictionary<int, ProductValidationInfo>> GetProductValidationMapAsync(int customerId, List<int> productIds);
         Task<PagedResult<Product>> GetPagedProductAsync(ProductFilterRequest request);
         Task<PagedResult<ProductDTO>> GetPagedProductsForShopDisplayAsync(int? customerId, ProductForShopFilterRequest request);
         Task<IEnumerable<ProductDTO>> GetProductsForShopAsync(int? customerId, ProductForShopFilterRequest request);

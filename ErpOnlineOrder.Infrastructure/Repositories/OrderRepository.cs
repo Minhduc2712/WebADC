@@ -37,6 +37,20 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .FirstOrDefaultAsync(o => o.Id == id);
         }
 
+        public async Task<Order?> GetByIdForStatusCheckAsync(int id)
+        {
+            return await _context.Orders
+                .AsNoTracking()
+                .FirstOrDefaultAsync(o => o.Id == id);
+        }
+
+        public IQueryable<Order?> GetByOrderIdAsync(int id)
+        {
+            return _context.Orders
+                .AsNoTracking()
+                .Where(o => o.Id == id);
+        }
+
         public async Task<IEnumerable<OrderDTO>> GetAllAsync()
         {
             var query = _context.Orders

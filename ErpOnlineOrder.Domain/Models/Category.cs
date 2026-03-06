@@ -23,6 +23,5 @@ namespace ErpOnlineOrder.Domain.Models
         public bool Is_deleted { get; set; }
 
         public virtual ICollection<Product_category> Product_Categories { get; set; } = new List<Product_category>();
-        public virtual ICollection<Customer_category> Customer_Categories { get; set; } = new List<Customer_category>();
     }
 }

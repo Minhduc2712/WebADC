@@ -2,7 +2,6 @@ using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.DTOs.AdminDTOs;
 using ErpOnlineOrder.Application.DTOs.AuthorDTOs;
 using ErpOnlineOrder.Application.DTOs.CoverTypeDTOs;
-using ErpOnlineOrder.Application.DTOs.CustomerCategoryDTOs;
 using ErpOnlineOrder.Application.DTOs.CustomerDTOs;
 using ErpOnlineOrder.Application.DTOs.CustomerProductDTOs;
 using ErpOnlineOrder.Application.DTOs.DistributorDTOs;
@@ -363,26 +362,6 @@ namespace ErpOnlineOrder.Application.Mappers
                 Max_quantity = cp.Max_quantity,
                 Is_active = cp.Is_active,
                 Created_at = cp.Created_at
-            };
-        }
-
-        #endregion
-
-        #region CustomerCategory
-
-        public static CustomerCategoryDto ToCustomerCategoryDto(Customer_category cc)
-        {
-            return new CustomerCategoryDto
-            {
-                Id = cc.Id,
-                Customer_id = cc.Customer_id,
-                Customer_name = cc.Customer?.Full_name ?? string.Empty,
-                Category_id = cc.Category_id,
-                Category_code = cc.Category?.Category_code ?? string.Empty,
-                Category_name = cc.Category?.Category_name ?? string.Empty,
-                Discount_percent = cc.Discount_percent,
-                Is_active = cc.Is_active,
-                Created_at = cc.Created_at
             };
         }
 

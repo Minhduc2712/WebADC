@@ -56,17 +56,16 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         }
 
         #region CRUD Khách hàng
-        public async Task<IActionResult> Index(int page = 1, int pageSize = 20, string? search = null, int? regionId = null, int? customerCategoryId = null)
+        public async Task<IActionResult> Index(int page = 1, int pageSize = 20, string? search = null, int? regionId = null)
         {
             try
             {
-                var result = await _customerApiClient.GetPagedAsync(page, pageSize, search, regionId, customerCategoryId);
+                var result = await _customerApiClient.GetPagedAsync(page, pageSize, search, regionId);
                 var allAssignments = await _customerManagementApiClient.GetAllAsync(null, null);
                 ViewBag.Assignments = allAssignments.ToList();
                 ViewBag.Search = search;
                 ViewBag.PageSize = pageSize;
                 ViewBag.RegionId = regionId;
-                ViewBag.CustomerCategoryId = customerCategoryId;
                 LoadCurrentUserPermissions();
                 return View(result);
             }

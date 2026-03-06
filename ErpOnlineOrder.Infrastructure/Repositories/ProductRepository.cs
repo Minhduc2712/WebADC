@@ -61,6 +61,32 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             return query.ProjectTo<ProductSelectDto>(_mapper.ConfigurationProvider);
         }
 
+        public async Task<Dictionary<int, ProductValidationInfo>> GetProductValidationMapAsync(int customerId, List<int> productIds)
+        {
+            return await _context.Products
+                .AsNoTracking()
+                .Where(p => productIds.Contains(p.Id))
+                .Select(p => new ProductValidationInfo
+                {
+                    Id = p.Id,
+                    Product_name = p.Product_name ?? "Unknown",
+                    OriginalPrice = p.Product_price ?? 0,
+                    CustomerSetting = _context.CustomerProducts
+                        .Where(cp => cp.Customer_id == customerId && cp.Product_id == p.Id && !cp.Is_deleted)
+                        .Select(cp => new { cp.Custom_price, cp.Discount_percent, cp.Max_quantity, cp.Is_active })
+                        .FirstOrDefault()
+                })
+                .ToDictionaryAsync(x => x.Id, x => new ProductValidationInfo {
+                    Id = x.Id,
+                    Product_name = x.Product_name,
+                    Max_quantity = x.CustomerSetting?.Max_quantity,
+                    HasSetting = x.CustomerSetting != null && x.CustomerSetting.Is_active,
+                    FinalPrice = x.CustomerSetting != null && x.CustomerSetting.Is_active 
+                        ? CalculateFinalPrice(x.OriginalPrice, x.CustomerSetting.Custom_price, x.CustomerSetting.Discount_percent)
+                        : x.OriginalPrice
+                });
+        }
+
         public async Task<Product?> GetByIdAsync(int id)
         {
             return await _context.Products
@@ -80,6 +106,27 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             return _context.Products
                 .AsNoTracking()
                 .Where(p => p.Id == id);
+        }
+
+        public async Task<ProductDTO?> GetNameByProductId(int id)
+        {
+            return await _context.Products
+                .AsNoTracking()
+                .Where(p => p.Id == id)
+                .Select(p => new ProductDTO
+                {
+                    Product_name = p.Product_name ?? ""
+                })
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<ProductDTO?> GetCategeoryIdsByProductIdAsync(int id)
+        {
+            return await _context.Products
+                .AsNoTracking()
+                .Where(p => p.Id == id)
+                .SelectMany(p => p.Product_Categories.Select(pc => pc.Category_id))
+                .ToListAsync();
         }
 
         public async Task<Product?> GetByCodeAsync(string code)

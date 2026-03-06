@@ -48,7 +48,6 @@ namespace ErpOnlineOrder.Infrastructure.Persistence
         public DbSet<Customer_management> CustomerManagements => Set<Customer_management>();
         public DbSet<Organization_information> OrganizationInformations => Set<Organization_information>();
         public DbSet<Customer_product> CustomerProducts => Set<Customer_product>();
-        public DbSet<Customer_category> CustomerCategories => Set<Customer_category>();
         public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -195,26 +194,6 @@ namespace ErpOnlineOrder.Infrastructure.Persistence
                     .HasForeignKey(x => x.Product_id)
                     .OnDelete(DeleteBehavior.Restrict);
                 entity.HasIndex(x => new { x.Customer_id, x.Product_id }).IsUnique();
-            });
-
-            // Customer_category configuration
-            modelBuilder.Entity<Customer_category>(entity =>
-            {
-                entity.ToTable("CustomerCategories");
-                entity.HasKey(x => x.Id);
-                entity.HasQueryFilter(cc => !cc.Is_deleted);
-                entity.Property(x => x.Customer_id).HasColumnName("Customer_id");
-                entity.Property(x => x.Category_id).HasColumnName("Category_id");
-                entity.Property(x => x.Discount_percent).HasColumnType("decimal(5,2)");
-                entity.HasOne(x => x.Customer)
-                    .WithMany(x => x.Customer_Categories)
-                    .HasForeignKey(x => x.Customer_id)
-                    .OnDelete(DeleteBehavior.Restrict);
-                entity.HasOne(x => x.Category)
-                    .WithMany(x => x.Customer_Categories)
-                    .HasForeignKey(x => x.Category_id)
-                    .OnDelete(DeleteBehavior.Restrict);
-                entity.HasIndex(x => new { x.Customer_id, x.Category_id }).IsUnique();
             });
 
             // Invoice configuration

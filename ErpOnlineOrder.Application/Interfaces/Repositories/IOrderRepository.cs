@@ -8,7 +8,9 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
     public interface IOrderRepository
     {
         Task<Order?> GetByIdAsync(int id);
-        Task<IEnumerable<OrderDTO>> GetAllAsync();
+        Task<Order?> GetByIdForStatusCheckAsync(int id);
+        IQueryable<Order?> GetByOrderIdAsync(int id);
+        Task<IEnumerable<OrderDTO>> GetAllAsync(); 
         Task<PagedResult<Order>> GetPagedOrdersAsync(OrderFilterRequest request, IEnumerable<int>? customerIds = null);
         Task<PagedResult<OrderDTO>> GetPagedOrdersDTOAsync(OrderFilterRequest request, IEnumerable<int>? customerIds = null);
         Task<IEnumerable<Order>> GetByCustomerIdsAsync(IEnumerable<int> customerIds);
