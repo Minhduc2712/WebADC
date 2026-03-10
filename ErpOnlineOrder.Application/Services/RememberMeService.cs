@@ -3,38 +3,43 @@ using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Models;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.Extensions.Configuration;
 
-namespace ErpOnlineOrder.Application.Services
+public class RememberMeService : IRememberMeService
 {
-    public class RememberMeService : IRememberMeService
+    private readonly string _secret;
+    private readonly IUserRepository _userRepository;
+
+    public RememberMeService(IUserRepository userRepository, IConfiguration configuration)
     {
-        private const string Secret = "ErpSecretKey2024";
-        private readonly IUserRepository _userRepository;
+        _userRepository = userRepository;
+        _secret = configuration["AuthSettings:RememberMeSecret"] ?? "FallbackSecret123!";
+    }
 
-        public RememberMeService(IUserRepository userRepository)
-        {
-            _userRepository = userRepository;
-        }
+    public string GenerateToken(User user)
+    {
+        // Thêm một giá trị salt hoặc thời gian nếu cần thiết
+        var data = $"{user.Username}:{user.Password}:{_secret}";
+        using var sha = SHA256.Create();
+        var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(data));
+        return Convert.ToBase64String(hash);
+    }
 
-        public string GenerateToken(User user)
-        {
-            var data = $"{user.Username}:{user.Password}:{Secret}";
-            using var sha = SHA256.Create();
-            var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(data));
-            return Convert.ToBase64String(hash);
-        }
+    public async Task<bool> ValidateTokenAsync(string username, string token)
+    {
+        if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(token))
+            return false;
 
-        public async Task<bool> ValidateTokenAsync(string username, string token)
-        {
-            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(token))
-                return false;
+        // Tối ưu: Chỉ lấy Username/Password, không lấy Staff/Customer/Roles
+        var user = await _userRepository.GetForTokenValidationAsync(username);
+        
+        if (user == null) return false;
 
-            var user = await _userRepository.GetByUsernameAsync(username);
-            if (user == null)
-                return false;
-
-            var expectedToken = GenerateToken(user);
-            return token == expectedToken;
-        }
+        var expectedToken = GenerateToken(user);
+        
+        // Sử dụng CryptographicOperations.FixedTimeEquals để chống Timing Attack
+        return CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(token), 
+            Encoding.UTF8.GetBytes(expectedToken));
     }
 }

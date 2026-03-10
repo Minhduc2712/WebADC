@@ -87,6 +87,11 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
 
+        public async Task<Product?> GetByIdBasicAsync(int id)
+        {
+            return await GetBaseQuery().FirstOrDefaultAsync(p => p.Id == id);
+        }
+
         public IQueryable<Product?> GetByProductId(int id)
         {
             return GetBaseQuery()
@@ -391,6 +396,15 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             product.Updated_at = DateTime.Now;
             _context.Products.Update(product);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<decimal> GetPriceByIdAsync(int id)
+        {
+            return await _context.Products
+                .AsNoTracking()
+                .Where(p => p.Id == id && !p.Is_deleted)
+                .Select(p => p.Product_price)
+                .FirstOrDefaultAsync();
         }
     }
 }

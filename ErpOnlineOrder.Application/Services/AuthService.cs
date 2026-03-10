@@ -39,10 +39,8 @@ namespace ErpOnlineOrder.Application.Services
 
             string email = dto.Email;
 
-            var exisitingStaffByUsername = await _userRepository.GetByUsernameAsync(username);
-            if (exisitingStaffByUsername != null) throw new Exception("Tên đăng nhập đã tồn tại");
-            var existingStaffByEmail = await _userRepository.GetByEmailAsync(email);
-            if (existingStaffByEmail != null) throw new Exception("Email đã tồn tại");
+            if (await _userRepository.ExistsByUsernameAsync(username)) throw new Exception("Tên đăng nhập đã tồn tại");
+            if (await _userRepository.ExistsByEmailAsync(email)) throw new Exception("Email đã tồn tại");
 
             string roleName = dto.Role_type.ToString();
 
@@ -85,10 +83,8 @@ namespace ErpOnlineOrder.Application.Services
 
             string Email = dto.Email;
              
-            var existingUsername = await _userRepository.GetByUsernameAsync(Username);
-            if(existingUsername != null) throw new Exception("Tài khoản đã tồn tại");
-            var existingEmail = await _userRepository.GetByEmailAsync(Email);
-            if (existingEmail != null) throw new Exception("Email đã tồn tại");
+            if (await _userRepository.ExistsByUsernameAsync(Username)) throw new Exception("Tài khoản đã tồn tại");
+            if (await _userRepository.ExistsByEmailAsync(Email)) throw new Exception("Email đã tồn tại");
 
             string roleName = "ROLE_CUSTOMER";
 
@@ -136,26 +132,26 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<string?> LoginAsync(LoginUserDto dto)
         {
-            string identifier = dto.Identifier;
-            string password = dto.Password;
+            if (string.IsNullOrEmpty(dto.Identifier)) throw new Exception("Tên đăng nhập không được để trống");
 
-            bool isEmail = identifier.Contains("@");
+            var user = await _userRepository.GetForLoginAsync(dto.Identifier);
 
-            string username = isEmail ? identifier.Split('@')[0] : identifier;
-
-            var existingUser = isEmail ? await _userRepository.GetByEmailAsync(identifier)
-                : await _userRepository.GetByUsernameAsync(username);
-
-            if (existingUser == null) throw new Exception("Sai tên đăng nhập hoặc mật khẩu");
-
-            if (existingUser != null && BCrypt.Net.BCrypt.Verify(password, existingUser.Password))
-            {
-                return existingUser.Username;
-            }
-            else
+            if (user == null) 
             {
                 throw new Exception("Sai tên đăng nhập hoặc mật khẩu");
             }
+
+            if (!user.Is_active)
+            {
+                throw new Exception("Tài khoản đã bị khóa.");
+            }
+
+            if (!BCrypt.Net.BCrypt.Verify(dto.Password, user.Password))
+            {
+                throw new Exception("Sai tên đăng nhập hoặc mật khẩu");
+            }
+
+            return user.Username;
         }
 
         public async Task<bool> ChangePasswordAsync(ChangePasswordDto dto)
@@ -168,8 +164,8 @@ namespace ErpOnlineOrder.Application.Services
 
             string username = isEmail ? identifier.Split('@')[0] : identifier;
 
-            var existingUser = isEmail ? await _userRepository.GetByEmailAsync(identifier)
-                : await _userRepository.GetByUsernameAsync(username);
+            var existingUser = isEmail ? await _userRepository.GetByEmailBasicAsync(identifier)
+                : await _userRepository.GetByUsernameBasicAsync(username);
 
             if (existingUser == null) throw new Exception("Người dùng không tồn tại");
 
@@ -279,7 +275,7 @@ namespace ErpOnlineOrder.Application.Services
             var newPassword = "Admin@123";
             var newHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
 
-            var existingAdmin = await _userRepository.GetByUsernameAsync("admin");
+            var existingAdmin = await _userRepository.GetByUsernameBasicAsync("admin");
             if (existingAdmin != null)
             {
                 existingAdmin.Password = newHash;
@@ -342,7 +338,7 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<CheckAdminResultDto?> CheckAdminAsync()
         {
-            var admin = await _userRepository.GetByUsernameAsync("admin");
+            var admin = await _userRepository.GetByUsernameBasicAsync("admin");
             if (admin == null) return null;
 
             var testPassword = "Admin@123";
@@ -405,7 +401,7 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<DebugRolePermissionsResultDto?> DebugRolePermissionsAsync(int roleId)
         {
-            var role = await _roleRepository.GetByIdAsync(roleId);
+            var role = await _roleRepository.GetByIdBasicAsync(roleId);
             if (role == null) return null;
 
             var rolePermissions = await _permissionService.GetRolePermissionsAsync(roleId);

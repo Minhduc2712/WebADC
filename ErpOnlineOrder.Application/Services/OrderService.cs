@@ -47,7 +47,7 @@ namespace ErpOnlineOrder.Application.Services
             var staff = await _staffRepository.GetByUserIdAsync(userId.Value);
             if (staff == null) return false;
 
-            return (await _customerManagementRepository.GetByStaffAndCustomerAsync(staff.Id, customerId)) != null;
+            return await _customerManagementRepository.ExistsAsync(staff.Id, customerId);
         }
 
         public async Task<OrderDTO?> GetByIdAsync(int id, int? userId = null)
@@ -386,7 +386,7 @@ namespace ErpOnlineOrder.Application.Services
             var staff = await _staffRepository.GetByUserIdAsync(userId);
             if (staff == null) return false;
 
-            return (await _customerManagementRepository.GetByStaffAndCustomerAsync(staff.Id, orderCustomerId)) != null;
+            return await _customerManagementRepository.ExistsAsync(staff.Id, orderCustomerId);
         }
 
         public async Task<bool> ConfirmOrderAsync(ConfirmOrderDto dto)
@@ -400,7 +400,7 @@ namespace ErpOnlineOrder.Application.Services
                 var staff = await _staffRepository.GetByUserIdAsync(dto.Updated_by);
                 if (staff != null)
                 {
-                    var isManaged = (await _customerManagementRepository.GetByStaffAndCustomerAsync(staff.Id, order.Customer_id)) != null;
+                    var isManaged = await _customerManagementRepository.ExistsAsync(staff.Id, order.Customer_id);
                     if (!isManaged) return false;
                 }
             }
@@ -425,7 +425,7 @@ namespace ErpOnlineOrder.Application.Services
                 var staff = await _staffRepository.GetByUserIdAsync(dto.Updated_by);
                 if (staff == null) return false;
 
-                bool isManaged = (await _customerManagementRepository.GetByStaffAndCustomerAsync(staff.Id, order.Customer_id)) != null;
+                bool isManaged = await _customerManagementRepository.ExistsAsync(staff.Id, order.Customer_id);
                 if (!isManaged) return false;
             }
 
@@ -523,8 +523,7 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<decimal> GetProductPriceForCustomerAsync(int customerId, int productId)
         {
-            var product = await _productRepository.GetByIdAsync(productId);
-            return product?.Product_price ?? 0;
+            return await _productRepository.GetPriceByIdAsync(productId);
         }
     }
 }

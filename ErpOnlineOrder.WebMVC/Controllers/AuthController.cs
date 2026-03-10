@@ -73,7 +73,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
                     if (model.RememberMe)
                     {
-                        var user = await _userRepository.GetByUsernameAsync(apiResult.Username);
+                        var user = await _userRepository.GetByUsernameBasicAsync(apiResult.Username);
                         if (user != null)
                             SetRememberMeCookies(user.Username, _rememberMeService.GenerateToken(user));
                     }
@@ -256,11 +256,11 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
             try
             {
-                var user = await _userRepository.GetByEmailAsync(email);
+                var userExists = await _userRepository.ExistsByEmailAsync(email);
 
                 TempData["SuccessMessage"] = "Nếu email tồn tại trong hệ thống, bạn sẽ nhận được hướng dẫn đặt lại mật khẩu.";
 
-                if (user != null)
+                if (userExists)
                 {
                     // TODO: G?i email reset password
                     _logger.LogInformation("Password reset requested for email: {Email}", email);

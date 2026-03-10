@@ -190,8 +190,6 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<Order?> GetByCodeAsync(string code)
         {
             return await GetBaseQuery()
-                .Include(o => o.Customer)
-                .Include(o => o.Order_Details).ThenInclude(od => od.Product)
                 .FirstOrDefaultAsync(o => o.Order_code == code);
         }
 
@@ -219,6 +217,15 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 order.Updated_at = DateTime.Now;
                 await _context.SaveChangesAsync();
             }
+        }
+
+        public async Task<OrderDTO?> GetOrderDetailsDtoAsync(int id)
+        {
+            return await _context.Orders
+                .AsNoTracking()
+                .Where(o => o.Id == id && !o.Is_deleted)
+                .ProjectTo<OrderDTO>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync();
         }
     }
 }

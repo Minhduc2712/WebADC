@@ -75,7 +75,7 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<bool> UpdateCustomerByAdminAsync(int id, UpdateCustomerByAdminDto dto, int updatedBy)
         {
-            var existing = await _customerRepository.GetByIdAsync(id);
+            var existing = await _customerRepository.GetByIdBasicAsync(id);
             if (existing == null) return false;
 
             existing.Customer_code = dto.Customer_code;

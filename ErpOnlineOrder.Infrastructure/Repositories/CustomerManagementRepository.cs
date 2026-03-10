@@ -80,6 +80,15 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .FirstOrDefaultAsync(cm => cm.Staff_id == staffId && cm.Customer_id == customerId);
         }
 
+        public async Task<bool> ExistsAsync(int staffId, int customerId, int? excludeId = null)
+        {
+            var query = GetBaseQuery()
+                .Where(cm => cm.Staff_id == staffId && cm.Customer_id == customerId);
+            if (excludeId.HasValue)
+                query = query.Where(cm => cm.Id != excludeId.Value);
+            return await query.AnyAsync();
+        }
+
         public async Task<IEnumerable<Customer_management>> GetByProvinceAsync(int provinceId)
         {
             return await GetBaseQuery(true)

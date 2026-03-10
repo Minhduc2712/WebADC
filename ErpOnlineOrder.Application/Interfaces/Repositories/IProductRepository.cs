@@ -9,6 +9,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
     public interface IProductRepository
     {
         Task<Product?> GetByIdAsync(int id);
+        Task<Product?> GetByIdBasicAsync(int id);
         public IQueryable<Product?> GetByProductId(int id);
         Task<Product?> GetByCodeAsync(string code);
         Task<bool> ExistsByCodeAsync(string code, int? excludeId = null);
@@ -28,5 +29,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
         Task<Product> AddAsync(Product product);
         Task DeleteAsync(int id);
         Task UpdateAsync(Product product);
+        Task<decimal> GetPriceByIdAsync(int id);
+
     }
 }

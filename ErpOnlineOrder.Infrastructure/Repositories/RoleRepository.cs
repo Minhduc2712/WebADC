@@ -28,6 +28,13 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .FirstOrDefaultAsync(r => r.Id == id);
         }
 
+        public async Task<Role?> GetByIdBasicAsync(int id)
+        {
+            return await _context.Roles
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.Id == id);
+        }
+
         public async Task<Role?> GetByNameAsync(string roleName)
         {
             return await _context.Roles

@@ -141,6 +141,15 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
             return await query.AnyAsync();
         }
+
+        public async Task<bool> ExistsAsync(int staffId, int customerId)
+        {
+            return await _context.CustomerManagements
+                .AsNoTracking()
+                .AnyAsync(cm => cm.Staff_id == staffId && 
+                                cm.Customer_id == customerId && 
+                                !cm.Is_deleted);
+        }
         
         public async Task<IEnumerable<int>> GetExistingProductIdsAsync(int customerId, IEnumerable<int> productIds)
         {

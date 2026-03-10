@@ -55,7 +55,7 @@ namespace ErpOnlineOrder.Application.Services
             }
 
             // Ki?m tra khách hàng t?n t?i
-            var customer = await _customerRepository.GetByIdAsync(dto.Customer_id);
+            var customer = await _customerRepository.GetByIdBasicAsync(dto.Customer_id);
             if (customer == null)
             {
                 throw new Exception("Khách hàng không t?n t?i");

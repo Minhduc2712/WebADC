@@ -39,9 +39,10 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<PagedResult<User>> GetPagedStaffAsync(StaffFilterRequest request)
         {
-            var query = GetBaseQuery(true)
-                .Where(u => u.Staff != null)
-                .AsQueryable();
+            var query = _context.Users.AsNoTracking()
+                .Include(u => u.Staff)
+                .Include(u => u.User_roles).ThenInclude(ur => ur.Role)
+                .Where(u => u.Staff != null && !u.Is_deleted);
 
             if (request.RoleId.HasValue)
             {
@@ -78,7 +79,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task DeleteAsync(int id)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);               if (user != null)
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id); if (user != null)
             {
                 user.Is_deleted = true;
                 user.Updated_at = DateTime.Now;
@@ -127,11 +128,23 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .FirstOrDefaultAsync(u => u.Username == username);
         }
 
+        public async Task<User?> GetByUsernameBasicAsync(string username)
+        {
+            return await GetBaseQuery()
+                .FirstOrDefaultAsync(u => u.Username == username);
+        }
+
         public async Task<User?> GetByEmailAsync(string email)
         {
             return await GetBaseQuery()
                 .Include(u => u.User_roles)
                     .ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(u => u.Email == email);
+        }
+
+        public async Task<User?> GetByEmailBasicAsync(string email)
+        {
+            return await GetBaseQuery()
                 .FirstOrDefaultAsync(u => u.Email == email);
         }
 
@@ -184,6 +197,52 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             return await GetBaseQuery(true)
                 .Where(u => u.User_roles.Any(ur => ur.Role_id == roleId))
                 .ToListAsync();
+        }
+
+        public async Task<bool> ExistsByUsernameAsync(string username)
+        {
+            return await _context.Users
+                .AnyAsync(u => u.Username == username && !u.Is_deleted);
+        }
+
+        public async Task<bool> ExistsByEmailAsync(string email)
+        {
+            return await _context.Users
+                .AnyAsync(u => u.Email == email && !u.Is_deleted);
+        }
+
+        public async Task<bool> ExistsByEmailAsync(string email, int excludeId)
+        {
+            return await _context.Users
+                .AnyAsync(u => u.Email == email && u.Id != excludeId && !u.Is_deleted);
+        }
+
+        public async Task<User?> GetForUpdateAsync(int id)
+        {
+            return await _context.Users
+                .Include(u => u.Staff)
+                .Include(u => u.User_roles)
+                .FirstOrDefaultAsync(u => u.Id == id && !u.Is_deleted);
+        }
+
+        public async Task<User?> GetForLoginAsync(string identifier)
+        {
+            return await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u =>
+                    (u.Username == identifier || u.Email == identifier)
+                    && !u.Is_deleted);
+        }
+        
+        public async Task<User?> GetForTokenValidationAsync(string username)
+        {
+            return await _context.Users
+                .AsNoTracking()
+                .Select(u => new User { 
+                    Username = u.Username, 
+                    Password = u.Password,
+                })
+                .FirstOrDefaultAsync(u => u.Username == username && !u.Is_deleted);
         }
     }
 }

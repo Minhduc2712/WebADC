@@ -10,6 +10,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
     public interface IRoleRepository
     {
         Task<Role?> GetByIdAsync(int id);
+        Task<Role?> GetByIdBasicAsync(int id);
         Task<Role?> GetByNameAsync(string roleName);
         Task<IEnumerable<Role>> GetAllAsync();
         Task<Role> AddAsync(Role role);

@@ -527,7 +527,7 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<RolePermissionDto?> GetRolePermissionsAsync(int roleId)
         {
-            var role = await _roleRepository.GetByIdAsync(roleId);
+            var role = await _roleRepository.GetByIdBasicAsync(roleId);
             if (role == null) return null;
 
             var rolePermissions = await _rolePermissionRepository.GetByRoleIdAsync(roleId);
@@ -585,7 +585,7 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<bool> UpdateRoleAsync(UpdateRoleDto dto, int updatedBy)
         {
-            var role = await _roleRepository.GetByIdAsync(dto.Id);
+            var role = await _roleRepository.GetByIdBasicAsync(dto.Id);
             if (role == null) return false;
 
             role.Role_name = dto.Role_name;

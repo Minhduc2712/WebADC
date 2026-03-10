@@ -43,8 +43,8 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<Customer_management> CreateCustomerManagementAsync(CreateCustomerManagementDto dto, int createdBy)
         {
-            var existing = await _customerManagementRepository.GetByStaffAndCustomerAsync(dto.Staff_id, dto.Customer_id);
-            if (existing != null)
+            var alreadyAssigned = await _customerManagementRepository.ExistsAsync(dto.Staff_id, dto.Customer_id);
+            if (alreadyAssigned)
                 throw new InvalidOperationException("Cán bộ này đã được gán phụ trách khách hàng này rồi.");
 
             var assignment = new Customer_management
@@ -67,8 +67,8 @@ namespace ErpOnlineOrder.Application.Services
             var existing = await _customerManagementRepository.GetByIdAsync(id);
             if (existing == null) return false;
 
-            var duplicate = await _customerManagementRepository.GetByStaffAndCustomerAsync(dto.Staff_id, dto.Customer_id);
-            if (duplicate != null && duplicate.Id != id)
+            var duplicateExists = await _customerManagementRepository.ExistsAsync(dto.Staff_id, dto.Customer_id, id);
+            if (duplicateExists)
                 throw new InvalidOperationException("Cán bộ này đã được gán phụ trách khách hàng này rồi.");
 
             existing.Staff_id = dto.Staff_id;
@@ -89,8 +89,8 @@ namespace ErpOnlineOrder.Application.Services
         public async Task<Customer_management> AssignStaffToCustomerAsync(int staffId, int customerId, int provinceId, int createdBy)
         {
             // Kiểm tra đã gán chưa
-            var existing = await _customerManagementRepository.GetByStaffAndCustomerAsync(staffId, customerId);
-            if (existing != null)
+            var alreadyAssigned = await _customerManagementRepository.ExistsAsync(staffId, customerId);
+            if (alreadyAssigned)
             {
                 throw new InvalidOperationException("Cán bộ này đã được gán phụ trách khách hàng này rồi.");
             }
@@ -119,8 +119,7 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<bool> IsAlreadyAssignedAsync(int staffId, int customerId)
         {
-            var existing = await _customerManagementRepository.GetByStaffAndCustomerAsync(staffId, customerId);
-            return existing != null;
+            return await _customerManagementRepository.ExistsAsync(staffId, customerId);
         }
     }
 }

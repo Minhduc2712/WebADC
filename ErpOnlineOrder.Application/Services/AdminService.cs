@@ -32,8 +32,6 @@ namespace ErpOnlineOrder.Application.Services
             _permissionService = permissionService;
         }
 
-        #region Qu?n lý tài kho?n nhân viên
-
         public async Task<IEnumerable<StaffAccountDto>> GetAllStaffAsync(int? currentUserId = null)
         {
             var users = await _userRepository.GetAllAsync();
@@ -80,23 +78,18 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<StaffAccountDto?> CreateStaffAccountAsync(CreateStaffAccountDto dto, int createdBy)
         {
-            // Ki?m tra username ?? t?n t?i
-            var existingByUsername = await _userRepository.GetByUsernameAsync(dto.Username);
-            if (existingByUsername != null)
+            if (await _userRepository.ExistsByUsernameAsync(dto.Username))
             {
-                throw new InvalidOperationException($"T?n ??ng nh?p '{dto.Username}' ?? t?n t?i trong h? th?ng.");
+                throw new InvalidOperationException($"Tên đăng nhập '{dto.Username}' đã tồn tại.");
             }
 
-            // Ki?m tra email ?? t?n t?i
-            var existingByEmail = await _userRepository.GetByEmailAsync(dto.Email);
-            if (existingByEmail != null)
+            if (await _userRepository.ExistsByEmailAsync(dto.Email))
             {
-                throw new InvalidOperationException($"Email '{dto.Email}' ?? ???c s? d?ng b?i t?i kho?n kh?c.");
+                throw new InvalidOperationException($"Email '{dto.Email}' đã được sử dụng.");
             }
 
             var now = DateTime.UtcNow;
             
-            // T?o user m?i
             var user = new User
             {
                 Username = dto.Username,
@@ -121,7 +114,6 @@ namespace ErpOnlineOrder.Application.Services
                 }
             };
 
-            // G?n roles n?u c?
             if (dto.Role_ids != null && dto.Role_ids.Any())
             {
                 user.User_roles = dto.Role_ids.Select(roleId => new User_role
@@ -135,14 +127,13 @@ namespace ErpOnlineOrder.Application.Services
 
             await _userRepository.AddAsync(user);
 
-            // L?y l?i user ?? tr? v?
             var createdUser = await _userRepository.GetByUsernameAsync(dto.Username);
             return createdUser != null ? EntityMappers.ToStaffAccountDto(createdUser) : null;
         }
 
         public async Task<bool> UpdateStaffAccountAsync(UpdateStaffAccountDto dto, int updatedBy)
         {
-            var user = await _userRepository.GetByIdAsync(dto.User_id);
+            var user = await _userRepository.GetForUpdateAsync(dto.User_id);
             if (user == null || user.Staff == null)
             {
                 return false;
@@ -150,24 +141,20 @@ namespace ErpOnlineOrder.Application.Services
 
             var now = DateTime.UtcNow;
 
-            // C?p nh?t email n?u c?
             if (!string.IsNullOrEmpty(dto.Email) && dto.Email != user.Email)
             {
-                var existingByEmail = await _userRepository.GetByEmailAsync(dto.Email);
-                if (existingByEmail != null && existingByEmail.Id != dto.User_id)
+                if (await _userRepository.ExistsByEmailAsync(dto.Email, dto.User_id))
                 {
-                    throw new InvalidOperationException($"Email '{dto.Email}' ?? ???c s? d?ng b?i t?i kho?n kh?c.");
+                    throw new InvalidOperationException($"Email '{dto.Email}' đã được sử dụng bởi tài khoản khác.");
                 }
                 user.Email = dto.Email;
             }
 
-            // C?p nh?t tr?ng th?i n?u c?
             if (dto.Is_active.HasValue)
             {
                 user.Is_active = dto.Is_active.Value;
             }
 
-            // C?p nh?t th?ng tin staff
             if (!string.IsNullOrEmpty(dto.Full_name))
             {
                 user.Staff.Full_name = dto.Full_name;
@@ -183,23 +170,23 @@ namespace ErpOnlineOrder.Application.Services
             user.Staff.Updated_by = updatedBy;
             user.Staff.Updated_at = now;
 
-            await _userRepository.UpdateAsync(user);
-
-            // C?p nh?t roles n?u c?
             if (dto.Role_ids != null)
             {
-                // X?a roles c?
-                foreach (var userRole in user.User_roles.ToList())
-                {
-                    await _userRepository.RemoveRoleAsync(dto.User_id, userRole.Role_id);
-                }
+                user.User_roles.Clear();
 
-                // Th?m roles m?i
                 foreach (var roleId in dto.Role_ids)
                 {
-                    await _userRepository.AssignRoleAsync(dto.User_id, roleId);
+                    user.User_roles.Add(new User_role
+                    {
+                        Role_id = roleId,
+                        User_id = user.Id,
+                        Created_at = now,
+                        Updated_at = now
+                    });
                 }
             }
+            
+            await _userRepository.UpdateAsync(user);
 
             return true;
         }
@@ -246,10 +233,6 @@ namespace ErpOnlineOrder.Application.Services
             return true;
         }
 
-        #endregion
-
-        #region Th?ng k?
-
         public async Task<int> GetActiveStaffCountAsync()
         {
             return await _userRepository.CountActiveStaffAsync();
@@ -264,7 +247,5 @@ namespace ErpOnlineOrder.Application.Services
         {
             return await _orderRepository.CountAsync();
         }
-
-        #endregion
     }
 }
