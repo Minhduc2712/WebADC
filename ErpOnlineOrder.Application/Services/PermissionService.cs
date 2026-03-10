@@ -206,25 +206,58 @@ namespace ErpOnlineOrder.Application.Services
             var roots = all.Where(p => p.Parent_id == null && !p.Is_special).ToList();
             var children = all.Where(p => p.Parent_id != null && !p.Is_special).ToList();
 
-            // Fallback: chua chay migration - tat ca Parent_id null, nhom theo danh muc
-            var hasFolders = roots.Any(r => !r.Permission_code.Contains("_"));
-            if (!hasFolders && roots.Any())
+            // Phân biệt root thực sự có children trong DB vs root lá (flat)
+            var childParentIds = children.Select(c => c.Parent_id).Distinct().ToHashSet();
+            var folderRoots = roots.Where(r => childParentIds.Contains(r.Id)).ToList();
+            var leafRoots = roots.Where(r => !childParentIds.Contains(r.Id)).ToList();
+
+            if (!folderRoots.Any())
             {
                 return BuildTreeFromModuleGrouping(all.Where(p => !p.Is_special).ToList());
             }
 
-            // Gom cac nhom "Danh muc chung" (REGION, PROVINCE, ORGANIZATION, DISTRIBUTOR, WAREHOUSE)
-            var danhMucChungRoots = roots.Where(r => PermissionCodes.DanhMucChungCodes.Contains(r.Permission_code)).ToList();
-            var otherRoots = roots.Except(danhMucChungRoots).ToList();
+            var treeParts = new List<PermissionDto>();
+
+            foreach (var fr in folderRoots)
+            {
+                treeParts.Add(MapToTreeDto(fr, children.ToList()));
+            }
+
+            var leafGroups = leafRoots
+                .GroupBy(p => GetCategoryCode(p.Permission_code))
+                .ToList();
+
+            foreach (var grp in leafGroups)
+            {
+                var moduleName = GetModuleDisplayName(grp.Key);
+                treeParts.Add(new PermissionDto
+                {
+                    Id = 0,
+                    Permission_code = grp.Key,
+                    Module_name = moduleName,
+                    Action_name = "",
+                    Parent_id = null,
+                    Is_special = false,
+                    Children = grp.OrderBy(p => p.Permission_code)
+                        .Select(c => MapChildPermission(c, moduleName))
+                        .ToList()
+                });
+            }
+
+            // Gom nhóm "Danh mục chung" và sắp xếp
+            var danhMucChungItems = treeParts.Where(t => PermissionCodes.DanhMucChungCodes.Contains(t.Permission_code)).ToList();
+            var otherItems = treeParts.Except(danhMucChungItems)
+                .OrderBy(t => GetCategorySortOrder(t.Permission_code))
+                .ThenBy(t => t.Permission_code)
+                .ToList();
 
             var result = new List<PermissionDto>();
-            var sortedOther = otherRoots.OrderBy(r => GetCategorySortOrder(r.Permission_code)).ThenBy(r => r.Permission_code).ToList();
-            var danhMucChungSortOrder = GetCategorySortOrder("REGION"); // Vi tri cua "Danh muc chung" = vi tri REGION
+            var danhMucChungSortOrder = GetCategorySortOrder("REGION");
+            var danhMucChungAdded = false;
 
-            foreach (var r in sortedOther)
+            foreach (var item in otherItems)
             {
-                var order = GetCategorySortOrder(r.Permission_code);
-                if (danhMucChungRoots.Any() && order > danhMucChungSortOrder)
+                if (!danhMucChungAdded && danhMucChungItems.Any() && GetCategorySortOrder(item.Permission_code) > danhMucChungSortOrder)
                 {
                     result.Add(new PermissionDto
                     {
@@ -234,17 +267,16 @@ namespace ErpOnlineOrder.Application.Services
                         Action_name = "",
                         Parent_id = null,
                         Is_special = false,
-                        Children = danhMucChungRoots
+                        Children = danhMucChungItems
                             .OrderBy(x => GetCategorySortOrder(x.Permission_code))
-                            .Select(x => MapToTreeDto(x, children))
                             .ToList()
                     });
-                    danhMucChungRoots = new List<Permission>(); // Chi them 1 lan
+                    danhMucChungAdded = true;
                 }
-
-                result.Add(MapToTreeDto(r, children));
+                result.Add(item);
             }
-            if (danhMucChungRoots.Any())
+
+            if (!danhMucChungAdded && danhMucChungItems.Any())
             {
                 result.Add(new PermissionDto
                 {
@@ -254,9 +286,8 @@ namespace ErpOnlineOrder.Application.Services
                     Action_name = "",
                     Parent_id = null,
                     Is_special = false,
-                    Children = danhMucChungRoots
+                    Children = danhMucChungItems
                         .OrderBy(x => GetCategorySortOrder(x.Permission_code))
-                        .Select(x => MapToTreeDto(x, children))
                         .ToList()
                 });
             }

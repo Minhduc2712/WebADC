@@ -1,5 +1,5 @@
 @{
-    ViewData["Title"] = "Khong co quyen truy cap";
+    ViewData["Title"] = "Không có quyền truy cập";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 
@@ -11,36 +11,36 @@
                     <div class="mb-4">
                         <i class="fas fa-ban fa-5x text-danger"></i>
                     </div>
-                    <h2 class="text-danger mb-3">Truy cap bi tu choi</h2>
+                    <h2 class="text-danger mb-3">Truy cập bị từ chối</h2>
                     <p class="text-muted mb-4">
-                        Ban khong co quyen truy cap vao chuc nang nay.<br/>
-                        Vui long lien he quan tri vien de duoc cap quyen.
+                        Bạn không có quyền truy cập vào chức năng này.<br/>
+                        Vui lòng liên hệ quản trị viên để được cấp quyền.
                     </p>
                     
                     <div class="alert alert-warning">
                         <i class="fas fa-exclamation-triangle me-2"></i>
-                        <strong>Ma loi:</strong> 403 - Forbidden
+                        <strong>Mã lỗi:</strong> 403 - Forbidden
                     </div>
 
                     <div class="d-flex justify-content-center gap-3 mt-4">
                         <a href="javascript:history.back()" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left me-1"></i> Quay lai
+                            <i class="fas fa-arrow-left me-1"></i> Quay lại
                         </a>
                         <a asp-controller="Order" asp-action="Index" class="btn btn-primary">
-                            <i class="fas fa-home me-1"></i> Ve trang chu
+                            <i class="fas fa-home me-1"></i> Về trang chủ
                         </a>
                     </div>
                 </div>
             </div>
 
-            <!-- Thong tin ho tro -->
+            <!-- Thông tin hỗ trợ -->
             <div class="card shadow mt-4">
                 <div class="card-body">
                     <h6 class="card-title">
-                        <i class="fas fa-info-circle me-1 text-info"></i> Can ho tro?
+                        <i class="fas fa-info-circle me-1 text-info"></i> Cần hỗ trợ?
                     </h6>
                     <p class="card-text small text-muted mb-0">
-                        Neu ban cho rang day la loi, vui long lien he bo phan IT hoac quan tri vien he thong.
+                        Nếu bạn cho rằng đây là lỗi, vui lòng liên hệ bộ phận IT hoặc quản trị viên hệ thống.
                     </p>
                 </div>
             </div>

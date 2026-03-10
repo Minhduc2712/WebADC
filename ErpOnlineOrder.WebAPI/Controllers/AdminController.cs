@@ -20,7 +20,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             _permissionService = permissionService;
         }
 
-        #region Qu?n lý tài kho?n nhân viên
+        #region Quản lý tài khoản nhân viên
         [HttpGet("staff")]
         [RequirePermission(PermissionCodes.StaffView)]
         public async Task<IActionResult> GetAllStaff()
@@ -43,7 +43,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var staff = await _adminService.GetStaffByIdAsync(userId, TryGetCurrentUserId());
             if (staff == null)
             {
-                return NotFound(new { message = "Nhân viên không t?n t?i" });
+                return NotFound(new { message = "Nhân viên không tồn tại" });
             }
             return Ok(staff);
         }
@@ -56,7 +56,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _adminService.CreateStaffAccountAsync(dto, GetCurrentUserId());
                 if (result == null)
                 {
-                    return BadRequest(new { message = "Không th? t?o tài kho?n nhân viên" });
+                    return BadRequest(new { message = "Không thể tạo tài khoản nhân viên" });
                 }
                 return CreatedAtAction(nameof(GetStaffById), new { userId = result.User_id }, result);
             }
@@ -71,7 +71,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             if (userId != dto.User_id)
             {
-                return BadRequest(new { message = "User ID không kh?p" });
+                return BadRequest(new { message = "User ID không khớp" });
             }
 
             try
@@ -79,9 +79,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _adminService.UpdateStaffAccountAsync(dto, GetCurrentUserId());
                 if (!result)
                 {
-                    return NotFound(new { message = "Nhân viên không t?n t?i" });
+                    return NotFound(new { message = "Nhân viên không tồn tại" });
                 }
-                return Ok(new { success = true, message = "C?p nh?t thành công" });
+                return Ok(new { success = true, message = "Cập nhật thành công" });
             }
             catch (Exception ex)
             {
@@ -95,9 +95,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _adminService.DeleteStaffAccountAsync(userId, GetCurrentUserId());
             if (!result)
             {
-                return NotFound(new { message = "Nhân viên không t?n t?i" });
+                return NotFound(new { message = "Nhân viên không tồn tại" });
             }
-            return Ok(new { success = true, message = "X�a th�nh c�ng" });
+            return Ok(new { success = true, message = "Xóa thành công" });
         }
         [HttpPatch("staff/{userId}/status")]
         [RequirePermission(PermissionCodes.StaffUpdate)]
@@ -106,9 +106,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _adminService.ToggleStaffStatusAsync(userId, isActive, GetCurrentUserId());
             if (!result)
             {
-                return NotFound(new { message = "Nhân viên không t?n t?i" });
+                return NotFound(new { message = "Nhân viên không tồn tại" });
             }
-            return Ok(new { success = true, message = isActive ? "?ã kích ho?t tài kho?n" : "?ã vô hi?u hóa tài kho?n" });
+            return Ok(new { success = true, message = isActive ? "Đã kích hoạt tài khoản" : "Đã vô hiệu hóa tài khoản" });
         }
         [HttpPost("staff/{userId}/reset-password")]
         [RequirePermission(PermissionCodes.StaffUpdate)]
@@ -116,20 +116,20 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             if (userId != dto.User_id)
             {
-                return BadRequest(new { message = "User ID không kh?p" });
+                return BadRequest(new { message = "User ID không khớp" });
             }
 
             var result = await _adminService.ResetPasswordAsync(dto, GetCurrentUserId());
             if (!result)
             {
-                return NotFound(new { message = "Nhân viên không t?n t?i" });
+                return NotFound(new { message = "Nhân viên không tồn tại" });
             }
-            return Ok(new { success = true, message = "?ã reset m?t kh?u thành công" });
+            return Ok(new { success = true, message = "Đã reset mật khẩu thành công" });
         }
 
         #endregion
 
-        #region Qu?n lý Roles
+        #region Quản lý Roles
         [HttpGet("roles")]
         public async Task<IActionResult> GetAllRoles()
         {

@@ -3,23 +3,9 @@
     ViewData["Title"] = "Gán sản phẩm cho khách hàng";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
     var customer = ViewBag.Customer as ErpOnlineOrder.Application.DTOs.CustomerDTO;
-    var allProducts = ViewBag.AllProducts as List<ErpOnlineOrder.Application.DTOs.ProductDTO> ?? new List<ErpOnlineOrder.Application.DTOs.ProductDTO>();
+    var pagedProducts = ViewBag.PagedProducts as PagedResult<ErpOnlineOrder.Application.DTOs.ProductDTO>;
+    var items = pagedProducts?.Items ?? new List<ErpOnlineOrder.Application.DTOs.ProductDTO>();
     var assignedProductIds = ViewBag.AssignedProductIds as HashSet<int> ?? new HashSet<int>();
-
-    var categoryGroups = allProducts
-        .GroupBy(p => p.Categories?.FirstOrDefault() ?? "Chưa phân loại")
-        .OrderBy(g => g.Key == "Chưa phân loại" ? "zzz" : g.Key)
-        .ToList();
-
-    string FormatPrice(decimal price)
-    {
-        return price.ToString("N0", new System.Globalization.CultureInfo("vi-VN"));
-    }
-
-    decimal GetPriceNum(decimal price)
-    {
-        return price;
-    }
 }
 
 @section Styles {
@@ -60,122 +46,160 @@
         </div>
     }
 
-    <div class="assign-card">
-        <div class="card-header-custom">
-            <i class="fas fa-check-square me-2"></i>Chọn sản phẩm để gán
+    <!-- Bộ lọc -->
+    <div class="table-card mb-4">
+        <div class="card-header">
+            <i class="fas fa-filter me-2"></i>Bộ lọc tìm kiếm
         </div>
-        <div class="card-body-custom">
+        <div class="card-body p-4">
+            <form asp-action="AssignProducts" method="get" id="filterForm">
+                <input type="hidden" name="customerId" value="@Model.Customer_id" />
+                <input type="hidden" name="page" value="1" />
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label">Tìm kiếm</label>
+                        <input type="text" name="search" value="@ViewBag.Search" class="form-control" placeholder="Tìm theo tên, mã sản phẩm..." />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Thể loại</label>
+                        @Html.DropDownList("categoryId", ViewBag.Categories as SelectList, "-- Tất cả --", new { @class = "form-select", onchange = "this.form.submit()" })
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Số dòng/trang</label>
+                        <select name="pageSize" class="form-select" onchange="this.form.submit()">
+                            <option value="10" selected="@(ViewBag.PageSize == 10)">10</option>
+                            <option value="20" selected="@(ViewBag.PageSize == 20)">20</option>
+                            <option value="50" selected="@(ViewBag.PageSize == 50)">50</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search me-1"></i>Tìm kiếm
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <a href="@Url.Action("AssignProducts", new { customerId = Model.Customer_id })" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-redo me-1"></i>Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Danh sách sản phẩm -->
+    <div class="table-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-check-square me-2"></i>Chọn sản phẩm để gán (@(pagedProducts?.TotalCount ?? 0) sản phẩm)</span>
+        </div>
+        <div class="card-body p-0">
             <form asp-action="AssignProducts" method="post" id="assignForm">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="Customer_id" value="@Model.Customer_id" />
 
-                <!-- Search & Sort Toolbar -->
-                <div class="toolbar">
-                    <div class="search-box">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="text" id="searchInput" placeholder="Tìm theo tên, mã, tác giả..." class="form-control" />
-                    </div>
-                    <div class="sort-group">
-                        <label class="mb-0 text-muted small">Sắp xếp:</label>
-                        <select id="sortSelect">
-                            <option value="name_asc">Tên A-Z</option>
-                            <option value="name_desc">Tên Z-A</option>
-                            <option value="price_asc">Giá tăng dần</option>
-                            <option value="price_desc">Giá giảm dần</option>
-                            <option value="code_asc">Mã SP A-Z</option>
-                        </select>
-                    </div>
-                    <div class="category-filter">
-                        <select id="categoryFilter">
-                            <option value="">Tất cả thể loại</option>
-                            @foreach (var g in categoryGroups)
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 50px;">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="selectAll" title="Chọn tất cả" />
+                                    </div>
+                                </th>
+                                <th style="width: 80px;">Ảnh</th>
+                                <th>Mã SP</th>
+                                <th>Tên sản phẩm</th>
+                                <th>Tác giả</th>
+                                <th>Giá</th>
+                                <th>Danh mục</th>
+                                <th style="width: 100px;">Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!items.Any())
                             {
-                                <option value="@g.Key">@g.Key (@g.Count())</option>
+                                <tr>
+                                    <td colspan="8" class="text-center py-4 text-muted">
+                                        <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                        Không có sản phẩm nào
+                                    </td>
+                                </tr>
                             }
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group-inline mb-3">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="selectAll" />
-                        <label class="form-check-label select-all-label" for="selectAll">Chọn tất cả chưa gán</label>
-                    </div>
-                </div>
-
-                <div class="products-container">
-                    @foreach (var group in categoryGroups)
-                    {
-                        var productsInCategory = group.OrderBy(p => p.Product_name).ToList();
-                        <div class="category-section" data-category="@group.Key">
-                            <div class="category-header">
-                                <span class="category-name"><i class="fas fa-folder me-2"></i>@group.Key</span>
-                                <span class="category-right">
-                                    <span class="category-count">@productsInCategory.Count sản phẩm</span>
-                                    <i class="fas fa-chevron-down toggle-icon text-muted"></i>
-                                </span>
-                            </div>
-                            <div class="category-products">
-                                @foreach (var p in productsInCategory)
+                            else
+                            {
+                                @foreach (var product in items)
                                 {
-                                    var isAssigned = assignedProductIds.Contains(p.Id);
-                                    var searchText = $"{p.Product_name} {p.Product_code} {string.Join(" ", p.Authors ?? new List<string>())} {string.Join(" ", p.Categories ?? new List<string>())}".ToLowerInvariant();
-                                    <div class="product-item @(isAssigned ? "assigned" : "selectable")"
-                                         data-product-id="@p.Id"
-                                         data-name="@p.Product_name"
-                                         data-code="@p.Product_code"
-                                         data-price="@GetPriceNum(p.Product_price).ToString(System.Globalization.CultureInfo.InvariantCulture)"
-                                         data-search="@searchText">
-                                        <div class="d-flex align-items-start gap-2">
-                                            @if (!isAssigned)
-                                            {
-                                                <div class="form-check mt-1">
+                                    var isAssigned = assignedProductIds.Contains(product.Id);
+                                    <tr class="@(isAssigned ? "table-success" : "")">
+                                        <td>
+                                            <div class="form-check">
+                                                @if (isAssigned)
+                                                {
+                                                    <input class="form-check-input" type="checkbox" disabled checked />
+                                                }
+                                                else
+                                                {
                                                     <input class="form-check-input product-checkbox" type="checkbox"
-                                                           name="Product_ids" value="@p.Id" id="prod_@p.Id" />
-                                                </div>
+                                                           name="Product_ids" value="@product.Id" id="prod_@product.Id" />
+                                                }
+                                            </div>
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(product.Product_link))
+                                            {
+                                                <img src="@product.Product_link" alt="@product.Product_name"
+                                                     style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;" />
                                             }
                                             else
                                             {
-                                                <div class="form-check mt-1">
-                                                    <input class="form-check-input" type="checkbox" disabled checked />
+                                                <div style="width: 50px; height: 50px; background: #f0f0f0; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                                    <i class="fas fa-image text-muted"></i>
                                                 </div>
                                             }
-                                            <div class="flex-grow-1 min-w-0">
-                                                <div class="product-name">@p.Product_name</div>
-                                                <div class="product-meta">
-                                                    <span class="badge-code">@p.Product_code</span>
-                                                    <span class="badge-price">@FormatPrice(p.Product_price) đ</span>
-                                                    @if (isAssigned)
-                                                    {
-                                                        <span class="badge-assigned"><i class="fas fa-check me-1"></i>Đã gán</span>
-                                                    }
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                        </td>
+                                        <td><span class="badge bg-secondary">@product.Product_code</span></td>
+                                        <td><strong>@product.Product_name</strong></td>
+                                        <td>@string.Join(", ", product.Authors)</td>
+                                        <td><span class="text-success fw-bold">@product.Product_price_formatted</span></td>
+                                        <td>
+                                            @foreach (var cat in product.Categories.Take(2))
+                                            {
+                                                <span class="badge bg-info me-1">@cat</span>
+                                            }
+                                            @if (product.Categories.Count > 2)
+                                            {
+                                                <span class="badge bg-secondary">+@(product.Categories.Count - 2)</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (isAssigned)
+                                            {
+                                                <span class="badge bg-success"><i class="fas fa-check me-1"></i>Đã gán</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-outline-secondary text-muted">Chưa gán</span>
+                                            }
+                                        </td>
+                                    </tr>
                                 }
-                            </div>
-                        </div>
-                    }
+                            }
+                        </tbody>
+                    </table>
                 </div>
 
-                <div id="noResults" class="no-results" style="display: none;">
-                    <i class="fas fa-search fa-2x mb-2 d-block"></i>
-                    Không tìm thấy sản phẩm phù hợp
-                </div>
-
-                @if (!allProducts.Any())
+                @if (pagedProducts != null && pagedProducts.TotalPages > 1)
                 {
-                    <div class="text-center py-5 text-muted">
-                        <i class="fas fa-box-open fa-3x mb-3 d-block opacity-50"></i>
-                        <p class="mb-0">Chưa có sản phẩm nào trong hệ thống.</p>
-                    </div>
+                    ViewBag.PaginationItemLabel = "sản phẩm";
+                    ViewBag.PaginationAction = "AssignProducts";
+                    @await Html.PartialAsync("_Pagination", pagedProducts)
                 }
-                else
+
+                @if (items.Any())
                 {
-                    <div class="mt-4">
-                        <button type="submit" class="btn btn-assign" id="btnSubmit">
-                            <i class="fas fa-user-tag me-2"></i>Gán sản phẩm đã chọn
+                    <div class="p-3 border-top">
+                        <button type="submit" class="btn btn-primary" id="btnSubmit">
+                            <i class="fas fa-user-tag me-2"></i>Gán sản phẩm đã chọn (<span id="selectedCount">0</span>)
                         </button>
                     </div>
                 }
@@ -187,105 +211,37 @@
 @section Scripts {
 <script>
 (function() {
-    var searchInput = document.getElementById('searchInput');
-    var sortSelect = document.getElementById('sortSelect');
-    var categoryFilter = document.getElementById('categoryFilter');
     var selectAll = document.getElementById('selectAll');
-    var noResults = document.getElementById('noResults');
+    var btnSubmit = document.getElementById('btnSubmit');
+    var selectedCount = document.getElementById('selectedCount');
 
-    function getProductItems() {
-        return document.querySelectorAll('.product-item.selectable');
+    function getCheckboxes() {
+        return document.querySelectorAll('.product-checkbox');
     }
 
-    function applyFilters() {
-        var query = (searchInput?.value || '').trim().toLowerCase();
-        var category = categoryFilter?.value || '';
-        var sortBy = sortSelect?.value || 'name_asc';
-
-        document.querySelectorAll('.category-section').forEach(function(section) {
-            var sectionCategory = section.dataset.category;
-            var showSection = !category || sectionCategory === category;
-
-            var products = section.querySelectorAll('.product-item');
-            var visibleCount = 0;
-
-            products.forEach(function(item) {
-                var matchSearch = !query || (item.dataset.search || '').indexOf(query) >= 0;
-                var matchCategory = !category || sectionCategory === category;
-                var show = matchSearch && matchCategory;
-
-                item.classList.toggle('hidden', !show);
-                if (show) visibleCount++;
-            });
-
-            section.classList.toggle('hidden', !showSection || visibleCount === 0);
-        });
-
-        applySort(sortBy);
-        updateNoResults();
+    function updateCount() {
+        var checked = document.querySelectorAll('.product-checkbox:checked').length;
+        if (selectedCount) selectedCount.textContent = checked;
+        if (btnSubmit) btnSubmit.disabled = checked === 0;
     }
-
-    function applySort(sortBy) {
-        document.querySelectorAll('.category-section:not(.hidden)').forEach(function(section) {
-            var container = section.querySelector('.category-products');
-            var items = Array.from(container.querySelectorAll('.product-item:not(.hidden)'));
-
-            items.sort(function(a, b) {
-                switch(sortBy) {
-                    case 'name_asc': return (a.dataset.name || '').localeCompare(b.dataset.name || '');
-                    case 'name_desc': return (b.dataset.name || '').localeCompare(a.dataset.name || '');
-                    case 'price_asc': return (parseFloat(a.dataset.price) || 0) - (parseFloat(b.dataset.price) || 0);
-                    case 'price_desc': return (parseFloat(b.dataset.price) || 0) - (parseFloat(a.dataset.price) || 0);
-                    case 'code_asc': return (a.dataset.code || '').localeCompare(b.dataset.code || '');
-                    default: return 0;
-                }
-            });
-
-            items.forEach(function(item) { container.appendChild(item); });
-        });
-    }
-
-    function updateNoResults() {
-        var anyVisible = document.querySelector('.product-item:not(.hidden)');
-        if (noResults) noResults.style.display = anyVisible ? 'none' : 'block';
-    }
-
-    searchInput?.addEventListener('input', applyFilters);
-    sortSelect?.addEventListener('change', applyFilters);
-    categoryFilter?.addEventListener('change', applyFilters);
-
-    document.querySelectorAll('.category-header').forEach(function(header) {
-        header.addEventListener('click', function() {
-            header.closest('.category-section').classList.toggle('collapsed');
-        });
-    });
 
     if (selectAll) {
         selectAll.addEventListener('change', function() {
-            var checkboxes = document.querySelectorAll('.product-checkbox:not([disabled])');
-            var items = document.querySelectorAll('.product-item.selectable:not(.hidden)');
-            checkboxes.forEach(function(cb) {
-                if (cb.closest('.product-item')?.classList.contains('hidden')) return;
+            getCheckboxes().forEach(function(cb) {
                 cb.checked = selectAll.checked;
             });
-            items.forEach(function(item) {
-                item.classList.toggle('selected', selectAll.checked);
-            });
+            updateCount();
         });
     }
 
-    document.querySelectorAll('.product-item.selectable').forEach(function(item) {
-        var cb = item.querySelector('.product-checkbox');
-        if (!cb) return;
-
-        item.addEventListener('click', function(e) {
-            if (e.target.type === 'checkbox') return;
-            cb.checked = !cb.checked;
-            item.classList.toggle('selected', cb.checked);
-        });
-
+    getCheckboxes().forEach(function(cb) {
         cb.addEventListener('change', function() {
-            item.classList.toggle('selected', cb.checked);
+            updateCount();
+            if (selectAll) {
+                var all = getCheckboxes();
+                var checkedAll = Array.from(all).every(function(c) { return c.checked; });
+                selectAll.checked = checkedAll && all.length > 0;
+            }
         });
     });
 
@@ -296,6 +252,20 @@
             alert('Vui lòng chọn ít nhất một sản phẩm.');
         }
     });
+
+    // Click row to toggle checkbox
+    document.querySelectorAll('#assignForm tbody tr').forEach(function(row) {
+        var cb = row.querySelector('.product-checkbox');
+        if (!cb) return;
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', function(e) {
+            if (e.target.type === 'checkbox' || e.target.tagName === 'A') return;
+            cb.checked = !cb.checked;
+            cb.dispatchEvent(new Event('change'));
+        });
+    });
+
+    updateCount();
 })();
 </script>
 }

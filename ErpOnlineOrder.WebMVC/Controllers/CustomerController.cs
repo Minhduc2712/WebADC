@@ -26,7 +26,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             var response = await _httpClient.PutAsJsonAsync("customer/update-customer", model);
             if (response.IsSuccessStatusCode)
             {
-                ViewBag.Message = "C?p nh?t thÙng tin kh·ch h‡ng th‡nh cÙng.";
+                ViewBag.Message = "C·∫≠p nh·∫≠t th√¥ng tin kh√°ch h√†ng th√†nh c√¥ng.";
                 return RedirectToAction("Index", "Home");
             }
             var error = await response.Content.ReadAsStringAsync();
@@ -45,7 +45,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             var response = await _httpClient.PutAsJsonAsync("customer/update-organization", model);
             if (response.IsSuccessStatusCode)
             {
-                ViewBag.Message = "C?p nh?t thÙng tin t? ch?c th‡nh cÙng.";
+                ViewBag.Message = "C·∫≠p nh·∫≠t th√¥ng tin t·ªï ch·ª©c th√†nh c√¥ng.";
                 return RedirectToAction("Index", "Home");
             }
             var error = await response.Content.ReadAsStringAsync();

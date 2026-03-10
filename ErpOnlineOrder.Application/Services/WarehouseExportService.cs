@@ -103,24 +103,24 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<WarehouseExportDto?> CreateExportFromInvoiceAsync(CreateWarehouseExportDto dto, int userId)
         {
-            // Ki?m tra hóa ??n t?n t?i
+            // Kiểm tra hóa đơn tồn tại
             var invoice = await _invoiceRepository.GetByIdAsync(dto.Invoice_id);
             if (invoice == null)
             {
-                throw new Exception("Hóa ??n không t?n t?i");
+                throw new Exception("Hóa đơn không tồn tại");
             }
 
-            // Ki?m tra hóa ??n ?ã có phi?u xu?t kho ch?a
+            // Kiểm tra hóa đơn đã có phiếu xuất kho chưa
             var existingExport = await HasExportForInvoiceAsync(dto.Invoice_id);
             if (existingExport)
             {
-                throw new Exception("Hóa ??n này ?ã có phi?u xu?t kho");
+                throw new Exception("Hóa đơn này đã có phiếu xuất kho");
             }
 
-            // Ki?m tra tr?ng thái hóa ??n
+            // Kiểm tra trạng thái hóa đơn
             if (invoice.Status != "Confirmed" && invoice.Status != "Draft")
             {
-                throw new Exception($"Không th? t?o phi?u xu?t kho cho hóa ??n có tr?ng thái: {invoice.Status}");
+                throw new Exception($"Không thể tạo phiếu xuất kho cho hóa đơn có trạng thái: {invoice.Status}");
             }
 
             var now = DateTime.UtcNow;
@@ -146,7 +146,7 @@ namespace ErpOnlineOrder.Application.Services
                 Warehouse_Export_Details = new List<Warehouse_export_detail>()
             };
 
-            // N?u có chi ti?t, s? d?ng chi ti?t ???c cung c?p
+            // Nếu có chi tiết, sử dụng chi tiết được cung cấp
             if (dto.Details != null && dto.Details.Any())
             {
                 foreach (var detail in dto.Details)
@@ -168,7 +168,7 @@ namespace ErpOnlineOrder.Application.Services
             }
             else
             {
-                // T? ??ng l?y t? hóa ??n
+                // Tự động lấy từ hóa đơn
                 foreach (var invoiceDetail in invoice.Invoice_Details.Where(d => !d.Is_deleted))
                 {
                     export.Warehouse_Export_Details.Add(new Warehouse_export_detail
@@ -213,7 +213,7 @@ namespace ErpOnlineOrder.Application.Services
 
             if (export.Status != "Draft")
             {
-                throw new Exception("Ch? có th? xác nh?n phi?u xu?t kho ? tr?ng thái Draft");
+                throw new Exception("Chỉ có thể xác nhận phiếu xuất kho ở trạng thái Draft");
             }
 
             export.Status = "Confirmed";
@@ -231,7 +231,7 @@ namespace ErpOnlineOrder.Application.Services
 
             if (export.Delivery_status == "Delivered")
             {
-                throw new Exception("Không th? h?y phi?u xu?t kho ?ã giao hàng");
+                throw new Exception("Không thể hủy phiếu xuất kho đã giao hàng");
             }
 
             export.Status = "Cancelled";
@@ -253,27 +253,27 @@ namespace ErpOnlineOrder.Application.Services
         {
             var result = new SplitExportResultDto();
 
-            // 1. L?y phi?u xu?t kho g?c
+            // 1. Lấy phiếu xuất kho gốc
             var sourceExport = await _exportRepository.GetByIdAsync(dto.Source_export_id);
             if (sourceExport == null)
             {
                 result.Success = false;
-                result.Message = "Phi?u xu?t kho không t?n t?i";
+                result.Message = "Phiếu xuất kho không tồn tại";
                 return result;
             }
 
-            // 2. Ki?m tra tr?ng thái
+            // 2. Kiểm tra trạng thái
             if (sourceExport.Status == "Split" || sourceExport.Status == "Merged" || sourceExport.Status == "Cancelled")
             {
                 result.Success = false;
-                result.Message = $"Không th? tách phi?u xu?t kho có tr?ng thái: {sourceExport.Status}";
+                result.Message = $"Không thể tách phiếu xuất kho có trạng thái: {sourceExport.Status}";
                 return result;
             }
 
             if (sourceExport.Delivery_status == "Delivered")
             {
                 result.Success = false;
-                result.Message = "Không th? tách phi?u xu?t kho ?ã giao hàng";
+                result.Message = "Không thể tách phiếu xuất kho đã giao hàng";
                 return result;
             }
 
@@ -281,13 +281,13 @@ namespace ErpOnlineOrder.Application.Services
             var newExports = new List<Warehouse_export>();
             var newInvoiceIds = new List<int>();
 
-            // 3. Tách hóa ??n tr??c (n?u c?n)
+            // 3. Tách hóa đơn trước (nếu cần)
             if (dto.Auto_split_invoice && sourceExport.Invoice != null)
             {
                 var splitInvoiceDto = new SplitInvoiceDto
                 {
                     Source_invoice_id = sourceExport.Invoice_id,
-                    Note = dto.Note ?? $"Tách theo phi?u xu?t kho {sourceExport.Warehouse_export_code}",
+                    Note = dto.Note ?? $"Tách theo phiếu xuất kho {sourceExport.Warehouse_export_code}",
                     Split_parts = dto.Split_parts.Select(part => new SplitInvoicePart
                     {
                         Items = part.Items.Select(item =>
@@ -295,7 +295,7 @@ namespace ErpOnlineOrder.Application.Services
                             var exportDetail = sourceExport.Warehouse_Export_Details
                                 .FirstOrDefault(d => d.Id == item.Export_detail_id);
                             
-                            // Tìm invoice detail t??ng ?ng
+                            // Tìm invoice detail tương ứng
                             var invoiceDetail = sourceExport.Invoice?.Invoice_Details
                                 .FirstOrDefault(d => d.Product_id == exportDetail?.Product_id);
                             
@@ -315,7 +315,7 @@ namespace ErpOnlineOrder.Application.Services
                 }
             }
 
-            // 4. T?o các phi?u xu?t kho m?i t? các ph?n tách
+            // 4. Tạo các phiếu xuất kho mới từ các phần tách
             int partIndex = 0;
             foreach (var part in dto.Split_parts)
             {
@@ -329,11 +329,11 @@ namespace ErpOnlineOrder.Application.Services
                     Staff_id = sourceExport.Staff_id,
                     Export_date = now,
                     Carrier_name = sourceExport.Carrier_name,
-                    Tracking_number = null, // Tracking m?i cho m?i phi?u
+                    Tracking_number = null, // Tracking mới cho mỗi phiếu
                     Delivery_status = "Pending",
                     Status = "Draft",
                     Parent_export_id = sourceExport.Id,
-                    Split_merge_note = dto.Note ?? $"Tách t? phi?u {sourceExport.Warehouse_export_code}",
+                    Split_merge_note = dto.Note ?? $"Tách từ phiếu {sourceExport.Warehouse_export_code}",
                     Created_by = userId,
                     Updated_by = userId,
                     Created_at = now,
@@ -365,7 +365,7 @@ namespace ErpOnlineOrder.Application.Services
 
                     newExport.Warehouse_Export_Details.Add(newDetail);
 
-                    // Gi?m s? l??ng trong phi?u g?c
+                    // Giảm số lượng trong phiếu gốc
                     sourceDetail.Quantity_shipped -= item.Quantity;
                     if (sourceDetail.Quantity_shipped <= 0)
                     {
@@ -382,16 +382,16 @@ namespace ErpOnlineOrder.Application.Services
                 partIndex++;
             }
 
-            // 5. C?p nh?t phi?u xu?t kho g?c
+            // 5. Cập nhật phiếu xuất kho gốc
             sourceExport.Status = "Split";
-            sourceExport.Split_merge_note = dto.Note ?? $"?ã tách thành {newExports.Count} phi?u";
+            sourceExport.Split_merge_note = dto.Note ?? $"Đã tách thành {newExports.Count} phiếu";
             sourceExport.Updated_by = userId;
             sourceExport.Updated_at = now;
 
             await _exportRepository.UpdateAsync(sourceExport);
 
             result.Success = true;
-            result.Message = $"?ã tách thành công thành {newExports.Count} phi?u xu?t kho m?i";
+            result.Message = $"Đã tách thành công thành {newExports.Count} phiếu xuất kho mới";
             result.Original_export = EntityMappers.ToWarehouseExportDto(sourceExport);
             result.New_exports = newExports.Select(e => EntityMappers.ToWarehouseExportDto(e)).ToList();
             result.New_invoice_ids = newInvoiceIds;
@@ -406,11 +406,11 @@ namespace ErpOnlineOrder.Application.Services
             if (dto.Export_ids.Count < 2)
             {
                 result.Success = false;
-                result.Message = "C?n ít nh?t 2 phi?u xu?t kho ?? g?p";
+                result.Message = "Cần ít nhất 2 phiếu xuất kho để gộp";
                 return result;
             }
 
-            // 1. L?y t?t c? phi?u xu?t kho c?n g?p
+            // 1. Lấy tất cả phiếu xuất kho cần gộp
             var exports = new List<Warehouse_export>();
             int? customerId = null;
 
@@ -420,21 +420,21 @@ namespace ErpOnlineOrder.Application.Services
                 if (export == null)
                 {
                     result.Success = false;
-                    result.Message = $"Phi?u xu?t kho {id} không t?n t?i";
+                    result.Message = $"Phiếu xuất kho {id} không tồn tại";
                     return result;
                 }
 
                 if (export.Status == "Merged" || export.Status == "Cancelled")
                 {
                     result.Success = false;
-                    result.Message = $"Phi?u {export.Warehouse_export_code} không th? g?p (tr?ng thái: {export.Status})";
+                    result.Message = $"Phiếu {export.Warehouse_export_code} không thể gộp (trạng thái: {export.Status})";
                     return result;
                 }
 
                 if (export.Delivery_status == "Delivered")
                 {
                     result.Success = false;
-                    result.Message = $"Phi?u {export.Warehouse_export_code} ?ã giao hàng, không th? g?p";
+                    result.Message = $"Phiếu {export.Warehouse_export_code} đã giao hàng, không thể gộp";
                     return result;
                 }
 
@@ -445,7 +445,7 @@ namespace ErpOnlineOrder.Application.Services
                 else if (export.Customer_id != customerId)
                 {
                     result.Success = false;
-                    result.Message = "T?t c? phi?u xu?t kho ph?i cùng m?t khách hàng";
+                    result.Message = "Tất cả phiếu xuất kho phải cùng một khách hàng";
                     return result;
                 }
 
@@ -455,7 +455,7 @@ namespace ErpOnlineOrder.Application.Services
             var now = DateTime.UtcNow;
             int? mergedInvoiceId = dto.Merged_invoice_id;
 
-            // 2. G?p hóa ??n tr??c (n?u c?n)
+            // 2. Gộp hóa đơn trước (nếu cần)
             if (dto.Auto_merge_invoices && !mergedInvoiceId.HasValue)
             {
                 var invoiceIds = exports.Select(e => e.Invoice_id).Distinct().ToList();
@@ -466,7 +466,7 @@ namespace ErpOnlineOrder.Application.Services
                         Invoice_ids = invoiceIds,
                         Customer_id = customerId!.Value,
                         Staff_id = dto.Staff_id,
-                        Note = dto.Note ?? "G?p theo phi?u xu?t kho"
+                        Note = dto.Note ?? "Gộp theo phiếu xuất kho"
                     };
 
                     var invoiceMergeResult = await _invoiceService.MergeInvoicesAsync(mergeInvoiceDto, userId);
@@ -481,19 +481,19 @@ namespace ErpOnlineOrder.Application.Services
                 }
             }
 
-            // 3. T?o phi?u xu?t kho g?p m?i
+            // 3. Tạo phiếu xuất kho gộp mới
             var mergedExport = new Warehouse_export
             {
                 Warehouse_export_code = $"EXP-M-{now:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 6).ToUpper()}",
                 Warehouse_id = dto.Warehouse_id,
                 Invoice_id = mergedInvoiceId ?? exports.First().Invoice_id,
-                Order_id = null, // Phi?u g?p không liên k?t tr?c ti?p v?i order
+                Order_id = null, // Phiếu gộp không liên kết trực tiếp với order
                 Customer_id = customerId!.Value,
                 Staff_id = dto.Staff_id,
                 Export_date = now,
                 Delivery_status = "Pending",
                 Status = "Draft",
-                Split_merge_note = dto.Note ?? $"G?p t? {exports.Count} phi?u: {string.Join(", ", exports.Select(e => e.Warehouse_export_code))}",
+                Split_merge_note = dto.Note ?? $"Gộp từ {exports.Count} phiếu: {string.Join(", ", exports.Select(e => e.Warehouse_export_code))}",
                 Created_by = userId,
                 Updated_by = userId,
                 Created_at = now,
@@ -502,24 +502,24 @@ namespace ErpOnlineOrder.Application.Services
                 Warehouse_Export_Details = new List<Warehouse_export_detail>()
             };
 
-            // 4. G?p t?t c? chi ti?t
+            // 4. Gộp tất cả chi tiết
             foreach (var export in exports)
             {
                 foreach (var detail in export.Warehouse_Export_Details.Where(d => !d.Is_deleted))
                 {
-                    // Ki?m tra s?n ph?m ?ã có trong phi?u g?p ch?a
+                    // Kiểm tra sản phẩm đã có trong phiếu gộp chưa
                     var existingDetail = mergedExport.Warehouse_Export_Details
                         .FirstOrDefault(d => d.Product_id == detail.Product_id && d.Unit_price == detail.Unit_price);
 
                     if (existingDetail != null)
                     {
-                        // C?ng d?n s? l??ng
+                        // Cộng dồn số lượng
                         existingDetail.Quantity_shipped += detail.Quantity_shipped;
                         existingDetail.Total_price = existingDetail.Quantity_shipped * existingDetail.Unit_price;
                     }
                     else
                     {
-                        // Thêm m?i
+                        // Thêm mới
                         mergedExport.Warehouse_Export_Details.Add(new Warehouse_export_detail
                         {
                             Warehouse_id = dto.Warehouse_id,
@@ -539,19 +539,19 @@ namespace ErpOnlineOrder.Application.Services
 
             await _exportRepository.AddAsync(mergedExport);
 
-            // 5. C?p nh?t tr?ng thái các phi?u ?ã g?p
+            // 5. Cập nhật trạng thái các phiếu đã gộp
             foreach (var export in exports)
             {
                 export.Status = "Merged";
                 export.Merged_into_export_id = mergedExport.Id;
-                export.Split_merge_note = $"?ã g?p vào phi?u {mergedExport.Warehouse_export_code}";
+                export.Split_merge_note = $"Đã gộp vào phiếu {mergedExport.Warehouse_export_code}";
                 export.Updated_by = userId;
                 export.Updated_at = now;
                 await _exportRepository.UpdateAsync(export);
             }
 
             result.Success = true;
-            result.Message = $"?ã g?p thành công {exports.Count} phi?u xu?t kho";
+            result.Message = $"Đã gộp thành công {exports.Count} phiếu xuất kho";
             result.Merged_export = EntityMappers.ToWarehouseExportDto(mergedExport);
             result.Merged_export_ids = dto.Export_ids;
             result.Merged_invoice_id = mergedInvoiceId;
@@ -567,18 +567,18 @@ namespace ErpOnlineOrder.Application.Services
                 return false;
             }
 
-            // L?y các phi?u con
+            // Lấy các phiếu con
             var childExports = await _exportRepository.GetChildExportsAsync(parentExportId);
             
-            // Ki?m tra không có phi?u nào ?ã giao hàng
+            // Kiểm tra không có phiếu nào đã giao hàng
             if (childExports.Any(c => c.Delivery_status == "Delivered"))
             {
-                throw new Exception("Không th? hoàn tác vì có phi?u ?ã giao hàng");
+                throw new Exception("Không thể hoàn tác vì có phiếu đã giao hàng");
             }
 
             var now = DateTime.UtcNow;
 
-            // Khôi ph?c s? l??ng v? phi?u g?c
+            // Khôi phục số lượng về phiếu gốc
             foreach (var childExport in childExports)
             {
                 foreach (var childDetail in childExport.Warehouse_Export_Details.Where(d => !d.Is_deleted))
@@ -601,14 +601,14 @@ namespace ErpOnlineOrder.Application.Services
                     }
                 }
 
-                // Xóa phi?u con
+                // Xóa phiếu con
                 childExport.Is_deleted = true;
                 childExport.Updated_by = userId;
                 childExport.Updated_at = now;
                 await _exportRepository.UpdateAsync(childExport);
             }
 
-            // C?p nh?t phi?u g?c
+            // Cập nhật phiếu gốc
             parentExport.Status = "Draft";
             parentExport.Split_merge_note = null;
             parentExport.Updated_by = userId;
@@ -628,16 +628,16 @@ namespace ErpOnlineOrder.Application.Services
 
             if (mergedExport.Delivery_status == "Delivered")
             {
-                throw new Exception("Không th? hoàn tác phi?u ?ã giao hàng");
+                throw new Exception("Không thể hoàn tác phiếu đã giao hàng");
             }
 
             var now = DateTime.UtcNow;
 
-            // L?y các phi?u ?ã g?p vào
+            // Lấy các phiếu đã gộp vào
             var allExports = await _exportRepository.GetAllAsync();
             var sourceExports = allExports.Where(e => e.Merged_into_export_id == mergedExportId).ToList();
 
-            // Khôi ph?c tr?ng thái các phi?u g?c
+            // Khôi phục trạng thái các phiếu gốc
             foreach (var export in sourceExports)
             {
                 export.Status = "Draft";
@@ -648,7 +648,7 @@ namespace ErpOnlineOrder.Application.Services
                 await _exportRepository.UpdateAsync(export);
             }
 
-            // Xóa phi?u g?p
+            // Xóa phiếu gộp
             mergedExport.Is_deleted = true;
             mergedExport.Updated_by = userId;
             mergedExport.Updated_at = now;

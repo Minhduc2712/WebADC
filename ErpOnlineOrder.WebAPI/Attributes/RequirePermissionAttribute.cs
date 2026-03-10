@@ -28,7 +28,7 @@ namespace ErpOnlineOrder.WebAPI.Attributes
 
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
-            // L?y userId t? Claims (JWT token ho?c session)
+            // Lấy userId từ Claims (JWT token hoặc session)
             var userIdClaim = context.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)
                 ?? context.HttpContext.User.FindFirst("UserId");
 
@@ -37,19 +37,19 @@ namespace ErpOnlineOrder.WebAPI.Attributes
                 context.Result = new UnauthorizedObjectResult(new 
                 { 
                     success = false, 
-                    message = "B?n ch?a ??ng nh?p" 
+                    message = "Bạn chưa đăng nhập" 
                 });
                 return;
             }
 
-            // Ki?m tra quy?n
+            // Kiểm tra quyền
             var hasPermission = await _permissionService.HasPermissionAsync(userId, _permissionCode);
             if (!hasPermission)
             {
                 context.Result = new ObjectResult(new 
                 { 
                     success = false, 
-                    message = $"B?n không có quy?n th?c hi?n hành ??ng này. Yêu c?u quy?n: {_permissionCode}" 
+                    message = $"Bạn không có quyền thực hiện hành động này. Yêu cầu quyền: {_permissionCode}" 
                 })
                 {
                     StatusCode = 403 // Forbidden

@@ -32,7 +32,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var organization = await _organizationService.GetByIdAsync(id);
             if (organization == null)
             {
-                return NotFound(new { message = "T? ch?c không t?n t?i" });
+                return NotFound(new { message = "Tổ chức không tồn tại" });
             }
             return Ok(organization);
         }
@@ -42,7 +42,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var organization = await _organizationService.GetByCustomerIdAsync(customerId);
             if (organization == null)
             {
-                return NotFound(new { message = "Không tìm th?y t? ch?c cho khách hàng này" });
+                return NotFound(new { message = "Không tìm thấy tổ chức cho khách hàng này" });
             }
             return Ok(organization);
         }
@@ -54,7 +54,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var created = await _organizationService.CreateOrganizationAsync(dto, GetCurrentUserId());
                 if (created == null)
                 {
-                    return BadRequest(new { message = "Không th? t?o t? ch?c" });
+                    return BadRequest(new { message = "Không thể tạo tổ chức" });
                 }
                 return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
             }
@@ -72,9 +72,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _organizationService.UpdateOrganizationAsync(dto, GetCurrentUserId());
                 if (!result)
                 {
-                    return NotFound(new { message = "T? ch?c không t?n t?i" });
+                    return NotFound(new { message = "Tổ chức không tồn tại" });
                 }
-                return Ok(new { success = true, message = "C?p nh?t t? ch?c thành công" });
+                return Ok(new { success = true, message = "Cập nhật tổ chức thành công" });
             }
             catch (Exception ex)
             {
@@ -87,9 +87,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _organizationService.DeleteOrganizationAsync(id);
             if (!result)
             {
-                return NotFound(new { message = "T? ch?c không t?n t?i" });
+                return NotFound(new { message = "Tổ chức không tồn tại" });
             }
-            return Ok(new { success = true, message = "Xóa t? ch?c thành công" });
+            return Ok(new { success = true, message = "Xóa tổ chức thành công" });
         }
     }
 }

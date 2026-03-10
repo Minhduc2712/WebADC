@@ -100,15 +100,15 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
             try
             {
-                var result = await _adminApiClient.CreateStaffAsync(model);
+                var (staff, error) = await _adminApiClient.CreateStaffAsync(model);
 
-                if (result != null)
+                if (staff != null)
                 {
                     SetSuccessMessage($"Tạo tài khoản nhân viên '{model.Username}' thành công!");
                     return RedirectToAction(nameof(Index));
                 }
 
-                ModelState.AddModelError("", "Tạo tài khoản thất bại. Vui lòng thử lại.");
+                ModelState.AddModelError("", error ?? "Tạo tài khoản thất bại. Vui lòng thử lại.");
             }
             catch (Exception ex)
             {

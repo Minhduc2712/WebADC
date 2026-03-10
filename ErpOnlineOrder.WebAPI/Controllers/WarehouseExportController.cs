@@ -19,7 +19,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             _customerRepository = customerRepository;
         }
 
-        #region CRUD c? b?n
+        #region CRUD cơ bản
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -39,7 +39,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var export = await _exportService.GetByIdAsync(id, TryGetCurrentUserId());
             if (export == null)
             {
-                return NotFound(new { message = "Phi?u xu?t kho không t?n t?i" });
+                return NotFound(new { message = "Phiếu xuất kho không tồn tại" });
             }
             return Ok(export);
         }
@@ -84,7 +84,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _exportService.CreateExportFromInvoiceAsync(dto, GetCurrentUserId());
                 if (result == null)
                 {
-                    return BadRequest(new { message = "Không th? t?o phi?u xu?t kho" });
+                    return BadRequest(new { message = "Không thể tạo phiếu xuất kho" });
                 }
                 return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
             }
@@ -101,9 +101,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _exportService.UpdateDeliveryStatusAsync(id, status, GetCurrentUserId());
                 if (!result)
                 {
-                    return NotFound(new { message = "Phi?u xu?t kho không t?n t?i" });
+                    return NotFound(new { message = "Phiếu xuất kho không tồn tại" });
                 }
-                return Ok(new { success = true, message = $"?ã c?p nh?t tr?ng thái giao hàng thành: {status}" });
+                return Ok(new { success = true, message = $"Đã cập nhật trạng thái giao hàng thành: {status}" });
             }
             catch (Exception ex)
             {
@@ -118,9 +118,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _exportService.ConfirmExportAsync(id, GetCurrentUserId());
                 if (!result)
                 {
-                    return NotFound(new { message = "Phi?u xu?t kho không t?n t?i" });
+                    return NotFound(new { message = "Phiếu xuất kho không tồn tại" });
                 }
-                return Ok(new { success = true, message = "?ã xác nh?n phi?u xu?t kho" });
+                return Ok(new { success = true, message = "Đã xác nhận phiếu xuất kho" });
             }
             catch (Exception ex)
             {
@@ -135,9 +135,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _exportService.CancelExportAsync(id, GetCurrentUserId());
                 if (!result)
                 {
-                    return NotFound(new { message = "Phi?u xu?t kho không t?n t?i" });
+                    return NotFound(new { message = "Phiếu xuất kho không tồn tại" });
                 }
-                return Ok(new { success = true, message = "?ã h?y phi?u xu?t kho" });
+                return Ok(new { success = true, message = "Đã hủy phiếu xuất kho" });
             }
             catch (Exception ex)
             {
@@ -150,14 +150,14 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _exportService.DeleteExportAsync(id);
             if (!result)
             {
-                return NotFound(new { message = "Phi?u xu?t kho không t?n t?i" });
+                return NotFound(new { message = "Phiếu xuất kho không tồn tại" });
             }
-            return Ok(new { success = true, message = "?ã xóa phi?u xu?t kho" });
+            return Ok(new { success = true, message = "Đã xóa phiếu xuất kho" });
         }
 
         #endregion
 
-        #region Tách/G?p phi?u xu?t kho
+        #region Tách/Gộp phiếu xuất kho
         [HttpPost("split")]
         public async Task<IActionResult> SplitExport([FromBody] SplitWarehouseExportDto dto)
         {
@@ -200,9 +200,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _exportService.UndoSplitAsync(id, GetCurrentUserId());
                 if (!result)
                 {
-                    return BadRequest(new { message = "Không th? hoàn tác" });
+                    return BadRequest(new { message = "Không thể hoàn tác" });
                 }
-                return Ok(new { success = true, message = "?ã hoàn tác tách phi?u xu?t kho" });
+                return Ok(new { success = true, message = "Đã hoàn tác tách phiếu xuất kho" });
             }
             catch (Exception ex)
             {
@@ -217,9 +217,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _exportService.UndoMergeAsync(id, GetCurrentUserId());
                 if (!result)
                 {
-                    return BadRequest(new { message = "Không th? hoàn tác" });
+                    return BadRequest(new { message = "Không thể hoàn tác" });
                 }
-                return Ok(new { success = true, message = "?ã hoàn tác g?p phi?u xu?t kho" });
+                return Ok(new { success = true, message = "Đã hoàn tác gộp phiếu xuất kho" });
             }
             catch (Exception ex)
             {

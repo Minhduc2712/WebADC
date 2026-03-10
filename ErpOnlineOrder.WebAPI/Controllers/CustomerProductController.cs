@@ -58,7 +58,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _customerProductService.AddProductToCustomerAsync(dto, createdBy);
             if (result == null)
             {
-                return BadRequest("S?n ph?m ?ã ???c gán cho khách hàng này ho?c d? li?u không h?p l?.");
+                return BadRequest("Sản phẩm đã được gán cho khách hàng này hoặc dữ liệu không hợp lệ.");
             }
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
@@ -71,9 +71,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _customerProductService.AssignProductsToCustomerAsync(dto, createdBy);
             if (!result)
             {
-                return BadRequest("Không th? gán s?n ph?m cho khách hàng.");
+                return BadRequest("Không thể gán sản phẩm cho khách hàng.");
             }
-            return Ok(new { message = "Gán s?n ph?m thành công." });
+            return Ok(new { message = "Gán sản phẩm thành công." });
         }
         [HttpPut("{id}")]
         [RequirePermission(PermissionCodes.CustomerProductAssign)]
@@ -81,7 +81,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             if (id != dto.Id)
             {
-                return BadRequest("ID không kh?p.");
+                return BadRequest("ID không khớp.");
             }
 
             int updatedBy = GetCurrentUserId();

@@ -18,6 +18,7 @@
     if (ViewBag.RegionId != null) rv["regionId"] = ViewBag.RegionId;
     if (ViewBag.RoleId != null) rv["roleId"] = ViewBag.RoleId;
     if (ViewBag.IsActive != null) rv["isActive"] = ViewBag.IsActive;
+    if (ViewBag.CustomerId != null) rv["customerId"] = ViewBag.CustomerId;
     var itemLabel = ViewBag.PaginationItemLabel ?? "mục";
     var actionName = ViewBag.PaginationAction as string ?? "Index";
     var routeValues = new Microsoft.AspNetCore.Routing.RouteValueDictionary(rv);

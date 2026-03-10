@@ -26,7 +26,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var region = await _regionService.GetByIdAsync(id);
             if (region == null)
             {
-                return NotFound(new { message = "Khu v?c không t?n t?i" });
+                return NotFound(new { message = "Khu vực không tồn tại" });
             }
             return Ok(region);
         }
@@ -38,7 +38,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var created = await _regionService.CreateRegionAsync(dto, GetCurrentUserId());
                 if (created == null)
                 {
-                    return BadRequest(new { message = "Không th? t?o khu v?c" });
+                    return BadRequest(new { message = "Không thể tạo khu vực" });
                 }
                 return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
             }
@@ -56,9 +56,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _regionService.UpdateRegionAsync(dto, GetCurrentUserId());
                 if (!result)
                 {
-                    return NotFound(new { message = "Khu v?c không t?n t?i" });
+                    return NotFound(new { message = "Khu vực không tồn tại" });
                 }
-                return Ok(new { success = true, message = "C?p nh?t khu v?c thành công" });
+                return Ok(new { success = true, message = "Cập nhật khu vực thành công" });
             }
             catch (Exception ex)
             {
@@ -71,9 +71,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _regionService.DeleteRegionAsync(id);
             if (!result)
             {
-                return NotFound(new { message = "Khu v?c không t?n t?i" });
+                return NotFound(new { message = "Khu vực không tồn tại" });
             }
-            return Ok(new { success = true, message = "Xóa khu v?c thành công" });
+            return Ok(new { success = true, message = "Xóa khu vực thành công" });
         }
     }
 }

@@ -49,11 +49,17 @@ namespace ErpOnlineOrder.WebMVC.Services
             return await response.Content.ReadFromJsonAsync<StaffAccountDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
         }
 
-        public async Task<StaffAccountDto?> CreateStaffAsync(CreateStaffAccountDto dto, CancellationToken cancellationToken = default)
+        public async Task<(StaffAccountDto? Staff, string? Error)> CreateStaffAsync(CreateStaffAccountDto dto, CancellationToken cancellationToken = default)
         {
             var response = await _http.PostAsJsonAsync("admin/staff", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
-            return await response.Content.ReadFromJsonAsync<StaffAccountDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken);
+                _logger.LogError("CreateStaffAsync failed: {StatusCode} - {Error}", (int)response.StatusCode, error);
+                return (null, error);
+            }
+            var staff = await response.Content.ReadFromJsonAsync<StaffAccountDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return (staff, null);
         }
 
         public async Task<(bool Success, string? Error)> UpdateStaffAsync(int userId, UpdateStaffAccountDto dto, CancellationToken cancellationToken = default)

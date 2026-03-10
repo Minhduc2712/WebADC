@@ -35,7 +35,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         public async Task<IActionResult> GetProvince(int id)
         {
             var province = await _provinceService.GetByIdAsync(id);
-            if (province == null) return NotFound(new { message = "T?nh th?nh kh?ng t?n t?i" });
+            if (province == null) return NotFound(new { message = "Tỉnh thành không tồn tại" });
             return Ok(province);
         }
         [HttpPost]
@@ -56,13 +56,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [RequirePermission(PermissionCodes.ProvinceUpdate)]
         public async Task<IActionResult> UpdateProvince(int id, [FromBody] UpdateProvinceDto dto)
         {
-            if (id != dto.Id) return BadRequest(new { message = "ID kh?ng kh?p" });
+            if (id != dto.Id) return BadRequest(new { message = "ID không khớp" });
 
             try
             {
                 var result = await _provinceService.UpdateProvinceAsync(dto, GetCurrentUserId());
-                if (!result) return NotFound(new { message = "T?nh th?nh kh?ng t?n t?i" });
-                return Ok(new { success = true, message = "C?p nh?t th?nh c?ng" });
+                if (!result) return NotFound(new { message = "Tỉnh thành không tồn tại" });
+                return Ok(new { success = true, message = "Cập nhật thành công" });
             }
             catch (Exception ex)
             {
@@ -76,8 +76,8 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var result = await _provinceService.DeleteProvinceAsync(id);
-                if (!result) return NotFound(new { message = "T?nh th?nh kh?ng t?n t?i" });
-                return Ok(new { success = true, message = "X?a th?nh c?ng" });
+                if (!result) return NotFound(new { message = "Tỉnh thành không tồn tại" });
+                return Ok(new { success = true, message = "Xóa thành công" });
             }
             catch (Exception ex)
             {

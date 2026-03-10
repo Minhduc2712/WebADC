@@ -47,18 +47,18 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<OrganizationDTO?> CreateOrganizationAsync(CreateOrganizationDto dto, int createdBy)
         {
-            // Ki?m tra mã t? ch?c ?ã t?n t?i
+            // Kiểm tra mã tổ chức đã tồn tại
             var codeExists = await _organizationRepository.ExistsByCodeAsync(dto.Organization_code);
             if (codeExists)
             {
-                throw new Exception("Mã t? ch?c ?ã t?n t?i");
+                throw new Exception("Mã tổ chức đã tồn tại");
             }
 
-            // Ki?m tra khách hàng t?n t?i
+            // Kiểm tra khách hàng tồn tại
             var customer = await _customerRepository.GetByIdBasicAsync(dto.Customer_id);
             if (customer == null)
             {
-                throw new Exception("Khách hàng không t?n t?i");
+                throw new Exception("Khách hàng không tồn tại");
             }
 
             var org = new Organization_information
@@ -80,7 +80,7 @@ namespace ErpOnlineOrder.Application.Services
 
             await _organizationRepository.AddAsync(org);
 
-            // Load l?i ?? l?y thông tin Customer
+            // Load lại để lấy thông tin Customer
             var created = await _organizationRepository.GetByIdAsync(org.Id);
             return created != null ? EntityMappers.ToOrganizationDto(created) : null;
         }
@@ -93,13 +93,13 @@ namespace ErpOnlineOrder.Application.Services
                 return false;
             }
 
-            // Ki?m tra mã t? ch?c ?ã t?n t?i (n?u thay ??i)
+            // Kiểm tra mã tổ chức đã tồn tại (nếu thay đổi)
             if (org.Organization_code != dto.Organization_code)
             {
                 var codeExists = await _organizationRepository.ExistsByCodeAsync(dto.Organization_code);
                 if (codeExists)
                 {
-                    throw new Exception("Mã t? ch?c ?ã t?n t?i");
+                    throw new Exception("Mã tổ chức đã tồn tại");
                 }
             }
 

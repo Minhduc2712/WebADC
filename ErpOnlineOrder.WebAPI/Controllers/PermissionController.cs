@@ -97,7 +97,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var rolePermissions = await _permissionService.GetRolePermissionsAsync(roleId);
             if (rolePermissions == null)
             {
-                return NotFound(new { message = "Role không t?n t?i" });
+                return NotFound(new { message = "Role không tồn tại" });
             }
             return Ok(rolePermissions);
         }
@@ -107,24 +107,24 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _permissionService.CreateRoleAsync(dto, GetCurrentUserId());
             if (!result)
             {
-                return BadRequest(new { message = "Không th? t?o role" });
+                return BadRequest(new { message = "Không thể tạo role" });
             }
-            return Ok(new { success = true, message = "T?o role thành công" });
+            return Ok(new { success = true, message = "Tạo role thành công" });
         }
         [HttpPut("roles/{id}")]
         public async Task<IActionResult> UpdateRole(int id, [FromBody] UpdateRoleDto dto)
         {
             if (id != dto.Id)
             {
-                return BadRequest(new { message = "ID không kh?p" });
+                return BadRequest(new { message = "ID không khớp" });
             }
 
             var result = await _permissionService.UpdateRoleAsync(dto, GetCurrentUserId());
             if (!result)
             {
-                return NotFound(new { message = "Role không t?n t?i" });
+                return NotFound(new { message = "Role không tồn tại" });
             }
-            return Ok(new { success = true, message = "C?p nh?t role thành công" });
+            return Ok(new { success = true, message = "Cập nhật role thành công" });
         }
         [HttpDelete("roles/{id}")]
         public async Task<IActionResult> DeleteRole(int id)
@@ -132,7 +132,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _permissionService.DeleteRoleAsync(id);
             if (!result)
             {
-                return NotFound(new { message = "Role không t?n t?i" });
+                return NotFound(new { message = "Role không tồn tại" });
             }
             return Ok(new { success = true, message = "X�a role th�nh c�ng" });
         }
@@ -141,13 +141,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             if (roleId != dto.Role_id)
             {
-                return BadRequest(new { message = "Role ID không kh?p" });
+                return BadRequest(new { message = "Role ID không khớp" });
             }
 
             var result = await _permissionService.AssignPermissionsToRoleAsync(dto);
             if (!result)
             {
-                return BadRequest(new { message = "Không th? gán permissions cho role" });
+                return BadRequest(new { message = "Không thể gán permissions cho role" });
             }
             return Ok(new { success = true, message = "G�n permissions th�nh c�ng" });
         }
@@ -167,7 +167,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var permissions = await _permissionService.GetUserPermissionDetailsAsync(GetCurrentUserId());
             if (permissions == null)
             {
-                return NotFound(new { message = "User không t?n t?i" });
+                return NotFound(new { message = "User không tồn tại" });
             }
             return Ok(permissions);
         }
@@ -177,7 +177,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var permissions = await _permissionService.GetUserPermissionDetailsAsync(userId);
             if (permissions == null)
             {
-                return NotFound(new { message = "User không t?n t?i" });
+                return NotFound(new { message = "User không tồn tại" });
             }
             return Ok(permissions);
         }
@@ -193,7 +193,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _permissionService.AssignRoleToUserAsync(userId, roleId);
             if (!result)
             {
-                return BadRequest(new { message = "Không th? gán role cho user" });
+                return BadRequest(new { message = "Không thể gán role cho user" });
             }
             return Ok(new { success = true, message = "G�n role th�nh c�ng" });
         }
