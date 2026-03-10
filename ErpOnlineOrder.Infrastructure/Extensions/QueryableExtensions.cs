@@ -16,20 +16,18 @@ public static class QueryableExtensions
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
 
-        var countTask = query.CountAsync(cancellationToken);
-        var itemsTask = query
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 
-        await Task.WhenAll(countTask, itemsTask);
-
         return new PagedResult<T>
         {
-            Items = itemsTask.Result,
+            Items = items,
             Page = page,
             PageSize = pageSize,
-            TotalCount = countTask.Result
+            TotalCount = totalCount
         };
     }
 

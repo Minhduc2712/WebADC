@@ -71,6 +71,9 @@ builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IInvoiceApiClient, Erp
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IWarehouseExportApiClient, ErpOnlineOrder.WebMVC.Services.WarehouseExportApiClient>();
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.ISettingApiClient, ErpOnlineOrder.WebMVC.Services.SettingApiClient>();
 
+// Add AutoMapper
+builder.Services.AddAutoMapper(typeof(ErpOnlineOrder.Infrastructure.Mappers.RepositoryMappingProfile).Assembly);
+
 // Add DbContext
 builder.Services.AddDbContext<ErpOnlineOrderDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
