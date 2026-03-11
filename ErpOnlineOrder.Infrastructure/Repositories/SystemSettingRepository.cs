@@ -31,6 +31,13 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
         }
 
+        public async Task<SystemSetting?> FindDeletedByKeyAsync(string key)
+        {
+            return await _context.SystemSettings
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(s => s.SettingKey == key && s.IsDeleted);
+        }
+
         public async Task<IEnumerable<SystemSetting>> GetAllAsync()
         {
             return await _context.SystemSettings

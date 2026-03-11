@@ -2,17 +2,18 @@ using Microsoft.AspNetCore.Mvc;
 using System.Net.Http;
 using System.Threading.Tasks;
 using ErpOnlineOrder.Application.DTOs.CustomerDTOs;
+using ErpOnlineOrder.WebMVC.Attributes;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
+    [RequireAuth]
     public class CustomerController : Controller
     {
         private readonly HttpClient _httpClient;
 
-        public CustomerController(HttpClient httpClient)
+        public CustomerController(IHttpClientFactory httpClientFactory)
         {
-            _httpClient = httpClient;
-            _httpClient.BaseAddress = new Uri("https://localhost:5001/api/");
+            _httpClient = httpClientFactory.CreateClient("ErpApi");
         }
 
         [HttpGet]

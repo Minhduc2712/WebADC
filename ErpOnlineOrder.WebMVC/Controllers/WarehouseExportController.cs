@@ -65,7 +65,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var export = await _warehouseExportApiClient.GetByIdAsync(id);
                 if (export == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy phiếu xuất kho.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 await LoadCurrentUserPermissions();
                 return View(export);
@@ -231,7 +234,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var export = await _warehouseExportApiClient.GetByIdAsync(id);
                 if (export == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy phiếu xuất kho.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 return View(export);
             }

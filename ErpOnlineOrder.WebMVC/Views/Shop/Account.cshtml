@@ -21,6 +21,7 @@
     <div class="container">
         @if (Context.Session.GetInt32("UserId") != null)
         {
+            @await Html.PartialAsync("_AccountNavbar")
             <div class="checkout-section">
                 <div class="row gy-5 justify-content-center">
                     <div class="col-lg-4 col-md-6">
@@ -48,7 +49,7 @@
                                 </a>
                             </div>
                             <div class="col-md-6">
-                                <a asp-controller="Auth" asp-action="ChangePassword" class="text-decoration-none d-block">
+                                <a asp-controller="Shop" asp-action="ChangePassword" class="text-decoration-none d-block">
                                     <div class="account-section billing-section text-center" style="padding: 30px 20px; transition: all 0.3s; border: 2px solid transparent;">
                                         <div style="width: 60px; height: 60px; background: #fff8e1; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
                                             <i class="fas fa-key fa-lg" style="color: #f5a623;"></i>

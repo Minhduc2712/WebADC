@@ -27,10 +27,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message, stackTrace = ex.StackTrace });
+                return BadRequest(new { message = ex.Message });
             }
         }
 
+
+#if DEBUG
+        // WARNING: Debug-only endpoints - MUST NOT be available in production
         [HttpPost("grant-all-permissions/{userId}")]
         public async Task<IActionResult> GrantAllPermissions(int userId)
         {
@@ -48,6 +51,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
         [HttpGet("hash")]
         public IActionResult GetHash([FromQuery] string password = "Admin@123")
         {
@@ -59,6 +63,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 verified = verify
             });
         }
+
         [HttpPost("seed-admin")]
         public async Task<IActionResult> SeedAdmin()
         {
@@ -88,6 +93,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+#endif
 
         [HttpPost("register-staff")]
         public async Task<IActionResult> RegisterStaff([FromBody] RegisterStaffDto model)
@@ -162,6 +168,8 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             }
         }
 
+#if DEBUG
+        // WARNING: Debug-only endpoints - MUST NOT be available in production
         [HttpGet("debug-permissions/{userId}")]
         public async Task<IActionResult> DebugUserPermissions(int userId)
         {
@@ -193,5 +201,6 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 return BadRequest(new { message = ex.Message, stackTrace = ex.StackTrace });
             }
         }
+#endif
     }
 }

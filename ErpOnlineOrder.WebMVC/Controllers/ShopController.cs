@@ -6,13 +6,15 @@ using ErpOnlineOrder.Application.DTOs.OrderDTOs;
 using ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs;
 using ErpOnlineOrder.Application.DTOs.InvoiceDTOs;
 using ErpOnlineOrder.Application.DTOs.CustomerDTOs;
+using ErpOnlineOrder.Application.DTOs.AuthDTOs;
 using ErpOnlineOrder.WebMVC.Extensions;
 using ErpOnlineOrder.WebMVC.Attributes;
+using ErpOnlineOrder.WebMVC.Services;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
     [RequireAuth]
-    public class ShopController : Controller
+    public class ShopController : BaseController
     {
         private readonly IProductService _productService;
         private readonly IOrderService _orderService;
@@ -21,6 +23,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         private readonly ICustomerRepository _customerRepository;
         private readonly IOrganizationService _organizationService;
         private readonly ICustomerService _customerService;
+        private readonly IAuthApiClient _authApiClient;
         private readonly ILogger<ShopController> _logger;
 
         public ShopController(
@@ -31,6 +34,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             ICustomerRepository customerRepository,
             IOrganizationService organizationService,
             ICustomerService customerService,
+            IAuthApiClient authApiClient,
             ILogger<ShopController> logger)
         {
             _productService = productService;
@@ -40,6 +44,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             _customerRepository = customerRepository;
             _organizationService = organizationService;
             _customerService = customerService;
+            _authApiClient = authApiClient;
             _logger = logger;
         }
 
@@ -473,6 +478,49 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             return View();
         }
 
+        #region Change Password (Customer)
+
+        [HttpGet]
+        public IActionResult ChangePassword()
+        {
+            var model = new ChangePasswordDto
+            {
+                Identifier = HttpContext.Session.GetUsername()
+            };
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(ChangePasswordDto model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            try
+            {
+                model.Identifier = HttpContext.Session.GetUsername();
+                var (success, errorMessage) = await _authApiClient.ChangePasswordAsync(model);
+
+                if (success)
+                {
+                    SetSuccessMessage("Đổi mật khẩu thành công!");
+                    return RedirectToAction(nameof(ChangePassword));
+                }
+
+                ModelState.AddModelError("", errorMessage ?? "Đổi mật khẩu thất bại.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error changing password for user");
+                ModelState.AddModelError("", "Có lỗi xảy ra. Vui lòng thử lại.");
+            }
+
+            return View(model);
+        }
+
+        #endregion
+
         /// <summary>Khách hàng chỉnh sửa thông tin đơn vị (tổ chức).</summary>
         [HttpGet]
         public async Task<IActionResult> UpdateOrganization()
@@ -517,7 +565,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 var result = await _customerService.UpdateOrganizationAsync(model);
                 if (result)
                 {
-                    TempData["SuccessMessage"] = "Cập nhật thông tin đơn vị thành công.";
+                    SetSuccessMessage("Cập nhật thông tin đơn vị thành công.");
                     return RedirectToAction(nameof(Account));
                 }
             }

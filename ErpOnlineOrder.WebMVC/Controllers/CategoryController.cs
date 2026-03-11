@@ -29,7 +29,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading categories");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
                 return View(Enumerable.Empty<CategoryDto>());
             }
         }
@@ -53,7 +53,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 var created = await _categoryApiClient.CreateAsync(model);
                 if (created != null)
                 {
-                    TempData["SuccessMessage"] = "Thêm danh mục thành công!";
+                    SetSuccessMessage("Thêm danh mục thành công!");
                     return RedirectToAction(nameof(Index));
                 }
                 ModelState.AddModelError("", "Thêm danh mục thất bại.");
@@ -73,14 +73,17 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var category = await _categoryApiClient.GetByIdAsync(id);
                 if (category == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy danh mục.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 return View(new UpdateCategoryDto { Id = category.Id, Category_code = category.Category_code, Category_name = category.Category_name });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading category for edit");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -101,7 +104,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 var (success, error) = await _categoryApiClient.UpdateAsync(id, model);
                 if (success)
                 {
-                    TempData["SuccessMessage"] = "Cập nhật danh mục thành công!";
+                    SetSuccessMessage("Cập nhật danh mục thành công!");
                     return RedirectToAction(nameof(Index));
                 }
                 ModelState.AddModelError("", error ?? "Cập nhật thất bại.");
@@ -123,14 +126,14 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var (success, error) = await _categoryApiClient.DeleteAsync(id);
                 if (success)
-                    TempData["SuccessMessage"] = "Xóa danh mục thành công!";
+                    SetSuccessMessage("Xóa danh mục thành công!");
                 else
-                    TempData["ErrorMessage"] = error ?? "Xóa thất bại.";
+                    SetErrorMessage(error ?? "Xóa thất bại.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting category");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
             }
 
             return RedirectToAction(nameof(Index));

@@ -114,7 +114,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var permission = await _permissionApiClient.GetPermissionByIdAsync(id);
                 if (permission == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy quyền.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 return View(permission);
             }
@@ -230,7 +233,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var userFullPermissions = await _permissionApiClient.GetUserFullPermissionsAsync(id);
                 if (userFullPermissions == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy người dùng.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 var permissionTree = (await _permissionApiClient.GetPermissionsTreeAsync()).ToList();
                 var specialPermissions = (await _permissionApiClient.GetSpecialPermissionsAsync()).ToList();

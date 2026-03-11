@@ -8,6 +8,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
     {
         Task<SystemSetting?> GetByKeyAsync(string key);
         Task<SystemSetting?> GetByIdAsync(int id);
+        Task<SystemSetting?> FindDeletedByKeyAsync(string key);
         Task<IEnumerable<SystemSetting>> GetAllAsync();
         Task AddAsync(SystemSetting setting);
         Task UpdateAsync(SystemSetting setting);

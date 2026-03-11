@@ -7,7 +7,7 @@ using ErpOnlineOrder.WebMVC.Services;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
-    public class AuthController : Controller
+    public class AuthController : BaseController
     {
         private readonly IAuthApiClient _authApiClient;
         private readonly IUserRepository _userRepository;
@@ -126,7 +126,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (success)
                 {
                     _logger.LogInformation("New customer registered via API: {Username}", model.Username);
-                    TempData["SuccessMessage"] = "Đăng ký thành công! Vui lòng đăng nhập.";
+                    SetSuccessMessage("Đăng ký thành công! Vui lòng đăng nhập.");
                     return RedirectToAction(nameof(Login));
                 }
 
@@ -169,7 +169,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
                 if (success)
                 {
-                    TempData["SuccessMessage"] = "Tạo tài khoản nhân viên thành công!";
+                    SetSuccessMessage("Tạo tài khoản nhân viên thành công!");
                     return RedirectToAction("Index", "Staff");
                 }
 
@@ -220,7 +220,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 {
                     ClearRememberMeCookies();
                     _logger.LogInformation("User {Username} changed password (via API)", model.Identifier);
-                    TempData["SuccessMessage"] = "Đổi mật khẩu thành công!";
+                    SetSuccessMessage("Đổi mật khẩu thành công!");
                     return RedirectToAction("Index", "Order");
                 }
 
@@ -258,7 +258,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var userExists = await _userRepository.ExistsByEmailAsync(email);
 
-                TempData["SuccessMessage"] = "Nếu email tồn tại trong hệ thống, bạn sẽ nhận được hướng dẫn đặt lại mật khẩu.";
+                SetSuccessMessage("Nếu email tồn tại trong hệ thống, bạn sẽ nhận được hướng dẫn đặt lại mật khẩu.");
 
                 if (userExists)
                 {

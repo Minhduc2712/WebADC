@@ -1,189 +1,396 @@
 /* ========== Shop Layout Override - Giao diện cải tiến ========== */
-@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap");
 
 body {
-  font-family: 'Be Vietnam Pro', 'Poppins', sans-serif;
-  scroll-behavior: smooth;
+    font-family: "Be Vietnam Pro", "Poppins", sans-serif;
+    scroll-behavior: smooth;
 }
 
 /* Header - Gọn gàng hơn */
 #header .header-top-section {
-  background: linear-gradient(135deg, #f8faf9 0%, #f0f9f4 100%);
-  border-bottom: 1px solid rgba(26, 127, 55, 0.12);
+    background: linear-gradient(135deg, #f8faf9 0%, #f0f9f4 100%);
+    border-bottom: 1px solid rgba(26, 127, 55, 0.12);
 }
 
 #header .header-top a {
-  color: #4b5563;
-  font-size: 1.3rem;
-  transition: color 0.2s;
+    color: #4b5563;
+    font-size: 1.3rem;
+    transition: color 0.2s;
 }
 
 #header .header-top a:hover {
-  color: #1a7f37;
+    color: #1a7f37;
 }
 
 #header .header-center-section {
-  background: #fff;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    background: #fff;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
 #header .header-bottom {
-  background: linear-gradient(135deg, #0d5c2e 0%, #1a7f37 50%, #228b45 100%);
-  padding: 12px 0;
+    background: linear-gradient(135deg, #0d5c2e 0%, #1a7f37 50%, #228b45 100%);
+    padding: 12px 0;
 }
 
 #header .header-nav .menu-list a {
-  color: rgba(255,255,255,0.95);
-  font-weight: 500;
+    color: rgba(255, 255, 255, 0.95);
+    font-weight: 500;
 }
 
 #header .header-nav .menu-list a:hover {
-  color: #fff;
-  background: rgba(255,255,255,0.12);
+    color: #fff;
+    background: rgba(255, 255, 255, 0.12);
 }
 
 /* Inline Search - Hiển thị ô tìm ngay trên header (desktop) */
 .header-search-inline {
-  flex: 1;
-  max-width: 400px;
-  margin: 0 24px;
+    flex: 1;
+    max-width: 400px;
+    margin: 0 24px;
 }
 
 .header-search-inline form {
-  display: flex;
-  background: #f8faf9;
-  border-radius: 10px;
-  overflow: hidden;
-  border: 1px solid #e5e7eb;
-  transition: border-color 0.2s, box-shadow 0.2s;
+    display: flex;
+    background: #f8faf9;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+    transition:
+        border-color 0.2s,
+        box-shadow 0.2s;
 }
 
 .header-search-inline form:focus-within {
-  border-color: #1a7f37;
-  box-shadow: 0 0 0 3px rgba(26, 127, 55, 0.15);
+    border-color: #1a7f37;
+    box-shadow: 0 0 0 3px rgba(26, 127, 55, 0.15);
 }
 
 .header-search-inline input {
-  flex: 1;
-  padding: 10px 16px;
-  border: none;
-  background: transparent;
-  font-size: 1.4rem;
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    font-size: 1.4rem;
 }
 
 .header-search-inline input::placeholder {
-  color: #9ca3af;
+    color: #9ca3af;
 }
 
 .header-search-inline button {
-  padding: 10px 16px;
-  background: #1a7f37;
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  transition: background 0.2s;
+    padding: 10px 16px;
+    background: #1a7f37;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
 }
 
 .header-search-inline button:hover {
-  background: #16602d;
-  color: #fff;
+    background: #16602d;
+    color: #fff;
 }
 
 /* Footer - Cân bằng màu sắc */
 .product.footer {
-  background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+    background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
 }
 
 .product.footer .footer-section .footer-link a {
-  color: rgba(255,255,255,0.8);
+    color: rgba(255, 255, 255, 0.8);
 }
 
 .product.footer .footer-section .footer-link a:hover {
-  color: #4ade80;
+    color: #4ade80;
 }
 
 /* Ngăn nhảy layout khi load */
 #header {
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  background: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: #fff;
+}
+
+/* Breadcrumb - Thu gọn */
+.blog.about-blog {
+    padding: 12px 0 8px;
+}
+.blog.about-blog .blog-bradcrum {
+    font-size: 0.85rem;
+    margin-bottom: 2px;
+}
+.blog.about-blog .blog-heading.about-heading {
+    margin: 0;
+    padding: 0;
+}
+.blog.about-blog .blog-heading .heading {
+    font-size: 1.3rem;
+    margin: 0;
+    padding: 0;
 }
 
 /* Mobile - Cải thiện offcanvas */
 .offcanvas-start {
-  box-shadow: 4px 0 24px rgba(0,0,0,0.12);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
 }
 
 .offcanvas-body .input-group .form-control {
-  border-radius: 10px 0 0 10px;
+    border-radius: 10px 0 0 10px;
 }
 
 .offcanvas-body .input-group .btn {
-  border-radius: 0 10px 10px 0;
-  background: #1a7f37;
-  color: #fff;
-  border-color: #1a7f37;
+    border-radius: 0 10px 10px 0;
+    background: #1a7f37;
+    color: #fff;
+    border-color: #1a7f37;
 }
 
 /* ========== Shop Pagination ========== */
 .shop-pagination {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
-  background: #fff;
-  border-radius: 10px;
-  border: 1px solid #e5e7eb;
-  margin-top: 2rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    margin-top: 2rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 .shop-pagination-info {
-  font-size: 1.25rem;
-  color: #6b7280;
-  font-weight: 500;
+    font-size: 1.25rem;
+    color: #6b7280;
+    font-weight: 500;
 }
 
 .shop-pagination-nav {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .shop-pagination-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 32px;
-  height: 32px;
-  padding: 0 8px;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #2563eb;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  text-decoration: none;
-  transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2563eb;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: all 0.2s ease;
 }
 
 .shop-pagination-btn:hover {
-  background: #eff6ff;
-  border-color: #2563eb;
-  color: #2563eb;
+    background: #eff6ff;
+    border-color: #2563eb;
+    color: #2563eb;
 }
 
 .shop-pagination-btn.active {
-  background: #2563eb;
-  border-color: #2563eb;
-  color: #fff;
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #fff;
 }
 
 .shop-pagination-btn.active:hover {
-  background: #1d4ed8;
-  border-color: #1d4ed8;
-  color: #fff;
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+    color: #fff;
+}
+
+/* ========== Account Navbar ========== */
+.account-navbar {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db transparent;
+}
+.account-navbar::-webkit-scrollbar {
+    height: 4px;
+}
+.account-navbar::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 4px;
+}
+.account-nav-item:hover {
+    background: #f0fdf4 !important;
+    color: #1a7f37 !important;
+}
+.account-nav-item.active {
+    background: #e8f5e9 !important;
+    color: #1a7f37 !important;
+    font-weight: 600 !important;
+}
+
+/* ========== RESPONSIVE - Shop Layout ========== */
+
+/* Tablet */
+@media (max-width: 991px) {
+    .header-search-inline {
+        max-width: 260px;
+        margin: 0 12px;
+    }
+    .header-search-inline input {
+        font-size: 1.2rem;
+    }
+    .shop-pagination {
+        flex-direction: column;
+        text-align: center;
+        padding: 0.5rem 0.75rem;
+    }
+    .shop-pagination-nav {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
+
+/* Mobile */
+@media (max-width: 767px) {
+    /* Account navbar */
+    .account-navbar {
+        padding: 4px 6px !important;
+        margin-bottom: 16px !important;
+    }
+    .account-navbar .d-flex {
+        flex-wrap: nowrap !important;
+        overflow-x: auto;
+    }
+    .account-nav-item span {
+        display: none;
+    }
+    .account-nav-item {
+        padding: 8px 10px !important;
+    }
+    .account-navbar .me-3 {
+        margin-right: 0.5rem !important;
+    }
+    .account-navbar .me-3 span {
+        display: none;
+    }
+
+    /* Header top */
+    #header .header-top-section .header-top {
+        flex-direction: column;
+        gap: 4px;
+        padding: 6px 0;
+    }
+    #header .header-top a span {
+        font-size: 1.1rem;
+    }
+
+    /* Product grid */
+    .product-sidebar .row .col-sm-6,
+    .product-sidebar .row .col-md-4,
+    .product-sidebar .row .col-lg-3 {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+
+    /* Product cards */
+    .product-card,
+    .single-items {
+        margin-bottom: 12px;
+    }
+
+    /* Cart table */
+    .cart-area .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Checkout form */
+    .checkout-area .row .col-lg-7,
+    .checkout-area .row .col-lg-5 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    /* Account page */
+    .account-area .row .col-md-4,
+    .account-area .row .col-md-8 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    /* Order detail tables */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .table-responsive table {
+        min-width: 500px;
+    }
+
+    /* Footer */
+    .product.footer .footer-section .row .col-lg-3 {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+
+    /* Pagination */
+    .shop-pagination {
+        padding: 0.5rem;
+        gap: 0.25rem;
+    }
+    .shop-pagination-info {
+        font-size: 1.1rem;
+    }
+    .shop-pagination-btn {
+        min-width: 28px;
+        height: 28px;
+        font-size: 1.1rem;
+    }
+
+    /* General spacing */
+    .container {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+    section {
+        padding-top: 20px;
+        padding-bottom: 20px;
+    }
+}
+
+/* Small Mobile */
+@media (max-width: 480px) {
+    /* Product grid single column */
+    .product-sidebar .row .col-sm-6,
+    .product-sidebar .row .col-md-4,
+    .product-sidebar .row .col-lg-3 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    /* Footer stack */
+    .product.footer .footer-section .row .col-lg-3,
+    .product.footer .footer-section .row .col-sm-6 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    /* Order/invoice cards */
+    .card .card-body {
+        padding: 12px;
+    }
+
+    /* Buttons full width */
+    .btn-group-sm .btn {
+        font-size: 0.75rem;
+        padding: 4px 6px;
+    }
+
+    /* Forms */
+    .form-control,
+    .form-select {
+        font-size: 0.9rem;
+    }
 }

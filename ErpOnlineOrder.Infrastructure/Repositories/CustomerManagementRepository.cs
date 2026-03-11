@@ -89,6 +89,13 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             return await query.AnyAsync();
         }
 
+        public async Task<Customer_management?> FindDeletedAsync(int staffId, int customerId)
+        {
+            return await _context.CustomerManagements
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(cm => cm.Staff_id == staffId && cm.Customer_id == customerId && cm.Is_deleted);
+        }
+
         public async Task<IEnumerable<Customer_management>> GetByProvinceAsync(int provinceId)
         {
             return await GetBaseQuery(true)

@@ -41,10 +41,6 @@
     <div class="col-md-4">
         <div class="table-card">
             <div class="card-body text-center p-4">
-                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3" 
-                     style="width: 100px; height: 100px; font-size: 2.5rem;">
-                    @(Model.Full_name?.Length > 0 ? Model.Full_name.Substring(0, 1).ToUpper() : "?")
-                </div>
                 <h5 class="mb-2">@Model.Full_name</h5>
                 <span class="badge bg-secondary">@Model.Customer_code</span>
             </div>

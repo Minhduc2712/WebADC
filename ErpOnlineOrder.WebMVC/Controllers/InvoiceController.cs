@@ -59,7 +59,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 var invoice = await _invoiceApiClient.GetByIdAsync(id);
 
                 if (invoice == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy hóa đơn.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 await LoadCurrentUserPermissions();
                 return View(invoice);
@@ -80,7 +83,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var invoice = await _invoiceApiClient.GetByIdAsync(id);
                 if (invoice == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy hóa đơn.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 return View(invoice);
             }

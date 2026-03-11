@@ -357,6 +357,108 @@
         .text-indigo { color: #4f46e5 !important; }
         .btn-outline-primary { border-color: #4f46e5; color: #4f46e5; }
         .btn-outline-primary:hover { background: #4f46e5; border-color: #4f46e5; color: white; }
+
+        /* ===== MOBILE TOGGLE BUTTON ===== */
+        .sidebar-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: #334155;
+            font-size: 1.25rem;
+            padding: 6px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .sidebar-toggle:hover { background: #f1f5f9; }
+
+        /* ===== SIDEBAR OVERLAY ===== */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 999;
+        }
+        .sidebar-overlay.active { display: block; }
+
+        /* ===== RESPONSIVE: TABLET (<=1024px) ===== */
+        @@media (max-width: 1024px) {
+            :root { --sidebar-width: 220px; }
+            .content-wrapper { padding: 20px 16px 32px; }
+            .top-navbar { padding: 12px 16px; }
+            .search-box { width: 200px; }
+            .table-card .table thead th,
+            .table-card .table tbody td { padding: 10px 12px; font-size: 0.85rem; }
+        }
+
+        /* ===== RESPONSIVE: MOBILE (<=768px) ===== */
+        @@media (max-width: 768px) {
+            .sidebar-toggle { display: block; }
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                z-index: 1100;
+            }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0 !important; }
+            .top-navbar { padding: 10px 12px; }
+            .search-box { width: 100%; max-width: 180px; }
+            .search-box input { padding: 8px 12px 8px 36px; font-size: 0.85rem; }
+            .content-wrapper { padding: 16px 12px 24px; }
+            .content-wrapper h4 { font-size: 1.1rem; }
+            /* Stack header actions */
+            .d-flex.justify-content-between.align-items-center.mb-4 {
+                flex-direction: column;
+                align-items: flex-start !important;
+                gap: 12px;
+            }
+            .d-flex.justify-content-between.align-items-center.mb-4 .d-flex.gap-2 {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+            .d-flex.justify-content-between.align-items-center.mb-4 .d-flex.gap-2 .btn {
+                flex: 1;
+                min-width: 0;
+                font-size: 0.8rem;
+                white-space: nowrap;
+            }
+            /* Stats grid */
+            .row .col-md-3, .row .col-md-4 { flex: 0 0 50%; max-width: 50%; }
+            .stat-card { padding: 14px; }
+            .stat-icon { width: 40px; height: 40px; font-size: 1rem; }
+            /* Table responsive */
+            .table-card .table thead th,
+            .table-card .table tbody td { padding: 8px 8px; font-size: 0.8rem; }
+            .table-card .table .btn-group-sm .btn { padding: 4px 6px; font-size: 0.75rem; }
+            /* Filter form */
+            .table-card .card-body.p-4 { padding: 12px !important; }
+            /* User dropdown */
+            .user-dropdown > div:not(.user-avatar) { display: none; }
+            .user-dropdown .fa-chevron-down { display: none; }
+            .user-avatar { margin-right: 0; }
+        }
+
+        /* ===== RESPONSIVE: SMALL MOBILE (<=480px) ===== */
+        @@media (max-width: 480px) {
+            .search-box { display: none; }
+            .content-wrapper { padding: 12px 8px 20px; }
+            .content-wrapper h4 { font-size: 1rem; }
+            .breadcrumb { font-size: 0.75rem; }
+            /* Stack stats vertically */
+            .row .col-md-3, .row .col-md-4, .row .col-sm-6 { flex: 0 0 100%; max-width: 100%; }
+            /* Table scroll */
+            .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .table-card .table { min-width: 600px; }
+            /* Full width buttons */
+            .d-flex.justify-content-between.align-items-center.mb-4 .d-flex.gap-2 .btn { flex: 1 1 100%; }
+            .btn-group.btn-group-sm { flex-wrap: nowrap; }
+            .btn-group.btn-group-sm .btn { padding: 3px 5px; }
+            /* Form inputs */
+            .row.g-3 > div { flex: 0 0 100% !important; max-width: 100% !important; }
+            /* Modal */
+            .modal-dialog { margin: 8px; }
+        }
     </style>
     @RenderSection("Styles", required: false)
 </head>
@@ -482,13 +584,21 @@
         </ul>
     </nav>
 
+    <!-- Sidebar Overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
     <!-- Main Content -->
     <div class="main-content">
         <!-- Top Navbar -->
         <div class="top-navbar">
-            <div class="search-box">
-                <i class="fas fa-search"></i>
-                <input type="text" placeholder="Tìm kiếm..." />
+            <div class="d-flex align-items-center">
+                <button class="sidebar-toggle" id="sidebarToggle" aria-label="Mở menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Tìm kiếm..." />
+                </div>
             </div>
             <div class="d-flex align-items-center">
                 <div class="me-4">
@@ -570,6 +680,42 @@
             });
 
             restoreScroll();
+        })();
+
+        // ===== Sidebar Toggle (Mobile) =====
+        (function() {
+            var sidebar = document.querySelector('.sidebar');
+            var toggle = document.getElementById('sidebarToggle');
+            var overlay = document.getElementById('sidebarOverlay');
+            if (!sidebar || !toggle || !overlay) return;
+
+            function openSidebar() {
+                sidebar.classList.add('open');
+                overlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+            function closeSidebar() {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+
+            toggle.addEventListener('click', function() {
+                sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+            });
+            overlay.addEventListener('click', closeSidebar);
+
+            // Close sidebar when clicking a menu link on mobile
+            sidebar.querySelectorAll('a[href]').forEach(function(link) {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth <= 768) closeSidebar();
+                });
+            });
+
+            // Close on resize to desktop
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 768) closeSidebar();
+            });
         })();
     </script>
     @RenderSection("Scripts", required: false)

@@ -28,7 +28,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading regions");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
                 return View(Enumerable.Empty<RegionDTO>());
             }
         }
@@ -52,7 +52,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 var created = await _regionApiClient.CreateAsync(model);
                 if (created != null)
                 {
-                    TempData["SuccessMessage"] = "Thêm khu vực thành công!";
+                    SetSuccessMessage("Thêm khu vực thành công!");
                     return RedirectToAction(nameof(Index));
                 }
                 ModelState.AddModelError("", "Thêm khu vực thất bại.");
@@ -72,7 +72,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var region = await _regionApiClient.GetByIdAsync(id);
                 if (region == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy vùng.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 var model = new UpdateRegionDto
                 {
@@ -86,7 +89,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading region for edit");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -107,7 +110,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 var (success, error) = await _regionApiClient.UpdateAsync(id, model);
                 if (success)
                 {
-                    TempData["SuccessMessage"] = "Cập nhật khu vực thành công!";
+                    SetSuccessMessage("Cập nhật khu vực thành công!");
                     return RedirectToAction(nameof(Index));
                 }
                 ModelState.AddModelError("", error ?? "Cập nhật thất bại.");
@@ -129,14 +132,14 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var (success, error) = await _regionApiClient.DeleteAsync(id);
                 if (success)
-                    TempData["SuccessMessage"] = "Xóa khu vực thành công!";
+                    SetSuccessMessage("Xóa khu vực thành công!");
                 else
-                    TempData["ErrorMessage"] = error ?? "Xóa thất bại.";
+                    SetErrorMessage(error ?? "Xóa thất bại.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting region");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
             }
 
             return RedirectToAction(nameof(Index));

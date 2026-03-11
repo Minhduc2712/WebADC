@@ -30,19 +30,13 @@
                 <i class="fas fa-user me-2 text-primary"></i>Khách hàng
             </div>
             <div class="card-body p-4">
-                <div class="d-flex align-items-center">
-                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
-                         style="width: 50px; height: 50px; font-size: 20px;">
-                        @(Model.Customer?.Full_name?.Length > 0 ? Model.Customer.Full_name.Substring(0, 1).ToUpper() : "?")
-                    </div>
-                    <div>
-                        <h5 class="mb-0">@(Model.Customer?.Full_name ?? "N/A")</h5>
-                        <span class="badge bg-secondary me-2">@(Model.Customer?.Customer_code ?? "")</span>
-                        @if (!string.IsNullOrEmpty(Model.Customer?.Phone_number))
-                        {
-                            <span class="text-muted"><i class="fas fa-phone me-1"></i>@Model.Customer.Phone_number</span>
-                        }
-                    </div>
+                <div>
+                    <h5 class="mb-0">@(Model.Customer?.Full_name ?? "N/A")</h5>
+                    <span class="badge bg-secondary me-2">@(Model.Customer?.Customer_code ?? "")</span>
+                    @if (!string.IsNullOrEmpty(Model.Customer?.Phone_number))
+                    {
+                        <span class="text-muted"><i class="fas fa-phone me-1"></i>@Model.Customer.Phone_number</span>
+                    }
                 </div>
             </div>
         </div>

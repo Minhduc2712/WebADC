@@ -119,6 +119,10 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             try
             {
+                var userId = TryGetCurrentUserId();
+                if (!userId.HasValue || userId.Value <= 0)
+                    return Unauthorized(new { message = "Vui lòng đăng nhập." });
+
                 var result = await _customerService.UpdateCustomerAsync(model);
                 return Ok(new { success = result });
             }

@@ -30,7 +30,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading distributors");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
                 return View(Enumerable.Empty<DistributorDto>());
             }
         }
@@ -54,7 +54,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 var created = await _distributorApiClient.CreateAsync(model);
                 if (created != null)
                 {
-                    TempData["SuccessMessage"] = "Thêm nhà phân phối thành công!";
+                    SetSuccessMessage("Thêm nhà phân phối thành công!");
                     return RedirectToAction(nameof(Index));
                 }
                 ModelState.AddModelError("", "Thêm nhà phân phối thất bại.");
@@ -74,7 +74,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var distributor = await _distributorApiClient.GetByIdAsync(id);
                 if (distributor == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy nhà phân phối.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 var updateDto = new UpdateDistributorDto
                 {
@@ -90,7 +93,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading distributor for edit");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -111,7 +114,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 var (success, error) = await _distributorApiClient.UpdateAsync(id, model);
                 if (success)
                 {
-                    TempData["SuccessMessage"] = "Cập nhật nhà phân phối thành công!";
+                    SetSuccessMessage("Cập nhật nhà phân phối thành công!");
                     return RedirectToAction(nameof(Index));
                 }
                 ModelState.AddModelError("", error ?? "Cập nhật thất bại.");
@@ -133,14 +136,14 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var (success, error) = await _distributorApiClient.DeleteAsync(id);
                 if (success)
-                    TempData["SuccessMessage"] = "Xóa nhà phân phối thành công!";
+                    SetSuccessMessage("Xóa nhà phân phối thành công!");
                 else
-                    TempData["ErrorMessage"] = error ?? "Xóa thất bại.";
+                    SetErrorMessage(error ?? "Xóa thất bại.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting distributor");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
             }
 
             return RedirectToAction(nameof(Index));

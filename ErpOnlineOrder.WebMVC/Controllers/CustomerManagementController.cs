@@ -82,7 +82,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var customer = await _customerApiClient.GetByIdAsync(id);
                 if (customer == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy khách hàng.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 var assignments = await _customerManagementApiClient.GetByCustomerAsync(id);
                 ViewBag.Assignments = assignments.ToList();
@@ -137,7 +140,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var customer = await _customerApiClient.GetByIdAsync(id);
                 if (customer == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy khách hàng.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 var updateDto = new UpdateCustomerByAdminDto
                 {
@@ -285,11 +291,11 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return View();
                 }
 
-                var created = await _customerManagementApiClient.AssignStaffAsync(Staff_id, Customer_id, Province_id);
+                var (created, error) = await _customerManagementApiClient.AssignStaffAsync(Staff_id, Customer_id, Province_id);
                 if (created != null)
                     SetSuccessMessage("Gán cán bộ phụ trách thành công!");
                 else
-                    SetErrorMessage("Gán cán bộ phụ trách thất bại.");
+                    SetErrorMessage(error ?? "Gán cán bộ phụ trách thất bại.");
                 return RedirectToAction(nameof(StaffAssignment));
             }
             catch (InvalidOperationException ex)
@@ -314,7 +320,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var assignment = await _customerManagementApiClient.GetByIdAsync(id);
                 if (assignment == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy phân công.");
+                    return RedirectToAction(nameof(StaffAssignment));
+                }
 
                 await LoadAssignmentFormData();
                 return View(assignment);
@@ -336,7 +345,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var assignment = await _customerManagementApiClient.GetByIdAsync(id);
                 if (assignment == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy phân công.");
+                    return RedirectToAction(nameof(StaffAssignment));
+                }
 
                 if (Staff_id <= 0)
                 {
@@ -386,9 +398,18 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
+                if (id <= 0)
+                {
+                    SetErrorMessage("Khách hàng không hợp lệ.");
+                    return RedirectToAction(nameof(Index));
+                }
+
                 var customer = await _customerApiClient.GetByIdAsync(id);
                 if (customer == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy khách hàng.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 var staffList = await _adminApiClient.GetAllStaffAsync();
                 var provinces = await _provinceApiClient.GetAllAsync();
@@ -415,6 +436,12 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
+                if (id <= 0)
+                {
+                    SetErrorMessage("Khách hàng không hợp lệ.");
+                    return RedirectToAction(nameof(Index));
+                }
+
                 if (Staff_id <= 0)
                 {
                     SetErrorMessage("Vui lòng chọn cán bộ phụ trách.");
@@ -427,11 +454,11 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return RedirectToAction(nameof(AssignStaff), new { id });
                 }
 
-                var created = await _customerManagementApiClient.AssignStaffAsync(Staff_id, id, Province_id);
+                var (created, error) = await _customerManagementApiClient.AssignStaffAsync(Staff_id, id, Province_id);
                 if (created != null)
                     SetSuccessMessage("Gán cán bộ phụ trách thành công!");
                 else
-                    SetErrorMessage("Gán cán bộ phụ trách thất bại.");
+                    SetErrorMessage(error ?? "Gán cán bộ phụ trách thất bại.");
                 return RedirectToAction(nameof(AssignStaff), new { id });
             }
             catch (InvalidOperationException ex)

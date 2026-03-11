@@ -1,12 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using ErpOnlineOrder.Application.DTOs.AuthorDTOs;
+using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.WebMVC.Attributes;
 using ErpOnlineOrder.WebMVC.Extensions;
 using ErpOnlineOrder.WebMVC.Services;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
-    [RequirePermission("CATEGORY_VIEW")]
+    [RequirePermission(PermissionCodes.CategoryView)]
     public class AuthorController : BaseController
     {
         private readonly IAuthorApiClient _authorApiClient;
@@ -28,12 +29,12 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading authors");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
                 return View(Enumerable.Empty<AuthorDto>());
             }
         }
 
-        [RequirePermission("CATEGORY_CREATE")]
+        [RequirePermission(PermissionCodes.CategoryCreate)]
         public IActionResult Create()
         {
             return View(new CreateAuthorDto());
@@ -41,7 +42,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequirePermission("CATEGORY_CREATE")]
+        [RequirePermission(PermissionCodes.CategoryCreate)]
         public async Task<IActionResult> Create(CreateAuthorDto model)
         {
             try
@@ -52,7 +53,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 var created = await _authorApiClient.CreateAsync(model);
                 if (created != null)
                 {
-                    TempData["SuccessMessage"] = "Thêm tác giả thành công!";
+                    SetSuccessMessage("Thêm tác giả thành công!");
                     return RedirectToAction(nameof(Index));
                 }
                 ModelState.AddModelError("", "Thêm tác giả thất bại.");
@@ -65,14 +66,17 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             return View(model);
         }
 
-        [RequirePermission("CATEGORY_UPDATE")]
+        [RequirePermission(PermissionCodes.CategoryUpdate)]
         public async Task<IActionResult> Edit(int id)
         {
             try
             {
                 var author = await _authorApiClient.GetByIdAsync(id);
                 if (author == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy tác giả.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 var updateDto = new UpdateAuthorDto
                 {
@@ -92,14 +96,14 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading author for edit");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
                 return RedirectToAction(nameof(Index));
             }
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequirePermission("CATEGORY_UPDATE")]
+        [RequirePermission(PermissionCodes.CategoryUpdate)]
         public async Task<IActionResult> Edit(int id, UpdateAuthorDto model)
         {
             try
@@ -113,7 +117,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 var (success, error) = await _authorApiClient.UpdateAsync(id, model);
                 if (success)
                 {
-                    TempData["SuccessMessage"] = "Cập nhật tác giả thành công!";
+                    SetSuccessMessage("Cập nhật tác giả thành công!");
                     return RedirectToAction(nameof(Index));
                 }
                 ModelState.AddModelError("", error ?? "Cập nhật thất bại.");
@@ -128,21 +132,21 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequirePermission("CATEGORY_DELETE")]
+        [RequirePermission(PermissionCodes.CategoryDelete)]
         public async Task<IActionResult> Delete(int id)
         {
             try
             {
                 var (success, error) = await _authorApiClient.DeleteAsync(id);
                 if (success)
-                    TempData["SuccessMessage"] = "Xóa tác giả thành công!";
+                    SetSuccessMessage("Xóa tác giả thành công!");
                 else
-                    TempData["ErrorMessage"] = error ?? "Xóa thất bại.";
+                    SetErrorMessage(error ?? "Xóa thất bại.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting author");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
             }
 
             return RedirectToAction(nameof(Index));

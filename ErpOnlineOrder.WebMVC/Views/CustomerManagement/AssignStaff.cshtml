@@ -1,7 +1,7 @@
 @{
     ViewData["Title"] = "Gán cán bộ phụ trách";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
-    var customer = ViewBag.Customer as ErpOnlineOrder.Domain.Models.Customer;
+    var customer = ViewBag.Customer as ErpOnlineOrder.Application.DTOs.CustomerDTO;
     var staffList = ViewBag.StaffList as List<ErpOnlineOrder.Application.DTOs.AdminDTOs.StaffAccountDto> ?? new List<ErpOnlineOrder.Application.DTOs.AdminDTOs.StaffAccountDto>();
     var provinces = ViewBag.Provinces as List<ErpOnlineOrder.Application.DTOs.ProvinceDTOs.ProvinceDTO> ?? new List<ErpOnlineOrder.Application.DTOs.ProvinceDTOs.ProvinceDTO>();
     var existingAssignments = ViewBag.ExistingAssignments as List<ErpOnlineOrder.Domain.Models.Customer_management> ?? new List<ErpOnlineOrder.Domain.Models.Customer_management>();
@@ -34,15 +34,9 @@
         <div class="card-body p-4">
             <div class="row">
                 <div class="col-md-6">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
-                             style="width: 60px; height: 60px; font-size: 24px;">
-                            @(customer.Full_name?.Length > 0 ? customer.Full_name.Substring(0, 1).ToUpper() : "?")
-                        </div>
-                        <div>
-                            <h5 class="mb-0">@customer.Full_name</h5>
-                            <span class="badge bg-secondary">@customer.Customer_code</span>
-                        </div>
+                    <div class="mb-3">
+                        <h5 class="mb-0">@customer.Full_name</h5>
+                        <span class="badge bg-secondary">@customer.Customer_code</span>
                     </div>
                 </div>
                 <div class="col-md-6">

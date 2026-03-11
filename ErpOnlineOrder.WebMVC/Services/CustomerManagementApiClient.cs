@@ -46,12 +46,17 @@ namespace ErpOnlineOrder.WebMVC.Services
             return await response.Content.ReadFromJsonAsync<Customer_management>(ErpApiClientHelper.JsonOptions, cancellationToken);
         }
 
-        public async Task<Customer_management?> AssignStaffAsync(int staffId, int customerId, int provinceId, CancellationToken cancellationToken = default)
+        public async Task<(Customer_management? Result, string? Error)> AssignStaffAsync(int staffId, int customerId, int provinceId, CancellationToken cancellationToken = default)
         {
             var body = new { Staff_id = staffId, Customer_id = customerId, Province_id = provinceId };
             var response = await _http.PostAsJsonAsync("customermanagement/assign", body, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
-            return await response.Content.ReadFromJsonAsync<Customer_management>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken);
+                return (null, error);
+            }
+            var result = await response.Content.ReadFromJsonAsync<Customer_management>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return (result, null);
         }
 
         public async Task<(bool Success, string? Error)> UpdateAsync(int id, Customer_management model, CancellationToken cancellationToken = default)

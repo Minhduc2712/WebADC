@@ -108,6 +108,8 @@ namespace ErpOnlineOrder.Application.Services
             if (updateCustomerDto.Customer_email != null)
             {
                 var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                    throw new Exception("Không tìm thấy tài khoản người dùng");
                 user.Email = updateCustomerDto.Customer_email;
                 await _userRepository.UpdateAsync(user);
             }

@@ -58,7 +58,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading products");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
                 return View(new PagedResult<ProductDTO> { Items = new List<ProductDTO>() });
             }
         }
@@ -69,14 +69,17 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 var product = await _productApiClient.GetByIdAsync(id);
 
                 if (product == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy sản phẩm.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 return View(product);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading product details");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -118,7 +121,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 var created = await _productApiClient.CreateAsync(dto);
                 if (created != null)
                 {
-                    TempData["SuccessMessage"] = "Thêm sản phẩm thành công!";
+                    SetSuccessMessage("Thêm sản phẩm thành công!");
                     return RedirectToAction(nameof(Index));
                 }
                 ModelState.AddModelError("", "Thêm sản phẩm thất bại.");
@@ -142,7 +145,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
                 if (product == null)
                 {
-                    TempData["ErrorMessage"] = "Sản phẩm không tồn tại hoặc đã bị xóa.";
+                    SetErrorMessage("Sản phẩm không tồn tại hoặc đã bị xóa.");
                     return RedirectToAction(nameof(Index));
                 }
 
@@ -152,7 +155,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading product for edit");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -192,7 +195,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 var (success, error) = await _productApiClient.UpdateAsync(id, dto);
                 if (success)
                 {
-                    TempData["SuccessMessage"] = "Cập nhật sản phẩm thành công!";
+                    SetSuccessMessage("Cập nhật sản phẩm thành công!");
                     return RedirectToAction(nameof(Index));
                 }
                 ModelState.AddModelError("", error ?? "Cập nhật thất bại.");
@@ -202,7 +205,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating product");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
                 await LoadDropdownsAsync(model);
                 return View(model);
             }
@@ -216,14 +219,14 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var (success, error) = await _productApiClient.DeleteAsync(id);
                 if (success)
-                    TempData["SuccessMessage"] = "Xóa sản phẩm thành công!";
+                    SetSuccessMessage("Xóa sản phẩm thành công!");
                 else
-                    TempData["ErrorMessage"] = error ?? "Xóa thất bại.";
+                    SetErrorMessage(error ?? "Xóa thất bại.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting product");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
             }
 
             return RedirectToAction(nameof(Index));
@@ -238,7 +241,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 var bytes = await _productService.ExportProductsToExcelAsync(search);
                 if (bytes == null || bytes.Length == 0)
                 {
-                    TempData["ErrorMessage"] = "Không có dữ liệu để xuất.";
+                    SetErrorMessage("Không có dữ liệu để xuất.");
                     return RedirectToAction(nameof(Index));
                 }
                 return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -247,7 +250,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error exporting products");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
                 return RedirectToAction(nameof(Index));
             }
         }

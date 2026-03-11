@@ -1,12 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using ErpOnlineOrder.Application.DTOs.PublisherDTOs;
+using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.WebMVC.Attributes;
 using ErpOnlineOrder.WebMVC.Extensions;
 using ErpOnlineOrder.WebMVC.Services;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
-    [RequirePermission("CATEGORY_VIEW")]
+    [RequirePermission(PermissionCodes.CategoryView)]
     public class PublisherController : BaseController
     {
         private readonly IPublisherApiClient _publisherApiClient;
@@ -28,12 +29,12 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading publishers");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
                 return View(Enumerable.Empty<PublisherDto>());
             }
         }
 
-        [RequirePermission("CATEGORY_CREATE")]
+        [RequirePermission(PermissionCodes.CategoryCreate)]
         public IActionResult Create()
         {
             return View(new CreatePublisherDto());
@@ -41,7 +42,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequirePermission("CATEGORY_CREATE")]
+        [RequirePermission(PermissionCodes.CategoryCreate)]
         public async Task<IActionResult> Create(CreatePublisherDto model)
         {
             try
@@ -52,7 +53,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 var created = await _publisherApiClient.CreateAsync(model);
                 if (created != null)
                 {
-                    TempData["SuccessMessage"] = "Thêm nhà xuất bản thành công!";
+                    SetSuccessMessage("Thêm nhà xuất bản thành công!");
                     return RedirectToAction(nameof(Index));
                 }
                 ModelState.AddModelError("", "Thêm nhà xuất bản thất bại.");
@@ -65,14 +66,17 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             return View(model);
         }
 
-        [RequirePermission("CATEGORY_UPDATE")]
+        [RequirePermission(PermissionCodes.CategoryUpdate)]
         public async Task<IActionResult> Edit(int id)
         {
             try
             {
                 var publisher = await _publisherApiClient.GetByIdAsync(id);
                 if (publisher == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy nhà xuất bản.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 var updateDto = new UpdatePublisherDto
                 {
@@ -88,14 +92,14 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading publisher for edit");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
                 return RedirectToAction(nameof(Index));
             }
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequirePermission("CATEGORY_UPDATE")]
+        [RequirePermission(PermissionCodes.CategoryUpdate)]
         public async Task<IActionResult> Edit(int id, UpdatePublisherDto model)
         {
             try
@@ -109,7 +113,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 var (success, error) = await _publisherApiClient.UpdateAsync(id, model);
                 if (success)
                 {
-                    TempData["SuccessMessage"] = "Cập nhật nhà xuất bản thành công!";
+                    SetSuccessMessage("Cập nhật nhà xuất bản thành công!");
                     return RedirectToAction(nameof(Index));
                 }
                 ModelState.AddModelError("", error ?? "Cập nhật thất bại.");
@@ -124,21 +128,21 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequirePermission("CATEGORY_DELETE")]
+        [RequirePermission(PermissionCodes.CategoryDelete)]
         public async Task<IActionResult> Delete(int id)
         {
             try
             {
                 var (success, error) = await _publisherApiClient.DeleteAsync(id);
                 if (success)
-                    TempData["SuccessMessage"] = "Xóa nhà xuất bản thành công!";
+                    SetSuccessMessage("Xóa nhà xuất bản thành công!");
                 else
-                    TempData["ErrorMessage"] = error ?? "Xóa thất bại.";
+                    SetErrorMessage(error ?? "Xóa thất bại.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting publisher");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
             }
 
             return RedirectToAction(nameof(Index));

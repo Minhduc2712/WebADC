@@ -73,7 +73,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 var userId = GetCurrentUserId();
                 var order = await _orderService.GetByIdAsync(id, userId);
                 if (order == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy đơn hàng.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 await LoadCurrentUserPermissions();
                 return View(order);
@@ -96,7 +99,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
             var order = await _orderService.GetByIdAsync(id, userId);
             if (order == null)
-                return NotFound();
+            {
+                SetErrorMessage("Không tìm thấy đơn hàng.");
+                return RedirectToAction(nameof(Index));
+            }
 
             return View("~/Views/Shop/PrintOrder.cshtml", order);
         }
@@ -116,7 +122,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var order = await _orderApiClient.GetByIdAsync(id);
                 if (order == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy đơn hàng.");
+                    return RedirectToAction(nameof(Index));
+                }
                 if (order.Order_status != "Pending")
                 {
                     SetErrorMessage("Chỉ có thể sửa đơn hàng đang chờ xử lý.");
@@ -158,11 +167,17 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             try
             {
                 if (model.Id != id)
-                    return NotFound();
+                {
+                    SetErrorMessage("Dữ liệu không hợp lệ.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 var order = await _orderApiClient.GetByIdAsync(id);
                 if (order == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy đơn hàng.");
+                    return RedirectToAction(nameof(Index));
+                }
                 if (order.Order_status != "Pending")
                 {
                     SetErrorMessage("Chỉ có thể sửa đơn hàng đang chờ xử lý.");

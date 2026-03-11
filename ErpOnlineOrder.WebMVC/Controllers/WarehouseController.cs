@@ -44,7 +44,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading warehouses");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
                 return View(Enumerable.Empty<WarehouseDto>());
             }
         }
@@ -61,7 +61,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading create form");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -83,7 +83,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 var created = await _warehouseApiClient.CreateAsync(model);
                 if (created != null)
                 {
-                    TempData["SuccessMessage"] = "Thêm kho hàng thành công!";
+                    SetSuccessMessage("Thêm kho hàng thành công!");
                     return RedirectToAction(nameof(Index));
                 }
                 ModelState.AddModelError("", "Thêm kho hàng thất bại.");
@@ -105,7 +105,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var warehouse = await _warehouseApiClient.GetByIdAsync(id);
                 if (warehouse == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy kho.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 var provinces = await _provinceApiClient.GetAllAsync();
                 ViewBag.Provinces = new SelectList(provinces, "Id", "Province_name", warehouse.Province_id);
@@ -123,7 +126,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading warehouse for edit");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -148,7 +151,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 var (success, error) = await _warehouseApiClient.UpdateAsync(id, model);
                 if (success)
                 {
-                    TempData["SuccessMessage"] = "Cập nhật kho hàng thành công!";
+                    SetSuccessMessage("Cập nhật kho hàng thành công!");
                     return RedirectToAction(nameof(Index));
                 }
                 ModelState.AddModelError("", error ?? "Cập nhật thất bại.");
@@ -172,14 +175,14 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var (success, error) = await _warehouseApiClient.DeleteAsync(id);
                 if (success)
-                    TempData["SuccessMessage"] = "Xóa kho hàng thành công!";
+                    SetSuccessMessage("Xóa kho hàng thành công!");
                 else
-                    TempData["ErrorMessage"] = error ?? "Xóa thất bại.";
+                    SetErrorMessage(error ?? "Xóa thất bại.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting warehouse");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
             }
 
             return RedirectToAction(nameof(Index));

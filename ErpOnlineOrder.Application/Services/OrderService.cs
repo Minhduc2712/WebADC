@@ -202,8 +202,12 @@ namespace ErpOnlineOrder.Application.Services
                 return new CreateOrderResultDto { Success = false, Message = "Lỗi hệ thống khi lưu đơn hàng." };
             }
 
-            _ = Task.Run(() => _emailService.SendOrderNotificationForStaffAndAdminAsync(order.Id));
-            _ = Task.Run(() => _emailService.SendOrderNotificationForCustomerAsync(order.Id));
+            _ = Task.Run(async () => {
+                try { await _emailService.SendOrderNotificationForStaffAndAdminAsync(order.Id); } catch { }
+            });
+            _ = Task.Run(async () => {
+                try { await _emailService.SendOrderNotificationForCustomerAsync(order.Id); } catch { }
+            });
 
             return new CreateOrderResultDto {
                 Success = true,
@@ -258,8 +262,12 @@ namespace ErpOnlineOrder.Application.Services
             result.Message = "Tạo đơn hàng thành công";
             result.Order_id = order.Id;
             result.Order_code = order.Order_code;
-            _ = Task.Run(() => _emailService.SendOrderNotificationForStaffAndAdminAsync(order.Id));
-            _ = Task.Run(() => _emailService.SendOrderNotificationForCustomerAsync(order.Id));
+            _ = Task.Run(async () => {
+                try { await _emailService.SendOrderNotificationForStaffAndAdminAsync(order.Id); } catch { }
+            });
+            _ = Task.Run(async () => {
+                try { await _emailService.SendOrderNotificationForCustomerAsync(order.Id); } catch { }
+            });
             return result;
         }
 
@@ -305,8 +313,12 @@ namespace ErpOnlineOrder.Application.Services
             result.Message = "Cập nhật đơn hàng thành công";
             result.Order_id = order.Id;
             result.Order_code = order.Order_code;
-            _ = Task.Run(() => _emailService.SendOrderNotificationForStaffAndAdminAsync(order.Id));
-            _ = Task.Run(() => _emailService.SendOrderNotificationForCustomerAsync(order.Id));
+            _ = Task.Run(async () => {
+                try { await _emailService.SendOrderNotificationForStaffAndAdminAsync(order.Id); } catch { }
+            });
+            _ = Task.Run(async () => {
+                try { await _emailService.SendOrderNotificationForCustomerAsync(order.Id); } catch { }
+            });
             return result;
         }
 

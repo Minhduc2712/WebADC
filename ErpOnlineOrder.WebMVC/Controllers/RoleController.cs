@@ -95,7 +95,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var rolePermission = await _permissionApiClient.GetRolePermissionsAsync(id);
                 if (rolePermission == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy vai trò.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 var model = new UpdateRoleDto
                 {
@@ -193,7 +196,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var rolePermission = await _permissionApiClient.GetRolePermissionsAsync(id);
                 if (rolePermission == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy vai trò.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 var permissionTree = (await _permissionApiClient.GetPermissionsTreeAsync()).ToList();
                 var specialPermissions = (await _permissionApiClient.GetSpecialPermissionsAsync()).ToList();
@@ -257,7 +263,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var rolePermission = await _permissionApiClient.GetRolePermissionsAsync(id);
                 if (rolePermission == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy vai trò.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 // Group permissions by module
                 var groupedPermissions = rolePermission.Permissions

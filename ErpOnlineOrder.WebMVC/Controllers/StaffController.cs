@@ -59,7 +59,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var staff = await _adminApiClient.GetStaffByIdAsync(id);
                 if (staff == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy nhân viên.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 var userFullPermissions = await _permissionApiClient.GetUserFullPermissionsAsync(id);
                 ViewBag.UserFullPermissions = userFullPermissions;
@@ -131,7 +134,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var staff = await _adminApiClient.GetStaffByIdAsync(id);
                 if (staff == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy nhân viên.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 var allRoles = await _permissionApiClient.GetAllRolesAsync();
                 var currentRoleIds = new List<int>();
@@ -282,7 +288,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var staff = await _adminApiClient.GetStaffByIdAsync(id);
                 if (staff == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy nhân viên.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 var model = new ResetPasswordDto
                 {
@@ -345,7 +354,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var staff = await _adminApiClient.GetStaffByIdAsync(id);
                 if (staff == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy nhân viên.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 var allRoles = await _permissionApiClient.GetAllRolesAsync();
                 var currentRoleIds = new List<int>();
@@ -385,7 +397,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var staff = await _adminApiClient.GetStaffByIdAsync(id);
                 if (staff == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy nhân viên.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 var model = new UpdateStaffAccountDto
                 {
@@ -423,7 +438,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var staff = await _adminApiClient.GetStaffByIdAsync(id);
                 if (staff == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy nhân viên.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 var userFullPermissions = await _permissionApiClient.GetUserFullPermissionsAsync(id);
                 var permissionTree = (await _permissionApiClient.GetPermissionsTreeAsync()).ToList();
@@ -457,7 +475,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var staff = await _adminApiClient.GetStaffByIdAsync(id);
                 if (staff == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy nhân viên.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 var dto = new AssignPermissionsToUserDto
                 {

@@ -105,15 +105,7 @@
                             var customerAssignments = assignments.Where(a => a.Customer_id == customer.Id).ToList();
                             <tr>
                                 <td><span class="badge bg-secondary">@customer.Customer_code</span></td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2" 
-                                             style="width: 35px; height: 35px; font-size: 14px;">
-                                            @(customer.Full_name?.Length > 0 ? customer.Full_name.Substring(0, 1).ToUpper() : "?")
-                                        </div>
-                                        <strong>@customer.Full_name</strong>
-                                    </div>
-                                </td>
+                                <td><strong>@customer.Full_name</strong></td>
                                 <td>
                                     @if (!string.IsNullOrEmpty(customer.Phone_number))
                                     {

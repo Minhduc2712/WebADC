@@ -61,17 +61,30 @@ namespace ErpOnlineOrder.Application.Services
             }
             else
             {
-                var setting = new SystemSetting
+                // Kiểm tra bản ghi soft-deleted → khôi phục (tránh vi phạm unique index)
+                var deleted = await _settingRepository.FindDeletedByKeyAsync(key);
+                if (deleted != null)
                 {
-                    SettingKey = key,
-                    SettingValue = value,
-                    CreatedBy = updatedBy,
-                    CreatedAt = System.DateTime.UtcNow,
-                    UpdatedBy = updatedBy,
-                    UpdatedAt = System.DateTime.UtcNow,
-                    IsDeleted = false
-                };
-                await _settingRepository.AddAsync(setting);
+                    deleted.SettingValue = value;
+                    deleted.UpdatedBy = updatedBy;
+                    deleted.UpdatedAt = System.DateTime.UtcNow;
+                    deleted.IsDeleted = false;
+                    await _settingRepository.UpdateAsync(deleted);
+                }
+                else
+                {
+                    var setting = new SystemSetting
+                    {
+                        SettingKey = key,
+                        SettingValue = value,
+                        CreatedBy = updatedBy,
+                        CreatedAt = System.DateTime.UtcNow,
+                        UpdatedBy = updatedBy,
+                        UpdatedAt = System.DateTime.UtcNow,
+                        IsDeleted = false
+                    };
+                    await _settingRepository.AddAsync(setting);
+                }
             }
             return true;
         }
@@ -80,6 +93,19 @@ namespace ErpOnlineOrder.Application.Services
         {
             var existing = await _settingRepository.GetByKeyAsync(key);
             if (existing != null) return false;
+
+            // Kiểm tra bản ghi soft-deleted → khôi phục (tránh vi phạm unique index)
+            var deleted = await _settingRepository.FindDeletedByKeyAsync(key);
+            if (deleted != null)
+            {
+                deleted.SettingValue = value ?? "";
+                deleted.Description = description;
+                deleted.UpdatedBy = updatedBy;
+                deleted.UpdatedAt = DateTime.UtcNow;
+                deleted.IsDeleted = false;
+                await _settingRepository.UpdateAsync(deleted);
+                return true;
+            }
 
             var setting = new SystemSetting
             {

@@ -112,7 +112,11 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             var allSettings = await _settingApiClient.GetAllSettingsAsync();
             var setting = allSettings?.FirstOrDefault(s => s.Id == id);
-            if (setting == null) return NotFound();
+            if (setting == null)
+            {
+                SetErrorMessage("Không tìm thấy cài đặt.");
+                return RedirectToAction(nameof(Index));
+            }
 
             var model = new UpdateSettingDto { SettingValue = setting.SettingValue, Description = setting.Description };
             ViewBag.SettingId = id;

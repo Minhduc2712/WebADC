@@ -43,7 +43,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading provinces");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
                 return View(Enumerable.Empty<ProvinceDTO>());
             }
         }
@@ -60,7 +60,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading create form");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -82,7 +82,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 var created = await _provinceApiClient.CreateAsync(model);
                 if (created != null)
                 {
-                    TempData["SuccessMessage"] = "Thêm tỉnh/thành phố thành công!";
+                    SetSuccessMessage("Thêm tỉnh/thành phố thành công!");
                     return RedirectToAction(nameof(Index));
                 }
                 ModelState.AddModelError("", "Thêm tỉnh/thành phố thất bại.");
@@ -104,7 +104,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var province = await _provinceApiClient.GetByIdAsync(id);
                 if (province == null)
-                    return NotFound();
+                {
+                    SetErrorMessage("Không tìm thấy tỉnh/thành phố.");
+                    return RedirectToAction(nameof(Index));
+                }
 
                 var model = new UpdateProvinceDto
                 {
@@ -122,7 +125,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading province for edit");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -147,7 +150,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 var (success, error) = await _provinceApiClient.UpdateAsync(id, model);
                 if (success)
                 {
-                    TempData["SuccessMessage"] = "Cập nhật tỉnh/thành phố thành công!";
+                    SetSuccessMessage("Cập nhật tỉnh/thành phố thành công!");
                     return RedirectToAction(nameof(Index));
                 }
                 ModelState.AddModelError("", error ?? "Cập nhật thất bại.");
@@ -171,14 +174,14 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 var (success, error) = await _provinceApiClient.DeleteAsync(id);
                 if (success)
-                    TempData["SuccessMessage"] = "Xóa tỉnh/thành phố thành công!";
+                    SetSuccessMessage("Xóa tỉnh/thành phố thành công!");
                 else
-                    TempData["ErrorMessage"] = error ?? "Xóa thất bại.";
+                    SetErrorMessage(error ?? "Xóa thất bại.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting province");
-                TempData["ErrorMessage"] = GetDetailedErrorMessage(ex);
+                SetErrorFromException(ex);
             }
 
             return RedirectToAction(nameof(Index));

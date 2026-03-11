@@ -20,6 +20,7 @@
 
 <section class="product footer-padding">
     <div class="container">
+        @await Html.PartialAsync("_AccountNavbar")
         @if (ViewData["ErrorMessage"] is string errorMsg)
         {
             <div class="alert alert-warning text-center">@errorMsg</div>

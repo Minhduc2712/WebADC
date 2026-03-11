@@ -88,11 +88,23 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<Customer_management> AssignStaffToCustomerAsync(int staffId, int customerId, int provinceId, int createdBy)
         {
-            // Kiểm tra đã gán chưa
+            // Kiểm tra đã gán chưa (active)
             var alreadyAssigned = await _customerManagementRepository.ExistsAsync(staffId, customerId);
             if (alreadyAssigned)
             {
                 throw new InvalidOperationException("Cán bộ này đã được gán phụ trách khách hàng này rồi.");
+            }
+
+            // Kiểm tra có bản ghi đã soft-delete → khôi phục thay vì tạo mới (tránh vi phạm unique index)
+            var deleted = await _customerManagementRepository.FindDeletedAsync(staffId, customerId);
+            if (deleted != null)
+            {
+                deleted.Province_id = provinceId;
+                deleted.Updated_by = createdBy;
+                deleted.Updated_at = DateTime.UtcNow;
+                deleted.Is_deleted = false;
+                await _customerManagementRepository.UpdateAsync(deleted);
+                return deleted;
             }
 
             var assignment = new Customer_management
