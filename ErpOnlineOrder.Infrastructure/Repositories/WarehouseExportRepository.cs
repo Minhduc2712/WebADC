@@ -152,6 +152,31 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<Warehouse_export>> GetByMergedIntoExportIdAsync(int mergedExportId)
+        {
+            return await _context.WarehouseExports
+                .Where(e => e.Merged_into_export_id == mergedExportId)
+                .ToListAsync();
+        }
+
+        public async Task<int> GetMaxChildSuffixAsync(string codePrefix)
+        {
+            var codes = await _context.WarehouseExports
+                .IgnoreQueryFilters()
+                .Where(e => e.Warehouse_export_code.StartsWith(codePrefix))
+                .Select(e => e.Warehouse_export_code)
+                .ToListAsync();
+
+            var max = 0;
+            foreach (var code in codes)
+            {
+                var suffix = code.Substring(codePrefix.Length);
+                if (int.TryParse(suffix, out var num) && num > max)
+                    max = num;
+            }
+            return max;
+        }
+
         public async Task AddAsync(Warehouse_export export)
         {
             export.Created_at = DateTime.Now;
@@ -163,7 +188,27 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task UpdateAsync(Warehouse_export export)
         {
             export.Updated_at = DateTime.Now;
-            _context.WarehouseExports.Update(export);
+            var tracked = await _context.WarehouseExports
+                .Include(e => e.Warehouse_Export_Details)
+                .FirstOrDefaultAsync(e => e.Id == export.Id);
+            if (tracked == null) return;
+
+            _context.Entry(tracked).CurrentValues.SetValues(export);
+
+            // Sync detail changes (Split/UndoSplit modify details)
+            if (export.Warehouse_Export_Details != null)
+            {
+                foreach (var detail in export.Warehouse_Export_Details)
+                {
+                    var trackedDetail = tracked.Warehouse_Export_Details
+                        .FirstOrDefault(d => d.Id == detail.Id);
+                    if (trackedDetail != null)
+                    {
+                        _context.Entry(trackedDetail).CurrentValues.SetValues(detail);
+                    }
+                }
+            }
+
             await _context.SaveChangesAsync();
         }
 

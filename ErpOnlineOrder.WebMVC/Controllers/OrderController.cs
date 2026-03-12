@@ -7,6 +7,7 @@ using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.WebMVC.Attributes;
 using ErpOnlineOrder.WebMVC.Services;
+using ErpOnlineOrder.WebMVC.Services.Interfaces;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
@@ -18,6 +19,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         private readonly ICustomerApiClient _customerApiClient;
         private readonly IProductApiClient _productApiClient;
         private readonly IPermissionApiClient _permissionApiClient;
+        private readonly IInvoiceApiClient _invoiceApiClient;
         private readonly ILogger<OrderController> _logger;
 
         public OrderController(
@@ -26,6 +28,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             ICustomerApiClient customerApiClient,
             IProductApiClient productApiClient,
             IPermissionApiClient permissionApiClient,
+            IInvoiceApiClient invoiceApiClient,
             ILogger<OrderController> logger)
         {
             _orderApiClient = orderApiClient;
@@ -33,6 +36,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             _customerApiClient = customerApiClient;
             _productApiClient = productApiClient;
             _permissionApiClient = permissionApiClient;
+            _invoiceApiClient = invoiceApiClient;
             _logger = logger;
         }
 
@@ -280,6 +284,28 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequirePermission(PermissionCodes.InvoiceCreate)]
+        public async Task<IActionResult> CreateInvoice(int id)
+        {
+            try
+            {
+                var result = await _invoiceApiClient.CreateFromOrderAsync(id);
+                if (result?.Success == true)
+                    SetSuccessMessage(result.Message);
+                else
+                    SetErrorMessage(result?.Message ?? "Không thể tạo hóa đơn từ đơn hàng!");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating invoice from order {OrderId}", id);
+                SetErrorMessage(GetDetailedErrorMessage(ex));
+            }
+
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
         [RequirePermission(PermissionCodes.OrderExport)]
         public async Task<IActionResult> ExportExcel()
         {
@@ -311,6 +337,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     ViewBag.CanApprove = true;
                     ViewBag.CanReject = true;
                     ViewBag.CanExport = true;
+                    ViewBag.CanCreateInvoice = true;
                     return;
                 }
 
@@ -324,6 +351,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 ViewBag.CanApprove = permissions?.Contains(PermissionCodes.OrderApprove) ?? false;
                 ViewBag.CanReject = permissions?.Contains(PermissionCodes.OrderReject) ?? false;
                 ViewBag.CanExport = permissions?.Contains(PermissionCodes.OrderExport) ?? false;
+                ViewBag.CanCreateInvoice = permissions?.Contains(PermissionCodes.InvoiceCreate) ?? false;
             }
             catch
             {
@@ -334,6 +362,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 ViewBag.CanApprove = false;
                 ViewBag.CanReject = false;
                 ViewBag.CanExport = false;
+                ViewBag.CanCreateInvoice = false;
             }
         }
     }

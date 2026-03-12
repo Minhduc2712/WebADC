@@ -1,4 +1,5 @@
 @model PagedResult<ErpOnlineOrder.Application.DTOs.InvoiceDTOs.InvoiceDto>
+@using ErpOnlineOrder.Domain.Constants
 @{
     ViewData["Title"] = "Quản lý hóa đơn";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
@@ -39,7 +40,6 @@
                     <select name="status" class="form-select" onchange="this.form.submit()">
                         <option value="">-- Tất cả --</option>
                         <option value="Draft" selected="@(ViewBag.Status == "Draft")">Nháp</option>
-                        <option value="Pending" selected="@(ViewBag.Status == "Pending")">Chờ xử lý</option>
                         <option value="Confirmed" selected="@(ViewBag.Status == "Confirmed")">Đã xác nhận</option>
                         <option value="Completed" selected="@(ViewBag.Status == "Completed")">Hoàn thành</option>
                         <option value="Cancelled" selected="@(ViewBag.Status == "Cancelled")">Đã hủy</option>
@@ -155,28 +155,8 @@
                     {
                         @foreach (var invoice in items.OrderByDescending(i => i.Invoice_date))
                         {
-                            var statusClass = invoice.Status switch
-                            {
-                                "Draft" => "bg-secondary",
-                                "Pending" => "bg-warning text-dark",
-                                "Confirmed" => "bg-primary",
-                                "Completed" => "bg-success",
-                                "Cancelled" => "bg-danger",
-                                "Split" => "bg-info",
-                                "Merged" => "bg-secondary",
-                                _ => "bg-secondary"
-                            };
-                            var statusText = invoice.Status switch
-                            {
-                                "Draft" => "Nháp",
-                                "Pending" => "Chờ xử lý",
-                                "Confirmed" => "Đã xác nhận",
-                                "Completed" => "Hoàn thành",
-                                "Cancelled" => "Đã hủy",
-                                "Split" => "Đã tách",
-                                "Merged" => "Đã gộp",
-                                _ => invoice.Status
-                            };
+                            var statusClass = ErpOnlineOrder.Domain.Constants.InvoiceStatuses.ToCssClass(invoice.Status);
+                            var statusText = ErpOnlineOrder.Domain.Constants.InvoiceStatuses.ToDisplayText(invoice.Status);
                             <tr>
                                 <td>
                                     <span class="badge bg-secondary">@invoice.Invoice_code</span>
@@ -190,13 +170,34 @@
                                 <td class="text-end">@invoice.Total_amount.ToString("N0")</td>
                                 <td class="text-end">@invoice.Tax_amount.ToString("N0")</td>
                                 <td class="text-end fw-bold text-success">@invoice.Grand_total.ToString("N0")</td>
-                                <td><span class="badge @statusClass">@statusText</span></td>
+                                <td>
+                                    @{
+                                        var allowed = InvoiceStatuses.AllowedTransitions.TryGetValue(invoice.Status, out var t) ? t : Array.Empty<string>();
+                                    }
+                                    <span class="badge @statusClass">@statusText</span>
+                                    @if (allowed.Length > 0)
+                                    {
+                                        <form asp-action="UpdateStatus" method="post" class="mt-1" style="min-width:140px" onsubmit="return confirm('Xác nhận chuyển trạng thái?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@invoice.Id" />
+                                            <div class="input-group input-group-sm">
+                                                <select name="status" class="form-select form-select-sm">
+                                                    @foreach (var ns in allowed)
+                                                    {
+                                                        <option value="@ns">@InvoiceStatuses.ToDisplayText(ns)</option>
+                                                    }
+                                                </select>
+                                                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-sync-alt"></i></button>
+                                            </div>
+                                        </form>
+                                    }
+                                </td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
                                         <a asp-action="Details" asp-route-id="@invoice.Id" class="btn btn-outline-primary" title="Xem chi tiết">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        @if (invoice.Status != "Completed" && invoice.Status != "Cancelled" && invoice.Status != "Split" && invoice.Status != "Merged" && invoice.Details.Count > 1)
+                                        @if (invoice.Status != "Completed" && invoice.Status != "Cancelled" && invoice.Status != "Merged" && (invoice.Details?.Count > 1 || invoice.Details?.Any(d => d.Quantity > 1) == true))
                                         {
                                             <a asp-action="Split" asp-route-id="@invoice.Id" class="btn btn-outline-info" title="Tách hóa đơn">
                                                 <i class="fas fa-expand-arrows-alt"></i>

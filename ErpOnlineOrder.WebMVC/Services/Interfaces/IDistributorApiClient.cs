@@ -1,7 +1,6 @@
-
 using ErpOnlineOrder.Application.DTOs.DistributorDTOs;
 
-namespace ErpOnlineOrder.WebMVC.Services
+namespace ErpOnlineOrder.WebMVC.Services.Interfaces
 {
     public interface IDistributorApiClient
     {

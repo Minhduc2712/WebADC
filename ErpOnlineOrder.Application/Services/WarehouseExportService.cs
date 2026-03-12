@@ -6,6 +6,7 @@ using ErpOnlineOrder.Application.Mappers;
 using ErpOnlineOrder.Domain.Models;
 using ClosedXML.Excel;
 using ErpOnlineOrder.Application.Helpers;
+using ErpOnlineOrder.Domain.Constants;
 
 namespace ErpOnlineOrder.Application.Services
 {
@@ -15,23 +16,48 @@ namespace ErpOnlineOrder.Application.Services
         private readonly IInvoiceRepository _invoiceRepository;
         private readonly IInvoiceService _invoiceService;
         private readonly IPermissionService _permissionService;
+        private readonly IStaffRepository _staffRepository;
+        private readonly ICustomerManagementRepository _customerManagementRepository;
+        private readonly IOrderRepository _orderRepository;
 
         public WarehouseExportService(
             IWarehouseExportRepository exportRepository,
             IInvoiceRepository invoiceRepository,
             IInvoiceService invoiceService,
-            IPermissionService permissionService)
+            IPermissionService permissionService,
+            IStaffRepository staffRepository,
+            ICustomerManagementRepository customerManagementRepository,
+            IOrderRepository orderRepository)
         {
             _exportRepository = exportRepository;
             _invoiceRepository = invoiceRepository;
             _invoiceService = invoiceService;
             _permissionService = permissionService;
+            _staffRepository = staffRepository;
+            _customerManagementRepository = customerManagementRepository;
+            _orderRepository = orderRepository;
+        }
+
+        private async Task<IEnumerable<int>?> GetAllowedCustomerIdsAsync(int userId)
+        {
+            if (await _permissionService.IsAdminAsync(userId)) return null;
+            var staff = await _staffRepository.GetByUserIdAsync(userId);
+            if (staff == null) return new List<int>();
+            return await _customerManagementRepository.GetCustomerIdsByStaffAsync(staff.Id);
         }
 
         public async Task<WarehouseExportDto?> GetByIdAsync(int id, int? userId = null)
         {
             var export = await _exportRepository.GetByIdAsync(id);
             if (export == null) return null;
+
+            if (userId.HasValue && userId.Value > 0)
+            {
+                var customerIds = await GetAllowedCustomerIdsAsync(userId.Value);
+                if (customerIds != null && !customerIds.Contains(export.Customer_id))
+                    return null;
+            }
+
             var dto = EntityMappers.ToWarehouseExportDto(export);
             if (userId.HasValue && userId.Value > 0)
                 await RecordPermissionEnricher.EnrichWarehouseExportAsync(dto, userId.Value, _permissionService);
@@ -40,7 +66,22 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<IEnumerable<WarehouseExportDto>> GetAllAsync(int? userId = null)
         {
-            var exports = await _exportRepository.GetAllAsync();
+            IEnumerable<Warehouse_export> exports;
+            if (userId.HasValue && userId.Value > 0)
+            {
+                var customerIds = await GetAllowedCustomerIdsAsync(userId.Value);
+                if (customerIds != null)
+                {
+                    var idList = customerIds.ToList();
+                    if (idList.Count == 0) return new List<WarehouseExportDto>();
+                    exports = (await _exportRepository.GetAllAsync()).Where(e => idList.Contains(e.Customer_id));
+                }
+                else
+                    exports = await _exportRepository.GetAllAsync();
+            }
+            else
+                exports = await _exportRepository.GetAllAsync();
+
             var list = exports.Select(EntityMappers.ToWarehouseExportDto).ToList();
             if (userId.HasValue && userId.Value > 0)
             {
@@ -53,7 +94,11 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<PagedResult<WarehouseExportDto>> GetAllPagedAsync(WarehouseExportFilterRequest request, int? userId = null)
         {
-            var paged = await _exportRepository.GetPagedWarehouseExportsAsync(request);
+            IEnumerable<int>? customerIds = null;
+            if (userId.HasValue && userId.Value > 0)
+                customerIds = await GetAllowedCustomerIdsAsync(userId.Value);
+
+            var paged = await _exportRepository.GetPagedWarehouseExportsAsync(request, customerIds);
             var dtos = paged.Items.Select(EntityMappers.ToWarehouseExportDto).ToList();
             if (userId.HasValue && userId.Value > 0)
             {
@@ -118,9 +163,17 @@ namespace ErpOnlineOrder.Application.Services
             }
 
             // Kiểm tra trạng thái hóa đơn
-            if (invoice.Status != "Confirmed" && invoice.Status != "Draft")
+            if (invoice.Status != InvoiceStatuses.Confirmed && invoice.Status != InvoiceStatuses.Draft && invoice.Status != InvoiceStatuses.Split)
             {
-                throw new Exception($"Không thể tạo phiếu xuất kho cho hóa đơn có trạng thái: {invoice.Status}");
+                throw new Exception($"Không thể tạo phiếu xuất kho cho hóa đơn có trạng thái: {InvoiceStatuses.ToDisplayText(invoice.Status)}");
+            }
+
+            // Xác định Staff_id: ưu tiên từ dto, nếu không có thì lấy từ userId
+            var staffId = dto.Staff_id;
+            if (staffId <= 0)
+            {
+                var staff = await _staffRepository.GetByUserIdAsync(userId);
+                staffId = staff?.Id ?? throw new Exception("Không tìm thấy nhân viên tương ứng với tài khoản đang đăng nhập");
             }
 
             var now = DateTime.UtcNow;
@@ -132,10 +185,8 @@ namespace ErpOnlineOrder.Application.Services
                 Invoice_id = dto.Invoice_id,
                 Order_id = invoice.Order_id,
                 Customer_id = invoice.Customer_id,
-                Staff_id = dto.Staff_id,
+                Staff_id = staffId,
                 Export_date = dto.Export_date ?? now,
-                Carrier_name = dto.Carrier_name,
-                Tracking_number = dto.Tracking_number,
                 Delivery_status = "Pending",
                 Status = "Draft",
                 Created_by = userId,
@@ -193,16 +244,54 @@ namespace ErpOnlineOrder.Application.Services
             return created != null ? EntityMappers.ToWarehouseExportDto(created) : null;
         }
 
+        private static readonly HashSet<string> ValidDeliveryStatuses = new(DeliveryStatuses.All);
+
         public async Task<bool> UpdateDeliveryStatusAsync(int id, string status, int userId)
         {
+            if (!ValidDeliveryStatuses.Contains(status))
+                throw new Exception($"Trạng thái giao hàng không hợp lệ: {status}. Chỉ chấp nhận: {string.Join(", ", ValidDeliveryStatuses)}");
+
             var export = await _exportRepository.GetByIdAsync(id);
             if (export == null) return false;
 
+            if (!DeliveryStatuses.CanTransition(export.Delivery_status, status))
+                throw new Exception($"Không thể chuyển trạng thái giao hàng từ '{DeliveryStatuses.ToDisplayText(export.Delivery_status)}' sang '{DeliveryStatuses.ToDisplayText(status)}'");
+
+            // Sync: phải xác nhận phiếu trước khi giao hàng
+            if (status == DeliveryStatuses.Shipped && export.Status == ExportStatuses.Draft)
+                throw new Exception("Phải xác nhận phiếu xuất kho trước khi giao hàng");
+
             export.Delivery_status = status;
+
+            // Sync: Delivered → export auto Completed
+            var autoCompleted = false;
+            if (status == DeliveryStatuses.Delivered && export.Status == ExportStatuses.Confirmed)
+            {
+                export.Status = ExportStatuses.Completed;
+                autoCompleted = true;
+            }
+
             export.Updated_by = userId;
             export.Updated_at = DateTime.UtcNow;
 
             await _exportRepository.UpdateAsync(export);
+
+            // Sync: auto Completed → đơn hàng cũng hoàn thành
+            if (autoCompleted && export.Order_id.HasValue)
+            {
+                var order = await _orderRepository.GetByIdForStatusCheckAsync(export.Order_id.Value);
+                if (order != null && order.Order_status != "Completed" && order.Order_status != "Cancelled")
+                {
+                    order.Order_status = "Completed";
+                    order.Updated_by = userId;
+                    await _orderRepository.UpdateAsync(order);
+                }
+            }
+
+            // Sync: auto Completed → hóa đơn cũng hoàn thành
+            if (autoCompleted)
+                await SyncStatusToInvoiceAsync(export, ExportStatuses.Completed, userId);
+
             return true;
         }
 
@@ -211,16 +300,20 @@ namespace ErpOnlineOrder.Application.Services
             var export = await _exportRepository.GetByIdAsync(id);
             if (export == null) return false;
 
-            if (export.Status != "Draft")
+            if (export.Status != ExportStatuses.Draft)
             {
                 throw new Exception("Chỉ có thể xác nhận phiếu xuất kho ở trạng thái Draft");
             }
 
-            export.Status = "Confirmed";
+            export.Status = ExportStatuses.Confirmed;
             export.Updated_by = userId;
             export.Updated_at = DateTime.UtcNow;
 
             await _exportRepository.UpdateAsync(export);
+
+            // Sync: xác nhận phiếu xuất kho → xác nhận hóa đơn
+            await SyncStatusToInvoiceAsync(export, ExportStatuses.Confirmed, userId);
+
             return true;
         }
 
@@ -229,21 +322,70 @@ namespace ErpOnlineOrder.Application.Services
             var export = await _exportRepository.GetByIdAsync(id);
             if (export == null) return false;
 
-            if (export.Delivery_status == "Delivered")
+            if (export.Delivery_status == DeliveryStatuses.Delivered)
             {
                 throw new Exception("Không thể hủy phiếu xuất kho đã giao hàng");
             }
 
-            export.Status = "Cancelled";
+            export.Status = ExportStatuses.Cancelled;
             export.Updated_by = userId;
             export.Updated_at = DateTime.UtcNow;
 
             await _exportRepository.UpdateAsync(export);
+
+            // Sync: hủy phiếu xuất kho → kiểm tra hủy hóa đơn
+            await SyncStatusToInvoiceAsync(export, ExportStatuses.Cancelled, userId);
+
+            return true;
+        }
+
+        public async Task<bool> UpdateStatusAsync(int id, string newStatus, int userId)
+        {
+            var export = await _exportRepository.GetByIdAsync(id);
+            if (export == null) return false;
+
+            if (!ExportStatuses.CanTransition(export.Status, newStatus))
+                throw new Exception($"Không thể chuyển trạng thái phiếu xuất kho từ '{ExportStatuses.ToDisplayText(export.Status)}' sang '{ExportStatuses.ToDisplayText(newStatus)}'");
+
+            export.Status = newStatus;
+
+            // Sync: Completed → delivery auto Delivered
+            if (newStatus == ExportStatuses.Completed && export.Delivery_status != DeliveryStatuses.Delivered)
+                export.Delivery_status = DeliveryStatuses.Delivered;
+
+            export.Updated_by = userId;
+            export.Updated_at = DateTime.UtcNow;
+            await _exportRepository.UpdateAsync(export);
+
+            // Sync: Completed → đơn hàng cũng hoàn thành
+            if (newStatus == ExportStatuses.Completed && export.Order_id.HasValue)
+            {
+                var order = await _orderRepository.GetByIdForStatusCheckAsync(export.Order_id.Value);
+                if (order != null && order.Order_status != "Completed" && order.Order_status != "Cancelled")
+                {
+                    order.Order_status = "Completed";
+                    order.Updated_by = userId;
+                    await _orderRepository.UpdateAsync(order);
+                }
+            }
+
+            // Sync: trạng thái phiếu xuất kho → hóa đơn
+            await SyncStatusToInvoiceAsync(export, newStatus, userId);
+
             return true;
         }
 
         public async Task<bool> DeleteExportAsync(int id)
         {
+            var export = await _exportRepository.GetByIdAsync(id);
+            if (export == null) return false;
+
+            if (export.Status == ExportStatuses.Confirmed || export.Status == ExportStatuses.Completed || export.Status == "Shipping")
+                throw new Exception($"Không thể xóa phiếu xuất kho ở trạng thái: {export.Status}");
+
+            if (export.Delivery_status == DeliveryStatuses.Delivered)
+                throw new Exception("Không thể xóa phiếu xuất kho đã giao hàng");
+
             await _exportRepository.DeleteAsync(id);
             return true;
         }
@@ -262,15 +404,17 @@ namespace ErpOnlineOrder.Application.Services
                 return result;
             }
 
-            // 2. Kiểm tra trạng thái
-            if (sourceExport.Status == "Split" || sourceExport.Status == "Merged" || sourceExport.Status == "Cancelled")
+            // 2. Kiểm tra trạng thái (cho phép Split để tách nhiều tầng)
+            if (sourceExport.Status == ExportStatuses.Merged
+                || sourceExport.Status == ExportStatuses.Cancelled
+                || sourceExport.Status == ExportStatuses.Completed)
             {
                 result.Success = false;
-                result.Message = $"Không thể tách phiếu xuất kho có trạng thái: {sourceExport.Status}";
+                result.Message = "Không thể tách phiếu xuất kho đã gộp/hủy/hoàn thành";
                 return result;
             }
 
-            if (sourceExport.Delivery_status == "Delivered")
+            if (sourceExport.Delivery_status == DeliveryStatuses.Delivered)
             {
                 result.Success = false;
                 result.Message = "Không thể tách phiếu xuất kho đã giao hàng";
@@ -316,22 +460,23 @@ namespace ErpOnlineOrder.Application.Services
             }
 
             // 4. Tạo các phiếu xuất kho mới từ các phần tách
+            var codePrefix = $"{sourceExport.Warehouse_export_code}-S";
+            var startIndex = await _exportRepository.GetMaxChildSuffixAsync(codePrefix);
+
             int partIndex = 0;
             foreach (var part in dto.Split_parts)
             {
                 var newExport = new Warehouse_export
                 {
-                    Warehouse_export_code = $"{sourceExport.Warehouse_export_code}-S{partIndex + 1}",
+                    Warehouse_export_code = $"{codePrefix}{startIndex + partIndex + 1}",
                     Warehouse_id = sourceExport.Warehouse_id,
                     Invoice_id = newInvoiceIds.Count > partIndex ? newInvoiceIds[partIndex] : sourceExport.Invoice_id,
                     Order_id = sourceExport.Order_id,
                     Customer_id = sourceExport.Customer_id,
                     Staff_id = sourceExport.Staff_id,
                     Export_date = now,
-                    Carrier_name = sourceExport.Carrier_name,
-                    Tracking_number = null, // Tracking mới cho mỗi phiếu
-                    Delivery_status = "Pending",
-                    Status = "Draft",
+                    Delivery_status = DeliveryStatuses.Pending,
+                    Status = ExportStatuses.Draft,
                     Parent_export_id = sourceExport.Id,
                     Split_merge_note = dto.Note ?? $"Tách từ phiếu {sourceExport.Warehouse_export_code}",
                     Created_by = userId,
@@ -383,7 +528,7 @@ namespace ErpOnlineOrder.Application.Services
             }
 
             // 5. Cập nhật phiếu xuất kho gốc
-            sourceExport.Status = "Split";
+            sourceExport.Status = ExportStatuses.Split;
             sourceExport.Split_merge_note = dto.Note ?? $"Đã tách thành {newExports.Count} phiếu";
             sourceExport.Updated_by = userId;
             sourceExport.Updated_at = now;
@@ -424,14 +569,14 @@ namespace ErpOnlineOrder.Application.Services
                     return result;
                 }
 
-                if (export.Status == "Merged" || export.Status == "Cancelled")
+                if (export.Status == ExportStatuses.Merged || export.Status == ExportStatuses.Cancelled)
                 {
                     result.Success = false;
                     result.Message = $"Phiếu {export.Warehouse_export_code} không thể gộp (trạng thái: {export.Status})";
                     return result;
                 }
 
-                if (export.Delivery_status == "Delivered")
+                if (export.Delivery_status == DeliveryStatuses.Delivered)
                 {
                     result.Success = false;
                     result.Message = $"Phiếu {export.Warehouse_export_code} đã giao hàng, không thể gộp";
@@ -491,8 +636,8 @@ namespace ErpOnlineOrder.Application.Services
                 Customer_id = customerId!.Value,
                 Staff_id = dto.Staff_id,
                 Export_date = now,
-                Delivery_status = "Pending",
-                Status = "Draft",
+                Delivery_status = DeliveryStatuses.Pending,
+                Status = ExportStatuses.Draft,
                 Split_merge_note = dto.Note ?? $"Gộp từ {exports.Count} phiếu: {string.Join(", ", exports.Select(e => e.Warehouse_export_code))}",
                 Created_by = userId,
                 Updated_by = userId,
@@ -542,7 +687,7 @@ namespace ErpOnlineOrder.Application.Services
             // 5. Cập nhật trạng thái các phiếu đã gộp
             foreach (var export in exports)
             {
-                export.Status = "Merged";
+                export.Status = ExportStatuses.Merged;
                 export.Merged_into_export_id = mergedExport.Id;
                 export.Split_merge_note = $"Đã gộp vào phiếu {mergedExport.Warehouse_export_code}";
                 export.Updated_by = userId;
@@ -562,18 +707,28 @@ namespace ErpOnlineOrder.Application.Services
         public async Task<bool> UndoSplitAsync(int parentExportId, int userId)
         {
             var parentExport = await _exportRepository.GetByIdAsync(parentExportId);
-            if (parentExport == null || parentExport.Status != "Split")
+            if (parentExport == null || parentExport.Status != ExportStatuses.Split)
             {
                 return false;
             }
 
             // Lấy các phiếu con
             var childExports = await _exportRepository.GetChildExportsAsync(parentExportId);
-            
-            // Kiểm tra không có phiếu nào đã giao hàng
-            if (childExports.Any(c => c.Delivery_status == "Delivered"))
+
+            // Kiểm tra: không cho hoàn tác nếu bất kỳ phiếu con nào đã chuyển trạng thái hoặc đã giao hàng
+            foreach (var child in childExports)
             {
-                throw new Exception("Không thể hoàn tác vì có phiếu đã giao hàng");
+                if (child.Status != ExportStatuses.Draft)
+                {
+                    throw new InvalidOperationException(
+                        $"Không thể hoàn tác tách phiếu xuất kho vì phiếu con {child.Warehouse_export_code} đã có trạng thái: {ExportStatuses.ToDisplayText(child.Status)}");
+                }
+
+                if (child.Delivery_status == DeliveryStatuses.Delivered)
+                {
+                    throw new InvalidOperationException(
+                        $"Không thể hoàn tác tách phiếu xuất kho vì phiếu con {child.Warehouse_export_code} đã giao hàng");
+                }
             }
 
             var now = DateTime.UtcNow;
@@ -609,7 +764,7 @@ namespace ErpOnlineOrder.Application.Services
             }
 
             // Cập nhật phiếu gốc
-            parentExport.Status = "Draft";
+            parentExport.Status = ExportStatuses.Draft;
             parentExport.Split_merge_note = null;
             parentExport.Updated_by = userId;
             parentExport.Updated_at = now;
@@ -626,7 +781,7 @@ namespace ErpOnlineOrder.Application.Services
                 return false;
             }
 
-            if (mergedExport.Delivery_status == "Delivered")
+            if (mergedExport.Delivery_status == DeliveryStatuses.Delivered)
             {
                 throw new Exception("Không thể hoàn tác phiếu đã giao hàng");
             }
@@ -634,13 +789,12 @@ namespace ErpOnlineOrder.Application.Services
             var now = DateTime.UtcNow;
 
             // Lấy các phiếu đã gộp vào
-            var allExports = await _exportRepository.GetAllAsync();
-            var sourceExports = allExports.Where(e => e.Merged_into_export_id == mergedExportId).ToList();
+            var sourceExports = (await _exportRepository.GetByMergedIntoExportIdAsync(mergedExportId)).ToList();
 
             // Khôi phục trạng thái các phiếu gốc
             foreach (var export in sourceExports)
             {
-                export.Status = "Draft";
+                export.Status = ExportStatuses.Draft;
                 export.Merged_into_export_id = null;
                 export.Split_merge_note = null;
                 export.Updated_by = userId;
@@ -661,7 +815,46 @@ namespace ErpOnlineOrder.Application.Services
         public async Task<bool> HasExportForInvoiceAsync(int invoiceId)
         {
             var exports = await _exportRepository.GetByInvoiceIdAsync(invoiceId);
-            return exports.Any(e => !e.Is_deleted && e.Status != "Cancelled");
+            return exports.Any(e => !e.Is_deleted && e.Status != ExportStatuses.Cancelled);
+        }
+
+        private async Task SyncStatusToInvoiceAsync(Warehouse_export export, string exportStatus, int userId)
+        {
+            if (export.Invoice_id <= 0) return;
+
+            var invoice = await _invoiceRepository.GetByIdAsync(export.Invoice_id);
+            if (invoice == null || invoice.Status == InvoiceStatuses.Cancelled) return;
+
+            var changed = false;
+
+            if (exportStatus == ExportStatuses.Confirmed && invoice.Status == InvoiceStatuses.Draft)
+            {
+                invoice.Status = InvoiceStatuses.Confirmed;
+                changed = true;
+            }
+            else if (exportStatus == ExportStatuses.Completed && invoice.Status != InvoiceStatuses.Completed)
+            {
+                invoice.Status = InvoiceStatuses.Completed;
+                changed = true;
+            }
+            else if (exportStatus == ExportStatuses.Cancelled)
+            {
+                // Chỉ hủy hóa đơn nếu không còn phiếu xuất kho active nào khác
+                var otherExports = await _exportRepository.GetByInvoiceIdAsync(export.Invoice_id);
+                var hasOtherActive = otherExports.Any(e => !e.Is_deleted && e.Id != export.Id && e.Status != ExportStatuses.Cancelled);
+                if (!hasOtherActive)
+                {
+                    invoice.Status = InvoiceStatuses.Cancelled;
+                    changed = true;
+                }
+            }
+
+            if (changed)
+            {
+                invoice.Updated_by = userId;
+                invoice.Updated_at = DateTime.UtcNow;
+                await _invoiceRepository.UpdateAsync(invoice);
+            }
         }
 
         public async Task<IEnumerable<WarehouseExportDto>> GetChildExportsAsync(int parentExportId)

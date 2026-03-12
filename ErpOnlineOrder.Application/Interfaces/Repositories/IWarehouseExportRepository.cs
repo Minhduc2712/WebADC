@@ -13,6 +13,8 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
         Task<IEnumerable<Warehouse_export>> GetByWarehouseIdAsync(int warehouseId);
         Task<IEnumerable<Warehouse_export>> GetByStatusAsync(string status);
         Task<IEnumerable<Warehouse_export>> GetChildExportsAsync(int parentExportId);
+        Task<IEnumerable<Warehouse_export>> GetByMergedIntoExportIdAsync(int mergedExportId);
+        Task<int> GetMaxChildSuffixAsync(string codePrefix);
         Task AddAsync(Warehouse_export export);
         Task UpdateAsync(Warehouse_export export);
         Task DeleteAsync(int id);

@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.DTOs.OrderDTOs;
 using ErpOnlineOrder.Domain.Models;
+using ErpOnlineOrder.WebMVC.Services.Interfaces;
 
 namespace ErpOnlineOrder.WebMVC.Services
 {

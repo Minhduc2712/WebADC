@@ -241,8 +241,6 @@ namespace ErpOnlineOrder.Infrastructure.Persistence
                 entity.HasKey(x => x.Id);
                 entity.HasQueryFilter(e => !e.Is_deleted);
                 entity.Property(x => x.Warehouse_export_code).HasMaxLength(50).IsRequired();
-                entity.Property(x => x.Carrier_name).HasMaxLength(100);
-                entity.Property(x => x.Tracking_number).HasMaxLength(100);
                 entity.Property(x => x.Delivery_status).HasMaxLength(20);
                 entity.Property(x => x.Status).HasMaxLength(20);
                 entity.Property(x => x.Split_merge_note).HasMaxLength(500);

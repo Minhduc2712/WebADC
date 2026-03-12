@@ -170,8 +170,6 @@ namespace ErpOnlineOrder.Application.Mappers
                 Customer_name = export.Customer?.Full_name ?? "",
                 Staff_id = export.Staff_id,
                 Staff_name = export.Staff?.Full_name ?? "",
-                Carrier_name = export.Carrier_name,
-                Tracking_number = export.Tracking_number,
                 Delivery_status = export.Delivery_status,
                 Status = export.Status ?? "",
                 Parent_export_id = export.Parent_export_id,

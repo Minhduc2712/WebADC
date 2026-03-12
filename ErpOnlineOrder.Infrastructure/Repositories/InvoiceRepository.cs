@@ -168,6 +168,25 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        public async Task<int> GetMaxChildSuffixAsync(string codePrefix)
+        {
+            // IgnoreQueryFilters để tính cả bản ghi đã xóa mềm, tránh trùng mã
+            var codes = await _context.Invoices
+                .IgnoreQueryFilters()
+                .Where(i => i.Invoice_code.StartsWith(codePrefix))
+                .Select(i => i.Invoice_code)
+                .ToListAsync();
+
+            var max = 0;
+            foreach (var code in codes)
+            {
+                var suffix = code.Substring(codePrefix.Length);
+                if (int.TryParse(suffix, out var num) && num > max)
+                    max = num;
+            }
+            return max;
+        }
+
         public async Task<IEnumerable<Invoice>> GetByMergedIntoInvoiceIdAsync(int mergedInvoiceId)
         {
             return await _context.Invoices
@@ -186,7 +205,26 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task UpdateAsync(Invoice invoice)
         {
             invoice.Updated_at = DateTime.Now;
-            _context.Invoices.Update(invoice);
+            var tracked = await _context.Invoices
+                .Include(i => i.Invoice_Details)
+                .FirstOrDefaultAsync(i => i.Id == invoice.Id);
+            if (tracked == null) return;
+
+            _context.Entry(tracked).CurrentValues.SetValues(invoice);
+
+            if (invoice.Invoice_Details != null)
+            {
+                foreach (var detail in invoice.Invoice_Details)
+                {
+                    var trackedDetail = tracked.Invoice_Details
+                        .FirstOrDefault(d => d.Id == detail.Id);
+                    if (trackedDetail != null)
+                    {
+                        _context.Entry(trackedDetail).CurrentValues.SetValues(detail);
+                    }
+                }
+            }
+
             await _context.SaveChangesAsync();
         }
 

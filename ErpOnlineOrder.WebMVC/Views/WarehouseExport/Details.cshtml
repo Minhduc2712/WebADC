@@ -1,28 +1,14 @@
 @model ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs.WarehouseExportDto
+@using ErpOnlineOrder.Domain.Constants
 @{
     ViewData["Title"] = "Chi tiết phiếu xuất kho";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
     
-    var statusClass = Model.Status switch
-    {
-        "Draft" => "bg-secondary",
-        "Pending" => "bg-warning text-dark",
-        "Confirmed" => "bg-primary",
-        "Shipping" => "bg-info",
-        "Completed" => "bg-success",
-        "Cancelled" => "bg-danger",
-        _ => "bg-secondary"
-    };
-    var statusText = Model.Status switch
-    {
-        "Draft" => "Nháp",
-        "Pending" => "Chờ xuất",
-        "Confirmed" => "Đã xác nhận",
-        "Shipping" => "Đang giao",
-        "Completed" => "Hoàn thành",
-        "Cancelled" => "Đã hủy",
-        _ => Model.Status
-    };
+    var statusClass = ExportStatuses.ToCssClass(Model.Status);
+    var statusText = ExportStatuses.ToDisplayText(Model.Status);
+    var canUpdate = (bool)(ViewBag.CanUpdate ?? false);
+    var allowedTransitions = ExportStatuses.AllowedTransitions.TryGetValue(Model.Status, out var transitions)
+        ? transitions : Array.Empty<string>();
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -37,7 +23,7 @@
         </nav>
     </div>
     <div>
-        @if (Model.Status == "Pending")
+        @if (Model.Status == ExportStatuses.Draft)
         {
             <form asp-action="Confirm" asp-route-id="@Model.Id" method="post" style="display: inline;">
                 @Html.AntiForgeryToken()
@@ -52,13 +38,13 @@
                 </button>
             </form>
         }
-        @if (Model.Status != "Completed" && Model.Status != "Cancelled" && Model.Details.Count > 1)
+        @if (Model.Status != ExportStatuses.Completed && Model.Status != ExportStatuses.Cancelled && Model.Details.Count > 1)
         {
             <a href="@Url.Action("Split", new { id = Model.Id })" class="btn btn-info me-2">
                 <i class="fas fa-expand-arrows-alt me-1"></i>Tách phiếu
             </a>
         }
-        @if (Model.Status == "Split")
+        @if (Model.Status == ExportStatuses.Split)
         {
             <form asp-action="UndoSplit" asp-route-id="@Model.Id" method="post" style="display: inline;" onsubmit="return confirm('Bạn có chắc muốn hoàn tác tách phiếu xuất kho?');">
                 @Html.AntiForgeryToken()
@@ -96,6 +82,24 @@
                 <div class="mb-3">
                     <label class="text-muted small">Trạng thái</label>
                     <p class="mb-0"><span class="badge @statusClass">@statusText</span></p>
+                    @if (canUpdate && allowedTransitions.Length > 0)
+                    {
+                        <form asp-action="UpdateStatus" method="post" class="mt-2" onsubmit="return confirm('Bạn có chắc muốn chuyển trạng thái?');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <div class="input-group input-group-sm">
+                                <select name="status" class="form-select form-select-sm">
+                                    @foreach (var nextStatus in allowedTransitions)
+                                    {
+                                        <option value="@nextStatus">@ExportStatuses.ToDisplayText(nextStatus)</option>
+                                    }
+                                </select>
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                        </form>
+                    }
                 </div>
                 <div class="mb-3">
                     <label class="text-muted small">Ngày xuất</label>
@@ -149,60 +153,32 @@
             </div>
             <div class="card-body">
                 @{
-                    var deliveryClass = Model.Delivery_status switch
-                    {
-                        "Pending" => "bg-secondary",
-                        "Shipped" => "bg-info",
-                        "Delivered" => "bg-success",
-                        "Failed" => "bg-danger",
-                        _ => "bg-secondary"
-                    };
-                    var deliveryText = Model.Delivery_status switch
-                    {
-                        "Pending" => "Chờ giao",
-                        "Shipped" => "Đã giao",
-                        "Delivered" => "Đã nhận",
-                        "Failed" => "Thất bại",
-                        _ => Model.Delivery_status ?? "N/A"
-                    };
+                    var deliveryClass = DeliveryStatuses.ToCssClass(Model.Delivery_status);
+                    var deliveryText = DeliveryStatuses.ToDisplayText(Model.Delivery_status);
+                    var allowedDeliveryTransitions = DeliveryStatuses.AllowedTransitions.TryGetValue(Model.Delivery_status, out var dTransitions)
+                        ? dTransitions : Array.Empty<string>();
                 }
                 <div class="mb-3">
                     <label class="text-muted small">Trạng thái giao hàng</label>
                     <p class="mb-0"><span class="badge @deliveryClass">@deliveryText</span></p>
+                    @if (canUpdate && allowedDeliveryTransitions.Length > 0 && Model.Status != ExportStatuses.Cancelled)
+                    {
+                        <form asp-action="UpdateDeliveryStatus" asp-route-id="@Model.Id" method="post" class="mt-2" onsubmit="return confirm('Bạn có chắc muốn chuyển trạng thái giao hàng?');">
+                            @Html.AntiForgeryToken()
+                            <div class="input-group input-group-sm">
+                                <select name="status" class="form-select form-select-sm">
+                                    @foreach (var nextDelivery in allowedDeliveryTransitions)
+                                    {
+                                        <option value="@nextDelivery">@DeliveryStatuses.ToDisplayText(nextDelivery)</option>
+                                    }
+                                </select>
+                                <button type="submit" class="btn btn-info btn-sm">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                        </form>
+                    }
                 </div>
-                @if (!string.IsNullOrEmpty(Model.Carrier_name))
-                {
-                    <div class="mb-3">
-                        <label class="text-muted small">Đơn vị vận chuyển</label>
-                        <p class="mb-0">@Model.Carrier_name</p>
-                    </div>
-                }
-                @if (!string.IsNullOrEmpty(Model.Tracking_number))
-                {
-                    <div class="mb-0">
-                        <label class="text-muted small">Mã vận đơn</label>
-                        <p class="mb-0"><code>@Model.Tracking_number</code></p>
-                    </div>
-                }
-                
-                @if (Model.Status == "Confirmed" || Model.Status == "Shipping")
-                {
-                    <hr />
-                    <form asp-action="UpdateDeliveryStatus" asp-route-id="@Model.Id" method="post">
-                        @Html.AntiForgeryToken()
-                        <div class="mb-2">
-                            <label class="form-label small">Cập nhật trạng thái</label>
-                            <select name="status" class="form-select form-select-sm">
-                                <option value="Shipped">Đã giao cho vận chuyển</option>
-                                <option value="Delivered">Đã giao thành công</option>
-                                <option value="Failed">Giao thất bại</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-sm btn-primary">
-                            <i class="fas fa-save me-1"></i>Cập nhật
-                        </button>
-                    </form>
-                }
             </div>
         </div>
         

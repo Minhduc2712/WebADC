@@ -5,23 +5,30 @@ using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Models;
 using ClosedXML.Excel;
 using ErpOnlineOrder.Application.Helpers;
+using ErpOnlineOrder.Domain.Constants;
 
 namespace ErpOnlineOrder.Application.Services
 {
     public class InvoiceService : IInvoiceService
     {
         private readonly IInvoiceRepository _invoiceRepository;
+        private readonly IOrderRepository _orderRepository;
         private readonly IStaffRepository _staffRepository;
         private readonly ICustomerManagementRepository _customerManagementRepository;
         private readonly IPermissionService _permissionService;
+        private readonly IWarehouseExportRepository _warehouseExportRepository;
 
-        public InvoiceService(IInvoiceRepository invoiceRepository, IStaffRepository staffRepository,
-            ICustomerManagementRepository customerManagementRepository, IPermissionService permissionService)
+        public InvoiceService(IInvoiceRepository invoiceRepository, IOrderRepository orderRepository,
+            IStaffRepository staffRepository,
+            ICustomerManagementRepository customerManagementRepository, IPermissionService permissionService,
+            IWarehouseExportRepository warehouseExportRepository)
         {
             _invoiceRepository = invoiceRepository;
+            _orderRepository = orderRepository;
             _staffRepository = staffRepository;
             _customerManagementRepository = customerManagementRepository;
             _permissionService = permissionService;
+            _warehouseExportRepository = warehouseExportRepository;
         }
 
         #region CRUD cơ bản
@@ -31,7 +38,6 @@ namespace ErpOnlineOrder.Application.Services
             var invoice = await _invoiceRepository.GetByIdAsync(id);
             if (invoice == null) return null;
 
-            // Cán bộ phụ trách chỉ xem được hóa đơn của khách hàng mình quản lý
             if (userId.HasValue && userId.Value > 0 && !await _permissionService.IsAdminAsync(userId.Value))
             {
                 var staff = await _staffRepository.GetByUserIdAsync(userId.Value);
@@ -172,10 +178,12 @@ namespace ErpOnlineOrder.Application.Services
                 return result;
             }
 
-            if (sourceInvoice.Status == "Split" || sourceInvoice.Status == "Merged")
+            if (sourceInvoice.Status == InvoiceStatuses.Merged
+                || sourceInvoice.Status == InvoiceStatuses.Cancelled
+                || sourceInvoice.Status == InvoiceStatuses.Completed)
             {
                 result.Success = false;
-                result.Message = "Không thể tách hóa đơn đã được tách/gộp";
+                result.Message = "Không thể tách hóa đơn đã gộp/hủy/hoàn thành";
                 return result;
             }
 
@@ -199,16 +207,20 @@ namespace ErpOnlineOrder.Application.Services
             var now = DateTime.UtcNow;
             var newInvoices = new List<Invoice>();
 
+            // Tìm số suffix lớn nhất đã tồn tại (bao gồm cả bản ghi đã xóa mềm) để tránh trùng mã
+            var codePrefix = $"{sourceInvoice.Invoice_code}-S";
+            var startIndex = await _invoiceRepository.GetMaxChildSuffixAsync(codePrefix);
+
             // 3. Tạo các hóa đơn mới từ các phần tách
             foreach (var (part, index) in validParts.Select((p, i) => (p, i)))
             {
                 var newInvoice = new Invoice
                 {
-                    Invoice_code = $"{sourceInvoice.Invoice_code}-S{index + 1}",
+                    Invoice_code = $"{codePrefix}{startIndex + index + 1}",
                     Invoice_date = now,
                     Customer_id = sourceInvoice.Customer_id,
                     Staff_id = sourceInvoice.Staff_id,
-                    Status = "Draft",
+                    Status = InvoiceStatuses.Draft,
                     Parent_invoice_id = sourceInvoice.Id,
                     Split_merge_note = dto.Note ?? $"Tách từ hóa đơn {sourceInvoice.Invoice_code}",
                     Created_by = userId,
@@ -274,7 +286,7 @@ namespace ErpOnlineOrder.Application.Services
             }
 
             // 4. Cập nhật hóa đơn gốc
-            sourceInvoice.Status = "Split";
+            sourceInvoice.Status = InvoiceStatuses.Split;
             sourceInvoice.Split_merge_note = dto.Note ?? $"Đã tách thành {newInvoices.Count} hóa đơn";
             sourceInvoice.Total_amount = sourceInvoice.Invoice_Details
                 .Where(d => !d.Is_deleted)
@@ -312,7 +324,7 @@ namespace ErpOnlineOrder.Application.Services
 
             foreach (var id in dto.Invoice_ids)
             {
-                var invoice = await _invoiceRepository.GetByIdAsync(id);
+                var invoice = await _invoiceRepository.GetByIdForUpdateAsync(id);
                 if (invoice == null)
                 {
                     result.Success = false;
@@ -320,7 +332,7 @@ namespace ErpOnlineOrder.Application.Services
                     return result;
                 }
 
-                if (invoice.Status == "Merged" || invoice.Status == "Cancelled")
+                if (invoice.Status == InvoiceStatuses.Merged || invoice.Status == InvoiceStatuses.Cancelled)
                 {
                     result.Success = false;
                     result.Message = $"Hóa đơn {invoice.Invoice_code} không thể gộp (trạng thái: {invoice.Status})";
@@ -361,7 +373,7 @@ namespace ErpOnlineOrder.Application.Services
                 Invoice_date = now,
                 Customer_id = customerId,
                 Staff_id = staffId,
-                Status = "Draft",
+                Status = InvoiceStatuses.Draft,
                 Split_merge_note = dto.Note ?? $"Gộp từ {invoices.Count} hóa đơn: {string.Join(", ", invoices.Select(i => i.Invoice_code))}",
                 Created_by = userId,
                 Updated_by = userId,
@@ -420,7 +432,7 @@ namespace ErpOnlineOrder.Application.Services
             // 4. Cập nhật trạng thái các hóa đơn đã gộp
             foreach (var invoice in invoices)
             {
-                invoice.Status = "Merged";
+                invoice.Status = InvoiceStatuses.Merged;
                 invoice.Merged_into_invoice_id = mergedInvoice.Id;
                 invoice.Split_merge_note = $"Đã gộp vào hóa đơn {mergedInvoice.Invoice_code}";
                 invoice.Updated_by = userId;
@@ -439,14 +451,31 @@ namespace ErpOnlineOrder.Application.Services
         public async Task<bool> UndoSplitAsync(int parentInvoiceId, int userId)
         {
             var parentInvoice = await _invoiceRepository.GetByIdForUpdateAsync(parentInvoiceId);
-            if (parentInvoice == null || parentInvoice.Status != "Split")
+            if (parentInvoice == null || parentInvoice.Status != InvoiceStatuses.Split)
             {
                 return false;
             }
 
             // Lấy các hóa đơn con
             var childInvoices = await _invoiceRepository.GetChildInvoicesAsync(parentInvoiceId);
-            
+
+            // Kiểm tra: không cho hoàn tác nếu bất kỳ hóa đơn con nào đã chuyển trạng thái hoặc có phiếu xuất kho
+            foreach (var child in childInvoices)
+            {
+                if (child.Status != InvoiceStatuses.Draft)
+                {
+                    throw new InvalidOperationException(
+                        $"Không thể hoàn tác tách hóa đơn vì hóa đơn con {child.Invoice_code} đã có trạng thái: {InvoiceStatuses.ToDisplayText(child.Status)}");
+                }
+
+                var exports = await _warehouseExportRepository.GetByInvoiceIdAsync(child.Id);
+                if (exports.Any())
+                {
+                    throw new InvalidOperationException(
+                        $"Không thể hoàn tác tách hóa đơn vì hóa đơn con {child.Invoice_code} đã có phiếu xuất kho");
+                }
+            }
+
             var now = DateTime.UtcNow;
 
             // Khôi phục số lượng về hóa đơn gốc
@@ -477,7 +506,7 @@ namespace ErpOnlineOrder.Application.Services
             }
 
             // Cập nhật hóa đơn gốc
-            parentInvoice.Status = "Draft";
+            parentInvoice.Status = InvoiceStatuses.Draft;
             parentInvoice.Split_merge_note = null;
             parentInvoice.Total_amount = parentInvoice.Invoice_Details
                 .Where(d => !d.Is_deleted)
@@ -508,7 +537,7 @@ namespace ErpOnlineOrder.Application.Services
             // Khôi phục trạng thái các hóa đơn gốc
             foreach (var invoice in sourceInvoices)
             {
-                invoice.Status = "Draft";
+                invoice.Status = InvoiceStatuses.Draft;
                 invoice.Merged_into_invoice_id = null;
                 invoice.Split_merge_note = null;
                 invoice.Updated_by = userId;
@@ -521,6 +550,158 @@ namespace ErpOnlineOrder.Application.Services
 
             return true;
         }
+
+        public async Task<bool> UpdateStatusAsync(int id, string newStatus, int userId)
+        {
+            var invoice = await _invoiceRepository.GetByIdForUpdateAsync(id);
+            if (invoice == null) return false;
+
+            if (!InvoiceStatuses.CanTransition(invoice.Status, newStatus))
+                throw new Exception($"Không thể chuyển trạng thái hóa đơn từ '{InvoiceStatuses.ToDisplayText(invoice.Status)}' sang '{InvoiceStatuses.ToDisplayText(newStatus)}'");
+
+            invoice.Status = newStatus;
+            invoice.Updated_by = userId;
+            invoice.Updated_at = DateTime.UtcNow;
+            await _invoiceRepository.UpdateAsync(invoice);
+
+            // Đồng bộ trạng thái sang phiếu xuất kho tương ứng
+            await SyncStatusToExportsAsync(invoice.Id, newStatus, userId);
+
+            return true;
+        }
+
+        private async Task SyncStatusToExportsAsync(int invoiceId, string invoiceStatus, int userId)
+        {
+            var exports = await _warehouseExportRepository.GetByInvoiceIdAsync(invoiceId);
+            var activeExports = exports.Where(e => !e.Is_deleted && e.Status != ExportStatuses.Cancelled).ToList();
+
+            foreach (var export in activeExports)
+            {
+                var changed = false;
+
+                if (invoiceStatus == InvoiceStatuses.Confirmed && export.Status == ExportStatuses.Draft)
+                {
+                    export.Status = ExportStatuses.Confirmed;
+                    changed = true;
+                }
+                else if (invoiceStatus == InvoiceStatuses.Completed && export.Status != ExportStatuses.Completed)
+                {
+                    export.Status = ExportStatuses.Completed;
+                    if (export.Delivery_status != DeliveryStatuses.Delivered)
+                        export.Delivery_status = DeliveryStatuses.Delivered;
+                    changed = true;
+                }
+                else if (invoiceStatus == InvoiceStatuses.Cancelled)
+                {
+                    export.Status = ExportStatuses.Cancelled;
+                    changed = true;
+                }
+
+                if (changed)
+                {
+                    export.Updated_by = userId;
+                    export.Updated_at = DateTime.UtcNow;
+                    await _warehouseExportRepository.UpdateAsync(export);
+                }
+            }
+        }
+
+        #endregion
+
+        #region Tạo hóa đơn từ đơn hàng
+
+        public async Task<CreateInvoiceFromOrderResultDto> CreateInvoiceFromOrderAsync(int orderId, int userId)
+        {
+            var result = new CreateInvoiceFromOrderResultDto();
+
+            var order = await _orderRepository.GetByIdAsync(orderId);
+            if (order == null)
+            {
+                result.Success = false;
+                result.Message = "Đơn hàng không tồn tại";
+                return result;
+            }
+
+            if (order.Order_status != "Confirmed")
+            {
+                result.Success = false;
+                result.Message = "Chỉ có thể tạo hóa đơn từ đơn hàng đã được xác nhận";
+                return result;
+            }
+
+            var activeDetails = order.Order_Details?.Where(d => !d.Is_deleted).ToList();
+            if (activeDetails == null || activeDetails.Count == 0)
+            {
+                result.Success = false;
+                result.Message = "Đơn hàng không có chi tiết sản phẩm";
+                return result;
+            }
+
+            // Lấy Staff_id từ cán bộ đang thao tác
+            var staff = await _staffRepository.GetByUserIdAsync(userId);
+            if (staff == null)
+            {
+                result.Success = false;
+                result.Message = "Không tìm thấy thông tin cán bộ. Chỉ cán bộ mới có thể tạo hóa đơn.";
+                return result;
+            }
+            var staffId = staff.Id;
+
+            var now = DateTime.UtcNow;
+            var invoice = new Invoice
+            {
+                Invoice_code = $"INV-{now:yyyyMMdd}-{Guid.NewGuid().ToString()[..6].ToUpper()}",
+                Invoice_date = now,
+                Customer_id = order.Customer_id,
+                Staff_id = staffId,
+                Order_id = orderId,
+                Status = InvoiceStatuses.Draft,
+                Created_by = userId,
+                Updated_by = userId,
+                Created_at = now,
+                Updated_at = now,
+                Is_deleted = false,
+                Invoice_Details = new List<Invoice_detail>()
+            };
+
+            decimal totalAmount = 0;
+            decimal taxAmount = 0;
+
+            foreach (var od in activeDetails)
+            {
+                var detail = new Invoice_detail
+                {
+                    Product_id = od.Product_id,
+                    Quantity = od.Quantity,
+                    Unit_price = od.Unit_price,
+                    Total_price = od.Total_price,
+                    Tax_rate = od.Tax_rate,
+                    Created_by = userId,
+                    Updated_by = userId,
+                    Created_at = now,
+                    Updated_at = now,
+                    Is_deleted = false
+                };
+
+                totalAmount += detail.Total_price;
+                taxAmount += detail.Total_price * detail.Tax_rate / 100;
+
+                invoice.Invoice_Details.Add(detail);
+            }
+
+            invoice.Total_amount = totalAmount;
+            invoice.Tax_amount = taxAmount;
+
+            await _invoiceRepository.AddAsync(invoice);
+
+            result.Success = true;
+            result.Message = $"Đã tạo hóa đơn nháp {invoice.Invoice_code} từ đơn hàng {order.Order_code}";
+            result.Invoice = EntityMappers.ToInvoiceDto(invoice);
+
+            return result;
+        }
+
+        #endregion
 
         public async Task<byte[]> ExportInvoicesToExcelAsync(string? status = null)
         {
@@ -559,8 +740,6 @@ namespace ErpOnlineOrder.Application.Services
             workbook.SaveAs(stream, false);
             return stream.ToArray();
         }
-
-        #endregion
 
     }
 }

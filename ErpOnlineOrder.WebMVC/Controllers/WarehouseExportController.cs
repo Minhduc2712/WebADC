@@ -3,9 +3,11 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Domain.Constants;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.WebMVC.Attributes;
 using ErpOnlineOrder.WebMVC.Services;
+using ErpOnlineOrder.WebMVC.Services.Interfaces;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
@@ -109,7 +111,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var result = await _warehouseExportApiClient.CreateAsync(model);
+                var (result, error) = await _warehouseExportApiClient.CreateAsync(model);
 
                 if (result != null)
                 {
@@ -118,7 +120,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 }
                 else
                 {
-                    SetErrorMessage("Không thể tạo phiếu xuất kho!");
+                    SetErrorMessage(error ?? "Không thể tạo phiếu xuất kho!");
                     var invoices = await _invoiceApiClient.GetForWarehouseExportAsync();
                     var warehouses = await _warehouseApiClient.GetForSelectAsync();
                     ViewBag.Invoices = new SelectList(invoices, "Id", "Invoice_code");
@@ -279,7 +281,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             try
             {
                 var exports = await _warehouseExportApiClient.GetAllAsync();
-                return View(exports.Where(e => e.Status != "Completed" && e.Status != "Cancelled" && e.Status != "Merged"));
+                return View(exports.Where(e => e.Status != ExportStatuses.Completed && e.Status != ExportStatuses.Cancelled && e.Status != ExportStatuses.Merged));
             }
             catch (Exception ex)
             {
@@ -375,6 +377,28 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 SetErrorMessage(GetDetailedErrorMessage(ex));
                 return RedirectToAction(nameof(Index));
             }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
+        public async Task<IActionResult> UpdateStatus(int id, string status)
+        {
+            try
+            {
+                var (success, error) = await _warehouseExportApiClient.UpdateStatusAsync(id, status);
+                if (success)
+                    SetSuccessMessage($"Đã cập nhật trạng thái phiếu xuất kho thành: {ExportStatuses.ToDisplayText(status)}");
+                else
+                    SetErrorMessage(error ?? "Không thể cập nhật trạng thái!");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating export status");
+                SetErrorMessage(GetDetailedErrorMessage(ex));
+            }
+
+            return RedirectToAction(nameof(Details), new { id });
         }
 
         private async Task LoadCurrentUserPermissions()

@@ -2,9 +2,11 @@ using Microsoft.AspNetCore.Mvc;
 using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.Application.DTOs.InvoiceDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Domain.Constants;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.WebMVC.Attributes;
 using ErpOnlineOrder.WebMVC.Services;
+using ErpOnlineOrder.WebMVC.Services.Interfaces;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
@@ -248,6 +250,28 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 SetErrorMessage(GetDetailedErrorMessage(ex));
                 return RedirectToAction(nameof(Index));
             }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequirePermission(PermissionCodes.InvoiceUpdate)]
+        public async Task<IActionResult> UpdateStatus(int id, string status)
+        {
+            try
+            {
+                var (success, error) = await _invoiceApiClient.UpdateStatusAsync(id, status);
+                if (success)
+                    SetSuccessMessage($"Đã cập nhật trạng thái hóa đơn thành: {InvoiceStatuses.ToDisplayText(status)}");
+                else
+                    SetErrorMessage(error ?? "Không thể cập nhật trạng thái!");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating invoice status");
+                SetErrorMessage(GetDetailedErrorMessage(ex));
+            }
+
+            return RedirectToAction(nameof(Details), new { id });
         }
 
         private async Task LoadCurrentUserPermissions()

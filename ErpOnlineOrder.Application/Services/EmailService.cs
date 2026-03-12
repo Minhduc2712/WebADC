@@ -87,6 +87,30 @@ namespace ErpOnlineOrder.Application.Services
             }
         }
 
+        public async Task SendOrderConfirmedNotificationForCustomerAsync(int OrderId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var order = await _orderRepository.GetByIdAsync(OrderId);
+                if (order == null) return;
+
+                var smtp = await _settingService.GetSmtpSettingsAsync();
+                if (!IsSmtpValid(smtp)) return;
+
+                var customerEmail = GetCustomerEmail(order);
+                if (string.IsNullOrWhiteSpace(customerEmail)) return;
+
+                var subject = $"[Thông báo] Đơn hàng của bạn đã được duyệt - Đơn hàng #{order.Order_code}";
+                var body = BuildOrderConfirmedBodyCustomer(order);
+
+                await SendEmailAsync(smtp!, customerEmail, subject, body, cancellationToken);
+            }
+            catch (System.Exception)
+            {
+                // Email gửi thất bại
+            }
+        }
+
         private static bool IsSmtpValid(SmtpSettingsDto? smtp)
         {
             return smtp != null && !string.IsNullOrWhiteSpace(smtp.FromEmail);
@@ -201,6 +225,41 @@ namespace ErpOnlineOrder.Application.Services
 
             sb.Append("</table>");
             sb.Append($"<p><strong>Tổng tiền:</strong> {order.Total_price:N0} VNĐ</p>");
+            sb.Append("</body></html>");
+            return sb.ToString();
+        }
+
+        private static string BuildOrderConfirmedBodyCustomer(Order order)
+        {
+            var sb = new StringBuilder();
+            sb.Append("<html><body style='font-family: Arial, sans-serif;'>");
+            sb.Append("<h2>Đơn hàng đã được duyệt</h2>");
+            sb.Append("<p>Đơn hàng của bạn đã được duyệt và đang được xử lý.</p>");
+            sb.Append($"<p><strong>Mã đơn:</strong> {WebUtility.HtmlEncode(order.Order_code)}</p>");
+            sb.Append($"<p><strong>Ngày đặt:</strong> {order.Order_date:dd/MM/yyyy HH:mm}</p>");
+            sb.Append($"<p><strong>Trạng thái:</strong> {WebUtility.HtmlEncode(order.Order_status ?? "Confirmed")}</p>");
+
+            if (order.Customer != null)
+            {
+                sb.Append($"<p><strong>Khách hàng:</strong> {WebUtility.HtmlEncode(order.Customer.Full_name ?? order.Customer.Customer_code)}</p>");
+                sb.Append($"<p><strong>Địa chỉ giao:</strong> {WebUtility.HtmlEncode(order.Shipping_address ?? order.Customer.Address ?? "")}</p>");
+            }
+
+            sb.Append("<h3>Chi tiết đơn hàng</h3>");
+            sb.Append("<table border='1' cellpadding='8' cellspacing='0' style='border-collapse: collapse; width: 100%;'>");
+            sb.Append("<tr style='background: #f0f0f0;'><th>STT</th><th>Sản phẩm</th><th>SL</th><th>Đơn giá</th><th>Thành tiền</th></tr>");
+
+            int stt = 1;
+            foreach (var od in order.Order_Details ?? [])
+            {
+                var productName = od.Product?.Product_name ?? $"Product #{od.Product_id}";
+                sb.Append($"<tr><td>{stt}</td><td>{WebUtility.HtmlEncode(productName)}</td><td>{od.Quantity}</td><td>{od.Unit_price:N0}</td><td>{od.Total_price:N0}</td></tr>");
+                stt++;
+            }
+
+            sb.Append("</table>");
+            sb.Append($"<p><strong>Tổng tiền:</strong> {order.Total_price:N0} VNĐ</p>");
+            sb.Append("<p>Cảm ơn bạn đã đặt hàng!</p>");
             sb.Append("</body></html>");
             return sb.ToString();
         }

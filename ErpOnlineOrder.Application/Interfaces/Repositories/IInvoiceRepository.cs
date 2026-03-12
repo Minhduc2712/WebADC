@@ -16,6 +16,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
         Task<IEnumerable<InvoiceDto>> GetForMergeAsync(IEnumerable<int>? customerIds = null);
         Task<IEnumerable<InvoiceSelectDto>> GetForWarehouseExportSelectAsync(IEnumerable<int>? customerIds = null);
         Task<IEnumerable<Invoice>> GetChildInvoicesAsync(int parentInvoiceId);
+        Task<int> GetMaxChildSuffixAsync(string codePrefix);
         Task<IEnumerable<Invoice>> GetByMergedIntoInvoiceIdAsync(int mergedInvoiceId);
         Task AddAsync(Invoice invoice);
         Task UpdateAsync(Invoice invoice);

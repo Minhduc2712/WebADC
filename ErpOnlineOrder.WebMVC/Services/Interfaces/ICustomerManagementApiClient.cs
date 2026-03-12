@@ -1,6 +1,6 @@
 using ErpOnlineOrder.Domain.Models;
 
-namespace ErpOnlineOrder.WebMVC.Services
+namespace ErpOnlineOrder.WebMVC.Services.Interfaces
 {
     public interface ICustomerManagementApiClient
     {

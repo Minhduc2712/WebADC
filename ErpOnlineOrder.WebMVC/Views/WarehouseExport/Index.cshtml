@@ -1,4 +1,5 @@
 @model PagedResult<ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs.WarehouseExportDto>
+@using ErpOnlineOrder.Domain.Constants
 @{
     ViewData["Title"] = "Quản lý xuất kho";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
@@ -165,42 +166,10 @@
                     {
                         @foreach (var export in items.OrderByDescending(e => e.Export_date))
                         {
-                            var statusClass = export.Status switch
-                            {
-                                "Draft" => "bg-secondary",
-                                "Pending" => "bg-warning text-dark",
-                                "Confirmed" => "bg-primary",
-                                "Shipping" => "bg-info",
-                                "Completed" => "bg-success",
-                                "Cancelled" => "bg-danger",
-                                _ => "bg-secondary"
-                            };
-                            var statusText = export.Status switch
-                            {
-                                "Draft" => "Nháp",
-                                "Pending" => "Chờ xuất",
-                                "Confirmed" => "Đã xác nhận",
-                                "Shipping" => "Đang giao",
-                                "Completed" => "Hoàn thành",
-                                "Cancelled" => "Đã hủy",
-                                _ => export.Status
-                            };
-                            var deliveryClass = export.Delivery_status switch
-                            {
-                                "Pending" => "bg-secondary",
-                                "Shipped" => "bg-info",
-                                "Delivered" => "bg-success",
-                                "Failed" => "bg-danger",
-                                _ => "bg-secondary"
-                            };
-                            var deliveryText = export.Delivery_status switch
-                            {
-                                "Pending" => "Chờ giao",
-                                "Shipped" => "Đã giao",
-                                "Delivered" => "Đã nhận",
-                                "Failed" => "Thất bại",
-                                _ => export.Delivery_status ?? "N/A"
-                            };
+                            var statusClass = ErpOnlineOrder.Domain.Constants.ExportStatuses.ToCssClass(export.Status);
+                            var statusText = ErpOnlineOrder.Domain.Constants.ExportStatuses.ToDisplayText(export.Status);
+                            var deliveryClass = ErpOnlineOrder.Domain.Constants.DeliveryStatuses.ToCssClass(export.Delivery_status);
+                            var deliveryText = ErpOnlineOrder.Domain.Constants.DeliveryStatuses.ToDisplayText(export.Delivery_status);
                             <tr>
                                 <td>
                                     <span class="badge bg-secondary">@export.Warehouse_export_code</span>
@@ -214,8 +183,50 @@
                                 <td>@export.Warehouse_name</td>
                                 <td>@export.Export_date.ToString("dd/MM/yyyy")</td>
                                 <td class="text-center"><span class="badge bg-primary">@export.Total_quantity</span></td>
-                                <td><span class="badge @statusClass">@statusText</span></td>
-                                <td><span class="badge @deliveryClass">@deliveryText</span></td>
+                                <td>
+                                    @{
+                                        var allowedExport = ExportStatuses.AllowedTransitions.TryGetValue(export.Status, out var et) ? et : Array.Empty<string>();
+                                    }
+                                    <span class="badge @statusClass">@statusText</span>
+                                    @if (allowedExport.Length > 0)
+                                    {
+                                        <form asp-action="UpdateStatus" method="post" class="mt-1" style="min-width:140px" onsubmit="return confirm('Xác nhận chuyển trạng thái?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@export.Id" />
+                                            <div class="input-group input-group-sm">
+                                                <select name="status" class="form-select form-select-sm">
+                                                    @foreach (var ns in allowedExport)
+                                                    {
+                                                        <option value="@ns">@ExportStatuses.ToDisplayText(ns)</option>
+                                                    }
+                                                </select>
+                                                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-sync-alt"></i></button>
+                                            </div>
+                                        </form>
+                                    }
+                                </td>
+                                <td>
+                                    @{
+                                        var allowedDelivery = DeliveryStatuses.AllowedTransitions.TryGetValue(export.Delivery_status, out var dt) ? dt : Array.Empty<string>();
+                                    }
+                                    <span class="badge @deliveryClass">@deliveryText</span>
+                                    @if (allowedDelivery.Length > 0 && export.Status != ExportStatuses.Cancelled)
+                                    {
+                                        <form asp-action="UpdateDeliveryStatus" method="post" class="mt-1" style="min-width:140px" onsubmit="return confirm('Xác nhận chuyển trạng thái giao hàng?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@export.Id" />
+                                            <div class="input-group input-group-sm">
+                                                <select name="status" class="form-select form-select-sm">
+                                                    @foreach (var ns in allowedDelivery)
+                                                    {
+                                                        <option value="@ns">@DeliveryStatuses.ToDisplayText(ns)</option>
+                                                    }
+                                                </select>
+                                                <button type="submit" class="btn btn-info btn-sm"><i class="fas fa-sync-alt"></i></button>
+                                            </div>
+                                        </form>
+                                    }
+                                </td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
                                         <a asp-action="Details" asp-route-id="@export.Id" class="btn btn-outline-primary" title="Xem chi tiết">

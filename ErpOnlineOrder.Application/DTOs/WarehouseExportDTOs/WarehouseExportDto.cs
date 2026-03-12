@@ -21,8 +21,6 @@ namespace ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs
         public int Staff_id { get; set; }
         public string Staff_name { get; set; } = string.Empty;
         
-        public string? Carrier_name { get; set; }
-        public string? Tracking_number { get; set; }
         public string Delivery_status { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         

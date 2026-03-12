@@ -152,6 +152,9 @@ namespace ErpOnlineOrder.Application.Constants
         public const string PermissionDelete = "PERMISSION_DELETE";
         public const string PermissionAssignUser = "PERMISSION_ASSIGN";
 
+        // Manage Customer Management (Phân quyền quản lý khách hàng)
+        public const string ManageCustomerManagement = "MANAGE_CUSTOMER_MANAGEMENT";
+
         // Settings
         public const string SettingsView = "SETTINGS_VIEW";
         public const string SettingsUpdate = "SETTINGS_UPDATE";

@@ -422,6 +422,11 @@ namespace ErpOnlineOrder.Application.Services
             order.Updated_at = DateTime.UtcNow;
 
             await _orderRepository.UpdateAsync(order);
+
+            _ = Task.Run(async () => {
+                try { await _emailService.SendOrderConfirmedNotificationForCustomerAsync(order.Id); } catch { }
+            });
+
             return true;
         }
 

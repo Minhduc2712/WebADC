@@ -1,30 +1,14 @@
 @model ErpOnlineOrder.Application.DTOs.InvoiceDTOs.InvoiceDto
+@using ErpOnlineOrder.Domain.Constants
 @{
     ViewData["Title"] = "Chi tiết hóa đơn";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
     
-    var statusClass = Model.Status switch
-    {
-        "Draft" => "bg-secondary",
-        "Pending" => "bg-warning text-dark",
-        "Confirmed" => "bg-primary",
-        "Completed" => "bg-success",
-        "Cancelled" => "bg-danger",
-        "Split" => "bg-info",
-        "Merged" => "bg-secondary",
-        _ => "bg-secondary"
-    };
-    var statusText = Model.Status switch
-    {
-        "Draft" => "Nháp",
-        "Pending" => "Chờ xử lý",
-        "Confirmed" => "Đã xác nhận",
-        "Completed" => "Hoàn thành",
-        "Cancelled" => "Đã hủy",
-        "Split" => "Đã tách",
-        "Merged" => "Đã gộp",
-        _ => Model.Status
-    };
+    var statusClass = InvoiceStatuses.ToCssClass(Model.Status);
+    var statusText = InvoiceStatuses.ToDisplayText(Model.Status);
+    var canUpdate = (bool)(ViewBag.CanUpdate ?? false);
+    var allowedTransitions = InvoiceStatuses.AllowedTransitions.TryGetValue(Model.Status, out var transitions)
+        ? transitions : Array.Empty<string>();
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -39,13 +23,13 @@
         </nav>
     </div>
     <div>
-        @if (Model.Status != "Completed" && Model.Status != "Cancelled" && Model.Details.Count > 1)
+        @if (Model.Status != InvoiceStatuses.Completed && Model.Status != InvoiceStatuses.Cancelled && (Model.Details?.Count > 1 || Model.Details?.Any(d => d.Quantity > 1) == true))
         {
             <a href="@Url.Action("Split", new { id = Model.Id })" class="btn btn-info me-2">
                 <i class="fas fa-expand-arrows-alt me-1"></i>Tách hóa đơn
             </a>
         }
-        @if (Model.Status == "Split")
+        @if (Model.Status == InvoiceStatuses.Split)
         {
             <form asp-action="UndoSplit" method="post" style="display: inline;" onsubmit="return confirm('Bạn có chắc muốn hoàn tác tách hóa đơn?');">
                 @Html.AntiForgeryToken()
@@ -85,6 +69,24 @@
                 <div class="mb-3">
                     <label class="text-muted small">Trạng thái</label>
                     <p class="mb-0"><span class="badge @statusClass">@statusText</span></p>
+                    @if (canUpdate && allowedTransitions.Length > 0)
+                    {
+                        <form asp-action="UpdateStatus" method="post" class="mt-2" onsubmit="return confirm('Bạn có chắc muốn chuyển trạng thái?');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <div class="input-group input-group-sm">
+                                <select name="status" class="form-select form-select-sm">
+                                    @foreach (var nextStatus in allowedTransitions)
+                                    {
+                                        <option value="@nextStatus">@InvoiceStatuses.ToDisplayText(nextStatus)</option>
+                                    }
+                                </select>
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                        </form>
+                    }
                 </div>
                 <div class="mb-3">
                     <label class="text-muted small">Ngày lập</label>

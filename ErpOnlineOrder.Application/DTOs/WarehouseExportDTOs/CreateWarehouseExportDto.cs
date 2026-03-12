@@ -7,8 +7,6 @@ namespace ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs
         public int Warehouse_id { get; set; }
         public int Staff_id { get; set; }
         public DateTime? Export_date { get; set; }
-        public string? Carrier_name { get; set; }
-        public string? Tracking_number { get; set; }
         public List<CreateWarehouseExportDetailDto>? Details { get; set; }
     }
 

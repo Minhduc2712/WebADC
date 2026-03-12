@@ -1,6 +1,6 @@
 using ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs;
 
-namespace ErpOnlineOrder.WebMVC.Services
+namespace ErpOnlineOrder.WebMVC.Services.Interfaces
 {
     public interface IWarehouseExportApiClient
     {
@@ -9,7 +9,7 @@ namespace ErpOnlineOrder.WebMVC.Services
         Task<WarehouseExportDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
         Task<IEnumerable<WarehouseExportDto>> GetByInvoiceIdAsync(int invoiceId, CancellationToken cancellationToken = default);
         Task<IEnumerable<WarehouseExportDto>> GetByCustomerIdAsync(int customerId, CancellationToken cancellationToken = default);
-        Task<WarehouseExportDto?> CreateAsync(CreateWarehouseExportDto dto, CancellationToken cancellationToken = default);
+        Task<(WarehouseExportDto? Data, string? Error)> CreateAsync(CreateWarehouseExportDto dto, CancellationToken cancellationToken = default);
         Task<(bool Success, string? Error)> UpdateDeliveryStatusAsync(int id, string status, CancellationToken cancellationToken = default);
         Task<(bool Success, string? Error)> ConfirmAsync(int id, CancellationToken cancellationToken = default);
         Task<(bool Success, string? Error)> CancelAsync(int id, CancellationToken cancellationToken = default);
@@ -20,5 +20,6 @@ namespace ErpOnlineOrder.WebMVC.Services
         Task<bool> UndoMergeAsync(int id, CancellationToken cancellationToken = default);
         Task<bool> HasExportForInvoiceAsync(int invoiceId, CancellationToken cancellationToken = default);
         Task<byte[]> ExportToExcelAsync(string? status = null, CancellationToken cancellationToken = default);
+        Task<(bool Success, string? Error)> UpdateStatusAsync(int id, string status, CancellationToken cancellationToken = default);
     }
 }

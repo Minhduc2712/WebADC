@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs;
 using ErpOnlineOrder.Domain.Models;
+using ErpOnlineOrder.WebMVC.Services.Interfaces;
 
 namespace ErpOnlineOrder.WebMVC.Services
 {
@@ -56,11 +57,13 @@ namespace ErpOnlineOrder.WebMVC.Services
             return list ?? new List<WarehouseExportDto>();
         }
 
-        public async Task<WarehouseExportDto?> CreateAsync(CreateWarehouseExportDto dto, CancellationToken cancellationToken = default)
+        public async Task<(WarehouseExportDto? Data, string? Error)> CreateAsync(CreateWarehouseExportDto dto, CancellationToken cancellationToken = default)
         {
             var response = await _http.PostAsJsonAsync("warehouseexport", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
-            return await response.Content.ReadFromJsonAsync<WarehouseExportDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+                return (null, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            var data = await response.Content.ReadFromJsonAsync<WarehouseExportDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return (data, null);
         }
 
         public async Task<(bool Success, string? Error)> UpdateDeliveryStatusAsync(int id, string status, CancellationToken cancellationToken = default)
@@ -123,6 +126,13 @@ namespace ErpOnlineOrder.WebMVC.Services
             if (!response.IsSuccessStatusCode) return false;
             var obj = await response.Content.ReadFromJsonAsync<CheckInvoiceResponse>(ErpApiClientHelper.JsonOptions, cancellationToken);
             return obj?.has_export ?? false;
+        }
+
+        public async Task<(bool Success, string? Error)> UpdateStatusAsync(int id, string status, CancellationToken cancellationToken = default)
+        {
+            var response = await _http.PatchAsync($"warehouseexport/{id}/status?status={Uri.EscapeDataString(status)}", null, cancellationToken);
+            if (response.IsSuccessStatusCode) return (true, null);
+            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
         }
 
         public async Task<byte[]> ExportToExcelAsync(string? status = null, CancellationToken cancellationToken = default)

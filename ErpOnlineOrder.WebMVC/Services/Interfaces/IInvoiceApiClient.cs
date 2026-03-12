@@ -1,6 +1,6 @@
 using ErpOnlineOrder.Application.DTOs.InvoiceDTOs;
 
-namespace ErpOnlineOrder.WebMVC.Services
+namespace ErpOnlineOrder.WebMVC.Services.Interfaces
 {
     public interface IInvoiceApiClient
     {
@@ -13,6 +13,8 @@ namespace ErpOnlineOrder.WebMVC.Services
         Task<MergeInvoiceResultDto?> MergeAsync(MergeInvoicesDto dto, CancellationToken cancellationToken = default);
         Task<bool> UndoSplitAsync(int parentInvoiceId, CancellationToken cancellationToken = default);
         Task<bool> UndoMergeAsync(int mergedInvoiceId, CancellationToken cancellationToken = default);
+        Task<CreateInvoiceFromOrderResultDto?> CreateFromOrderAsync(int orderId, CancellationToken cancellationToken = default);
         Task<byte[]> ExportToExcelAsync(string? status = null, CancellationToken cancellationToken = default);
+        Task<(bool Success, string? Error)> UpdateStatusAsync(int id, string status, CancellationToken cancellationToken = default);
     }
 }

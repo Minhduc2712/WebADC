@@ -1,6 +1,7 @@
 using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.Application.DTOs.InvoiceDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Domain.Constants;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.WebAPI.Attributes;
 using Microsoft.AspNetCore.Mvc;
@@ -79,13 +80,20 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [HttpPost("{id}/undo-split")]
         public async Task<IActionResult> UndoSplit(int id)
         {
-            var userId = int.TryParse(User.FindFirst("UserId")?.Value, out int uid) ? uid : 0;
-            var result = await _invoiceService.UndoSplitAsync(id, userId);
-            if (!result)
+            try
             {
-                return BadRequest(new { message = "Không thể hoàn tác" });
+                var userId = int.TryParse(User.FindFirst("UserId")?.Value, out int uid) ? uid : 0;
+                var result = await _invoiceService.UndoSplitAsync(id, userId);
+                if (!result)
+                {
+                    return BadRequest(new { message = "Không thể hoàn tác" });
+                }
+                return Ok(new { success = true, message = "Đã hoàn tác tách hóa đơn" });
             }
-            return Ok(new { success = true, message = "Đã hoàn tác tách hóa đơn" });
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
         [HttpPost("{id}/undo-merge")]
         public async Task<IActionResult> UndoMerge(int id)
@@ -97,6 +105,33 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 return BadRequest(new { message = "Không thể hoàn tác" });
             }
             return Ok(new { success = true, message = "Đã hoàn tác gộp hóa đơn" });
+        }
+
+        [HttpPost("create-from-order/{orderId}")]
+        // [RequirePermission(PermissionCodes.InvoiceCreate)]
+        public async Task<IActionResult> CreateFromOrder(int orderId)
+        {
+            var userId = GetCurrentUserId();
+            var result = await _invoiceService.CreateInvoiceFromOrderAsync(orderId, userId);
+            if (!result.Success)
+                return BadRequest(result);
+            return Ok(result);
+        }
+
+        [HttpPatch("{id}/status")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromQuery] string status)
+        {
+            try
+            {
+                var result = await _invoiceService.UpdateStatusAsync(id, status, GetCurrentUserId());
+                if (!result)
+                    return NotFound(new { message = "Hóa đơn không tồn tại" });
+                return Ok(new { success = true, message = $"Đã cập nhật trạng thái hóa đơn thành: {InvoiceStatuses.ToDisplayText(status)}" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpGet("export")]

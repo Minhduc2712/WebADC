@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using ErpOnlineOrder.Application.DTOs.InvoiceDTOs;
 using ErpOnlineOrder.Domain.Models;
+using ErpOnlineOrder.WebMVC.Services.Interfaces;
 
 namespace ErpOnlineOrder.WebMVC.Services
 {
@@ -80,6 +81,20 @@ namespace ErpOnlineOrder.WebMVC.Services
         {
             var response = await _http.PostAsync($"invoice/{mergedInvoiceId}/undo-merge", null, cancellationToken);
             return response.IsSuccessStatusCode;
+        }
+
+        public async Task<CreateInvoiceFromOrderResultDto?> CreateFromOrderAsync(int orderId, CancellationToken cancellationToken = default)
+        {
+            var response = await _http.PostAsync($"invoice/create-from-order/{orderId}", null, cancellationToken);
+            if (!response.IsSuccessStatusCode) return null;
+            return await response.Content.ReadFromJsonAsync<CreateInvoiceFromOrderResultDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
+        }
+
+        public async Task<(bool Success, string? Error)> UpdateStatusAsync(int id, string status, CancellationToken cancellationToken = default)
+        {
+            var response = await _http.PatchAsync($"invoice/{id}/status?status={Uri.EscapeDataString(status)}", null, cancellationToken);
+            if (response.IsSuccessStatusCode) return (true, null);
+            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
         }
 
         public async Task<byte[]> ExportToExcelAsync(string? status = null, CancellationToken cancellationToken = default)

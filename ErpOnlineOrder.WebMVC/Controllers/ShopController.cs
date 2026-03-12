@@ -7,9 +7,11 @@ using ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs;
 using ErpOnlineOrder.Application.DTOs.InvoiceDTOs;
 using ErpOnlineOrder.Application.DTOs.CustomerDTOs;
 using ErpOnlineOrder.Application.DTOs.AuthDTOs;
+using ErpOnlineOrder.Domain.Constants;
 using ErpOnlineOrder.WebMVC.Extensions;
 using ErpOnlineOrder.WebMVC.Attributes;
 using ErpOnlineOrder.WebMVC.Services;
+using ErpOnlineOrder.WebMVC.Services.Interfaces;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
@@ -364,7 +366,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             if (export.Customer_id != customer.Id)
                 return Forbid();
 
-            if (export.Status == "Cancelled")
+            if (export.Status == ExportStatuses.Cancelled)
             {
                 TempData["Error"] = "Phiếu xuất kho đã hủy.";
                 return RedirectToAction(nameof(Exports));
@@ -377,7 +379,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 return RedirectToAction(nameof(Exports));
             }
 
-            if (invoice.Status == "Split" || invoice.Status == "Merged")
+            if (invoice.Status == InvoiceStatuses.Split || invoice.Status == InvoiceStatuses.Merged)
             {
                 TempData["Error"] = "Hóa đơn này đã được tách hoặc gộp.";
                 return RedirectToAction(nameof(Exports));

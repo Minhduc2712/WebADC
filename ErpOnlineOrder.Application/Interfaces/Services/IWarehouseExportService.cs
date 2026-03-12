@@ -18,11 +18,12 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
         Task<bool> UpdateDeliveryStatusAsync(int id, string status, int userId);
         Task<bool> ConfirmExportAsync(int id, int userId);
         Task<bool> CancelExportAsync(int id, int userId);
+        Task<bool> UpdateStatusAsync(int id, string newStatus, int userId);
         Task<bool> DeleteExportAsync(int id);
         
         #endregion
 
-        #region Tách/G?p phi?u xu?t kho
+        #region Tï¿½ch/G?p phi?u xu?t kho
         Task<SplitExportResultDto> SplitExportAsync(SplitWarehouseExportDto dto, int userId);
         Task<MergeExportResultDto> MergeExportsAsync(MergeWarehouseExportsDto dto, int userId);
         Task<bool> UndoSplitAsync(int parentExportId, int userId);

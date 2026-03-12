@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using ErpOnlineOrder.Domain.Constants;
 
 namespace ErpOnlineOrder.Domain.Models
 {
@@ -30,7 +31,7 @@ namespace ErpOnlineOrder.Domain.Models
         
         public decimal Total_amount { get; set; }
         public decimal Tax_amount { get; set; }
-        public string Status { get; set; } = "Draft";
+        public string Status { get; set; } = InvoiceStatuses.Draft;
         public int? Parent_invoice_id { get; set; }
         [ForeignKey("Parent_invoice_id")]
         public virtual Invoice? Parent_invoice { get; set; }

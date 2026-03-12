@@ -1,6 +1,6 @@
 using ErpOnlineOrder.Application.DTOs.CustomerProductDTOs;
 
-namespace ErpOnlineOrder.WebMVC.Services
+namespace ErpOnlineOrder.WebMVC.Services.Interfaces
 {
     public interface ICustomerProductApiClient
     {

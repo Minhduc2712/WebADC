@@ -1,6 +1,7 @@
 using ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Domain.Constants;
 using ErpOnlineOrder.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -55,7 +56,6 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var exports = await _exportService.GetByCustomerIdAsync(customerId);
             return Ok(exports);
         }
-        /// <summary>Lấy phiếu xuất kho của khách hàng đang đăng nhập (dùng UserId từ token/session).</summary>
         [HttpGet("my-exports")]
         public async Task<IActionResult> GetMyExports()
         {
@@ -121,6 +121,21 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                     return NotFound(new { message = "Phiếu xuất kho không tồn tại" });
                 }
                 return Ok(new { success = true, message = "Đã xác nhận phiếu xuất kho" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+        [HttpPatch("{id}/status")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromQuery] string status)
+        {
+            try
+            {
+                var result = await _exportService.UpdateStatusAsync(id, status, GetCurrentUserId());
+                if (!result)
+                    return NotFound(new { message = "Phiếu xuất kho không tồn tại" });
+                return Ok(new { success = true, message = $"Đã cập nhật trạng thái phiếu xuất kho thành: {ExportStatuses.ToDisplayText(status)}" });
             }
             catch (Exception ex)
             {

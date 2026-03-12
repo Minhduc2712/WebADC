@@ -1,7 +1,7 @@
 using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.DTOs.OrderDTOs;
 
-namespace ErpOnlineOrder.WebMVC.Services
+namespace ErpOnlineOrder.WebMVC.Services.Interfaces
 {
     public interface IOrderApiClient
     {

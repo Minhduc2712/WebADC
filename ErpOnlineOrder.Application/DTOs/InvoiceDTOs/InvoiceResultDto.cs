@@ -14,4 +14,10 @@ namespace ErpOnlineOrder.Application.DTOs.InvoiceDTOs
         public InvoiceDto? Merged_invoice { get; set; }
         public List<int> Merged_invoice_ids { get; set; } = new();
     }
+    public class CreateInvoiceFromOrderResultDto
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public InvoiceDto? Invoice { get; set; }
+    }
 }

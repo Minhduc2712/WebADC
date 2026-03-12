@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using ErpOnlineOrder.Domain.Constants;
 
 namespace ErpOnlineOrder.Domain.Models
 {
@@ -32,10 +33,8 @@ namespace ErpOnlineOrder.Domain.Models
         
         public DateTime Export_date { get; set; }
         
-        public string? Carrier_name { get; set; }
-        public string? Tracking_number { get; set; }
-        public string Delivery_status { get; set; } = "Pending";
-        public string Status { get; set; } = "Draft";
+        public string Delivery_status { get; set; } = DeliveryStatuses.Pending;
+        public string Status { get; set; } = ExportStatuses.Draft;
         public int? Parent_export_id { get; set; }
         [ForeignKey("Parent_export_id")]
         public virtual Warehouse_export? Parent_export { get; set; }

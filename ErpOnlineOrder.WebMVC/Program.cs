@@ -51,25 +51,25 @@ builder.Services.AddHttpClient("ErpApi", client =>
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 })
 .AddHttpMessageHandler<ErpOnlineOrder.WebMVC.Services.ErpApiUserIdHandler>();
-builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IAuthApiClient, ErpOnlineOrder.WebMVC.Services.AuthApiClient>();
-builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.ICategoryApiClient, ErpOnlineOrder.WebMVC.Services.CategoryApiClient>();
-builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IAuthorApiClient, ErpOnlineOrder.WebMVC.Services.AuthorApiClient>();
-builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IPublisherApiClient, ErpOnlineOrder.WebMVC.Services.PublisherApiClient>();
-builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.ICoverTypeApiClient, ErpOnlineOrder.WebMVC.Services.CoverTypeApiClient>();
-builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IWarehouseApiClient, ErpOnlineOrder.WebMVC.Services.WarehouseApiClient>();
-builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IDistributorApiClient, ErpOnlineOrder.WebMVC.Services.DistributorApiClient>();
-builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IRegionApiClient, ErpOnlineOrder.WebMVC.Services.RegionApiClient>();
-builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IProvinceApiClient, ErpOnlineOrder.WebMVC.Services.ProvinceApiClient>();
-builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IProductApiClient, ErpOnlineOrder.WebMVC.Services.ProductApiClient>();
-builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.ICustomerApiClient, ErpOnlineOrder.WebMVC.Services.CustomerApiClient>();
-builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IOrderApiClient, ErpOnlineOrder.WebMVC.Services.OrderApiClient>();
-builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IPermissionApiClient, ErpOnlineOrder.WebMVC.Services.PermissionApiClient>();
-builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.ICustomerManagementApiClient, ErpOnlineOrder.WebMVC.Services.CustomerManagementApiClient>();
-builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.ICustomerProductApiClient, ErpOnlineOrder.WebMVC.Services.CustomerProductApiClient>();
-builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IAdminApiClient, ErpOnlineOrder.WebMVC.Services.AdminApiClient>();
-builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IInvoiceApiClient, ErpOnlineOrder.WebMVC.Services.InvoiceApiClient>();
-builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.IWarehouseExportApiClient, ErpOnlineOrder.WebMVC.Services.WarehouseExportApiClient>();
-builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.ISettingApiClient, ErpOnlineOrder.WebMVC.Services.SettingApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IAuthApiClient, ErpOnlineOrder.WebMVC.Services.AuthApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.ICategoryApiClient, ErpOnlineOrder.WebMVC.Services.CategoryApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IAuthorApiClient, ErpOnlineOrder.WebMVC.Services.AuthorApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IPublisherApiClient, ErpOnlineOrder.WebMVC.Services.PublisherApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.ICoverTypeApiClient, ErpOnlineOrder.WebMVC.Services.CoverTypeApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IWarehouseApiClient, ErpOnlineOrder.WebMVC.Services.WarehouseApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IDistributorApiClient, ErpOnlineOrder.WebMVC.Services.DistributorApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IRegionApiClient, ErpOnlineOrder.WebMVC.Services.RegionApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IProvinceApiClient, ErpOnlineOrder.WebMVC.Services.ProvinceApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IProductApiClient, ErpOnlineOrder.WebMVC.Services.ProductApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.ICustomerApiClient, ErpOnlineOrder.WebMVC.Services.CustomerApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IOrderApiClient, ErpOnlineOrder.WebMVC.Services.OrderApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IPermissionApiClient, ErpOnlineOrder.WebMVC.Services.PermissionApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.ICustomerManagementApiClient, ErpOnlineOrder.WebMVC.Services.CustomerManagementApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.ICustomerProductApiClient, ErpOnlineOrder.WebMVC.Services.CustomerProductApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IAdminApiClient, ErpOnlineOrder.WebMVC.Services.AdminApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IInvoiceApiClient, ErpOnlineOrder.WebMVC.Services.InvoiceApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IWarehouseExportApiClient, ErpOnlineOrder.WebMVC.Services.WarehouseExportApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.ISettingApiClient, ErpOnlineOrder.WebMVC.Services.SettingApiClient>();
 
 // Add AutoMapper
 builder.Services.AddAutoMapper(typeof(ErpOnlineOrder.Infrastructure.Mappers.RepositoryMappingProfile).Assembly);
