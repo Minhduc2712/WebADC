@@ -35,7 +35,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         public async Task<IActionResult> GetProvince(int id)
         {
             var province = await _provinceService.GetByIdAsync(id);
-            if (province == null) return NotFound(new { message = "Tỉnh thành không tồn tại" });
+            if (province == null) return NotFound(new { message = "Không tìm thấy tỉnh/thành phố." });
             return Ok(province);
         }
         [HttpPost]
@@ -56,13 +56,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [RequirePermission(PermissionCodes.ProvinceUpdate)]
         public async Task<IActionResult> UpdateProvince(int id, [FromBody] UpdateProvinceDto dto)
         {
-            if (id != dto.Id) return BadRequest(new { message = "ID không khớp" });
+            if (id != dto.Id) return BadRequest(new { message = "ID trên URL không khớp với dữ liệu cập nhật tỉnh/thành phố." });
 
             try
             {
                 var result = await _provinceService.UpdateProvinceAsync(dto, GetCurrentUserId());
-                if (!result) return NotFound(new { message = "Tỉnh thành không tồn tại" });
-                return Ok(new { success = true, message = "Cập nhật thành công" });
+                if (!result) return NotFound(new { message = "Không tìm thấy tỉnh/thành phố cần cập nhật." });
+                return Ok(new { success = true, message = "Cập nhật tỉnh/thành phố thành công" });
             }
             catch (Exception ex)
             {
@@ -76,8 +76,8 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var result = await _provinceService.DeleteProvinceAsync(id);
-                if (!result) return NotFound(new { message = "Tỉnh thành không tồn tại" });
-                return Ok(new { success = true, message = "Xóa thành công" });
+                if (!result) return NotFound(new { message = "Không tìm thấy tỉnh/thành phố cần xóa." });
+                return Ok(new { success = true, message = "Xóa tỉnh/thành phố thành công" });
             }
             catch (Exception ex)
             {

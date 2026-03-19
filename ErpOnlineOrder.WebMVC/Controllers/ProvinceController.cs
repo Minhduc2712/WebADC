@@ -80,13 +80,13 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return View(model);
                 }
 
-                var created = await _provinceApiClient.CreateAsync(model);
+                var (created, error) = await _provinceApiClient.CreateAsync(model);
                 if (created != null)
                 {
                     SetSuccessMessage("Thêm tỉnh/thành phố thành công!");
                     return RedirectToAction(nameof(Index));
                 }
-                ModelState.AddModelError("", "Thêm tỉnh/thành phố thất bại.");
+                ModelState.AddModelError("", error ?? "Không thể thêm tỉnh/thành phố. Vui lòng kiểm tra mã tỉnh/thành và khu vực liên kết.");
             }
             catch (Exception ex)
             {
@@ -154,7 +154,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     SetSuccessMessage("Cập nhật tỉnh/thành phố thành công!");
                     return RedirectToAction(nameof(Index));
                 }
-                ModelState.AddModelError("", error ?? "Cập nhật thất bại.");
+                ModelState.AddModelError("", error ?? "Không thể cập nhật tỉnh/thành phố. Dữ liệu có thể không hợp lệ hoặc bản ghi không còn tồn tại.");
             }
             catch (Exception ex)
             {
@@ -177,7 +177,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (success)
                     SetSuccessMessage("Xóa tỉnh/thành phố thành công!");
                 else
-                    SetErrorMessage(error ?? "Xóa thất bại.");
+                    SetErrorMessage(error ?? "Không thể xóa tỉnh/thành phố. Tỉnh/thành phố có thể đang được sử dụng bởi kho hoặc khách hàng.");
             }
             catch (Exception ex)
             {

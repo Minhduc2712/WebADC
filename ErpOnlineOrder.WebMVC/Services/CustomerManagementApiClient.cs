@@ -40,11 +40,14 @@ namespace ErpOnlineOrder.WebMVC.Services
             return list ?? new List<Customer_management>();
         }
 
-        public async Task<Customer_management?> CreateAsync(Customer_management model, CancellationToken cancellationToken = default)
+        public async Task<(Customer_management? Data, string? Error)> CreateAsync(Customer_management model, CancellationToken cancellationToken = default)
         {
             var response = await _http.PostAsJsonAsync("customermanagement", model, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
-            return await response.Content.ReadFromJsonAsync<Customer_management>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+                return (null, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+
+            var data = await response.Content.ReadFromJsonAsync<Customer_management>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return (data, null);
         }
 
         public async Task<(Customer_management? Result, string? Error)> AssignStaffAsync(int staffId, int customerId, int provinceId, CancellationToken cancellationToken = default)

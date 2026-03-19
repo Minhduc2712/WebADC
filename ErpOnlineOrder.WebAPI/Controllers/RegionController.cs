@@ -26,7 +26,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var region = await _regionService.GetByIdAsync(id);
             if (region == null)
             {
-                return NotFound(new { message = "Khu vực không tồn tại" });
+                return NotFound(new { message = "Không tìm thấy khu vực." });
             }
             return Ok(region);
         }
@@ -38,7 +38,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var created = await _regionService.CreateRegionAsync(dto, GetCurrentUserId());
                 if (created == null)
                 {
-                    return BadRequest(new { message = "Không thể tạo khu vực" });
+                    return BadRequest(new { message = "Không thể tạo khu vực. Mã khu vực có thể đã tồn tại hoặc dữ liệu chưa hợp lệ." });
                 }
                 return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
             }
@@ -56,7 +56,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _regionService.UpdateRegionAsync(dto, GetCurrentUserId());
                 if (!result)
                 {
-                    return NotFound(new { message = "Khu vực không tồn tại" });
+                    return NotFound(new { message = "Không tìm thấy khu vực cần cập nhật." });
                 }
                 return Ok(new { success = true, message = "Cập nhật khu vực thành công" });
             }
@@ -71,7 +71,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _regionService.DeleteRegionAsync(id);
             if (!result)
             {
-                return NotFound(new { message = "Khu vực không tồn tại" });
+                return NotFound(new { message = "Không tìm thấy khu vực cần xóa." });
             }
             return Ok(new { success = true, message = "Xóa khu vực thành công" });
         }

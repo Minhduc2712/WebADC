@@ -51,13 +51,13 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (!ModelState.IsValid)
                     return View(model);
 
-                var created = await _authorApiClient.CreateAsync(model);
+                var (created, error) = await _authorApiClient.CreateAsync(model);
                 if (created != null)
                 {
                     SetSuccessMessage("Thêm tác giả thành công!");
                     return RedirectToAction(nameof(Index));
                 }
-                ModelState.AddModelError("", "Thêm tác giả thất bại.");
+                ModelState.AddModelError("", error ?? "Không thể thêm tác giả. Vui lòng kiểm tra mã tác giả và thông tin nhập vào.");
             }
             catch (Exception ex)
             {
@@ -121,7 +121,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     SetSuccessMessage("Cập nhật tác giả thành công!");
                     return RedirectToAction(nameof(Index));
                 }
-                ModelState.AddModelError("", error ?? "Cập nhật thất bại.");
+                ModelState.AddModelError("", error ?? "Không thể cập nhật tác giả. Vui lòng kiểm tra dữ liệu và trạng thái bản ghi.");
             }
             catch (Exception ex)
             {
@@ -142,7 +142,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (success)
                     SetSuccessMessage("Xóa tác giả thành công!");
                 else
-                    SetErrorMessage(error ?? "Xóa thất bại.");
+                    SetErrorMessage(error ?? "Không thể xóa tác giả. Tác giả có thể đang được liên kết với sản phẩm.");
             }
             catch (Exception ex)
             {

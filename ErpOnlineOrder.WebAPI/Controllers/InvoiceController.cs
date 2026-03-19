@@ -86,7 +86,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _invoiceService.UndoSplitAsync(id, userId);
                 if (!result)
                 {
-                    return BadRequest(new { message = "Không thể hoàn tác" });
+                    return BadRequest(new { message = "Không thể hoàn tác tách hóa đơn. Hóa đơn không tồn tại hoặc không ở trạng thái Đã tách." });
                 }
                 return Ok(new { success = true, message = "Đã hoàn tác tách hóa đơn" });
             }
@@ -102,7 +102,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _invoiceService.UndoMergeAsync(id, userId);
             if (!result)
             {
-                return BadRequest(new { message = "Không thể hoàn tác" });
+                return BadRequest(new { message = "Không thể hoàn tác gộp hóa đơn. Hóa đơn không tồn tại hoặc không ở trạng thái đã gộp hợp lệ." });
             }
             return Ok(new { success = true, message = "Đã hoàn tác gộp hóa đơn" });
         }

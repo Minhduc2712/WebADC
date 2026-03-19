@@ -146,6 +146,7 @@
                         <th>Khách hàng</th>
                         <th>Kho</th>
                         <th>Ngày xuất</th>
+                        <th>Ngày đến</th>
                         <th class="text-center">Số SP</th>
                         <th>Trạng thái</th>
                         <th>Giao hàng</th>
@@ -156,7 +157,7 @@
                     @if (!items.Any())
                     {
                         <tr>
-                            <td colspan="9" class="text-center py-4 text-muted">
+                            <td colspan="10" class="text-center py-4 text-muted">
                                 <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
                                 Không có phiếu xuất kho nào
                             </td>
@@ -182,6 +183,7 @@
                                 <td>@export.Customer_name</td>
                                 <td>@export.Warehouse_name</td>
                                 <td>@export.Export_date.ToString("dd/MM/yyyy")</td>
+                                <td>@(export.Arrival_date?.ToString("dd/MM/yyyy") ?? "-")</td>
                                 <td class="text-center"><span class="badge bg-primary">@export.Total_quantity</span></td>
                                 <td>
                                     @{
@@ -232,6 +234,12 @@
                                         <a asp-action="Details" asp-route-id="@export.Id" class="btn btn-outline-primary" title="Xem chi tiết">
                                             <i class="fas fa-eye"></i>
                                         </a>
+                                        @if (export.Status == ExportStatuses.Draft && Context.Session.HasPermission("WAREHOUSE_UPDATE"))
+                                        {
+                                            <a asp-action="Edit" asp-route-id="@export.Id" class="btn btn-outline-warning" title="Chỉnh sửa">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        }
                                         @if (export.Status == "Pending")
                                         {
                                             <button type="button" class="btn btn-outline-success" title="Xác nhận"

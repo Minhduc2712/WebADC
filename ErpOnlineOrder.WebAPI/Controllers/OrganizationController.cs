@@ -32,7 +32,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var organization = await _organizationService.GetByIdAsync(id);
             if (organization == null)
             {
-                return NotFound(new { message = "Tổ chức không tồn tại" });
+                return NotFound(new { message = "Không tìm thấy tổ chức." });
             }
             return Ok(organization);
         }
@@ -42,7 +42,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var organization = await _organizationService.GetByCustomerIdAsync(customerId);
             if (organization == null)
             {
-                return NotFound(new { message = "Không tìm thấy tổ chức cho khách hàng này" });
+                return NotFound(new { message = "Không tìm thấy thông tin tổ chức của khách hàng này." });
             }
             return Ok(organization);
         }
@@ -54,7 +54,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var created = await _organizationService.CreateOrganizationAsync(dto, GetCurrentUserId());
                 if (created == null)
                 {
-                    return BadRequest(new { message = "Không thể tạo tổ chức" });
+                    return BadRequest(new { message = "Không thể tạo tổ chức. Mã số thuế hoặc thông tin tổ chức có thể không hợp lệ/trùng lặp." });
                 }
                 return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
             }
@@ -72,7 +72,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _organizationService.UpdateOrganizationAsync(dto, GetCurrentUserId());
                 if (!result)
                 {
-                    return NotFound(new { message = "Tổ chức không tồn tại" });
+                    return NotFound(new { message = "Không tìm thấy tổ chức cần cập nhật." });
                 }
                 return Ok(new { success = true, message = "Cập nhật tổ chức thành công" });
             }
@@ -87,7 +87,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _organizationService.DeleteOrganizationAsync(id);
             if (!result)
             {
-                return NotFound(new { message = "Tổ chức không tồn tại" });
+                return NotFound(new { message = "Không tìm thấy tổ chức cần xóa." });
             }
             return Ok(new { success = true, message = "Xóa tổ chức thành công" });
         }

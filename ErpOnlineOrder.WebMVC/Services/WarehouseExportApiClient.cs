@@ -66,6 +66,13 @@ namespace ErpOnlineOrder.WebMVC.Services
             return (data, null);
         }
 
+        public async Task<(bool Success, string? Error)> UpdateAsync(int id, UpdateWarehouseExportDto dto, CancellationToken cancellationToken = default)
+        {
+            var response = await _http.PutAsJsonAsync($"warehouseexport/{id}", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
+            if (response.IsSuccessStatusCode) return (true, null);
+            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+        }
+
         public async Task<(bool Success, string? Error)> UpdateDeliveryStatusAsync(int id, string status, CancellationToken cancellationToken = default)
         {
             var response = await _http.PatchAsync($"warehouseexport/{id}/delivery-status?status={Uri.EscapeDataString(status)}", null, cancellationToken);

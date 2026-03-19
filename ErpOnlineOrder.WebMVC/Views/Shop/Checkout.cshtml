@@ -1,6 +1,8 @@
 @{
     ViewData["Title"] = "Thanh toán";
     Layout = "~/Views/Shared/_ShopLayout.cshtml";
+    var orgShippingAddress = (ViewBag.OrganizationShippingAddress as string) ?? string.Empty;
+    var hasOrgShippingAddress = (ViewBag.HasOrganizationShippingAddress as bool?) ?? false;
 }
 
 <!-- Breadcrumb -->
@@ -69,8 +71,21 @@
                                 </div>
                                 <div class="review-form-name address-form">
                                     <label for="address" class="form-label">Địa chỉ *</label>
-                                    <input type="text" id="address" class="form-control" placeholder="Nhập địa chỉ giao hàng">
+                                    <input type="text" id="address" class="form-control" value="@orgShippingAddress" placeholder="Nhập địa chỉ giao hàng">
                                 </div>
+                                @if (!hasOrgShippingAddress)
+                                {
+                                    <div id="addressWarning" class="alert alert-warning mt-2 mb-2" role="alert">
+                                        Bạn chưa có địa chỉ mặc định từ thông tin đơn vị. Vui lòng nhập địa chỉ giao hàng trước khi đặt đơn,
+                                        hoặc cập nhật tại <a asp-action="UpdateOrganization">Thông tin đơn vị</a>.
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div id="addressWarning" class="alert alert-info mt-2 mb-2" role="alert">
+                                        Địa chỉ đã được lấy từ thông tin đơn vị. Bạn có thể chỉnh sửa nếu muốn giao đến nơi khác.
+                                    </div>
+                                }
                                 <div class="account-inner-form city-inner-form">
                                     <div class="review-form-name">  
                                         <label for="city" class="form-label">Quận / Huyện *</label>
@@ -188,6 +203,22 @@
             return;
         }
 
+        var shippingAddressInput = document.getElementById('address');
+        var shippingAddress = shippingAddressInput ? shippingAddressInput.value.trim() : '';
+        if (!shippingAddress) {
+            showToast('Vui lòng nhập địa chỉ giao hàng hoặc cập nhật địa chỉ trong thông tin đơn vị.', 'error');
+            var warning = document.getElementById('addressWarning');
+            if (warning) {
+                warning.classList.remove('alert-info');
+                warning.classList.add('alert-warning');
+                warning.style.display = 'block';
+            }
+            if (shippingAddressInput) {
+                shippingAddressInput.focus();
+            }
+            return;
+        }
+
         var btn = document.getElementById('placeOrderBtn');
         btn.textContent = 'Đang xử lý...';
         btn.style.pointerEvents = 'none';
@@ -202,7 +233,7 @@
                 };
             }),
             note: document.getElementById('note') ? document.getElementById('note').value : '',
-            shippingAddress: document.getElementById('address') ? document.getElementById('address').value : ''
+            shippingAddress: shippingAddress
         };
 
         fetch('@Url.Action("PlaceOrder", "Shop")', {
@@ -222,7 +253,7 @@
                     window.location.href = '@Url.Action("Orders")';
                 }, 2000);
             } else {
-                showToast(result.message || 'Có lỗi xảy ra khi đặt hàng.', 'error');
+                showToast(result.message || 'Không thể đặt hàng. Vui lòng kiểm tra giỏ hàng và thông tin giao hàng.', 'error');
                 btn.textContent = 'Đặt hàng ngay';
                 btn.style.pointerEvents = 'auto';
                 btn.style.opacity = '1';
@@ -230,7 +261,7 @@
         })
         .catch(function(error) {
             console.error('Error:', error);
-            showToast('Có lỗi xảy ra. Vui lòng thử lại.', 'error');
+            showToast('Không thể kết nối để đặt hàng. Vui lòng thử lại sau.', 'error');
             btn.textContent = 'Đặt hàng ngay';
             btn.style.pointerEvents = 'auto';
             btn.style.opacity = '1';

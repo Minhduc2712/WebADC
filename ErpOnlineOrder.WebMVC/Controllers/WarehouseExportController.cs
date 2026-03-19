@@ -120,7 +120,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 }
                 else
                 {
-                    SetErrorMessage(error ?? "Không thể tạo phiếu xuất kho!");
+                    SetErrorMessage(error ?? "Không thể tạo phiếu xuất kho. Vui lòng kiểm tra trạng thái hóa đơn, tồn kho và dữ liệu chi tiết xuất.");
                     var invoices = await _invoiceApiClient.GetForWarehouseExportAsync();
                     var warehouses = await _warehouseApiClient.GetForSelectAsync();
                     ViewBag.Invoices = new SelectList(invoices, "Id", "Invoice_code");
@@ -136,6 +136,78 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             }
         }
 
+        [HttpGet]
+        [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
+        public async Task<IActionResult> Edit(int id)
+        {
+            try
+            {
+                var export = await _warehouseExportApiClient.GetByIdAsync(id);
+                if (export == null)
+                {
+                    SetErrorMessage("Không tìm thấy phiếu xuất kho.");
+                    return RedirectToAction(nameof(Index));
+                }
+
+                if (export.Status != ExportStatuses.Draft)
+                {
+                    SetErrorMessage("Chỉ có thể chỉnh sửa phiếu xuất kho ở trạng thái Nháp.");
+                    return RedirectToAction(nameof(Details), new { id });
+                }
+
+                var warehouses = await _warehouseApiClient.GetForSelectAsync();
+                ViewBag.Warehouses = new SelectList(warehouses, "Id", "Warehouse_name", export.Warehouse_id);
+                ViewBag.ExportCode = export.Warehouse_export_code;
+                ViewBag.ExportId = export.Id;
+
+                var model = new UpdateWarehouseExportDto
+                {
+                    Warehouse_id = export.Warehouse_id,
+                    Export_date = export.Export_date,
+                    Arrival_date = export.Arrival_date,
+                    Split_merge_note = export.Split_merge_note
+                };
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading export edit form");
+                SetErrorMessage(GetDetailedErrorMessage(ex));
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
+        public async Task<IActionResult> Edit(int id, UpdateWarehouseExportDto model)
+        {
+            try
+            {
+                var (success, error) = await _warehouseExportApiClient.UpdateAsync(id, model);
+                if (success)
+                {
+                    SetSuccessMessage("Cập nhật phiếu xuất kho thành công!");
+                    return RedirectToAction(nameof(Details), new { id });
+                }
+
+                SetErrorMessage(error ?? "Không thể cập nhật phiếu xuất kho. Chỉ phiếu ở trạng thái Nháp mới được chỉnh sửa.");
+                var export = await _warehouseExportApiClient.GetByIdAsync(id);
+                var warehouses = await _warehouseApiClient.GetForSelectAsync();
+                ViewBag.Warehouses = new SelectList(warehouses, "Id", "Warehouse_name", model.Warehouse_id);
+                ViewBag.ExportCode = export?.Warehouse_export_code ?? "";
+                ViewBag.ExportId = id;
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating export");
+                SetErrorMessage(GetDetailedErrorMessage(ex));
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
@@ -143,12 +215,12 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var (result, _) = await _warehouseExportApiClient.ConfirmAsync(id);
+                var (result, error) = await _warehouseExportApiClient.ConfirmAsync(id);
 
                 if (result)
                     SetSuccessMessage("Đã xác nhận xuất kho thành công!");
                 else
-                    SetErrorMessage("Không thể xác nhận xuất kho!");
+                    SetErrorMessage(error ?? "Không thể xác nhận xuất kho. Vui lòng kiểm tra trạng thái phiếu hiện tại.");
             }
             catch (Exception ex)
             {
@@ -166,12 +238,12 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var (result, _) = await _warehouseExportApiClient.CancelAsync(id);
+                var (result, error) = await _warehouseExportApiClient.CancelAsync(id);
 
                 if (result)
                     SetSuccessMessage("Đã hủy xuất kho thành công!");
                 else
-                    SetErrorMessage("Không thể hủy xuất kho!");
+                    SetErrorMessage(error ?? "Không thể hủy xuất kho. Phiếu đã giao hàng hoặc đã hoàn thành không thể hủy.");
             }
             catch (Exception ex)
             {
@@ -189,12 +261,12 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var (result, _) = await _warehouseExportApiClient.UpdateDeliveryStatusAsync(id, status);
+                var (result, error) = await _warehouseExportApiClient.UpdateDeliveryStatusAsync(id, status);
 
                 if (result)
                     SetSuccessMessage("Đã cập nhật trạng thái giao hàng!");
                 else
-                    SetErrorMessage("Không thể cập nhật trạng thái!");
+                    SetErrorMessage(error ?? "Không thể cập nhật trạng thái giao hàng. Vui lòng kiểm tra luồng trạng thái hợp lệ.");
             }
             catch (Exception ex)
             {
@@ -212,12 +284,12 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var (result, _) = await _warehouseExportApiClient.DeleteAsync(id);
+                var (result, error) = await _warehouseExportApiClient.DeleteAsync(id);
 
                 if (result)
                     SetSuccessMessage("Đã xóa phiếu xuất kho thành công!");
                 else
-                    SetErrorMessage("Không thể xóa phiếu xuất kho!");
+                    SetErrorMessage(error ?? "Không thể xóa phiếu xuất kho. Chỉ được xóa khi phiếu ở trạng thái Nháp và chưa giao hàng.");
             }
             catch (Exception ex)
             {
@@ -325,7 +397,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (result)
                     SetSuccessMessage("Đã hoàn tác tách phiếu xuất kho!");
                 else
-                    SetErrorMessage("Không thể hoàn tác tách phiếu xuất kho!");
+                    SetErrorMessage("Không thể hoàn tác tách phiếu xuất kho. Vui lòng kiểm tra phiếu cha có ở trạng thái Đã tách và các phiếu con chưa phát sinh xử lý.");
             }
             catch (Exception ex)
             {
@@ -346,7 +418,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (result)
                     SetSuccessMessage("Đã hoàn tác gộp phiếu xuất kho!");
                 else
-                    SetErrorMessage("Không thể hoàn tác gộp phiếu xuất kho!");
+                    SetErrorMessage("Không thể hoàn tác gộp phiếu xuất kho. Vui lòng kiểm tra trạng thái phiếu và dữ liệu phiếu nguồn.");
             }
             catch (Exception ex)
             {
@@ -390,7 +462,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (success)
                     SetSuccessMessage($"Đã cập nhật trạng thái phiếu xuất kho thành: {ExportStatuses.ToDisplayText(status)}");
                 else
-                    SetErrorMessage(error ?? "Không thể cập nhật trạng thái!");
+                    SetErrorMessage(error ?? "Không thể cập nhật trạng thái phiếu xuất kho. Vui lòng kiểm tra trạng thái hiện tại và trạng thái đích.");
             }
             catch (Exception ex)
             {

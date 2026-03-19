@@ -12,6 +12,7 @@ using ErpOnlineOrder.Application.DTOs.ProductDTOs;
 using ErpOnlineOrder.Application.DTOs.ProvinceDTOs;
 using ErpOnlineOrder.Application.DTOs.PublisherDTOs;
 using ErpOnlineOrder.Application.DTOs.RegionDTOs;
+using ErpOnlineOrder.Application.DTOs.StockDTOs;
 using ErpOnlineOrder.Application.DTOs.WarehouseDTOs;
 using ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs;
 using ErpOnlineOrder.Domain.Models;
@@ -160,6 +161,7 @@ namespace ErpOnlineOrder.Application.Mappers
                 Id = export.Id,
                 Warehouse_export_code = export.Warehouse_export_code,
                 Export_date = export.Export_date,
+                Arrival_date = export.Arrival_date,
                 Warehouse_id = export.Warehouse_id,
                 Warehouse_name = export.Warehouse?.Warehouse_name ?? "",
                 Invoice_id = export.Invoice_id,
@@ -235,6 +237,24 @@ namespace ErpOnlineOrder.Application.Mappers
                 Province_name = w.Province?.Province_name,
                 Created_at = w.Created_at,
                 Updated_at = w.Updated_at
+            };
+        }
+
+        #endregion
+
+        #region Stock
+
+        public static StockDto ToStockDto(Stock s)
+        {
+            return new StockDto
+            {
+                Id = s.Id,
+                Warehouse_id = s.Warehouse_id,
+                Warehouse_name = s.Warehouse?.Warehouse_name ?? string.Empty,
+                Product_id = s.Product_id,
+                Product_name = s.Product?.Product_name ?? string.Empty,
+                Quantity = s.Quantity,
+                Updated_at = s.Updated_at
             };
         }
 

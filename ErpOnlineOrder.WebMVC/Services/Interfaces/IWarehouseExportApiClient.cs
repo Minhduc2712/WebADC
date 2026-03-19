@@ -10,6 +10,7 @@ namespace ErpOnlineOrder.WebMVC.Services.Interfaces
         Task<IEnumerable<WarehouseExportDto>> GetByInvoiceIdAsync(int invoiceId, CancellationToken cancellationToken = default);
         Task<IEnumerable<WarehouseExportDto>> GetByCustomerIdAsync(int customerId, CancellationToken cancellationToken = default);
         Task<(WarehouseExportDto? Data, string? Error)> CreateAsync(CreateWarehouseExportDto dto, CancellationToken cancellationToken = default);
+        Task<(bool Success, string? Error)> UpdateAsync(int id, UpdateWarehouseExportDto dto, CancellationToken cancellationToken = default);
         Task<(bool Success, string? Error)> UpdateDeliveryStatusAsync(int id, string status, CancellationToken cancellationToken = default);
         Task<(bool Success, string? Error)> ConfirmAsync(int id, CancellationToken cancellationToken = default);
         Task<(bool Success, string? Error)> CancelAsync(int id, CancellationToken cancellationToken = default);

@@ -204,7 +204,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     SetSuccessMessage("Cập nhật đơn hàng thành công!");
                     return RedirectToAction(nameof(Details), new { id });
                 }
-                SetErrorMessage(errorMessage ?? "Cập nhật đơn hàng thất bại!");
+                SetErrorMessage(errorMessage ?? "Không thể cập nhật đơn hàng. Vui lòng kiểm tra trạng thái đơn và dữ liệu chi tiết sản phẩm.");
                 ViewBag.Order = order;
                 ViewBag.Customers = await GetCustomerSelectListAsync();
                 ViewBag.Products = await _productApiClient.GetForOrderAsync();
@@ -229,7 +229,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (result)
                     SetSuccessMessage("Đã xác nhận đơn hàng thành công!");
                 else
-                    SetErrorMessage("Không thể xác nhận đơn hàng!");
+                    SetErrorMessage("Không thể xác nhận đơn hàng. Đơn hàng có thể không ở trạng thái chờ xử lý.");
             }
             catch (Exception ex)
             {
@@ -251,7 +251,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (result)
                     SetSuccessMessage("Đã hủy đơn hàng thành công!");
                 else
-                    SetErrorMessage("Không thể hủy đơn hàng!");
+                    SetErrorMessage("Không thể hủy đơn hàng. Đơn hàng có thể đã được xác nhận hoặc đã xử lý ở bước tiếp theo.");
             }
             catch (Exception ex)
             {
@@ -295,7 +295,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (result?.Success == true)
                     SetSuccessMessage(result.Message);
                 else
-                    SetErrorMessage(result?.Message ?? "Không thể tạo hóa đơn từ đơn hàng!");
+                    SetErrorMessage(result?.Message ?? "Không thể tạo hóa đơn từ đơn hàng. Vui lòng kiểm tra trạng thái đơn hàng và dữ liệu chi tiết.");
             }
             catch (Exception ex)
             {

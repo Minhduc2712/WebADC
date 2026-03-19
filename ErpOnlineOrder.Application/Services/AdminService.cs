@@ -141,13 +141,14 @@ namespace ErpOnlineOrder.Application.Services
 
             var now = DateTime.UtcNow;
 
-            if (!string.IsNullOrEmpty(dto.Email) && dto.Email != user.Email)
+            var normalizedEmail = string.IsNullOrWhiteSpace(dto.Email) ? null : dto.Email.Trim();
+            if (!string.IsNullOrEmpty(normalizedEmail) && !string.Equals(normalizedEmail, user.Email, StringComparison.OrdinalIgnoreCase))
             {
-                if (await _userRepository.ExistsByEmailAsync(dto.Email, dto.User_id))
+                if (await _userRepository.ExistsByEmailAsync(normalizedEmail, dto.User_id))
                 {
-                    throw new InvalidOperationException($"Email '{dto.Email}' đã được sử dụng bởi tài khoản khác.");
+                    throw new InvalidOperationException($"Email '{normalizedEmail}' đã được sử dụng bởi tài khoản khác.");
                 }
-                user.Email = dto.Email;
+                user.Email = normalizedEmail;
             }
 
             if (dto.Is_active.HasValue)

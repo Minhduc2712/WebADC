@@ -28,11 +28,14 @@ namespace ErpOnlineOrder.WebMVC.Services
             return await response.Content.ReadFromJsonAsync<PublisherDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
         }
 
-        public async Task<PublisherDto?> CreateAsync(CreatePublisherDto dto, CancellationToken cancellationToken = default)
+        public async Task<(PublisherDto? Data, string? Error)> CreateAsync(CreatePublisherDto dto, CancellationToken cancellationToken = default)
         {
             var response = await _http.PostAsJsonAsync("publisher", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
-            return await response.Content.ReadFromJsonAsync<PublisherDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+                return (null, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+
+            var data = await response.Content.ReadFromJsonAsync<PublisherDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return (data, null);
         }
 
         public async Task<(bool Success, string? Error)> UpdateAsync(int id, UpdatePublisherDto dto, CancellationToken cancellationToken = default)

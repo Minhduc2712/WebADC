@@ -14,6 +14,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
         Task<PagedResult<WarehouseExportDto>> GetByCustomerIdPagedAsync(int customerId, WarehouseExportFilterRequest request);
         Task<IEnumerable<WarehouseExportDto>> GetByWarehouseIdAsync(int warehouseId);
         Task<WarehouseExportDto?> CreateExportFromInvoiceAsync(CreateWarehouseExportDto dto, int userId);
+        Task<bool> UpdateExportAsync(int id, UpdateWarehouseExportDto dto, int userId);
         
         Task<bool> UpdateDeliveryStatusAsync(int id, string status, int userId);
         Task<bool> ConfirmExportAsync(int id, int userId);

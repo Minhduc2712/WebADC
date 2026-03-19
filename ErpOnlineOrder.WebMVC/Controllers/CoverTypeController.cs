@@ -51,13 +51,13 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (!ModelState.IsValid)
                     return View(model);
 
-                var created = await _coverTypeApiClient.CreateAsync(model);
+                var (created, error) = await _coverTypeApiClient.CreateAsync(model);
                 if (created != null)
                 {
                     SetSuccessMessage("Thêm loại bìa thành công!");
                     return RedirectToAction(nameof(Index));
                 }
-                ModelState.AddModelError("", "Thêm loại bìa thất bại.");
+                ModelState.AddModelError("", error ?? "Không thể thêm loại bìa. Vui lòng kiểm tra mã loại bìa và tên loại bìa.");
             }
             catch (Exception ex)
             {
@@ -109,7 +109,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     SetSuccessMessage("Cập nhật loại bìa thành công!");
                     return RedirectToAction(nameof(Index));
                 }
-                ModelState.AddModelError("", error ?? "Cập nhật thất bại.");
+                ModelState.AddModelError("", error ?? "Không thể cập nhật loại bìa. Dữ liệu có thể không hợp lệ hoặc bản ghi không còn tồn tại.");
             }
             catch (Exception ex)
             {
@@ -130,7 +130,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (success)
                     SetSuccessMessage("Xóa loại bìa thành công!");
                 else
-                    SetErrorMessage(error ?? "Xóa thất bại.");
+                    SetErrorMessage(error ?? "Không thể xóa loại bìa. Loại bìa có thể đang được sử dụng bởi sản phẩm.");
             }
             catch (Exception ex)
             {

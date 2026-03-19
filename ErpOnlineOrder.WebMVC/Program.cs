@@ -69,6 +69,7 @@ builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.ICustomerPr
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IAdminApiClient, ErpOnlineOrder.WebMVC.Services.AdminApiClient>();
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IInvoiceApiClient, ErpOnlineOrder.WebMVC.Services.InvoiceApiClient>();
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IWarehouseExportApiClient, ErpOnlineOrder.WebMVC.Services.WarehouseExportApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IStockApiClient, ErpOnlineOrder.WebMVC.Services.StockApiClient>();
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.ISettingApiClient, ErpOnlineOrder.WebMVC.Services.SettingApiClient>();
 
 // Add AutoMapper
@@ -100,6 +101,7 @@ builder.Services.AddScoped<IAuthorRepository, AuthorRepository>();
 builder.Services.AddScoped<IPublisherRepository, PublisherRepository>();
 builder.Services.AddScoped<ICoverTypeRepository, CoverTypeRepository>();
 builder.Services.AddScoped<IWarehouseRepository, WarehouseRepository>();
+builder.Services.AddScoped<IStockRepository, StockRepository>();
 builder.Services.AddScoped<IStaffRepository, StaffRepository>();
 builder.Services.AddScoped<ISystemSettingRepository, SystemSettingRepository>();
 
@@ -128,6 +130,7 @@ builder.Services.AddScoped<IAuthorService, AuthorService>();
 builder.Services.AddScoped<IPublisherService, PublisherService>();
 builder.Services.AddScoped<ICoverTypeService, CoverTypeService>();
 builder.Services.AddScoped<IWarehouseService, WarehouseService>();
+builder.Services.AddScoped<IStockService, StockService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<ISettingService, SettingService>();
 

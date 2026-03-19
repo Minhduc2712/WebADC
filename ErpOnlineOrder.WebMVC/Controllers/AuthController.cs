@@ -131,7 +131,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return RedirectToAction(nameof(Login));
                 }
 
-                ModelState.AddModelError("", errorMessage ?? "Đăng ký thất bại. Vui lòng thử lại.");
+                ModelState.AddModelError("", errorMessage ?? "Không thể đăng ký tài khoản khách hàng. Tên đăng nhập, email hoặc số điện thoại có thể đã tồn tại.");
             }
             catch (Exception ex)
             {
@@ -174,7 +174,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return RedirectToAction("Index", "Staff");
                 }
 
-                ModelState.AddModelError("", errorMessage ?? "Tạo tài khoản thất bại. Vui lòng thử lại.");
+                ModelState.AddModelError("", errorMessage ?? "Không thể tạo tài khoản nhân viên. Vui lòng kiểm tra thông tin đăng nhập và email.");
             }
             catch (Exception ex)
             {
@@ -225,7 +225,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return RedirectToAction("Index", "Order");
                 }
 
-                ModelState.AddModelError("", errorMessage ?? "Đổi mật khẩu thất bại.");
+                ModelState.AddModelError("", errorMessage ?? "Không thể đổi mật khẩu. Vui lòng kiểm tra mật khẩu hiện tại và chính sách mật khẩu mới.");
             }
             catch (Exception ex)
             {
@@ -272,7 +272,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing forgot password for {Email}", email);
-                ModelState.AddModelError("", "Có lỗi xảy ra. Vui lòng thử lại.");
+                ModelState.AddModelError("", "Không thể xử lý yêu cầu quên mật khẩu lúc này. Vui lòng thử lại sau ít phút.");
                 ViewBag.Email = email;
                 return View();
             }

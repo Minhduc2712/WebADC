@@ -112,7 +112,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                ModelState.AddModelError("", error ?? "Tạo tài khoản thất bại. Vui lòng thử lại.");
+                ModelState.AddModelError("", error ?? "Không thể tạo tài khoản nhân viên. Tên đăng nhập hoặc email có thể đã tồn tại.");
             }
             catch (Exception ex)
             {
@@ -197,7 +197,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
             try
             {
-                var (success, _) = await _adminApiClient.UpdateStaffAsync(id, model);
+                var (success, error) = await _adminApiClient.UpdateStaffAsync(id, model);
 
                 if (success)
                 {
@@ -205,7 +205,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                ModelState.AddModelError("", "Cập nhật thất bại. Vui lòng thử lại.");
+                ModelState.AddModelError("", error ?? "Không thể cập nhật thông tin nhân viên. Dữ liệu gửi lên có thể không hợp lệ hoặc nhân viên không còn tồn tại.");
             }
             catch (Exception ex)
             {
@@ -332,7 +332,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                ModelState.AddModelError("", "Đặt lại mật khẩu thất bại! Vui lòng thử lại.");
+                ModelState.AddModelError("", "Không thể đặt lại mật khẩu. Tài khoản có thể không tồn tại hoặc dữ liệu mật khẩu không hợp lệ.");
             }
             catch (Exception ex)
             {
@@ -417,7 +417,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                SetErrorMessage("Gán vai trò thất bại! Vui lòng thử lại.");
+                SetErrorMessage("Không thể gán vai trò cho nhân viên. Vui lòng kiểm tra danh sách vai trò đã chọn.");
             }
             catch (Exception ex)
             {
@@ -497,7 +497,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                SetErrorMessage("Gán quyền thất bại! Vui lòng thử lại.");
+                SetErrorMessage("Không thể gán quyền trực tiếp cho nhân viên. Vui lòng kiểm tra quyền đã chọn và dữ liệu hết hạn.");
             }
             catch (Exception ex)
             {

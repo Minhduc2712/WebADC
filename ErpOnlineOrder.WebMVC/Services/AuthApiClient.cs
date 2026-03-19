@@ -36,7 +36,7 @@ namespace ErpOnlineOrder.WebMVC.Services
                 return (false, await ReadErrorMessageAsync(response, cancellationToken));
 
             var body = await response.Content.ReadFromJsonAsync<SuccessApiResponse>(JsonOptions, cancellationToken);
-            return body?.Success == true ? (true, null) : (false, "Đăng ký thất bại.");
+            return body?.Success == true ? (true, null) : (false, "Không thể đăng ký tài khoản khách hàng. Dữ liệu đăng ký có thể chưa hợp lệ.");
         }
 
         public async Task<(bool Success, string? ErrorMessage)> RegisterStaffAsync(RegisterStaffDto dto, CancellationToken cancellationToken = default)
@@ -46,7 +46,7 @@ namespace ErpOnlineOrder.WebMVC.Services
                 return (false, await ReadErrorMessageAsync(response, cancellationToken));
 
             var body = await response.Content.ReadFromJsonAsync<SuccessApiResponse>(JsonOptions, cancellationToken);
-            return body?.Success == true ? (true, null) : (false, "Tạo tài khoản thất bại.");
+            return body?.Success == true ? (true, null) : (false, "Không thể tạo tài khoản nhân viên. Dữ liệu đăng ký có thể chưa hợp lệ.");
         }
 
         public async Task<(bool Success, string? ErrorMessage)> ChangePasswordAsync(ChangePasswordDto dto, CancellationToken cancellationToken = default)
@@ -56,7 +56,7 @@ namespace ErpOnlineOrder.WebMVC.Services
                 return (false, await ReadErrorMessageAsync(response, cancellationToken));
 
             var body = await response.Content.ReadFromJsonAsync<SuccessApiResponse>(JsonOptions, cancellationToken);
-            return body?.Success == true ? (true, null) : (false, "Đổi mật khẩu thất bại.");
+            return body?.Success == true ? (true, null) : (false, "Không thể đổi mật khẩu. Vui lòng kiểm tra mật khẩu hiện tại và mật khẩu mới.");
         }
 
         private static async Task<string?> ReadErrorMessageAsync(HttpResponseMessage response, CancellationToken cancellationToken)

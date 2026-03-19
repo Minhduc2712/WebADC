@@ -511,6 +511,11 @@
                 <li class="menu-title">QUẢN LÝ XUẤT KHO</li>
                 <li><a href="@Url.Action("Index", "WarehouseExport")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "WarehouseExport" ? "active" : "")"><i class="fas fa-truck-loading"></i> Phiếu xuất kho</a></li>
             }
+
+            @if (Context.Session.HasPermission("STOCK_VIEW"))
+            {
+                <li><a href="@Url.Action("Index", "Stock")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Stock" ? "active" : "")"><i class="fas fa-boxes"></i> Tồn kho</a></li>
+            }
             
             @* NHÂN SỰ - Hiển thị nếu có quyền STAFF_VIEW *@
             @if (Context.Session.HasPermission("STAFF_VIEW"))

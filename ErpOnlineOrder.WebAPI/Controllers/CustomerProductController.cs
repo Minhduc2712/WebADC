@@ -71,7 +71,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _customerProductService.AssignProductsToCustomerAsync(dto, createdBy);
             if (!result)
             {
-                return BadRequest("Không thể gán sản phẩm cho khách hàng.");
+                return BadRequest("Không thể gán sản phẩm cho khách hàng. Có thể sản phẩm đã được gán trước đó hoặc dữ liệu gửi lên không hợp lệ.");
             }
             return Ok(new { message = "Gán sản phẩm thành công." });
         }
@@ -81,7 +81,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             if (id != dto.Id)
             {
-                return BadRequest("ID không khớp.");
+                return BadRequest("ID trên URL không khớp với ID bản ghi phân quyền sản phẩm khách hàng.");
             }
 
             int updatedBy = GetCurrentUserId();
@@ -89,7 +89,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _customerProductService.UpdateCustomerProductAsync(dto, updatedBy);
             if (!result)
             {
-                return NotFound();
+                return NotFound(new { message = "Không tìm thấy bản ghi gán sản phẩm của khách hàng để cập nhật." });
             }
             return NoContent();
         }
@@ -102,7 +102,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _customerProductService.RemoveProductFromCustomerAsync(id, deletedBy);
             if (!result)
             {
-                return NotFound();
+                return NotFound(new { message = "Không tìm thấy bản ghi gán sản phẩm của khách hàng để xóa." });
             }
             return NoContent();
         }

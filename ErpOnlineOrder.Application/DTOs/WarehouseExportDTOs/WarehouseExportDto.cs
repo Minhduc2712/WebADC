@@ -5,6 +5,7 @@ namespace ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs
         public int Id { get; set; }
         public string Warehouse_export_code { get; set; } = string.Empty;
         public DateTime Export_date { get; set; }
+        public DateTime? Arrival_date { get; set; }
         
         public int Warehouse_id { get; set; }
         public string Warehouse_name { get; set; } = string.Empty;

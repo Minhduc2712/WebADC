@@ -50,13 +50,13 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (!ModelState.IsValid)
                     return View(model);
 
-                var created = await _regionApiClient.CreateAsync(model);
+                var (created, error) = await _regionApiClient.CreateAsync(model);
                 if (created != null)
                 {
                     SetSuccessMessage("Thêm khu vực thành công!");
                     return RedirectToAction(nameof(Index));
                 }
-                ModelState.AddModelError("", "Thêm khu vực thất bại.");
+                ModelState.AddModelError("", error ?? "Không thể thêm khu vực. Vui lòng kiểm tra mã khu vực và tên khu vực.");
             }
             catch (Exception ex)
             {
@@ -114,7 +114,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     SetSuccessMessage("Cập nhật khu vực thành công!");
                     return RedirectToAction(nameof(Index));
                 }
-                ModelState.AddModelError("", error ?? "Cập nhật thất bại.");
+                ModelState.AddModelError("", error ?? "Không thể cập nhật khu vực. Dữ liệu có thể không hợp lệ hoặc khu vực không còn tồn tại.");
             }
             catch (Exception ex)
             {
@@ -135,7 +135,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (success)
                     SetSuccessMessage("Xóa khu vực thành công!");
                 else
-                    SetErrorMessage(error ?? "Xóa thất bại.");
+                    SetErrorMessage(error ?? "Không thể xóa khu vực. Khu vực có thể đang được liên kết với tỉnh/thành phố.");
             }
             catch (Exception ex)
             {

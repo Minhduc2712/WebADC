@@ -169,7 +169,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                ModelState.AddModelError("", "Cập nhật thất bại.");
+                ModelState.AddModelError("", "Không thể cập nhật quyền. Mã quyền có thể đã trùng hoặc không đúng định dạng MODULE_ACTION.");
             }
             catch (Exception ex)
             {
@@ -196,7 +196,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (success)
                     SetSuccessMessage("Xóa quyền thành công!");
                 else
-                    SetErrorMessage("Xóa quyền thất bại!");
+                    SetErrorMessage("Không thể xóa quyền. Quyền có thể đang được gán cho vai trò hoặc người dùng.");
             }
             catch (Exception ex)
             {
@@ -277,7 +277,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 }
                 else
                 {
-                    SetErrorMessage("Gán quyền thất bại!");
+                    SetErrorMessage("Không thể gán quyền cho người dùng. Vui lòng kiểm tra danh sách quyền đã chọn.");
                 }
             }
             catch (Exception ex)

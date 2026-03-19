@@ -243,6 +243,7 @@ namespace ErpOnlineOrder.Infrastructure.Persistence
                 entity.Property(x => x.Warehouse_export_code).HasMaxLength(50).IsRequired();
                 entity.Property(x => x.Delivery_status).HasMaxLength(20);
                 entity.Property(x => x.Status).HasMaxLength(20);
+                entity.Property(x => x.Arrival_date).HasColumnType("date");
                 entity.Property(x => x.Split_merge_note).HasMaxLength(500);
                 entity.Property(x => x.Warehouse_id).HasColumnName("Warehouse_id");
                 entity.Property(x => x.Invoice_id).HasColumnName("Invoice_id");

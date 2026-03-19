@@ -118,13 +118,13 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return View(model);
 
                 model.Customer_code = $"KH{DateTime.Now:yyyyMMddHHmmss}";
-                var created = await _customerApiClient.CreateAsync(model);
+                var (created, error) = await _customerApiClient.CreateAsync(model);
                 if (created != null)
                 {
                     SetSuccessMessage("Thêm khách hàng thành công!");
                     return RedirectToAction(nameof(Index));
                 }
-                SetErrorMessage("Thêm khách hàng thất bại.");
+                SetErrorMessage(error ?? "Không thể thêm khách hàng. Vui lòng kiểm tra thông tin đăng ký và dữ liệu liên hệ.");
                 return View(model);
             }
             catch (Exception ex)
@@ -181,7 +181,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (success)
                     SetSuccessMessage("Cập nhật khách hàng thành công!");
                 else
-                    SetErrorMessage("Cập nhật khách hàng thất bại.");
+                    SetErrorMessage("Không thể cập nhật khách hàng. Bản ghi có thể không tồn tại hoặc dữ liệu không hợp lệ.");
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
@@ -202,7 +202,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (success)
                     SetSuccessMessage("Xóa khách hàng thành công!");
                 else
-                    SetErrorMessage("Xóa khách hàng thất bại.");
+                    SetErrorMessage("Không thể xóa khách hàng. Khách hàng có thể đang liên kết với đơn hàng/hóa đơn hoặc dữ liệu khác.");
             }
             catch (Exception ex)
             {
@@ -296,7 +296,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (created != null)
                     SetSuccessMessage("Gán cán bộ phụ trách thành công!");
                 else
-                    SetErrorMessage(error ?? "Gán cán bộ phụ trách thất bại.");
+                    SetErrorMessage(error ?? "Không thể gán cán bộ phụ trách. Cán bộ hoặc khách hàng có thể không hợp lệ, hoặc đã tồn tại phân công.");
                 return RedirectToAction(nameof(StaffAssignment));
             }
             catch (InvalidOperationException ex)
@@ -383,7 +383,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (success)
                     SetSuccessMessage("Cập nhật gán cán bộ phụ trách thành công!");
                 else
-                    SetErrorMessage("Cập nhật thất bại.");
+                    SetErrorMessage("Không thể cập nhật phân công cán bộ phụ trách. Bản ghi có thể không còn tồn tại.");
                 return RedirectToAction(nameof(StaffAssignment));
             }
             catch (Exception ex)
@@ -459,7 +459,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (created != null)
                     SetSuccessMessage("Gán cán bộ phụ trách thành công!");
                 else
-                    SetErrorMessage(error ?? "Gán cán bộ phụ trách thất bại.");
+                    SetErrorMessage(error ?? "Không thể gán cán bộ phụ trách cho khách hàng. Vui lòng kiểm tra cán bộ, tỉnh thành và phân công hiện có.");
                 return RedirectToAction(nameof(AssignStaff), new { id });
             }
             catch (InvalidOperationException ex)
@@ -486,7 +486,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (success)
                     SetSuccessMessage("Xóa gán cán bộ phụ trách thành công!");
                 else
-                    SetErrorMessage("Xóa thất bại.");
+                    SetErrorMessage("Không thể xóa phân công cán bộ phụ trách. Bản ghi có thể đã bị xóa trước đó.");
             }
             catch (Exception ex)
             {

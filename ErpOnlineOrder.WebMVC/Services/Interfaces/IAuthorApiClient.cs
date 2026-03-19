@@ -6,7 +6,7 @@ namespace ErpOnlineOrder.WebMVC.Services.Interfaces
     {
         Task<IEnumerable<AuthorDto>> GetAllAsync(CancellationToken cancellationToken = default);
         Task<AuthorDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
-        Task<AuthorDto?> CreateAsync(CreateAuthorDto dto, CancellationToken cancellationToken = default);
+        Task<(AuthorDto? Data, string? Error)> CreateAsync(CreateAuthorDto dto, CancellationToken cancellationToken = default);
         Task<(bool Success, string? Error)> UpdateAsync(int id, UpdateAuthorDto dto, CancellationToken cancellationToken = default);
         Task<(bool Success, string? Error)> DeleteAsync(int id, CancellationToken cancellationToken = default);
     }

@@ -73,7 +73,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                ModelState.AddModelError("", "Tạo role thất bại. Vui lòng thử lại.");
+                ModelState.AddModelError("", "Không thể tạo vai trò. Tên vai trò có thể đã tồn tại hoặc không hợp lệ.");
             }
             catch (Exception ex)
             {
@@ -144,7 +144,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                ModelState.AddModelError("", "Cập nhật thất bại. Vui lòng thử lại.");
+                ModelState.AddModelError("", "Không thể cập nhật vai trò. Vai trò có thể không tồn tại hoặc dữ liệu gửi lên không hợp lệ.");
             }
             catch (Exception ex)
             {
@@ -174,7 +174,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 }
                 else
                 {
-                    SetErrorMessage("Xóa role thất bại!");
+                    SetErrorMessage("Không thể xóa vai trò. Vai trò có thể đang được gán cho người dùng.");
                 }
             }
             catch (Exception ex)
@@ -242,7 +242,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                SetErrorMessage("Gán quyền thất bại!");
+                SetErrorMessage("Không thể gán quyền cho vai trò. Vui lòng kiểm tra quyền đã chọn và trạng thái vai trò.");
             }
             catch (Exception ex)
             {

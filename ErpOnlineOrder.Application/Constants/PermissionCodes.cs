@@ -5,7 +5,7 @@ namespace ErpOnlineOrder.Application.Constants
         public static readonly string[] CategoryOrder =
         {
             "PRODUCT", "CATEGORY", "REGION", "PROVINCE", "ORGANIZATION", "DISTRIBUTOR",
-            "CUSTOMER", "ORDER", "INVOICE", "WAREHOUSE", "WAREHOUSE_EXPORT", "STAFF",
+            "CUSTOMER", "ORDER", "INVOICE", "WAREHOUSE", "WAREHOUSE_EXPORT", "STOCK", "STAFF",
             "ROLE", "PERMISSION", "SETTINGS"
         };
 
@@ -27,6 +27,7 @@ namespace ErpOnlineOrder.Application.Constants
             { "INVOICE", "Hóa đơn" },
             { "WAREHOUSE", "Kho hàng" },
             { "WAREHOUSE_EXPORT", "Xuất kho" },
+            { "STOCK", "Tồn kho" },
             { "STAFF", "Danh sách cán bộ" },
             { "ROLE", "Vai trò" },
             { "PERMISSION", "Quyền hạn" },
@@ -125,6 +126,11 @@ namespace ErpOnlineOrder.Application.Constants
         public const string WarehouseExportUpdate = "WAREHOUSE_EXPORT_UPDATE";
         public const string WarehouseExportDelete = "WAREHOUSE_EXPORT_DELETE";
 
+        // Stock Permissions (Tồn kho)
+        public const string StockView = "STOCK_VIEW";
+        public const string StockUpdate = "STOCK_UPDATE";
+        public const string StockDelete = "STOCK_DELETE";
+
         // Staff Permissions
         public const string StaffView = "STAFF_VIEW";
         public const string StaffCreate = "STAFF_CREATE";
@@ -151,10 +157,6 @@ namespace ErpOnlineOrder.Application.Constants
         public const string PermissionUpdate = "PERMISSION_UPDATE";
         public const string PermissionDelete = "PERMISSION_DELETE";
         public const string PermissionAssignUser = "PERMISSION_ASSIGN";
-
-        // Manage Customer Management (Phân quyền quản lý khách hàng)
-        public const string ManageCustomerManagement = "MANAGE_CUSTOMER_MANAGEMENT";
-
         // Settings
         public const string SettingsView = "SETTINGS_VIEW";
         public const string SettingsUpdate = "SETTINGS_UPDATE";

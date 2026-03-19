@@ -138,7 +138,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     SetSuccessMessage("Đã cập nhật cài đặt!");
                     return RedirectToAction(nameof(Index));
                 }
-                ModelState.AddModelError("", error ?? "Cập nhật thất bại.");
+                ModelState.AddModelError("", error ?? "Không thể cập nhật cài đặt. Vui lòng kiểm tra giá trị nhập và kiểu dữ liệu của cấu hình.");
             }
             catch (Exception ex)
             {

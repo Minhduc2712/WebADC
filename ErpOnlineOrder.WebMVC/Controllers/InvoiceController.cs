@@ -116,7 +116,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 }
                 else
                 {
-                    SetErrorMessage(result.Message ?? "Tách hóa đơn thất bại!");
+                    SetErrorMessage(result.Message ?? "Không thể tách hóa đơn. Vui lòng kiểm tra trạng thái hóa đơn và số lượng sản phẩm cần tách.");
                 }
             }
             catch (Exception ex)
@@ -161,7 +161,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 }
                 else
                 {
-                    SetErrorMessage(result.Message ?? "Gộp hóa đơn thất bại!");
+                    SetErrorMessage(result.Message ?? "Không thể gộp hóa đơn. Vui lòng kiểm tra danh sách hóa đơn nguồn và điều kiện gộp.");
                 }
             }
             catch (Exception ex)
@@ -189,7 +189,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 }
                 else
                 {
-                    SetErrorMessage("Không thể hoàn tác tách hóa đơn!");
+                    SetErrorMessage("Không thể hoàn tác tách hóa đơn. Hóa đơn cha có thể không ở trạng thái Đã tách hoặc hóa đơn con đã phát sinh xử lý.");
                 }
             }
             catch (Exception ex)
@@ -217,7 +217,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 }
                 else
                 {
-                    SetErrorMessage("Không thể hoàn tác gộp hóa đơn!");
+                    SetErrorMessage("Không thể hoàn tác gộp hóa đơn. Hóa đơn đã gộp có thể không còn đủ điều kiện hoàn tác.");
                 }
             }
             catch (Exception ex)
@@ -263,7 +263,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (success)
                     SetSuccessMessage($"Đã cập nhật trạng thái hóa đơn thành: {InvoiceStatuses.ToDisplayText(status)}");
                 else
-                    SetErrorMessage(error ?? "Không thể cập nhật trạng thái!");
+                    SetErrorMessage(error ?? "Không thể cập nhật trạng thái hóa đơn. Vui lòng kiểm tra trạng thái hiện tại và trạng thái đích.");
             }
             catch (Exception ex)
             {

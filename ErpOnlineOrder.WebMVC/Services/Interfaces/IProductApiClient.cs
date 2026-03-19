@@ -12,7 +12,7 @@ namespace ErpOnlineOrder.WebMVC.Services.Interfaces
         Task<PagedResult<ProductDTO>> GetPagedAsync(int page = 1, int pageSize = 20, string? searchTerm = null, int? categoryId = null, int? publisherId = null, CancellationToken cancellationToken = default);
         Task<ProductDTO?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
         Task<Product?> GetEntityByIdAsync(int id, CancellationToken cancellationToken = default);
-        Task<ProductDTO?> CreateAsync(CreateProductDto dto, CancellationToken cancellationToken = default);
+        Task<(ProductDTO? Data, string? Error)> CreateAsync(CreateProductDto dto, CancellationToken cancellationToken = default);
         Task<(bool Success, string? Error)> UpdateAsync(int id, UpdateProductDto dto, CancellationToken cancellationToken = default);
         Task<(bool Success, string? Error)> DeleteAsync(int id, CancellationToken cancellationToken = default);
         Task<byte[]> ExportToExcelAsync(string? search = null, CancellationToken cancellationToken = default);

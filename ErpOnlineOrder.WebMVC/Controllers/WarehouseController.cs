@@ -81,13 +81,13 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return View(model);
                 }
 
-                var created = await _warehouseApiClient.CreateAsync(model);
+                var (created, error) = await _warehouseApiClient.CreateAsync(model);
                 if (created != null)
                 {
                     SetSuccessMessage("Thêm kho hàng thành công!");
                     return RedirectToAction(nameof(Index));
                 }
-                ModelState.AddModelError("", "Thêm kho hàng thất bại.");
+                ModelState.AddModelError("", error ?? "Không thể thêm kho hàng. Vui lòng kiểm tra mã kho, tên kho và tỉnh/thành phố.");
             }
             catch (Exception ex)
             {
@@ -155,7 +155,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     SetSuccessMessage("Cập nhật kho hàng thành công!");
                     return RedirectToAction(nameof(Index));
                 }
-                ModelState.AddModelError("", error ?? "Cập nhật thất bại.");
+                ModelState.AddModelError("", error ?? "Không thể cập nhật kho hàng. Dữ liệu có thể không hợp lệ hoặc kho không còn tồn tại.");
             }
             catch (Exception ex)
             {
@@ -178,7 +178,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (success)
                     SetSuccessMessage("Xóa kho hàng thành công!");
                 else
-                    SetErrorMessage(error ?? "Xóa thất bại.");
+                    SetErrorMessage(error ?? "Không thể xóa kho hàng. Kho có thể đang phát sinh phiếu xuất hoặc dữ liệu liên quan.");
             }
             catch (Exception ex)
             {

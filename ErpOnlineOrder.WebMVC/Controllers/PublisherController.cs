@@ -51,13 +51,13 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (!ModelState.IsValid)
                     return View(model);
 
-                var created = await _publisherApiClient.CreateAsync(model);
+                var (created, error) = await _publisherApiClient.CreateAsync(model);
                 if (created != null)
                 {
                     SetSuccessMessage("Thêm nhà xuất bản thành công!");
                     return RedirectToAction(nameof(Index));
                 }
-                ModelState.AddModelError("", "Thêm nhà xuất bản thất bại.");
+                ModelState.AddModelError("", error ?? "Không thể thêm nhà xuất bản. Vui lòng kiểm tra mã nhà xuất bản và thông tin liên hệ.");
             }
             catch (Exception ex)
             {
@@ -117,7 +117,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     SetSuccessMessage("Cập nhật nhà xuất bản thành công!");
                     return RedirectToAction(nameof(Index));
                 }
-                ModelState.AddModelError("", error ?? "Cập nhật thất bại.");
+                ModelState.AddModelError("", error ?? "Không thể cập nhật nhà xuất bản. Dữ liệu có thể không hợp lệ hoặc bản ghi không còn tồn tại.");
             }
             catch (Exception ex)
             {
@@ -138,7 +138,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (success)
                     SetSuccessMessage("Xóa nhà xuất bản thành công!");
                 else
-                    SetErrorMessage(error ?? "Xóa thất bại.");
+                    SetErrorMessage(error ?? "Không thể xóa nhà xuất bản. Nhà xuất bản có thể đang được liên kết với sản phẩm.");
             }
             catch (Exception ex)
             {

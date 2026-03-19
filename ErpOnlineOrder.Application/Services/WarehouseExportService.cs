@@ -19,6 +19,7 @@ namespace ErpOnlineOrder.Application.Services
         private readonly IStaffRepository _staffRepository;
         private readonly ICustomerManagementRepository _customerManagementRepository;
         private readonly IOrderRepository _orderRepository;
+        private readonly IStockRepository _stockRepository;
 
         public WarehouseExportService(
             IWarehouseExportRepository exportRepository,
@@ -27,7 +28,8 @@ namespace ErpOnlineOrder.Application.Services
             IPermissionService permissionService,
             IStaffRepository staffRepository,
             ICustomerManagementRepository customerManagementRepository,
-            IOrderRepository orderRepository)
+            IOrderRepository orderRepository,
+            IStockRepository stockRepository)
         {
             _exportRepository = exportRepository;
             _invoiceRepository = invoiceRepository;
@@ -36,6 +38,7 @@ namespace ErpOnlineOrder.Application.Services
             _staffRepository = staffRepository;
             _customerManagementRepository = customerManagementRepository;
             _orderRepository = orderRepository;
+            _stockRepository = stockRepository;
         }
 
         private async Task<IEnumerable<int>?> GetAllowedCustomerIdsAsync(int userId)
@@ -187,6 +190,7 @@ namespace ErpOnlineOrder.Application.Services
                 Customer_id = invoice.Customer_id,
                 Staff_id = staffId,
                 Export_date = dto.Export_date ?? now,
+                Arrival_date = dto.Arrival_date,
                 Delivery_status = "Pending",
                 Status = "Draft",
                 Created_by = userId,
@@ -238,10 +242,70 @@ namespace ErpOnlineOrder.Application.Services
                 }
             }
 
+            // Kiểm tra tồn kho theo kho + sản phẩm và trừ tồn khi tạo phiếu xuất
+            var requestedByProduct = export.Warehouse_Export_Details
+                .Where(d => !d.Is_deleted)
+                .GroupBy(d => d.Product_id)
+                .Select(g => new { ProductId = g.Key, Quantity = g.Sum(x => x.Quantity_shipped) })
+                .ToList();
+
+            foreach (var item in requestedByProduct)
+            {
+                if (item.Quantity <= 0)
+                {
+                    throw new Exception($"Số lượng xuất không hợp lệ cho sản phẩm {item.ProductId}");
+                }
+
+                var stock = await _stockRepository.GetByWarehouseAndProductAsync(dto.Warehouse_id, item.ProductId);
+                if (stock == null)
+                {
+                    throw new Exception($"Kho chưa được gán sản phẩm {item.ProductId} trong tồn kho");
+                }
+
+                if (stock.Quantity < item.Quantity)
+                {
+                    throw new Exception($"Tồn kho không đủ cho sản phẩm {item.ProductId}. Tồn hiện tại: {stock.Quantity}, yêu cầu xuất: {item.Quantity}");
+                }
+            }
+
+            foreach (var item in requestedByProduct)
+            {
+                var stock = await _stockRepository.GetByWarehouseAndProductAsync(dto.Warehouse_id, item.ProductId);
+                if (stock == null) continue;
+
+                stock.Quantity -= item.Quantity;
+                stock.Updated_by = userId;
+                stock.Updated_at = now;
+                await _stockRepository.UpdateAsync(stock);
+            }
+
             await _exportRepository.AddAsync(export);
 
             var created = await _exportRepository.GetByIdAsync(export.Id);
             return created != null ? EntityMappers.ToWarehouseExportDto(created) : null;
+        }
+
+        public async Task<bool> UpdateExportAsync(int id, UpdateWarehouseExportDto dto, int userId)
+        {
+            var export = await _exportRepository.GetByIdAsync(id);
+            if (export == null) return false;
+
+            if (export.Status != ExportStatuses.Draft)
+            {
+                throw new InvalidOperationException("Chỉ được chỉnh sửa phiếu xuất kho ở trạng thái Nháp");
+            }
+
+            export.Warehouse_id = dto.Warehouse_id;
+            export.Export_date = dto.Export_date;
+            export.Arrival_date = dto.Arrival_date;
+            export.Split_merge_note = string.IsNullOrWhiteSpace(dto.Split_merge_note)
+                ? null
+                : dto.Split_merge_note.Trim();
+            export.Updated_by = userId;
+            export.Updated_at = DateTime.UtcNow;
+
+            await _exportRepository.UpdateAsync(export);
+            return true;
         }
 
         private static readonly HashSet<string> ValidDeliveryStatuses = new(DeliveryStatuses.All);
@@ -873,14 +937,15 @@ namespace ErpOnlineOrder.Application.Services
 
             ws.Cell(1, 1).Value = "Mã phiếu";
             ws.Cell(1, 2).Value = "Ngày xuất";
-            ws.Cell(1, 3).Value = "Hóa đơn";
-            ws.Cell(1, 4).Value = "Khách hàng";
-            ws.Cell(1, 5).Value = "Kho";
-            ws.Cell(1, 6).Value = "Tổng SL";
-            ws.Cell(1, 7).Value = "Tổng tiền";
-            ws.Cell(1, 8).Value = "Trạng thái";
-            ws.Cell(1, 9).Value = "Giao hàng";
-            ws.Range(1, 1, 1, 9).Style.Font.Bold = true;
+            ws.Cell(1, 3).Value = "Ngày vận chuyển đến";
+            ws.Cell(1, 4).Value = "Hóa đơn";
+            ws.Cell(1, 5).Value = "Khách hàng";
+            ws.Cell(1, 6).Value = "Kho";
+            ws.Cell(1, 7).Value = "Tổng SL";
+            ws.Cell(1, 8).Value = "Tổng tiền";
+            ws.Cell(1, 9).Value = "Trạng thái";
+            ws.Cell(1, 10).Value = "Giao hàng";
+            ws.Range(1, 1, 1, 10).Style.Font.Bold = true;
 
             int row = 2;
             foreach (var exp in exports)
@@ -888,13 +953,14 @@ namespace ErpOnlineOrder.Application.Services
                 var dto = EntityMappers.ToWarehouseExportDto(exp);
                 ExcelHelper.SetCellValue(ws.Cell(row, 1), dto.Warehouse_export_code);
                 ExcelHelper.SetCellValue(ws.Cell(row, 2), dto.Export_date.ToString("dd/MM/yyyy"));
-                ExcelHelper.SetCellValue(ws.Cell(row, 3), dto.Invoice_code ?? "");
-                ExcelHelper.SetCellValue(ws.Cell(row, 4), dto.Customer_name ?? "");
-                ExcelHelper.SetCellValue(ws.Cell(row, 5), dto.Warehouse_name ?? "");
-                ws.Cell(row, 6).Value = dto.Total_quantity;
-                ws.Cell(row, 7).Value = dto.Total_amount;
-                ExcelHelper.SetCellValue(ws.Cell(row, 8), dto.Status ?? "");
-                ExcelHelper.SetCellValue(ws.Cell(row, 9), dto.Delivery_status ?? "");
+                ExcelHelper.SetCellValue(ws.Cell(row, 3), dto.Arrival_date?.ToString("dd/MM/yyyy") ?? "");
+                ExcelHelper.SetCellValue(ws.Cell(row, 4), dto.Invoice_code ?? "");
+                ExcelHelper.SetCellValue(ws.Cell(row, 5), dto.Customer_name ?? "");
+                ExcelHelper.SetCellValue(ws.Cell(row, 6), dto.Warehouse_name ?? "");
+                ws.Cell(row, 7).Value = dto.Total_quantity;
+                ws.Cell(row, 8).Value = dto.Total_amount;
+                ExcelHelper.SetCellValue(ws.Cell(row, 9), dto.Status ?? "");
+                ExcelHelper.SetCellValue(ws.Cell(row, 10), dto.Delivery_status ?? "");
                 row++;
             }
             ws.Columns().AdjustToContents();

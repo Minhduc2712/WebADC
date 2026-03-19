@@ -134,8 +134,20 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             return View();
         }
 
-        public IActionResult Checkout()
+        public async Task<IActionResult> Checkout()
         {
+            var organizationAddress = string.Empty;
+            var customerId = await GetCurrentCustomerIdAsync();
+            if (customerId.HasValue)
+            {
+                var org = await _organizationService.GetByCustomerIdAsync(customerId.Value);
+                organizationAddress = org?.Recipient_address;
+                if (string.IsNullOrWhiteSpace(organizationAddress))
+                    organizationAddress = org?.Address;
+            }
+
+            ViewBag.OrganizationShippingAddress = organizationAddress ?? string.Empty;
+            ViewBag.HasOrganizationShippingAddress = !string.IsNullOrWhiteSpace(organizationAddress);
             return View();
         }
 
@@ -220,6 +232,8 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 {
                     Order_date = DateTime.Now,
                     Customer_id = customer.Id,
+                    Shipping_address = request.ShippingAddress,
+                    note = request.Note,
                     Created_by = userId,
                     Order_details = request.Items.Select(item => new OrderDetailDto
                     {
@@ -243,7 +257,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error placing order");
-                return Json(new { success = false, message = "Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại." });
+                return Json(new { success = false, message = "Không thể đặt hàng lúc này. Vui lòng kiểm tra lại giỏ hàng và thử lại sau." });
             }
         }
 
@@ -281,7 +295,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error cancelling order {OrderId}", id);
-                return Json(new { success = false, message = "Có lỗi xảy ra." });
+                return Json(new { success = false, message = "Không thể hủy đơn hàng lúc này. Vui lòng thử lại sau." });
             }
         }
 
@@ -462,12 +476,12 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     TempData["Success"] = result.Message;
                     return RedirectToAction(nameof(Exports));
                 }
-                TempData["Error"] = result?.Message ?? "Tách hóa đơn thất bại.";
+                TempData["Error"] = result?.Message ?? "Không thể tách hóa đơn. Vui lòng kiểm tra số lượng tách và trạng thái hóa đơn.";
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error splitting invoice for customer");
-                TempData["Error"] = "Có lỗi xảy ra khi tách hóa đơn.";
+                TempData["Error"] = "Không thể xử lý yêu cầu tách hóa đơn lúc này. Vui lòng thử lại sau.";
             }
 
             ViewBag.Export = export;
@@ -510,12 +524,12 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return RedirectToAction(nameof(ChangePassword));
                 }
 
-                ModelState.AddModelError("", errorMessage ?? "Đổi mật khẩu thất bại.");
+                ModelState.AddModelError("", errorMessage ?? "Không thể đổi mật khẩu. Vui lòng kiểm tra mật khẩu hiện tại và mật khẩu mới.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error changing password for user");
-                ModelState.AddModelError("", "Có lỗi xảy ra. Vui lòng thử lại.");
+                ModelState.AddModelError("", "Không thể đổi mật khẩu lúc này. Vui lòng thử lại sau.");
             }
 
             return View(model);
@@ -574,7 +588,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating organization for customer {CustomerId}", customerId);
-                ModelState.AddModelError("", "Có lỗi xảy ra khi cập nhật. Vui lòng thử lại.");
+                ModelState.AddModelError("", "Không thể cập nhật thông tin đơn vị. Vui lòng kiểm tra dữ liệu và thử lại.");
             }
             return View(model);
         }

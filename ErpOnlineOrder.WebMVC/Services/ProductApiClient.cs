@@ -81,15 +81,14 @@ namespace ErpOnlineOrder.WebMVC.Services
             return await response.Content.ReadFromJsonAsync<Product>(ErpApiClientHelper.JsonOptions, cancellationToken);
         }
 
-        public async Task<ProductDTO?> CreateAsync(CreateProductDto dto, CancellationToken cancellationToken = default)
+        public async Task<(ProductDTO? Data, string? Error)> CreateAsync(CreateProductDto dto, CancellationToken cancellationToken = default)
         {
             var response = await _http.PostAsJsonAsync("product", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
             if (!response.IsSuccessStatusCode)
-            {
-                var msg = await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken);
-                throw new InvalidOperationException(msg ?? "Thêm sản phẩm thất bại.");
-            }
-            return await response.Content.ReadFromJsonAsync<ProductDTO>(ErpApiClientHelper.JsonOptions, cancellationToken);
+                return (null, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+
+            var data = await response.Content.ReadFromJsonAsync<ProductDTO>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return (data, null);
         }
 
         public async Task<(bool Success, string? Error)> UpdateAsync(int id, UpdateProductDto dto, CancellationToken cancellationToken = default)

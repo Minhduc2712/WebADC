@@ -84,9 +84,26 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _exportService.CreateExportFromInvoiceAsync(dto, GetCurrentUserId());
                 if (result == null)
                 {
-                    return BadRequest(new { message = "Không thể tạo phiếu xuất kho" });
+                    return BadRequest(new { message = "Không thể tạo phiếu xuất kho. Dữ liệu không hợp lệ hoặc chưa đủ điều kiện xuất kho." });
                 }
                 return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateExport(int id, [FromBody] UpdateWarehouseExportDto dto)
+        {
+            try
+            {
+                var result = await _exportService.UpdateExportAsync(id, dto, GetCurrentUserId());
+                if (!result)
+                {
+                    return NotFound(new { message = "Phiếu xuất kho không tồn tại" });
+                }
+                return Ok(new { success = true, message = "Đã cập nhật phiếu xuất kho" });
             }
             catch (Exception ex)
             {
@@ -215,7 +232,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _exportService.UndoSplitAsync(id, GetCurrentUserId());
                 if (!result)
                 {
-                    return BadRequest(new { message = "Không thể hoàn tác" });
+                    return BadRequest(new { message = "Không thể hoàn tác tách phiếu xuất kho. Phiếu không tồn tại hoặc không ở trạng thái Đã tách." });
                 }
                 return Ok(new { success = true, message = "Đã hoàn tác tách phiếu xuất kho" });
             }
@@ -232,7 +249,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _exportService.UndoMergeAsync(id, GetCurrentUserId());
                 if (!result)
                 {
-                    return BadRequest(new { message = "Không thể hoàn tác" });
+                    return BadRequest(new { message = "Không thể hoàn tác gộp phiếu xuất kho. Phiếu không tồn tại hoặc không ở trạng thái đã gộp hợp lệ." });
                 }
                 return Ok(new { success = true, message = "Đã hoàn tác gộp phiếu xuất kho" });
             }

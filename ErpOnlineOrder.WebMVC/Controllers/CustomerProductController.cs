@@ -116,7 +116,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return RedirectToAction("Index", new { customerId = model.Customer_id });
                 }
 
-                SetErrorMessage(error ?? "Không thể gán sản phẩm.");
+                SetErrorMessage(error ?? "Không thể gán sản phẩm cho khách hàng. Vui lòng kiểm tra sản phẩm đã chọn và trạng thái phân quyền.");
                 return RedirectToAction("AssignProducts", new { customerId = model.Customer_id });
             }
             catch (Exception ex)
@@ -176,7 +176,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return RedirectToAction("Index", new { customerId = (await _customerProductApiClient.GetByIdAsync(id))?.Customer_id ?? 0 });
                 }
 
-                SetErrorMessage(error ?? "Không thể cập nhật.");
+                SetErrorMessage(error ?? "Không thể cập nhật cấu hình sản phẩm của khách hàng. Vui lòng kiểm tra dữ liệu số lượng và trạng thái bản ghi.");
                 return RedirectToAction("Edit", new { id });
             }
             catch (Exception ex)
@@ -204,7 +204,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 }
                 else
                 {
-                    SetErrorMessage(error ?? "Không thể xóa.");
+                    SetErrorMessage(error ?? "Không thể xóa gán sản phẩm. Bản ghi có thể không tồn tại hoặc đã bị thay đổi.");
                 }
 
                 return RedirectToAction("Index", new { customerId });

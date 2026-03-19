@@ -44,11 +44,14 @@ namespace ErpOnlineOrder.WebMVC.Services
             return list ?? new List<WarehouseDto>();
         }
 
-        public async Task<WarehouseDto?> CreateAsync(CreateWarehouseDto dto, CancellationToken cancellationToken = default)
+        public async Task<(WarehouseDto? Data, string? Error)> CreateAsync(CreateWarehouseDto dto, CancellationToken cancellationToken = default)
         {
             var response = await _http.PostAsJsonAsync("warehouse", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
-            return await response.Content.ReadFromJsonAsync<WarehouseDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+                return (null, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+
+            var data = await response.Content.ReadFromJsonAsync<WarehouseDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return (data, null);
         }
 
         public async Task<(bool Success, string? Error)> UpdateAsync(int id, UpdateWarehouseDto dto, CancellationToken cancellationToken = default)

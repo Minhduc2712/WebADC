@@ -64,21 +64,21 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         public async Task<IActionResult> CreatePermission([FromBody] CreatePermissionRequest request)
         {
             var result = await _permissionService.CreatePermissionAsync(request.Permission_code, GetCurrentUserId());
-            if (!result) return BadRequest(new { message = "Tạo quyền thất bại" });
+            if (!result) return BadRequest(new { message = "Không thể tạo quyền. Mã quyền có thể đã tồn tại hoặc không đúng định dạng." });
             return Ok(new { success = true });
         }
         [HttpPut("permissions/{id}")]
         public async Task<IActionResult> UpdatePermission(int id, [FromBody] CreatePermissionRequest request)
         {
             var result = await _permissionService.UpdatePermissionAsync(id, request.Permission_code, GetCurrentUserId());
-            if (!result) return NotFound(new { message = "Cập nhật thất bại" });
+            if (!result) return NotFound(new { message = "Không thể cập nhật quyền. Quyền không tồn tại hoặc dữ liệu cập nhật không hợp lệ." });
             return Ok(new { success = true });
         }
         [HttpDelete("permissions/{id}")]
         public async Task<IActionResult> DeletePermission(int id)
         {
             var result = await _permissionService.DeletePermissionAsync(id);
-            if (!result) return NotFound(new { message = "Xóa thất bại" });
+            if (!result) return NotFound(new { message = "Không thể xóa quyền. Quyền không tồn tại hoặc đang được sử dụng bởi vai trò/người dùng khác." });
             return Ok(new { success = true });
         }
 
@@ -97,7 +97,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var rolePermissions = await _permissionService.GetRolePermissionsAsync(roleId);
             if (rolePermissions == null)
             {
-                return NotFound(new { message = "Role không tồn tại" });
+                return NotFound(new { message = "Không tìm thấy vai trò." });
             }
             return Ok(rolePermissions);
         }
@@ -107,7 +107,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _permissionService.CreateRoleAsync(dto, GetCurrentUserId());
             if (!result)
             {
-                return BadRequest(new { message = "Không thể tạo role" });
+                return BadRequest(new { message = "Không thể tạo vai trò. Tên vai trò có thể đã tồn tại hoặc không hợp lệ." });
             }
             return Ok(new { success = true, message = "Tạo role thành công" });
         }
@@ -116,13 +116,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             if (id != dto.Id)
             {
-                return BadRequest(new { message = "ID không khớp" });
+                return BadRequest(new { message = "ID trên URL không khớp với ID vai trò trong dữ liệu cập nhật." });
             }
 
             var result = await _permissionService.UpdateRoleAsync(dto, GetCurrentUserId());
             if (!result)
             {
-                return NotFound(new { message = "Role không tồn tại" });
+                return NotFound(new { message = "Không tìm thấy vai trò cần cập nhật." });
             }
             return Ok(new { success = true, message = "Cập nhật role thành công" });
         }
@@ -132,7 +132,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _permissionService.DeleteRoleAsync(id);
             if (!result)
             {
-                return NotFound(new { message = "Role không tồn tại" });
+                return NotFound(new { message = "Không tìm thấy vai trò cần xóa." });
             }
             return Ok(new { success = true, message = "X�a role th�nh c�ng" });
         }
@@ -141,13 +141,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             if (roleId != dto.Role_id)
             {
-                return BadRequest(new { message = "Role ID không khớp" });
+                return BadRequest(new { message = "Role ID trên URL không khớp với dữ liệu phân quyền." });
             }
 
             var result = await _permissionService.AssignPermissionsToRoleAsync(dto);
             if (!result)
             {
-                return BadRequest(new { message = "Không thể gán permissions cho role" });
+                return BadRequest(new { message = "Không thể gán quyền cho vai trò. Vui lòng kiểm tra danh sách quyền và trạng thái vai trò." });
             }
             return Ok(new { success = true, message = "G�n permissions th�nh c�ng" });
         }
@@ -167,7 +167,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var permissions = await _permissionService.GetUserPermissionDetailsAsync(GetCurrentUserId());
             if (permissions == null)
             {
-                return NotFound(new { message = "User không tồn tại" });
+                return NotFound(new { message = "Không tìm thấy người dùng hiện tại để lấy quyền." });
             }
             return Ok(permissions);
         }
@@ -177,7 +177,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var permissions = await _permissionService.GetUserPermissionDetailsAsync(userId);
             if (permissions == null)
             {
-                return NotFound(new { message = "User không tồn tại" });
+                return NotFound(new { message = "Không tìm thấy người dùng để lấy thông tin quyền." });
             }
             return Ok(permissions);
         }
@@ -193,7 +193,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _permissionService.AssignRoleToUserAsync(userId, roleId);
             if (!result)
             {
-                return BadRequest(new { message = "Không thể gán role cho user" });
+                return BadRequest(new { message = "Không thể gán vai trò cho người dùng. Vui lòng kiểm tra người dùng, vai trò và dữ liệu phân quyền." });
             }
             return Ok(new { success = true, message = "G�n role th�nh c�ng" });
         }
@@ -207,21 +207,21 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         public async Task<IActionResult> GetUserFullPermissions(int userId)
         {
             var result = await _permissionService.GetUserFullPermissionsAsync(userId);
-            if (result == null) return NotFound(new { message = "User không tồn tại" });
+            if (result == null) return NotFound(new { message = "Không tìm thấy người dùng để lấy quyền đầy đủ." });
             return Ok(result);
         }
         [HttpPost("user/assign-permissions")]
         public async Task<IActionResult> AssignPermissionsToUser([FromBody] AssignPermissionsToUserDto dto)
         {
             var result = await _permissionService.AssignPermissionsToUserAsync(dto, GetCurrentUserId());
-            if (!result) return BadRequest(new { message = "Gán quyền thất bại" });
+            if (!result) return BadRequest(new { message = "Không thể gán quyền trực tiếp cho người dùng. Vui lòng kiểm tra danh sách quyền gửi lên." });
             return Ok(new { success = true, message = "Gán quyền thành công" });
         }
         [HttpPost("user/{userId}/remove-all-direct")]
         public async Task<IActionResult> RemoveAllDirectPermissionsFromUser(int userId)
         {
             var result = await _permissionService.RemoveAllDirectPermissionsFromUserAsync(userId);
-            if (!result) return BadRequest(new { message = "Xóa quyền thất bại" });
+            if (!result) return BadRequest(new { message = "Không thể xóa toàn bộ quyền trực tiếp của người dùng. Người dùng có thể không tồn tại." });
             return Ok(new { success = true });
         }
 

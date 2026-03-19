@@ -28,11 +28,14 @@ namespace ErpOnlineOrder.WebMVC.Services
             return await response.Content.ReadFromJsonAsync<RegionDTO>(ErpApiClientHelper.JsonOptions, cancellationToken);
         }
 
-        public async Task<RegionDTO?> CreateAsync(CreateRegionDto dto, CancellationToken cancellationToken = default)
+        public async Task<(RegionDTO? Data, string? Error)> CreateAsync(CreateRegionDto dto, CancellationToken cancellationToken = default)
         {
             var response = await _http.PostAsJsonAsync("region", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
-            return await response.Content.ReadFromJsonAsync<RegionDTO>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+                return (null, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+
+            var data = await response.Content.ReadFromJsonAsync<RegionDTO>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return (data, null);
         }
 
         public async Task<(bool Success, string? Error)> UpdateAsync(int id, UpdateRegionDto dto, CancellationToken cancellationToken = default)

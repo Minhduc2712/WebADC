@@ -18,6 +18,7 @@ namespace ErpOnlineOrder.Application.Services
         private readonly ICustomerManagementRepository _customerManagementRepository;
         private readonly ICustomerProductRepository _customerProductRepository;
         private readonly IProductRepository _productRepository;
+        private readonly IOrganizationRepository _organizationRepository;
         private readonly IEmailService _emailService;
         private readonly IPermissionService _permissionService;
 
@@ -27,6 +28,7 @@ namespace ErpOnlineOrder.Application.Services
             ICustomerManagementRepository customerManagementRepository,
             ICustomerProductRepository customerProductRepository,
             IProductRepository productRepository,
+            IOrganizationRepository organizationRepository,
             IEmailService emailService,
             IPermissionService permissionService)
         {
@@ -35,8 +37,23 @@ namespace ErpOnlineOrder.Application.Services
             _customerManagementRepository = customerManagementRepository;
             _customerProductRepository = customerProductRepository;
             _productRepository = productRepository;
+            _organizationRepository = organizationRepository;
             _emailService = emailService;
             _permissionService = permissionService;
+        }
+
+        private async Task<string?> ResolveShippingAddressAsync(int customerId, string? requestedAddress)
+        {
+            var inputAddress = string.IsNullOrWhiteSpace(requestedAddress) ? null : requestedAddress.Trim();
+            if (!string.IsNullOrWhiteSpace(inputAddress))
+                return inputAddress;
+
+            var org = await _organizationRepository.GetByCustomerIdAsync(customerId);
+            var orgAddress = org?.Recipient_address;
+            if (string.IsNullOrWhiteSpace(orgAddress))
+                orgAddress = org?.Address;
+
+            return string.IsNullOrWhiteSpace(orgAddress) ? null : orgAddress.Trim();
         }
 
         private async Task<bool> IsUserAllowedForCustomerAsync(int? userId, int customerId)
@@ -133,6 +150,14 @@ namespace ErpOnlineOrder.Application.Services
                 return new CreateOrderResultDto { Success = false, Message = "Vui lòng chọn khách hàng." };
 
             int customerId = dto.Customer_id.Value;
+            var shippingAddress = await ResolveShippingAddressAsync(customerId, dto.Shipping_address);
+            if (string.IsNullOrWhiteSpace(shippingAddress))
+                return new CreateOrderResultDto
+                {
+                    Success = false,
+                    Message = "Vui lòng nhập địa chỉ giao hàng hoặc cập nhật địa chỉ trong thông tin tổ chức."
+                };
+
             var productIds = dto.Order_details.Select(od => od.Product_id).Distinct().ToList();
 
             var productDataMap = await _productRepository.GetProductValidationMapAsync(customerId, productIds);
@@ -180,7 +205,7 @@ namespace ErpOnlineOrder.Application.Services
                 Order_code = $"ORD-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString()[..6].ToUpper()}",
                 Order_date = dto.Order_date,
                 Customer_id = customerId,
-                Shipping_address = dto.Shipping_address?.Trim(),
+                Shipping_address = shippingAddress,
                 note = dto.note?.Trim(),
                 Total_amount = orderDetails.Sum(od => od.Quantity),
                 Total_price = orderDetails.Sum(od => od.Total_price),
@@ -224,6 +249,15 @@ namespace ErpOnlineOrder.Application.Services
                 return new CreateOrderResultDto { Success = false, Message = "Vui lòng chọn khách hàng." };
             }
             int customerId = dto.Customer_id.Value;
+            var shippingAddress = await ResolveShippingAddressAsync(customerId, dto.Shipping_address);
+            if (string.IsNullOrWhiteSpace(shippingAddress))
+            {
+                return new CreateOrderResultDto
+                {
+                    Success = false,
+                    Message = "Vui lòng nhập địa chỉ giao hàng hoặc cập nhật địa chỉ trong thông tin tổ chức."
+                };
+            }
 
             var result = new CreateOrderResultDto();
 
@@ -243,7 +277,7 @@ namespace ErpOnlineOrder.Application.Services
                 Order_code = $"ORD-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 6).ToUpper()}",
                 Order_date = dto.Order_date,
                 Customer_id = customerId,
-                Shipping_address = string.IsNullOrWhiteSpace(dto.Shipping_address) ? null : dto.Shipping_address.Trim(),
+                Shipping_address = shippingAddress,
                 note = string.IsNullOrWhiteSpace(dto.note) ? null : dto.note.Trim(),
                 Total_amount = orderDetails.Sum(od => od.Quantity),
                 Total_price = orderDetails.Sum(od => od.Total_price),

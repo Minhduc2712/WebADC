@@ -32,6 +32,7 @@ namespace ErpOnlineOrder.Domain.Models
         public virtual Customer? Customer { get; set; }
         
         public DateTime Export_date { get; set; }
+        public DateTime? Arrival_date { get; set; }
         
         public string Delivery_status { get; set; } = DeliveryStatuses.Pending;
         public string Status { get; set; } = ExportStatuses.Draft;

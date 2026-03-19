@@ -119,13 +119,13 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     AuthorIds = authorIds
                 };
 
-                var created = await _productApiClient.CreateAsync(dto);
+                var (created, error) = await _productApiClient.CreateAsync(dto);
                 if (created != null)
                 {
                     SetSuccessMessage("Thêm sản phẩm thành công!");
                     return RedirectToAction(nameof(Index));
                 }
-                ModelState.AddModelError("", "Thêm sản phẩm thất bại.");
+                ModelState.AddModelError("", error ?? "Không thể thêm sản phẩm. Vui lòng kiểm tra mã sản phẩm, giá bán và các thông tin bắt buộc.");
                 await LoadDropdownsAsync();
                 return View(model);
             }
@@ -199,7 +199,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     SetSuccessMessage("Cập nhật sản phẩm thành công!");
                     return RedirectToAction(nameof(Index));
                 }
-                ModelState.AddModelError("", error ?? "Cập nhật thất bại.");
+                ModelState.AddModelError("", error ?? "Không thể cập nhật sản phẩm. Dữ liệu có thể không hợp lệ hoặc sản phẩm đã bị thay đổi trạng thái.");
                 await LoadDropdownsAsync(model);
                 return View(model);
             }
@@ -222,7 +222,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (success)
                     SetSuccessMessage("Xóa sản phẩm thành công!");
                 else
-                    SetErrorMessage(error ?? "Xóa thất bại.");
+                    SetErrorMessage(error ?? "Không thể xóa sản phẩm. Sản phẩm có thể đang phát sinh trong đơn hàng hoặc dữ liệu liên quan.");
             }
             catch (Exception ex)
             {

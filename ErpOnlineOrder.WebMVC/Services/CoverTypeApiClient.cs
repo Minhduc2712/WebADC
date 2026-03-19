@@ -28,11 +28,14 @@ namespace ErpOnlineOrder.WebMVC.Services
             return await response.Content.ReadFromJsonAsync<CoverTypeDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
         }
 
-        public async Task<CoverTypeDto?> CreateAsync(CreateCoverTypeDto dto, CancellationToken cancellationToken = default)
+        public async Task<(CoverTypeDto? Data, string? Error)> CreateAsync(CreateCoverTypeDto dto, CancellationToken cancellationToken = default)
         {
             var response = await _http.PostAsJsonAsync("covertype", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
-            return await response.Content.ReadFromJsonAsync<CoverTypeDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+                return (null, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+
+            var data = await response.Content.ReadFromJsonAsync<CoverTypeDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return (data, null);
         }
 
         public async Task<(bool Success, string? Error)> UpdateAsync(int id, UpdateCoverTypeDto dto, CancellationToken cancellationToken = default)

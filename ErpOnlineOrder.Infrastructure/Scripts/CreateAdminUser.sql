@@ -37,7 +37,7 @@ GO
 -- =============================================
 PRINT N'Buoc 2: Kiem tra va seed du lieu co ban...';
 
--- Seed Permissions (Staff)
+-- Seed Permissions (Staff + Stock)
 IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'STAFF_VIEW')
 BEGIN
     INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES
@@ -47,6 +47,15 @@ BEGIN
     ('STAFF_DELETE', NULL, 0, 1, GETDATE(), 1, GETDATE(), 0),
     ('STAFF_ASSIGN', NULL, 0, 1, GETDATE(), 1, GETDATE(), 0);
     PRINT N'  - Da seed Permissions';
+END
+
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'STOCK_VIEW')
+BEGIN
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES
+    ('STOCK_VIEW', NULL, 0, 1, GETDATE(), 1, GETDATE(), 0),
+    ('STOCK_UPDATE', NULL, 0, 1, GETDATE(), 1, GETDATE(), 0),
+    ('STOCK_DELETE', NULL, 0, 1, GETDATE(), 1, GETDATE(), 0);
+    PRINT N'  - Da seed Stock permissions';
 END
 
 -- Seed Role ROLE_ADMIN

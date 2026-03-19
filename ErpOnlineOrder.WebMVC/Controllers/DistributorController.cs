@@ -52,13 +52,13 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (!ModelState.IsValid)
                     return View(model);
 
-                var created = await _distributorApiClient.CreateAsync(model);
+                var (created, error) = await _distributorApiClient.CreateAsync(model);
                 if (created != null)
                 {
                     SetSuccessMessage("Thêm nhà phân phối thành công!");
                     return RedirectToAction(nameof(Index));
                 }
-                ModelState.AddModelError("", "Thêm nhà phân phối thất bại.");
+                ModelState.AddModelError("", error ?? "Không thể thêm nhà phân phối. Vui lòng kiểm tra mã, tên và thông tin liên hệ.");
             }
             catch (Exception ex)
             {
@@ -118,7 +118,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     SetSuccessMessage("Cập nhật nhà phân phối thành công!");
                     return RedirectToAction(nameof(Index));
                 }
-                ModelState.AddModelError("", error ?? "Cập nhật thất bại.");
+                ModelState.AddModelError("", error ?? "Không thể cập nhật nhà phân phối. Dữ liệu có thể không hợp lệ hoặc bản ghi không còn tồn tại.");
             }
             catch (Exception ex)
             {
@@ -139,7 +139,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (success)
                     SetSuccessMessage("Xóa nhà phân phối thành công!");
                 else
-                    SetErrorMessage(error ?? "Xóa thất bại.");
+                    SetErrorMessage(error ?? "Không thể xóa nhà phân phối. Nhà phân phối có thể đang liên kết với sản phẩm.");
             }
             catch (Exception ex)
             {

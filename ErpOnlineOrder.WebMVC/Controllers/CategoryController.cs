@@ -51,13 +51,13 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (!ModelState.IsValid)
                     return View(model);
 
-                var created = await _categoryApiClient.CreateAsync(model);
+                var (created, error) = await _categoryApiClient.CreateAsync(model);
                 if (created != null)
                 {
                     SetSuccessMessage("Thêm danh mục thành công!");
                     return RedirectToAction(nameof(Index));
                 }
-                ModelState.AddModelError("", "Thêm danh mục thất bại.");
+                ModelState.AddModelError("", error ?? "Không thể thêm danh mục. Vui lòng kiểm tra mã danh mục và tên danh mục.");
             }
             catch (Exception ex)
             {
@@ -108,7 +108,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     SetSuccessMessage("Cập nhật danh mục thành công!");
                     return RedirectToAction(nameof(Index));
                 }
-                ModelState.AddModelError("", error ?? "Cập nhật thất bại.");
+                ModelState.AddModelError("", error ?? "Không thể cập nhật danh mục. Dữ liệu có thể không hợp lệ hoặc danh mục không còn tồn tại.");
             }
             catch (Exception ex)
             {
@@ -129,7 +129,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (success)
                     SetSuccessMessage("Xóa danh mục thành công!");
                 else
-                    SetErrorMessage(error ?? "Xóa thất bại.");
+                    SetErrorMessage(error ?? "Không thể xóa danh mục. Danh mục có thể đang được sử dụng bởi sản phẩm.");
             }
             catch (Exception ex)
             {
