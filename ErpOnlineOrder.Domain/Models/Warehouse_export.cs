@@ -18,8 +18,7 @@ namespace ErpOnlineOrder.Domain.Models
         public int? Order_id { get; set; }
         [ForeignKey("Order_id")]
         public virtual Order? Order { get; set; }
-        [Required]
-        public int Invoice_id { get; set; }
+        public int? Invoice_id { get; set; }
         [ForeignKey("Invoice_id")]
         public virtual Invoice? Invoice { get; set; }
         

@@ -209,17 +209,6 @@ IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'WAREHOUSE_EXPO
     VALUES ('WAREHOUSE_EXPORT_DELETE', @WeParentId, 0, 0, GETDATE(), 0, GETDATE(), 0);
 GO
 
--- Stock (ton kho)
-IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'STOCK_VIEW')
-    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
-    VALUES ('STOCK_VIEW', NULL, 0, 0, GETDATE(), 0, GETDATE(), 0);
-IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'STOCK_UPDATE')
-    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
-    VALUES ('STOCK_UPDATE', NULL, 0, 0, GETDATE(), 0, GETDATE(), 0);
-IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'STOCK_DELETE')
-    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
-    VALUES ('STOCK_DELETE', NULL, 0, 0, GETDATE(), 0, GETDATE(), 0);
-
 -- Staff
 IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'STAFF_VIEW')
     INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
@@ -572,57 +561,9 @@ PRINT N'  -> Sample Products OK';
 GO
 
 -- =============================================
--- 8. SEED STOCKS
+-- 8. VERIFICATION
 -- =============================================
-PRINT N'[8/9] Seeding Stocks...';
-
-DECLARE @WhKHO01 INT, @WhKHO02 INT;
-DECLARE @Sp001 INT, @Sp002 INT, @Sp003 INT;
-
-SELECT @WhKHO01 = Id FROM Warehouses WHERE Warehouse_code = 'KHO01';
-SELECT @WhKHO02 = Id FROM Warehouses WHERE Warehouse_code = 'KHO02';
-
-SELECT @Sp001 = Id FROM Products WHERE Product_code = 'SP001';
-SELECT @Sp002 = Id FROM Products WHERE Product_code = 'SP002';
-SELECT @Sp003 = Id FROM Products WHERE Product_code = 'SP003';
-
-IF @WhKHO01 IS NOT NULL AND @Sp001 IS NOT NULL
-AND NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @WhKHO01 AND Product_id = @Sp001 AND Is_deleted = 0)
-    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
-    VALUES (200, @WhKHO01, @Sp001, 0, GETDATE(), 0, GETDATE(), 0);
-
-IF @WhKHO01 IS NOT NULL AND @Sp002 IS NOT NULL
-AND NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @WhKHO01 AND Product_id = @Sp002 AND Is_deleted = 0)
-    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
-    VALUES (150, @WhKHO01, @Sp002, 0, GETDATE(), 0, GETDATE(), 0);
-
-IF @WhKHO01 IS NOT NULL AND @Sp003 IS NOT NULL
-AND NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @WhKHO01 AND Product_id = @Sp003 AND Is_deleted = 0)
-    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
-    VALUES (120, @WhKHO01, @Sp003, 0, GETDATE(), 0, GETDATE(), 0);
-
-IF @WhKHO02 IS NOT NULL AND @Sp001 IS NOT NULL
-AND NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @WhKHO02 AND Product_id = @Sp001 AND Is_deleted = 0)
-    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
-    VALUES (180, @WhKHO02, @Sp001, 0, GETDATE(), 0, GETDATE(), 0);
-
-IF @WhKHO02 IS NOT NULL AND @Sp002 IS NOT NULL
-AND NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @WhKHO02 AND Product_id = @Sp002 AND Is_deleted = 0)
-    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
-    VALUES (140, @WhKHO02, @Sp002, 0, GETDATE(), 0, GETDATE(), 0);
-
-IF @WhKHO02 IS NOT NULL AND @Sp003 IS NOT NULL
-AND NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @WhKHO02 AND Product_id = @Sp003 AND Is_deleted = 0)
-    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
-    VALUES (100, @WhKHO02, @Sp003, 0, GETDATE(), 0, GETDATE(), 0);
-
-PRINT N'  -> Stocks OK';
-GO
-
--- =============================================
--- 9. VERIFICATION
--- =============================================
-PRINT N'[9/9] Verification...';
+PRINT N'[8/8] Verification...';
 PRINT N'';
 
 SELECT 'Roles' AS [Table], COUNT(*) AS [Count] FROM Roles WHERE Is_deleted = 0
@@ -639,7 +580,11 @@ UNION ALL SELECT 'CoverTypes', COUNT(*) FROM CoverTypes WHERE Is_deleted = 0
 UNION ALL SELECT 'Distributors', COUNT(*) FROM Distributors WHERE Is_deleted = 0
 UNION ALL SELECT 'Warehouses', COUNT(*) FROM Warehouses WHERE Is_deleted = 0
 UNION ALL SELECT 'Products', COUNT(*) FROM Products WHERE Is_deleted = 0
-UNION ALL SELECT 'Stocks', COUNT(*) FROM Stocks WHERE Is_deleted = 0
+UNION ALL SELECT 'Orders', COUNT(*) FROM Orders WHERE Is_deleted = 0
+UNION ALL SELECT 'OrderDetails', COUNT(*) FROM OrderDetails WHERE Is_deleted = 0
+UNION ALL SELECT 'Invoices', COUNT(*) FROM Invoices WHERE Is_deleted = 0
+UNION ALL SELECT 'WarehouseExports', COUNT(*) FROM WarehouseExports WHERE Is_deleted = 0
+UNION ALL SELECT 'WarehouseExportDetails', COUNT(*) FROM WarehouseExportDetails WHERE Is_deleted = 0
 UNION ALL SELECT 'SystemSettings', COUNT(*) FROM SystemSettings WHERE Is_deleted = 0;
 
 PRINT N'';

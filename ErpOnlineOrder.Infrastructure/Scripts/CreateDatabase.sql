@@ -472,7 +472,7 @@ CREATE TABLE WarehouseExports (
     Warehouse_export_code NVARCHAR(50) NOT NULL,
     Warehouse_id INT NOT NULL,
     Order_id INT NULL,
-    Invoice_id INT NOT NULL,
+    Invoice_id INT NULL,
     Staff_id INT NOT NULL,
     Customer_id INT NOT NULL,
     Export_date DATETIME2 NOT NULL,

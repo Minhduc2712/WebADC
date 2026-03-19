@@ -165,7 +165,7 @@ namespace ErpOnlineOrder.Application.Mappers
                 Warehouse_id = export.Warehouse_id,
                 Warehouse_name = export.Warehouse?.Warehouse_name ?? "",
                 Invoice_id = export.Invoice_id,
-                Invoice_code = export.Invoice?.Invoice_code ?? "",
+                Invoice_code = export.Invoice?.Invoice_code,
                 Order_id = export.Order_id,
                 Order_code = export.Order?.Order_code,
                 Customer_id = export.Customer_id,

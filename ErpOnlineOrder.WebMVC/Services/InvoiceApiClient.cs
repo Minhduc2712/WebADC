@@ -83,12 +83,12 @@ namespace ErpOnlineOrder.WebMVC.Services
             return response.IsSuccessStatusCode;
         }
 
-        public async Task<CreateInvoiceFromOrderResultDto?> CreateFromOrderAsync(int orderId, CancellationToken cancellationToken = default)
-        {
-            var response = await _http.PostAsync($"invoice/create-from-order/{orderId}", null, cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
-            return await response.Content.ReadFromJsonAsync<CreateInvoiceFromOrderResultDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
-        }
+        // public async Task<CreateInvoiceFromOrderResultDto?> CreateFromOrderAsync(int orderId, CancellationToken cancellationToken = default)
+        // {
+        //     var response = await _http.PostAsync($"invoice/create-from-order/{orderId}", null, cancellationToken);
+        //     if (!response.IsSuccessStatusCode) return null;
+        //     return await response.Content.ReadFromJsonAsync<CreateInvoiceFromOrderResultDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
+        // }
 
         public async Task<(bool Success, string? Error)> UpdateStatusAsync(int id, string status, CancellationToken cancellationToken = default)
         {

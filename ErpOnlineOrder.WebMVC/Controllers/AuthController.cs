@@ -5,6 +5,7 @@ using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.WebMVC.Extensions;
 using ErpOnlineOrder.WebMVC.Services;
 using ErpOnlineOrder.WebMVC.Services.Interfaces;
+using System.Text.Json;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
@@ -17,6 +18,9 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         private readonly ILogger<AuthController> _logger;
 
         private const int RememberMeDays = 30;
+        private const string CustomerRegisterAccountSessionKey = "CustomerRegister.Account";
+        private const string CustomerRegisterPersonalSessionKey = "CustomerRegister.Personal";
+        private const string CustomerRegisterOrganizationSessionKey = "CustomerRegister.Organization";
 
         public AuthController(
             IAuthApiClient authApiClient,
@@ -110,32 +114,111 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 return RedirectToAction("Index", "Order");
             }
 
-            return View(new RegisterCustomerDto());
+            var model = GetFromSession<RegisterCustomerAccountStepDto>(CustomerRegisterAccountSessionKey) ?? new RegisterCustomerAccountStepDto();
+            return View(model);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CustomerRegister(RegisterCustomerDto model)
+        public IActionResult CustomerRegister(RegisterCustomerAccountStepDto model)
         {
             if (!ModelState.IsValid)
                 return View(model);
 
+            SaveToSession(CustomerRegisterAccountSessionKey, model);
+            return RedirectToAction(nameof(CustomerRegisterPersonal));
+        }
+
+        [HttpGet]
+        public IActionResult CustomerRegisterPersonal()
+        {
+            if (HttpContext.Session.IsAuthenticated())
+                return RedirectToAction("Index", "Order");
+
+            if (GetFromSession<RegisterCustomerAccountStepDto>(CustomerRegisterAccountSessionKey) == null)
+                return RedirectToAction(nameof(CustomerRegister));
+
+            var model = GetFromSession<RegisterCustomerPersonalStepDto>(CustomerRegisterPersonalSessionKey) ?? new RegisterCustomerPersonalStepDto();
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult CustomerRegisterPersonal(RegisterCustomerPersonalStepDto model)
+        {
+            if (GetFromSession<RegisterCustomerAccountStepDto>(CustomerRegisterAccountSessionKey) == null)
+                return RedirectToAction(nameof(CustomerRegister));
+
+            if (!ModelState.IsValid)
+                return View(model);
+
+            SaveToSession(CustomerRegisterPersonalSessionKey, model);
+            return RedirectToAction(nameof(CustomerRegisterOrganization));
+        }
+
+        [HttpGet]
+        public IActionResult CustomerRegisterOrganization()
+        {
+            if (HttpContext.Session.IsAuthenticated())
+                return RedirectToAction("Index", "Order");
+
+            if (GetFromSession<RegisterCustomerAccountStepDto>(CustomerRegisterAccountSessionKey) == null)
+                return RedirectToAction(nameof(CustomerRegister));
+            if (GetFromSession<RegisterCustomerPersonalStepDto>(CustomerRegisterPersonalSessionKey) == null)
+                return RedirectToAction(nameof(CustomerRegisterPersonal));
+
+            var model = GetFromSession<RegisterCustomerOrganizationStepDto>(CustomerRegisterOrganizationSessionKey) ?? new RegisterCustomerOrganizationStepDto();
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CustomerRegisterOrganization(RegisterCustomerOrganizationStepDto model)
+        {
+            if (GetFromSession<RegisterCustomerAccountStepDto>(CustomerRegisterAccountSessionKey) == null)
+                return RedirectToAction(nameof(CustomerRegister));
+            if (GetFromSession<RegisterCustomerPersonalStepDto>(CustomerRegisterPersonalSessionKey) == null)
+                return RedirectToAction(nameof(CustomerRegisterPersonal));
+
+            if (!ModelState.IsValid)
+                return View(model);
+
+            SaveToSession(CustomerRegisterOrganizationSessionKey, model);
+
+            var account = GetFromSession<RegisterCustomerAccountStepDto>(CustomerRegisterAccountSessionKey);
+            var personal = GetFromSession<RegisterCustomerPersonalStepDto>(CustomerRegisterPersonalSessionKey);
+            var organization = GetFromSession<RegisterCustomerOrganizationStepDto>(CustomerRegisterOrganizationSessionKey);
+
+            if (account == null || personal == null || organization == null)
+            {
+                ModelState.AddModelError("", "Phiên đăng ký đã hết hạn. Vui lòng thử lại từ đầu.");
+                return View(model);
+            }
+
             try
             {
-                var (success, errorMessage) = await _authApiClient.RegisterCustomerAsync(model);
+                var request = new FinalizeCustomerRegistrationDto
+                {
+                    Account = account,
+                    Personal = personal,
+                    Organization = organization
+                };
+
+                var (success, errorMessage) = await _authApiClient.FinalizeCustomerRegistrationAsync(request);
 
                 if (success)
                 {
-                    _logger.LogInformation("New customer registered via API: {Username}", model.Username);
+                    _logger.LogInformation("New customer registered via wizard: {Username}", account.Username);
+                    ClearCustomerRegisterSession();
                     SetSuccessMessage("Đăng ký thành công! Vui lòng đăng nhập.");
                     return RedirectToAction(nameof(Login));
                 }
 
-                ModelState.AddModelError("", errorMessage ?? "Không thể đăng ký tài khoản khách hàng. Tên đăng nhập, email hoặc số điện thoại có thể đã tồn tại.");
+                ModelState.AddModelError("", errorMessage ?? "Không thể hoàn tất đăng ký khách hàng.");
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Customer registration failed");
+                _logger.LogWarning(ex, "Customer wizard registration failed");
                 ModelState.AddModelError("", ex.Message);
             }
 
@@ -357,6 +440,32 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 ClearRememberMeCookies();
                 return false;
             }
+        }
+
+        private void SaveToSession<T>(string key, T value)
+        {
+            HttpContext.Session.SetString(key, JsonSerializer.Serialize(value));
+        }
+
+        private T? GetFromSession<T>(string key)
+        {
+            var raw = HttpContext.Session.GetString(key);
+            if (string.IsNullOrWhiteSpace(raw)) return default;
+            try
+            {
+                return JsonSerializer.Deserialize<T>(raw);
+            }
+            catch
+            {
+                return default;
+            }
+        }
+
+        private void ClearCustomerRegisterSession()
+        {
+            HttpContext.Session.Remove(CustomerRegisterAccountSessionKey);
+            HttpContext.Session.Remove(CustomerRegisterPersonalSessionKey);
+            HttpContext.Session.Remove(CustomerRegisterOrganizationSessionKey);
         }
         private void SetUserSessionFromApiResult(LoginResponseDto dto)
         {

@@ -494,7 +494,7 @@ namespace ErpOnlineOrder.Application.Services
             {
                 var splitInvoiceDto = new SplitInvoiceDto
                 {
-                    Source_invoice_id = sourceExport.Invoice_id,
+                    Source_invoice_id = sourceExport.Invoice_id ?? 0,
                     Note = dto.Note ?? $"Tách theo phiếu xuất kho {sourceExport.Warehouse_export_code}",
                     Split_parts = dto.Split_parts.Select(part => new SplitInvoicePart
                     {
@@ -667,7 +667,11 @@ namespace ErpOnlineOrder.Application.Services
             // 2. Gộp hóa đơn trước (nếu cần)
             if (dto.Auto_merge_invoices && !mergedInvoiceId.HasValue)
             {
-                var invoiceIds = exports.Select(e => e.Invoice_id).Distinct().ToList();
+                var invoiceIds = exports
+                    .Where(e => e.Invoice_id.HasValue)
+                    .Select(e => e.Invoice_id!.Value)
+                    .Distinct()
+                    .ToList();
                 if (invoiceIds.Count > 1)
                 {
                     var mergeInvoiceDto = new MergeInvoicesDto
@@ -686,7 +690,7 @@ namespace ErpOnlineOrder.Application.Services
                 }
                 else
                 {
-                    mergedInvoiceId = invoiceIds.First();
+                    mergedInvoiceId = invoiceIds.FirstOrDefault();
                 }
             }
 
@@ -884,9 +888,9 @@ namespace ErpOnlineOrder.Application.Services
 
         private async Task SyncStatusToInvoiceAsync(Warehouse_export export, string exportStatus, int userId)
         {
-            if (export.Invoice_id <= 0) return;
+            if (!export.Invoice_id.HasValue || export.Invoice_id.Value <= 0) return;
 
-            var invoice = await _invoiceRepository.GetByIdAsync(export.Invoice_id);
+            var invoice = await _invoiceRepository.GetByIdAsync(export.Invoice_id.Value);
             if (invoice == null || invoice.Status == InvoiceStatuses.Cancelled) return;
 
             var changed = false;
@@ -904,7 +908,7 @@ namespace ErpOnlineOrder.Application.Services
             else if (exportStatus == ExportStatuses.Cancelled)
             {
                 // Chỉ hủy hóa đơn nếu không còn phiếu xuất kho active nào khác
-                var otherExports = await _exportRepository.GetByInvoiceIdAsync(export.Invoice_id);
+                var otherExports = await _exportRepository.GetByInvoiceIdAsync(export.Invoice_id.Value);
                 var hasOtherActive = otherExports.Any(e => !e.Is_deleted && e.Id != export.Id && e.Status != ExportStatuses.Cancelled);
                 if (!hasOtherActive)
                 {

@@ -8,6 +8,7 @@ using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.WebMVC.Attributes;
 using ErpOnlineOrder.WebMVC.Services;
 using ErpOnlineOrder.WebMVC.Services.Interfaces;
+using System.Text;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
@@ -221,15 +222,38 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequirePermission(PermissionCodes.OrderApprove)]
-        public async Task<IActionResult> Confirm(int id)
+        public async Task<IActionResult> Confirm(int id, ConfirmOrderDto model)
         {
             try
             {
-                var result = await _orderApiClient.ConfirmOrderAsync(id);
-                if (result)
-                    SetSuccessMessage("Đã xác nhận đơn hàng thành công!");
+                model.OrderId = id;
+                var result = await _orderApiClient.ConfirmOrderAsync(id, model);
+                if (!result.Success)
+                {
+                    SetErrorMessage(string.IsNullOrWhiteSpace(result.Message)
+                        ? "Không thể xác nhận đơn hàng. Đơn hàng có thể không ở trạng thái chờ xử lý."
+                        : result.Message);
+                    return RedirectToAction(nameof(Details), new { id });
+                }
+
+                if (string.Equals(model.Notify_method, "download", StringComparison.OrdinalIgnoreCase))
+                {
+                    var order = await _orderApiClient.GetByIdAsync(id);
+                    if (order == null)
+                    {
+                        SetSuccessMessage(result.Message);
+                        return RedirectToAction(nameof(Index));
+                    }
+
+                    var csv = BuildApprovedOrderCsv(order);
+                    var fileName = $"DonDuyet_{order.Order_code}_{DateTime.Now:yyyyMMddHHmmss}.csv";
+                    return File(Encoding.UTF8.GetBytes(csv), "text/csv; charset=utf-8", fileName);
+                }
+
+                if (result.Is_split && !string.IsNullOrWhiteSpace(result.Child_order_code))
+                    SetSuccessMessage($"{result.Message} Đơn con: {result.Child_order_code}.");
                 else
-                    SetErrorMessage("Không thể xác nhận đơn hàng. Đơn hàng có thể không ở trạng thái chờ xử lý.");
+                    SetSuccessMessage(result.Message);
             }
             catch (Exception ex)
             {
@@ -238,6 +262,33 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             }
 
             return RedirectToAction(nameof(Details), new { id });
+        }
+
+        [HttpGet]
+        [RequirePermission(PermissionCodes.OrderApprove)]
+        public async Task<IActionResult> GetConfirmItems(int id)
+        {
+            var order = await _orderApiClient.GetByIdAsync(id);
+            if (order == null || order.Order_status != "Pending")
+            {
+                return NotFound(new { message = "Không tìm thấy đơn hàng hoặc đơn hàng không thể duyệt." });
+            }
+
+            var items = order.Order_details.Select(x => new
+            {
+                product_id = x.Product_id,
+                product_name = x.Product_name,
+                quantity = x.Quantity,
+                unit_price = x.Unit_price,
+                total_price = x.Total_price
+            });
+
+            return Json(new
+            {
+                order_id = order.Id,
+                order_code = order.Order_code,
+                items
+            });
         }
 
         [HttpPost]
@@ -284,27 +335,27 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [RequirePermission(PermissionCodes.InvoiceCreate)]
-        public async Task<IActionResult> CreateInvoice(int id)
-        {
-            try
-            {
-                var result = await _invoiceApiClient.CreateFromOrderAsync(id);
-                if (result?.Success == true)
-                    SetSuccessMessage(result.Message);
-                else
-                    SetErrorMessage(result?.Message ?? "Không thể tạo hóa đơn từ đơn hàng. Vui lòng kiểm tra trạng thái đơn hàng và dữ liệu chi tiết.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating invoice from order {OrderId}", id);
-                SetErrorMessage(GetDetailedErrorMessage(ex));
-            }
+        // [HttpPost]
+        // [ValidateAntiForgeryToken]
+        // [RequirePermission(PermissionCodes.InvoiceCreate)]
+        // public async Task<IActionResult> CreateInvoice(int id)
+        // {
+        //     try
+        //     {
+        //         var result = await _invoiceApiClient.CreateFromOrderAsync(id);
+        //         if (result?.Success == true)
+        //             SetSuccessMessage(result.Message);
+        //         else
+        //             SetErrorMessage(result?.Message ?? "Không thể tạo hóa đơn từ đơn hàng. Vui lòng kiểm tra trạng thái đơn hàng và dữ liệu chi tiết.");
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         _logger.LogError(ex, "Error creating invoice from order {OrderId}", id);
+        //         SetErrorMessage(GetDetailedErrorMessage(ex));
+        //     }
 
-            return RedirectToAction(nameof(Details), new { id });
-        }
+        //     return RedirectToAction(nameof(Details), new { id });
+        // }
 
         [RequirePermission(PermissionCodes.OrderExport)]
         public async Task<IActionResult> ExportExcel()
@@ -364,6 +415,19 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 ViewBag.CanExport = false;
                 ViewBag.CanCreateInvoice = false;
             }
+        }
+
+        private static string BuildApprovedOrderCsv(OrderDTO order)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("MaDon,MaSanPham,TenSanPham,SoLuong,DonGia,ThanhTien");
+            foreach (var item in order.Order_details)
+            {
+                var productName = (item.Product_name ?? string.Empty).Replace('"', '\'');
+                sb.AppendLine($"{order.Order_code},{item.Product_id},\"{productName}\",{item.Quantity},{item.Unit_price:0.##},{item.Total_price:0.##}");
+            }
+
+            return sb.ToString();
         }
     }
 }

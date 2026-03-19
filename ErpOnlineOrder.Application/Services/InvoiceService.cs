@@ -610,96 +610,96 @@ namespace ErpOnlineOrder.Application.Services
 
         #region Tạo hóa đơn từ đơn hàng
 
-        public async Task<CreateInvoiceFromOrderResultDto> CreateInvoiceFromOrderAsync(int orderId, int userId)
-        {
-            var result = new CreateInvoiceFromOrderResultDto();
+        // public async Task<CreateInvoiceFromOrderResultDto> CreateInvoiceFromOrderAsync(int orderId, int userId)
+        // {
+        //     var result = new CreateInvoiceFromOrderResultDto();
 
-            var order = await _orderRepository.GetByIdAsync(orderId);
-            if (order == null)
-            {
-                result.Success = false;
-                result.Message = "Đơn hàng không tồn tại";
-                return result;
-            }
+        //     var order = await _orderRepository.GetByIdAsync(orderId);
+        //     if (order == null)
+        //     {
+        //         result.Success = false;
+        //         result.Message = "Đơn hàng không tồn tại";
+        //         return result;
+        //     }
 
-            if (order.Order_status != "Confirmed")
-            {
-                result.Success = false;
-                result.Message = "Chỉ có thể tạo hóa đơn từ đơn hàng đã được xác nhận";
-                return result;
-            }
+        //     if (order.Order_status != "Confirmed")
+        //     {
+        //         result.Success = false;
+        //         result.Message = "Chỉ có thể tạo hóa đơn từ đơn hàng đã được xác nhận";
+        //         return result;
+        //     }
 
-            var activeDetails = order.Order_Details?.Where(d => !d.Is_deleted).ToList();
-            if (activeDetails == null || activeDetails.Count == 0)
-            {
-                result.Success = false;
-                result.Message = "Đơn hàng không có chi tiết sản phẩm";
-                return result;
-            }
+        //     var activeDetails = order.Order_Details?.Where(d => !d.Is_deleted).ToList();
+        //     if (activeDetails == null || activeDetails.Count == 0)
+        //     {
+        //         result.Success = false;
+        //         result.Message = "Đơn hàng không có chi tiết sản phẩm";
+        //         return result;
+        //     }
 
-            // Lấy Staff_id từ cán bộ đang thao tác
-            var staff = await _staffRepository.GetByUserIdAsync(userId);
-            if (staff == null)
-            {
-                result.Success = false;
-                result.Message = "Không tìm thấy thông tin cán bộ. Chỉ cán bộ mới có thể tạo hóa đơn.";
-                return result;
-            }
-            var staffId = staff.Id;
+        //     // Lấy Staff_id từ cán bộ đang thao tác
+        //     var staff = await _staffRepository.GetByUserIdAsync(userId);
+        //     if (staff == null)
+        //     {
+        //         result.Success = false;
+        //         result.Message = "Không tìm thấy thông tin cán bộ. Chỉ cán bộ mới có thể tạo hóa đơn.";
+        //         return result;
+        //     }
+        //     var staffId = staff.Id;
 
-            var now = DateTime.UtcNow;
-            var invoice = new Invoice
-            {
-                Invoice_code = $"INV-{now:yyyyMMdd}-{Guid.NewGuid().ToString()[..6].ToUpper()}",
-                Invoice_date = now,
-                Customer_id = order.Customer_id,
-                Staff_id = staffId,
-                Order_id = orderId,
-                Status = InvoiceStatuses.Draft,
-                Created_by = userId,
-                Updated_by = userId,
-                Created_at = now,
-                Updated_at = now,
-                Is_deleted = false,
-                Invoice_Details = new List<Invoice_detail>()
-            };
+        //     var now = DateTime.UtcNow;
+        //     var invoice = new Invoice
+        //     {
+        //         Invoice_code = $"INV-{now:yyyyMMdd}-{Guid.NewGuid().ToString()[..6].ToUpper()}",
+        //         Invoice_date = now,
+        //         Customer_id = order.Customer_id,
+        //         Staff_id = staffId,
+        //         Order_id = orderId,
+        //         Status = InvoiceStatuses.Draft,
+        //         Created_by = userId,
+        //         Updated_by = userId,
+        //         Created_at = now,
+        //         Updated_at = now,
+        //         Is_deleted = false,
+        //         Invoice_Details = new List<Invoice_detail>()
+        //     };
 
-            decimal totalAmount = 0;
-            decimal taxAmount = 0;
+        //     decimal totalAmount = 0;
+        //     decimal taxAmount = 0;
 
-            foreach (var od in activeDetails)
-            {
-                var detail = new Invoice_detail
-                {
-                    Product_id = od.Product_id,
-                    Quantity = od.Quantity,
-                    Unit_price = od.Unit_price,
-                    Total_price = od.Total_price,
-                    Tax_rate = od.Tax_rate,
-                    Created_by = userId,
-                    Updated_by = userId,
-                    Created_at = now,
-                    Updated_at = now,
-                    Is_deleted = false
-                };
+        //     foreach (var od in activeDetails)
+        //     {
+        //         var detail = new Invoice_detail
+        //         {
+        //             Product_id = od.Product_id,
+        //             Quantity = od.Quantity,
+        //             Unit_price = od.Unit_price,
+        //             Total_price = od.Total_price,
+        //             Tax_rate = od.Tax_rate,
+        //             Created_by = userId,
+        //             Updated_by = userId,
+        //             Created_at = now,
+        //             Updated_at = now,
+        //             Is_deleted = false
+        //         };
 
-                totalAmount += detail.Total_price;
-                taxAmount += detail.Total_price * detail.Tax_rate / 100;
+        //         totalAmount += detail.Total_price;
+        //         taxAmount += detail.Total_price * detail.Tax_rate / 100;
 
-                invoice.Invoice_Details.Add(detail);
-            }
+        //         invoice.Invoice_Details.Add(detail);
+        //     }
 
-            invoice.Total_amount = totalAmount;
-            invoice.Tax_amount = taxAmount;
+        //     invoice.Total_amount = totalAmount;
+        //     invoice.Tax_amount = taxAmount;
 
-            await _invoiceRepository.AddAsync(invoice);
+        //     await _invoiceRepository.AddAsync(invoice);
 
-            result.Success = true;
-            result.Message = $"Đã tạo hóa đơn nháp {invoice.Invoice_code} từ đơn hàng {order.Order_code}";
-            result.Invoice = EntityMappers.ToInvoiceDto(invoice);
+        //     result.Success = true;
+        //     result.Message = $"Đã tạo hóa đơn nháp {invoice.Invoice_code} từ đơn hàng {order.Order_code}";
+        //     result.Invoice = EntityMappers.ToInvoiceDto(invoice);
 
-            return result;
-        }
+        //     return result;
+        // }
 
         #endregion
 

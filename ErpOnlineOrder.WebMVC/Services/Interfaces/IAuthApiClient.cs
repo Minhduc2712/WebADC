@@ -6,6 +6,7 @@ namespace ErpOnlineOrder.WebMVC.Services.Interfaces
     {
         Task<LoginResponseDto?> LoginAsync(LoginUserDto dto, CancellationToken cancellationToken = default);
         Task<(bool Success, string? ErrorMessage)> RegisterCustomerAsync(RegisterCustomerDto dto, CancellationToken cancellationToken = default);
+        Task<(bool Success, string? ErrorMessage)> FinalizeCustomerRegistrationAsync(FinalizeCustomerRegistrationDto dto, CancellationToken cancellationToken = default);
         Task<(bool Success, string? ErrorMessage)> RegisterStaffAsync(RegisterStaffDto dto, CancellationToken cancellationToken = default);
         Task<(bool Success, string? ErrorMessage)> ChangePasswordAsync(ChangePasswordDto dto, CancellationToken cancellationToken = default);
     }

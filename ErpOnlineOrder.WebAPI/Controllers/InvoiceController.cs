@@ -107,16 +107,16 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             return Ok(new { success = true, message = "Đã hoàn tác gộp hóa đơn" });
         }
 
-        [HttpPost("create-from-order/{orderId}")]
-        // [RequirePermission(PermissionCodes.InvoiceCreate)]
-        public async Task<IActionResult> CreateFromOrder(int orderId)
-        {
-            var userId = GetCurrentUserId();
-            var result = await _invoiceService.CreateInvoiceFromOrderAsync(orderId, userId);
-            if (!result.Success)
-                return BadRequest(result);
-            return Ok(result);
-        }
+        // [HttpPost("create-from-order/{orderId}")]
+        // // [RequirePermission(PermissionCodes.InvoiceCreate)]
+        // public async Task<IActionResult> CreateFromOrder(int orderId)
+        // {
+        //     var userId = GetCurrentUserId();
+        //     var result = await _invoiceService.CreateInvoiceFromOrderAsync(orderId, userId);
+        //     if (!result.Success)
+        //         return BadRequest(result);
+        //     return Ok(result);
+        // }
 
         [HttpPatch("{id}/status")]
         public async Task<IActionResult> UpdateStatus(int id, [FromQuery] string status)

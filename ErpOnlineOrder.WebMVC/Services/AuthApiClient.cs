@@ -39,6 +39,16 @@ namespace ErpOnlineOrder.WebMVC.Services
             return body?.Success == true ? (true, null) : (false, "Không thể đăng ký tài khoản khách hàng. Dữ liệu đăng ký có thể chưa hợp lệ.");
         }
 
+        public async Task<(bool Success, string? ErrorMessage)> FinalizeCustomerRegistrationAsync(FinalizeCustomerRegistrationDto dto, CancellationToken cancellationToken = default)
+        {
+            var response = await _httpClient.PostAsJsonAsync("auth/register-customer-finalize", dto, JsonOptions, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+                return (false, await ReadErrorMessageAsync(response, cancellationToken));
+
+            var body = await response.Content.ReadFromJsonAsync<SuccessApiResponse>(JsonOptions, cancellationToken);
+            return body?.Success == true ? (true, null) : (false, "Không thể hoàn tất đăng ký khách hàng.");
+        }
+
         public async Task<(bool Success, string? ErrorMessage)> RegisterStaffAsync(RegisterStaffDto dto, CancellationToken cancellationToken = default)
         {
             var response = await _httpClient.PostAsJsonAsync("auth/register-staff", dto, JsonOptions, cancellationToken);

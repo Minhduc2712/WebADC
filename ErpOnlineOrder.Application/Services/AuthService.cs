@@ -130,6 +130,74 @@ namespace ErpOnlineOrder.Application.Services
             return true;
         }
 
+        public async Task<bool> FinalizeCustomerRegistrationAsync(FinalizeCustomerRegistrationDto dto)
+        {
+            var username = dto.Account.Username.Trim();
+            var email = dto.Account.Email.Trim();
+
+            if (await _userRepository.ExistsByUsernameAsync(username))
+                throw new Exception("Tài khoản đã tồn tại");
+
+            if (await _userRepository.ExistsByEmailAsync(email))
+                throw new Exception("Email đã tồn tại");
+
+            const string roleName = "ROLE_CUSTOMER";
+            var roleFromDb = await _roleRepository.GetByNameAsync(roleName);
+            if (roleFromDb == null)
+                throw new Exception($"Cấu hình lỗi: '{roleName}' không tồn tại trong Database.");
+
+            var now = DateTime.UtcNow;
+            var user = new User
+            {
+                Username = username,
+                Email = email,
+                Password = BCrypt.Net.BCrypt.HashPassword(dto.Account.Password),
+                User_roles = new List<User_role>
+                {
+                    new User_role { Role_id = roleFromDb.Id }
+                },
+                Is_active = true,
+                Created_at = now,
+                Created_by = 0,
+                Updated_at = now,
+                Updated_by = 0,
+                Is_deleted = false,
+                Customer = new Customer
+                {
+                    Customer_code = $"CUST-{Guid.NewGuid().ToString()[..8].ToUpper()}",
+                    Full_name = dto.Personal.Full_name.Trim(),
+                    Phone_number = dto.Personal.Phone_number.Trim(),
+                    Address = dto.Personal.Address.Trim(),
+                    Created_at = now,
+                    Created_by = 0,
+                    Updated_at = now,
+                    Updated_by = 0,
+                    Is_deleted = false,
+                    Organization_informations = new List<Organization_information>
+                    {
+                        new Organization_information
+                        {
+                            Organization_code = $"ORG-{Guid.NewGuid().ToString()[..8].ToUpper()}",
+                            Organization_name = dto.Organization.Organization_name.Trim(),
+                            Address = dto.Organization.Address.Trim(),
+                            Tax_number = dto.Organization.Tax_number,
+                            Recipient_name = dto.Organization.Recipient_name.Trim(),
+                            Recipient_phone = dto.Organization.Recipient_phone,
+                            Recipient_address = dto.Organization.Recipient_address.Trim(),
+                            Created_at = now,
+                            Created_by = 0,
+                            Updated_at = now,
+                            Updated_by = 0,
+                            Is_deleted = false
+                        }
+                    }
+                }
+            };
+
+            await _userRepository.AddAsync(user);
+            return true;
+        }
+
         public async Task<string?> LoginAsync(LoginUserDto dto)
         {
             if (string.IsNullOrEmpty(dto.Identifier)) throw new Exception("Tên đăng nhập không được để trống");

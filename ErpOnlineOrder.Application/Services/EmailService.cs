@@ -17,6 +17,7 @@ namespace ErpOnlineOrder.Application.Services
     {
         private readonly ISettingService _settingService;
         private readonly IOrderRepository _orderRepository;
+        private readonly IWarehouseExportRepository _warehouseExportRepository;
         private readonly IUserRepository _userRepository;
         private readonly IRoleRepository _roleRepository;
         private readonly ICustomerManagementRepository _customerManagementRepository;
@@ -24,15 +25,45 @@ namespace ErpOnlineOrder.Application.Services
         public EmailService(
             ISettingService settingService,
             IOrderRepository orderRepository,
+            IWarehouseExportRepository warehouseExportRepository,
             IRoleRepository roleRepository,
             IUserRepository userRepository,
             ICustomerManagementRepository customerManagementRepository)
         {
             _settingService = settingService;
             _orderRepository = orderRepository;
+            _warehouseExportRepository = warehouseExportRepository;
             _roleRepository = roleRepository;
             _userRepository = userRepository;
             _customerManagementRepository = customerManagementRepository;
+        }
+
+        public async Task SendWarehouseExportNotificationForStaffAndAdminAsync(int warehouseExportId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var export = await _warehouseExportRepository.GetByIdAsync(warehouseExportId);
+                if (export == null) return;
+
+                var smtp = await _settingService.GetSmtpSettingsAsync();
+                if (!IsSmtpValid(smtp)) return;
+
+                var staffAdminEmails = await GetStaffAndAdminEmailsAsync(export.Customer_id);
+                if (staffAdminEmails.Count == 0) return;
+
+                var subject = $"[Vận chuyển] Phiếu xuất kho mới #{export.Warehouse_export_code}";
+                var body = BuildWarehouseExportNotificationBody(export);
+
+                foreach (var email in staffAdminEmails)
+                {
+                    if (string.IsNullOrWhiteSpace(email)) continue;
+                    await SendEmailAsync(smtp!, email.Trim(), subject, body, cancellationToken);
+                }
+            }
+            catch
+            {
+                // Email gửi thất bại - có thể do SMTP chưa cấu hình hoặc lỗi kết nối
+            }
         }
 
         public async Task SendOrderNotificationForStaffAndAdminAsync(int OrderId, CancellationToken cancellationToken = default)
@@ -260,6 +291,38 @@ namespace ErpOnlineOrder.Application.Services
             sb.Append("</table>");
             sb.Append($"<p><strong>Tổng tiền:</strong> {order.Total_price:N0} VNĐ</p>");
             sb.Append("<p>Cảm ơn bạn đã đặt hàng!</p>");
+            sb.Append("</body></html>");
+            return sb.ToString();
+        }
+
+        private static string BuildWarehouseExportNotificationBody(Warehouse_export export)
+        {
+            var sb = new StringBuilder();
+            sb.Append("<html><body style='font-family: Arial, sans-serif;'>");
+            sb.Append("<h2>Phiếu xuất kho mới</h2>");
+            sb.Append($"<p><strong>Mã phiếu xuất:</strong> {WebUtility.HtmlEncode(export.Warehouse_export_code)}</p>");
+            sb.Append($"<p><strong>Mã đơn:</strong> {WebUtility.HtmlEncode(export.Order?.Order_code ?? "-")}</p>");
+            sb.Append($"<p><strong>Mã hóa đơn:</strong> {WebUtility.HtmlEncode(export.Invoice?.Invoice_code ?? "-")}</p>");
+            sb.Append($"<p><strong>Kho:</strong> {WebUtility.HtmlEncode(export.Warehouse?.Warehouse_name ?? export.Warehouse_id.ToString())}</p>");
+            sb.Append($"<p><strong>Khách hàng:</strong> {WebUtility.HtmlEncode(export.Customer?.Full_name ?? export.Customer?.Customer_code ?? "-")}</p>");
+            sb.Append($"<p><strong>Ngày xuất:</strong> {export.Export_date:dd/MM/yyyy HH:mm}</p>");
+            sb.Append($"<p><strong>Trạng thái vận chuyển:</strong> {WebUtility.HtmlEncode(export.Delivery_status ?? "Pending")}</p>");
+            sb.Append($"<p><strong>Địa chỉ giao:</strong> {WebUtility.HtmlEncode(export.Order?.Shipping_address ?? export.Customer?.Address ?? "")}</p>");
+
+            sb.Append("<h3>Chi tiết xuất kho</h3>");
+            sb.Append("<table border='1' cellpadding='8' cellspacing='0' style='border-collapse: collapse; width: 100%;'>");
+            sb.Append("<tr style='background: #f0f0f0;'><th>STT</th><th>Sản phẩm</th><th>SL xuất</th><th>Đơn giá</th><th>Thành tiền</th></tr>");
+
+            var stt = 1;
+            foreach (var detail in export.Warehouse_Export_Details ?? [])
+            {
+                var productName = detail.Product?.Product_name ?? $"Product #{detail.Product_id}";
+                sb.Append($"<tr><td>{stt}</td><td>{WebUtility.HtmlEncode(productName)}</td><td>{detail.Quantity_shipped}</td><td>{detail.Unit_price:N0}</td><td>{detail.Total_price:N0}</td></tr>");
+                stt++;
+            }
+
+            sb.Append("</table>");
+            sb.Append("<p>Vui lòng xử lý vận chuyển theo phiếu xuất kho trên.</p>");
             sb.Append("</body></html>");
             return sb.ToString();
         }

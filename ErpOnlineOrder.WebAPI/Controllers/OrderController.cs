@@ -132,14 +132,20 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         }
 
         [HttpPost("{id}/confirm")]
-        public async Task<IActionResult> ConfirmOrder(int id)
+        public async Task<IActionResult> ConfirmOrder(int id, [FromBody] ConfirmOrderDto? request)
         {
             try
             {
-                var dto = new ConfirmOrderDto { OrderId = id, Updated_by = GetCurrentUserId() };
+                var dto = request ?? new ConfirmOrderDto();
+                dto.OrderId = id;
+                dto.Updated_by = GetCurrentUserId();
                 var result = await _orderService.ConfirmOrderAsync(dto);
-                if (!result) return NotFound();
-                return Ok(new { success = result });
+                if (!result.Success)
+                {
+                    return BadRequest(result);
+                }
+
+                return Ok(result);
             }
             catch (Exception ex)
             {

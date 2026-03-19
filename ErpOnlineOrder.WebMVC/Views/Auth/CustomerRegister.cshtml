@@ -1,14 +1,14 @@
-@model ErpOnlineOrder.Application.DTOs.AuthDTOs.RegisterCustomerDto
+@model ErpOnlineOrder.Application.DTOs.AuthDTOs.RegisterCustomerAccountStepDto
 @{
-    ViewData["Title"] = "Đăng ký tài khoản cho khách hàng";
+    ViewData["Title"] = "Đăng ký tài khoản - Bước 1";
     Layout = "~/Views/Shared/_EmptyLayout.cshtml";
 }
 
 <div class="auth-card auth-card-wide">
     <div class="auth-header">
         <i class="fas fa-user-plus"></i>
-        <h3 class="mb-0">Đăng ký tài khoản</h3>
-        <p class="mb-0 mt-2 opacity-75">ERP Online Order</p>
+        <h3 class="mb-0">Đăng ký khách hàng - Bước 1/3</h3>
+        <p class="mb-0 mt-2 opacity-75">Thông tin tài khoản</p>
     </div>
     <div class="auth-body">
         @if (!ViewData.ModelState.IsValid)
@@ -50,8 +50,16 @@
                 <span asp-validation-for="Password" class="text-danger small"></span>
             </div>
 
+            <div class="mb-3">
+                <label class="form-label fw-semibold">
+                    <i class="fas fa-check-circle me-1"></i> Nhập lại mật khẩu <span class="text-danger">*</span>
+                </label>
+                <input asp-for="ConfirmPassword" type="password" class="form-control" placeholder="Nhập lại mật khẩu" />
+                <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+            </div>
+
             <button type="submit" class="btn btn-primary btn-auth w-100 mb-3">
-                <i class="fas fa-user-plus me-2"></i> Đăng ký
+                <i class="fas fa-arrow-right me-2"></i> Tiếp tục bước 2
             </button>
 
             <div class="text-center">
@@ -61,3 +69,7 @@
         </form>
     </div>
 </div>
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}

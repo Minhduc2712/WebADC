@@ -7,6 +7,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
     {
         Task<bool> RegisterByAdminAsync(RegisterStaffDto dto);
         Task<bool> RegisterByCustomerAsync(RegisterCustomerDto dto);
+        Task<bool> FinalizeCustomerRegistrationAsync(FinalizeCustomerRegistrationDto dto);
         Task<string?> LoginAsync(LoginUserDto dto);
         Task<LoginResponseDto?> GetLoginResponseAsync(LoginUserDto dto);
         Task<bool> ChangePasswordAsync(ChangePasswordDto dto);

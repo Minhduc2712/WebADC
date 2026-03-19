@@ -11,6 +11,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
         Task<Order?> GetByIdAsync(int id);
         Task<Order?> GetByIdForStatusCheckAsync(int id);
         Task<Order?> GetByIdForCopyAsync(int id);
+        Task<Order?> GetByIdForApprovalAsync(int id);
         IQueryable<Order?> GetByOrderIdAsync(int id);
         Task<IEnumerable<OrderDTO>> GetAllAsync(); 
         Task<int> CountAsync(Expression<Func<Order, bool>>? predicate = null);        

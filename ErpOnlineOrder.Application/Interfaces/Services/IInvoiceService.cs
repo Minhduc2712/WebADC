@@ -16,7 +16,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
         Task<bool> UndoSplitAsync(int parentInvoiceId, int userId);
         Task<bool> UndoMergeAsync(int mergedInvoiceId, int userId);
         Task<bool> UpdateStatusAsync(int id, string newStatus, int userId);
-        Task<CreateInvoiceFromOrderResultDto> CreateInvoiceFromOrderAsync(int orderId, int userId);
+        // Task<CreateInvoiceFromOrderResultDto> CreateInvoiceFromOrderAsync(int orderId, int userId);
         Task<byte[]> ExportInvoicesToExcelAsync(string? status = null);
     }
 }

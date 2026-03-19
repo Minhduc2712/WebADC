@@ -10,8 +10,8 @@ namespace ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs
         public int Warehouse_id { get; set; }
         public string Warehouse_name { get; set; } = string.Empty;
         
-        public int Invoice_id { get; set; }
-        public string Invoice_code { get; set; } = string.Empty;
+        public int? Invoice_id { get; set; }
+        public string? Invoice_code { get; set; }
         
         public int? Order_id { get; set; }
         public string? Order_code { get; set; }

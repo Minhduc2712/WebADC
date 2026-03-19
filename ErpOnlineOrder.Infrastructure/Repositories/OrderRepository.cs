@@ -55,6 +55,13 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .FirstOrDefaultAsync(o => o.Id == id);
         }
 
+        public async Task<Order?> GetByIdForApprovalAsync(int id)
+        {
+            return await _context.Orders
+                .Include(o => o.Order_Details)
+                .FirstOrDefaultAsync(o => o.Id == id && !o.Is_deleted);
+        }
+
         public IQueryable<Order?> GetByOrderIdAsync(int id)
         {
             return GetBaseQuery()

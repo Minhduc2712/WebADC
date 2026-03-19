@@ -88,10 +88,21 @@ namespace ErpOnlineOrder.WebMVC.Services
             return order?.Id;
         }
 
-        public async Task<bool> ConfirmOrderAsync(int id, CancellationToken cancellationToken = default)
+        public async Task<ConfirmOrderResultDto> ConfirmOrderAsync(int id, ConfirmOrderDto model, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PostAsync($"order/{id}/confirm", null, cancellationToken);
-            return response.IsSuccessStatusCode;
+            var response = await _http.PostAsJsonAsync($"order/{id}/confirm", model, ErpApiClientHelper.JsonOptions, cancellationToken);
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<ConfirmOrderResultDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
+                return result ?? new ConfirmOrderResultDto { Success = true, Message = "Đã duyệt đơn hàng thành công." };
+            }
+
+            var msg = await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken);
+            return new ConfirmOrderResultDto
+            {
+                Success = false,
+                Message = string.IsNullOrWhiteSpace(msg) ? "Không thể duyệt đơn hàng." : msg
+            };
         }
 
         public async Task<bool> CancelOrderAsync(int id, CancellationToken cancellationToken = default)

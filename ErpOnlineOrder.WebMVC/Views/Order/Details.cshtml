@@ -6,6 +6,7 @@
     var statusClass = Model.Order_status switch
     {
         "Pending" => "bg-warning text-dark",
+        "Exporting" => "bg-primary",
         "Confirmed" => "bg-primary",
         "Completed" => "bg-success",
         "Cancelled" => "bg-danger",
@@ -14,6 +15,7 @@
     var statusText = Model.Order_status switch
     {
         "Pending" => "Chờ xử lý",
+        "Exporting" => "Xuất kho",
         "Confirmed" => "Đã xác nhận",
         "Completed" => "Hoàn thành",
         "Cancelled" => "Đã hủy",
@@ -41,20 +43,23 @@
                     <i class="fas fa-edit me-1"></i>Sửa đơn
                 </a>
             }
-            <form asp-action="Confirm" asp-route-id="@Model.Id" method="post" style="display: inline;">
-                @Html.AntiForgeryToken()
-                <button type="submit" class="btn btn-success me-2">
-                    <i class="fas fa-check me-1"></i>Xác nhận
+            @if (ViewBag.CanApprove == true)
+            {
+                <button type="button" class="btn btn-success me-2" onclick="openApproveModal(@Model.Id, '@Model.Order_code')">
+                    <i class="fas fa-check me-1"></i>Duyệt
                 </button>
-            </form>
-            <form asp-action="Cancel" asp-route-id="@Model.Id" method="post" style="display: inline;">
-                @Html.AntiForgeryToken()
-                <button type="submit" class="btn btn-danger me-2">
-                    <i class="fas fa-times me-1"></i>Hủy đơn
-                </button>
-            </form>
+            }
+            @if (ViewBag.CanReject == true)
+            {
+                <form asp-action="Cancel" asp-route-id="@Model.Id" method="post" style="display: inline;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger me-2">
+                        <i class="fas fa-times me-1"></i>Hủy đơn
+                    </button>
+                </form>
+            }
         }
-        @if (Model.Order_status == "Confirmed" && ViewBag.CanCreateInvoice == true)
+        @* @if (Model.Order_status == "Confirmed" && ViewBag.CanCreateInvoice == true)
         {
             <form asp-action="CreateInvoice" asp-route-id="@Model.Id" method="post" style="display: inline;">
                 @Html.AntiForgeryToken()
@@ -62,7 +67,7 @@
                     <i class="fas fa-file-invoice me-1"></i>Xuất hóa đơn
                 </button>
             </form>
-        }
+        } *@
         <a asp-action="PrintOrder" asp-route-id="@Model.Id" target="_blank" class="btn btn-outline-info me-2">
             <i class="fas fa-print me-1"></i>In đơn
         </a>
@@ -71,6 +76,102 @@
         </a>
     </div>
 </div>
+
+<div class="modal fade" id="approveModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-check-circle text-success me-2"></i>Duyệt đơn hàng <span id="approveOrderCode" class="badge bg-secondary ms-1"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="approveForm" method="post">
+                <div class="modal-body">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="approveOrderId" name="id" value="@Model.Id" />
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Chọn sản phẩm cần duyệt</label>
+                        <div class="table-responsive border rounded">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 56px;">Chọn</th>
+                                        <th>Sản phẩm</th>
+                                        <th style="width: 130px;">SL đặt</th>
+                                        <th style="width: 150px;">SL duyệt</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="approveItemsBody"></tbody>
+                            </table>
+                        </div>
+                        <div class="form-text">Phần sản phẩm không duyệt sẽ được tách sang đơn hàng con (trạng thái chờ xử lý).</div>
+                    </div>
+
+                    <div>
+                        <label class="form-label fw-semibold">Hình thức gửi cho khách hàng</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="Notify_method" id="notifyEmail" value="email" checked>
+                            <label class="form-check-label" for="notifyEmail">Gửi qua email</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="Notify_method" id="notifyDownload" value="download">
+                            <label class="form-check-label" for="notifyDownload">Tải xuống file CSV</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-success">Xác nhận duyệt</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const approveModal = new bootstrap.Modal(document.getElementById('approveModal'));
+
+    function openApproveModal(id, orderCode) {
+        document.getElementById('approveOrderCode').textContent = orderCode;
+        document.getElementById('approveOrderId').value = id;
+        document.getElementById('approveForm').action = '@Url.Action("Confirm")/' + id;
+        renderApproveItems();
+        approveModal.show();
+    }
+
+    function renderApproveItems() {
+        const items = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Order_details.Select(x => new
+                     {
+                         product_id = x.Product_id,
+                         product_name = x.Product_name,
+                         quantity = x.Quantity
+                     })));
+
+        if (!items.length) {
+            document.getElementById('approveItemsBody').innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">Không có sản phẩm để duyệt.</td></tr>';
+            return;
+        }
+
+        const rows = items.map((item, index) => {
+            return `<tr>
+                <td>
+                    <input class="form-check-input" type="hidden" name="Approved_items[${index}].Is_selected" value="false" />
+                    <input class="form-check-input" type="checkbox" name="Approved_items[${index}].Is_selected" value="true" checked />
+                    <input type="hidden" name="Approved_items[${index}].Product_id" value="${item.product_id}" />
+                </td>
+                <td>${item.product_name}</td>
+                <td>${item.quantity}</td>
+                <td>
+                    <input type="number" class="form-control form-control-sm" min="1" max="${item.quantity}" value="${item.quantity}" name="Approved_items[${index}].Quantity" required />
+                </td>
+            </tr>`;
+        }).join('');
+
+        document.getElementById('approveItemsBody').innerHTML = rows;
+    }
+</script>
+}
 
 <div class="row">
     <div class="col-md-4">

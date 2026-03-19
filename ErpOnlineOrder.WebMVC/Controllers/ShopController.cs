@@ -386,7 +386,13 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 return RedirectToAction(nameof(Exports));
             }
 
-            var invoice = await _invoiceService.GetByIdAsync(export.Invoice_id);
+            if (!export.Invoice_id.HasValue)
+            {
+                TempData["Error"] = "Phiếu xuất kho này chưa có hóa đơn.";
+                return RedirectToAction(nameof(Exports));
+            }
+
+            var invoice = await _invoiceService.GetByIdAsync(export.Invoice_id.Value);
             if (invoice == null)
             {
                 TempData["Error"] = "Không tìm thấy hóa đơn liên quan.";
@@ -429,7 +435,13 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             if (export.Customer_id != customer.Id)
                 return Forbid();
 
-            var invoice = await _invoiceService.GetByIdAsync(export.Invoice_id);
+            if (!export.Invoice_id.HasValue)
+            {
+                TempData["Error"] = "Phiếu xuất kho này chưa có hóa đơn.";
+                return RedirectToAction(nameof(Exports));
+            }
+
+            var invoice = await _invoiceService.GetByIdAsync(export.Invoice_id.Value);
             if (invoice == null)
             {
                 TempData["Error"] = "Không tìm thấy hóa đơn.";

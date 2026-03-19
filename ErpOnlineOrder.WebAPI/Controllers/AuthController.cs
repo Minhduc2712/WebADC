@@ -124,6 +124,20 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             }
         }
 
+        [HttpPost("register-customer-finalize")]
+        public async Task<IActionResult> RegisterCustomerFinalize([FromBody] FinalizeCustomerRegistrationDto model)
+        {
+            try
+            {
+                var result = await _authService.FinalizeCustomerRegistrationAsync(model);
+                return Ok(new { success = result });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginUserDto model)
         {
