@@ -1,6 +1,7 @@
 using ErpOnlineOrder.Application.DTOs.OrganizationDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
+using ErpOnlineOrder.Application.DTOs;
 
 namespace ErpOnlineOrder.WebAPI.Controllers
 {
@@ -18,13 +19,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         public async Task<IActionResult> GetAll()
         {
             var organizations = await _organizationService.GetAllAsync();
-            return Ok(organizations);
+            return Ok(ApiResponse<object>.Ok(organizations));
         }
         [HttpGet("search")]
         public async Task<IActionResult> Search([FromQuery] string? keyword)
         {
             var organizations = await _organizationService.SearchAsync(keyword);
-            return Ok(organizations);
+            return Ok(ApiResponse<object>.Ok(organizations));
         }
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -32,9 +33,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var organization = await _organizationService.GetByIdAsync(id);
             if (organization == null)
             {
-                return NotFound(new { message = "Không tìm thấy tổ chức." });
+                return NotFound(ApiResponse<object>.Fail("Không tìm thấy tổ chức."));
             }
-            return Ok(organization);
+            return Ok(ApiResponse<object>.Ok(organization));
         }
         [HttpGet("customer/{customerId}")]
         public async Task<IActionResult> GetByCustomer(int customerId)
@@ -42,9 +43,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var organization = await _organizationService.GetByCustomerIdAsync(customerId);
             if (organization == null)
             {
-                return NotFound(new { message = "Không tìm thấy thông tin tổ chức của khách hàng này." });
+                return NotFound(ApiResponse<object>.Fail("Không tìm thấy thông tin tổ chức của khách hàng này."));
             }
-            return Ok(organization);
+            return Ok(ApiResponse<object>.Ok(organization));
         }
         [HttpPost]
         public async Task<IActionResult> CreateOrganization([FromBody] CreateOrganizationDto dto)
@@ -54,13 +55,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var created = await _organizationService.CreateOrganizationAsync(dto, GetCurrentUserId());
                 if (created == null)
                 {
-                    return BadRequest(new { message = "Không thể tạo tổ chức. Mã số thuế hoặc thông tin tổ chức có thể không hợp lệ/trùng lặp." });
+                    return BadRequest(ApiResponse<object>.Fail("Không thể tạo tổ chức. Mã số thuế hoặc thông tin tổ chức có thể không hợp lệ/trùng lặp."));
                 }
-                return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+                return CreatedAtAction(nameof(GetById), new { id = created.Id }, ApiResponse<object>.Ok(created));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
         [HttpPut("{id}")]
@@ -72,13 +73,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _organizationService.UpdateOrganizationAsync(dto, GetCurrentUserId());
                 if (!result)
                 {
-                    return NotFound(new { message = "Không tìm thấy tổ chức cần cập nhật." });
+                    return NotFound(ApiResponse<object>.Fail("Không tìm thấy tổ chức cần cập nhật."));
                 }
-                return Ok(new { success = true, message = "Cập nhật tổ chức thành công" });
+                return Ok(ApiResponse<object>.Ok(null, "Cập nhật tổ chức thành công"));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
         [HttpDelete("{id}")]
@@ -87,9 +88,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _organizationService.DeleteOrganizationAsync(id);
             if (!result)
             {
-                return NotFound(new { message = "Không tìm thấy tổ chức cần xóa." });
+                return NotFound(ApiResponse<object>.Fail("Không tìm thấy tổ chức cần xóa."));
             }
-            return Ok(new { success = true, message = "Xóa tổ chức thành công" });
+            return Ok(ApiResponse<object>.Ok(null, "Xóa tổ chức thành công"));
         }
     }
 }

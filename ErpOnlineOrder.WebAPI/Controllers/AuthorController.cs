@@ -3,6 +3,7 @@ using ErpOnlineOrder.Application.DTOs.AuthorDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.Mappers;
 using ErpOnlineOrder.Domain.Models;
+using ErpOnlineOrder.Application.DTOs;
 
 namespace ErpOnlineOrder.WebAPI.Controllers
 {
@@ -21,15 +22,15 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         public async Task<IActionResult> GetAll()
         {
             var list = await _authorService.GetAllAsync();
-            return Ok(list.Select(EntityMappers.ToAuthorDto));
+            return Ok(ApiResponse<object>.Ok(list.Select(EntityMappers.ToAuthorDto)));
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
             var item = await _authorService.GetByIdAsync(id);
-            if (item == null) return NotFound();
-            return Ok(EntityMappers.ToAuthorDto(item));
+            if (item == null) return NotFound(ApiResponse<object>.Fail("Không tìm thấy tác giả."));
+            return Ok(ApiResponse<object>.Ok(EntityMappers.ToAuthorDto(item)));
         }
 
         [HttpPost]
@@ -38,26 +39,26 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var created = await _authorService.CreateAsync(dto, GetCurrentUserId());
-                return Ok(EntityMappers.ToAuthorDto(created));
+                return Ok(ApiResponse<object>.Ok(EntityMappers.ToAuthorDto(created)));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateAuthorDto dto)
         {
-            if (id != dto.Id) return BadRequest();
+            if (id != dto.Id) return BadRequest(ApiResponse<object>.Fail("ID không khớp."));
             try
             {
                 var result = await _authorService.UpdateAsync(id, dto, GetCurrentUserId());
-                return Ok(new { success = result });
+                return Ok(ApiResponse<object>.Ok(new { success = result }));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
@@ -67,11 +68,11 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var result = await _authorService.DeleteAsync(id);
-                return Ok(new { success = result });
+                return Ok(ApiResponse<object>.Ok(new { success = result }));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
     }

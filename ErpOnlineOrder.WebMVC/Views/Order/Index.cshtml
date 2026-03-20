@@ -1,354 +1,162 @@
-@model PagedResult<ErpOnlineOrder.Application.DTOs.OrderDTO>
+@using ErpOnlineOrder.Application.DTOs
+@using ErpOnlineOrder.Application.DTOs.OrderDTOs
+@model PagedResult<OrderDTO>
 @{
-    ViewData["Title"] = "Quản lý đơn hàng";
+    ViewData["Title"] = "Quản lý Đơn hàng";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
-    var items = Model?.Items ?? new List<ErpOnlineOrder.Application.DTOs.OrderDTO>();
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h4 class="mb-1">Quản lý đơn hàng</h4>
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item"><a href="@Url.Action("Index", "Order")">Trang chủ</a></li>
-                <li class="breadcrumb-item active">Đơn hàng</li>
-            </ol>
-        </nav>
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-shopping-cart text-primary me-2"></i> Quản lý đơn hàng
+        </h1>
+        <div>
+            @if (ViewBag.CanExport == true)
+            {
+                <a asp-action="ExportExcel" class="btn btn-sm btn-success shadow-sm">
+                    <i class="fas fa-file-excel fa-sm text-white-50"></i> Xuất Excel
+                </a>
+            }
+        </div>
     </div>
-    <div>
-        @if (Context.Session.HasPermission("ORDER_EXPORT"))
-        {
-            <a href="@Url.Action("ExportExcel")" class="btn btn-success">
-                <i class="fas fa-file-excel me-1"></i>Xuất Excel
-            </a>
-        }
-    </div>
-</div>
 
-<!-- Bộ lọc -->
-<div class="table-card mb-4">
-    <div class="card-header">
-        <i class="fas fa-filter me-2"></i>Bộ lọc
-    </div>
-    <div class="card-body p-4">
-        <form asp-action="Index" method="get" id="filterForm">
-            <input type="hidden" name="page" value="1" />
-            <div class="row g-3">
+    <!-- Form Tìm kiếm -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form method="get" class="row gx-2 gy-2 align-items-center">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" name="search" class="form-control" placeholder="Tìm mã đơn, tên khách hàng..." value="@ViewBag.Search">
+                    </div>
+                </div>
                 <div class="col-md-3">
-                    <label class="form-label">Trạng thái</label>
-                    <select name="status" class="form-select" onchange="this.form.submit()">
-                        <option value="">-- Tất cả --</option>
+                    <select name="status" class="form-select">
+                        <option value="">-- Tất cả trạng thái --</option>
                         <option value="Pending" selected="@(ViewBag.Status == "Pending")">Chờ xử lý</option>
-                        <option value="Exporting" selected="@(ViewBag.Status == "Exporting")">Xuất kho</option>
-                        <option value="Confirmed" selected="@(ViewBag.Status == "Confirmed")">Đã xác nhận (cũ)</option>
-                        <option value="Cancelled" selected="@(ViewBag.Status == "Cancelled")">Đã hủy</option>
+                        <option value="Approved" selected="@(ViewBag.Status == "Approved")">Đã duyệt</option>
                         <option value="Completed" selected="@(ViewBag.Status == "Completed")">Hoàn thành</option>
+                        <option value="Cancelled" selected="@(ViewBag.Status == "Cancelled")">Đã hủy</option>
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Số dòng/trang</label>
-                    <select name="pageSize" class="form-select" onchange="this.form.submit()">
-                        <option value="10" selected="@(ViewBag.PageSize == 10)">10</option>
-                        <option value="20" selected="@(ViewBag.PageSize == 20)">20</option>
-                        <option value="50" selected="@(ViewBag.PageSize == 50)">50</option>
-                    </select>
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-filter me-1"></i> Lọc</button>
                 </div>
-                <div class="col-md-4 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary me-2">
-                        <i class="fas fa-search me-1"></i>Lọc
-                    </button>
-                    <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
-                        <i class="fas fa-redo me-1"></i>Reset
-                    </a>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Thống kê nhanh - Compact -->
-<div class="row mb-2 g-2">
-    @{
-        var pending = items.Count(o => o.Order_status == "Pending");
-        var confirmed = items.Count(o => o.Order_status == "Exporting" || o.Order_status == "Confirmed");
-        var cancelled = items.Count(o => o.Order_status == "Cancelled");
-        var completed = items.Count(o => o.Order_status == "Completed");
-    }
-    <div class="col-md-3">
-        <div class="card stat-card-compact shadow-sm">
-            <div class="card-body d-flex align-items-center justify-content-between py-1 px-2">
-                <div>
-                    <div class="stat-label">Chờ xử lý</div>
-                    <div class="stat-value">@pending</div>
-                </div>
-                <div class="stat-icon-sm yellow"><i class="fas fa-clock"></i></div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stat-card-compact shadow-sm">
-            <div class="card-body d-flex align-items-center justify-content-between py-1 px-2">
-                <div>
-                    <div class="stat-label">Xuất kho</div>
-                    <div class="stat-value">@confirmed</div>
-                </div>
-                <div class="stat-icon-sm blue"><i class="fas fa-check"></i></div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stat-card-compact shadow-sm">
-            <div class="card-body d-flex align-items-center justify-content-between py-1 px-2">
-                <div>
-                    <div class="stat-label">Hoàn thành</div>
-                    <div class="stat-value">@completed</div>
-                </div>
-                <div class="stat-icon-sm green"><i class="fas fa-check-double"></i></div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stat-card-compact shadow-sm">
-            <div class="card-body d-flex align-items-center justify-content-between py-1 px-2">
-                <div>
-                    <div class="stat-label">Đã hủy</div>
-                    <div class="stat-value">@cancelled</div>
-                </div>
-                <div class="stat-icon-sm red"><i class="fas fa-times"></i></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Danh sách đơn hàng -->
-<div class="table-card">
-    <div class="card-header">
-        <i class="fas fa-shopping-cart me-2"></i>Danh sách đơn hàng (@(Model?.TotalCount ?? 0) đơn hàng)
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>Mã đơn hàng</th>
-                        <th>Khách hàng</th>
-                        <th>Ngày đặt</th>
-                        <th>Tổng tiền</th>
-                        <th>Số SP</th>
-                        <th>Trạng thái</th>
-                        <th style="width: 150px;">Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (!items.Any())
-                    {
-                        <tr>
-                            <td colspan="7" class="text-center py-4 text-muted">
-                                <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
-                                Không có đơn hàng nào
-                            </td>
-                        </tr>
-                    }
-                    else
-                    {
-                        @foreach (var order in items.OrderByDescending(o => o.Order_date))
-                        {
-                            var statusClass = order.Order_status switch
-                            {
-                                "Pending" => "bg-warning text-dark",
-                                "Exporting" => "bg-primary",
-                                "Confirmed" => "bg-primary",
-                                "Completed" => "bg-success",
-                                "Cancelled" => "bg-danger",
-                                _ => "bg-secondary"
-                            };
-                            var statusText = order.Order_status switch
-                            {
-                                "Pending" => "Chờ xử lý",
-                                "Exporting" => "Xuất kho",
-                                "Confirmed" => "Đã xác nhận",
-                                "Completed" => "Hoàn thành",
-                                "Cancelled" => "Đã hủy",
-                                _ => order.Order_status
-                            };
-                            <tr>
-                                <td><span class="badge bg-secondary">@order.Order_code</span></td>
-                                <td>@order.Customer_name</td>
-                                <td>@order.Order_date.ToString("dd/MM/yyyy HH:mm")</td>
-                                <td><span class="text-success fw-bold">@order.Total_price.ToString("N0") VNĐ</span></td>
-                                <td><span class="badge bg-info">@order.Order_details.Count</span></td>
-                                <td><span class="badge @statusClass">@statusText</span></td>
-                                <td>
-                                    <div class="btn-group btn-group-sm">
-                                        <a asp-action="Details" asp-route-id="@order.Id" class="btn btn-outline-primary" title="Xem chi tiết">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        <a asp-action="PrintOrder" asp-route-id="@order.Id" target="_blank" class="btn btn-outline-secondary" title="In đơn hàng">
-                                            <i class="fas fa-print"></i>
-                                        </a>
-                                        @if (order.Order_status == "Pending")
-                                        {
-                                            @if (Context.Session.HasPermission("ORDER_APPROVE"))
-                                            {
-                                                <button type="button" class="btn btn-outline-success" title="Xác nhận"
-                                                        onclick="openApproveModal(@order.Id, '@order.Order_code')">
-                                                    <i class="fas fa-check"></i>
-                                                </button>
-                                            }
-                                            @if (Context.Session.HasPermission("ORDER_REJECT"))
-                                            {
-                                                <button type="button" class="btn btn-outline-danger" title="Hủy"
-                                                        onclick="openCancelModal(@order.Id, '@order.Order_code')">
-                                                    <i class="fas fa-times"></i>
-                                                </button>
-                                            }
-                                        }
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    }
-                </tbody>
-            </table>
-        </div>
-        @if (Model != null && Model.TotalPages > 1)
-        {
-            ViewBag.PaginationItemLabel = "đơn hàng";
-            @await Html.PartialAsync("_Pagination", Model)
-        }
-    </div>
-</div>
-
-<!-- Modal duyệt đơn -->
-<div class="modal fade" id="approveModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-check-circle text-success me-2"></i>Duyệt đơn hàng <span id="approveOrderCode" class="badge bg-secondary ms-1"></span></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="approveForm" method="post">
-                <div class="modal-body">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" id="approveOrderId" name="id" />
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Chọn sản phẩm cần duyệt</label>
-                        <div class="table-responsive border rounded">
-                            <table class="table table-sm table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th style="width: 56px;">Chọn</th>
-                                        <th>Sản phẩm</th>
-                                        <th style="width: 130px;">SL đặt</th>
-                                        <th style="width: 150px;">SL duyệt</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="approveItemsBody">
-                                    <tr><td colspan="4" class="text-center text-muted py-3">Đang tải dữ liệu...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="form-text">Phần sản phẩm không duyệt sẽ được tách sang đơn hàng con (trạng thái chờ xử lý).</div>
-                    </div>
-
-                    <div>
-                        <label class="form-label fw-semibold">Hình thức gửi cho khách hàng</label>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="Notify_method" id="notifyEmail" value="email" checked>
-                            <label class="form-check-label" for="notifyEmail">Gửi qua email</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="Notify_method" id="notifyDownload" value="download">
-                            <label class="form-check-label" for="notifyDownload">Tải xuống file CSV</label>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                    <button type="submit" class="btn btn-success">Xác nhận duyệt</button>
+                <div class="col-md-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary w-100"><i class="fas fa-sync me-1"></i> Xóa lọc</a>
                 </div>
             </form>
         </div>
     </div>
-</div>
 
-<!-- Modal hủy đơn -->
-<div class="modal fade" id="cancelModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-times-circle text-danger me-2"></i>Hủy đơn hàng</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <div class="card shadow mb-4 border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle mb-0">
+                    <thead class="bg-primary text-white">
+                        <tr>
+                            <th class="ps-3 border-0">Mã đơn hàng</th>
+                            <th class="border-0">Khách hàng</th>
+                            <th class="border-0">Ngày đặt</th>
+                            <th class="text-end border-0">Tổng tiền</th>
+                            <th class="text-center border-0">Trạng thái</th>
+                            <th class="text-center pe-3 border-0">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Items != null && Model.Items.Any())
+                        {
+                            foreach (var item in Model.Items)
+                            {
+                                var isChild = item.IndentLevel > 0;
+                                var paddingLeft = item.IndentLevel * 30; 
+                                
+                                <tr>
+                                    <!-- Cột Mã đơn hàng (Có phân cấp) -->
+                                    <td class="ps-3" style="padding-left: @(paddingLeft + 15)px !important;">
+                                        @if (isChild)
+                                        {
+                                            <i class="fas fa-level-up-alt fa-rotate-90 text-muted me-2" style="font-size: 0.8em;"></i>
+                                            <span class="badge bg-light text-dark border border-secondary shadow-sm" title="Đơn con tách từ @item.Parent_order_id">
+                                                #@item.Order_code
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="fw-bold text-primary fs-6">#@item.Order_code</span>
+                                        }
+                                    </td>
+                                    
+                                    <td>
+                                        <div class="fw-bold">@item.Customer_name</div>
+                                    </td>
+                                    <td>@item.Order_date.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td class="text-end font-weight-bold text-danger">@item.Total_price.ToString("N0") đ</td>
+                                    <td class="text-center">
+                                        @if(item.Order_status == "Pending") { <span class="badge bg-warning text-dark px-2 py-1">Chờ xử lý</span> }
+                                        else if(item.Order_status == "Approved") { <span class="badge bg-info px-2 py-1">Đã duyệt</span> }
+                                        else if(item.Order_status == "Completed") { <span class="badge bg-success px-2 py-1">Hoàn thành</span> }
+                                        else if(item.Order_status == "Cancelled") { <span class="badge bg-danger px-2 py-1">Đã hủy</span> }
+                                        else { <span class="badge bg-secondary px-2 py-1">@item.Order_status</span> }
+                                    </td>
+                                    <td class="text-center pe-3">
+                                        <div class="btn-group shadow-sm">
+                                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary" title="Xem chi tiết">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            @if (ViewBag.CanUpdate == true && item.Order_status == "Pending")
+                                            {
+                                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning" title="Sửa">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            }
+                                            @if (ViewBag.CanDelete == true && item.Order_status == "Pending")
+                                            {
+                                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa đơn hàng này?');">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">
+                                    <i class="fas fa-box-open fa-2x mb-2 text-light"></i><br/>
+                                    Không tìm thấy đơn hàng nào
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
-            <div class="modal-body">
-                <p id="cancelModalMessage"></p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                <form id="cancelForm" method="post" style="display: inline;">
-                    @Html.AntiForgeryToken()
-                    <button type="submit" class="btn btn-danger">Xác nhận</button>
-                </form>
+            
+            <!-- Pagination -->
+            <div class="card-footer bg-white border-0 py-3">
+                @if (Model.TotalPages > 1)
+                {
+                    <ul class="pagination justify-content-end mb-0">
+                        <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
+                            <a class="page-link" asp-action="Index" asp-route-page="@(Model.Page - 1)" asp-route-status="@ViewBag.Status" asp-route-search="@ViewBag.Search">Trước</a>
+                        </li>
+                        @for (int i = 1; i <= Model.TotalPages; i++)
+                        {
+                            <li class="page-item @(Model.Page == i ? "active" : "")">
+                                <a class="page-link" asp-action="Index" asp-route-page="@i" asp-route-status="@ViewBag.Status" asp-route-search="@ViewBag.Search">@i</a>
+                            </li>
+                        }
+                        <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
+                            <a class="page-link" asp-action="Index" asp-route-page="@(Model.Page + 1)" asp-route-status="@ViewBag.Status" asp-route-search="@ViewBag.Search">Sau</a>
+                        </li>
+                    </ul>
+                }
             </div>
         </div>
     </div>
 </div>
-
-@section Scripts {
-<script>
-    const approveModal = new bootstrap.Modal(document.getElementById('approveModal'));
-    const cancelModal = new bootstrap.Modal(document.getElementById('cancelModal'));
-
-    async function openApproveModal(id, orderCode) {
-        document.getElementById('approveOrderId').value = id;
-        document.getElementById('approveOrderCode').textContent = orderCode;
-        document.getElementById('approveForm').action = '@Url.Action("Confirm")/' + id;
-        document.getElementById('approveItemsBody').innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">Đang tải dữ liệu...</td></tr>';
-
-        approveModal.show();
-
-        try {
-            const response = await fetch('@Url.Action("GetConfirmItems")?id=' + id, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-            if (!response.ok) {
-                throw new Error('Không thể lấy dữ liệu sản phẩm trong đơn hàng.');
-            }
-
-            const data = await response.json();
-            renderApproveItems(data.items || []);
-        } catch (error) {
-            document.getElementById('approveItemsBody').innerHTML = '<tr><td colspan="4" class="text-danger text-center py-3">Không tải được dữ liệu sản phẩm. Vui lòng thử lại.</td></tr>';
-        }
-    }
-
-    function renderApproveItems(items) {
-        if (!items.length) {
-            document.getElementById('approveItemsBody').innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">Không có sản phẩm để duyệt.</td></tr>';
-            return;
-        }
-
-        const rows = items.map((item, index) => {
-            return `<tr>
-                <td>
-                    <input class="form-check-input" type="hidden" name="Approved_items[${index}].Is_selected" value="false" />
-                    <input class="form-check-input" type="checkbox" name="Approved_items[${index}].Is_selected" value="true" checked />
-                    <input type="hidden" name="Approved_items[${index}].Product_id" value="${item.product_id}" />
-                </td>
-                <td>${item.product_name}</td>
-                <td>${item.quantity}</td>
-                <td>
-                    <input type="number" class="form-control form-control-sm" min="1" max="${item.quantity}" value="${item.quantity}" name="Approved_items[${index}].Quantity" required />
-                </td>
-            </tr>`;
-        }).join('');
-
-        document.getElementById('approveItemsBody').innerHTML = rows;
-    }
-
-    function openCancelModal(id, orderCode) {
-        document.getElementById('cancelForm').action = '@Url.Action("Cancel")/' + id;
-        document.getElementById('cancelModalMessage').innerHTML = 'Bạn có chắc chắn muốn hủy đơn hàng <strong>' + orderCode + '</strong>?';
-        cancelModal.show();
-    }
-</script>
-}

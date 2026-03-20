@@ -1,5 +1,6 @@
-using ErpOnlineOrder.Application.Interfaces.Repositories;
-using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.WebMVC.Services.Interfaces;
+using ErpOnlineOrder.Application.DTOs.AuthDTOs;
+using System.Threading.Tasks;
 
 namespace ErpOnlineOrder.WebMVC.Middleware
 {
@@ -16,11 +17,10 @@ namespace ErpOnlineOrder.WebMVC.Middleware
 
         public async Task InvokeAsync(
             HttpContext context,
-            IUserRepository userRepository,
-            IPermissionService permissionService,
-            IRememberMeService rememberMeService)
+            IAuthApiClient authApiClient,
+            IPermissionApiClient permissionApiClient)
         {
-            // B? qua các du?ng d?n không c?n xác th?c
+            // Bỏ qua các đường dẫn không cần xác thực
             var path = context.Request.Path.Value?.ToLower() ?? "";
             if (IsPublicPath(path))
             {
@@ -33,15 +33,11 @@ namespace ErpOnlineOrder.WebMVC.Middleware
 
             if (userId == null || string.IsNullOrEmpty(username))
             {
-                var restored = await TryRestoreSessionFromCookie(context, userRepository, permissionService, rememberMeService);
-
-                if (!restored)
-                {
-                }
+                await TryRestoreSessionFromCookie(context, authApiClient);
             }
             else
             {
-                var isValid = await ValidateSession(context, userRepository, permissionService, userId.Value);
+                var isValid = await ValidateSession(context, permissionApiClient, userId.Value);
                 if (!isValid)
                 {
                     ClearSession(context);
@@ -70,9 +66,7 @@ namespace ErpOnlineOrder.WebMVC.Middleware
         }
         private async Task<bool> TryRestoreSessionFromCookie(
             HttpContext context,
-            IUserRepository userRepository,
-            IPermissionService permissionService,
-            IRememberMeService rememberMeService)
+            IAuthApiClient authApiClient)
         {
             try
             {
@@ -90,21 +84,14 @@ namespace ErpOnlineOrder.WebMVC.Middleware
                     return false;
                 }
 
-                if (!await rememberMeService.ValidateTokenAsync(cookieUsername, cookieToken))
+                var response = await authApiClient.AutoLoginAsync(cookieUsername, cookieToken);
+                if (response == null)
                 {
                     ClearRememberMeCookies(context);
                     return false;
                 }
 
-                var user = await userRepository.GetByUsernameAsync(cookieUsername);
-
-                if (user == null || !user.Is_active || user.Is_deleted)
-                {
-                    ClearRememberMeCookies(context);
-                    return false;
-                }
-
-                await SetUserSession(context, user, permissionService);
+                SetUserSessionFromApiResult(context, response);
 
                 _logger.LogInformation("Session restored from cookie for user: {Username}", cookieUsername);
                 return true;
@@ -116,7 +103,7 @@ namespace ErpOnlineOrder.WebMVC.Middleware
                 return false;
             }
         }
-        private async Task<bool> ValidateSession(HttpContext context, IUserRepository userRepository, IPermissionService permissionService, int userId)
+        private async Task<bool> ValidateSession(HttpContext context, IPermissionApiClient permissionApiClient, int userId)
         {
             try
             {
@@ -124,69 +111,41 @@ namespace ErpOnlineOrder.WebMVC.Middleware
                 var lastCheck = context.Session.GetString("LastValidationCheck");
                 if (!string.IsNullOrEmpty(lastCheck))
                 {
-                    var lastCheckTime = DateTime.Parse(lastCheck);
-                    if ((DateTime.Now - lastCheckTime).TotalMinutes < 5)
+                    if (DateTime.TryParse(lastCheck, out var lastCheckTime))
                     {
-                        return true; // Chưa đến lúc kiểm tra
+                        if ((DateTime.Now - lastCheckTime).TotalMinutes < 5)
+                        {
+                            return true; // Chưa đến lúc kiểm tra
+                        }
                     }
                 }
 
-                var user = await userRepository.GetByIdAsync(userId);
-                if (user == null || !user.Is_active || user.Is_deleted)
-                {
-                    return false;
-                }
-
                 // Đồng bộ quyền từ DB vào Session để menu và controller luôn khớp (tránh 403 khi admin đã đổi quyền)
-                var permissions = await permissionService.GetUserPermissionsAsync(userId);
-                context.Session.SetString("Permissions", string.Join(",", permissions));
-
-                // Cập nhật thời gian kiểm tra
-                context.Session.SetString("LastValidationCheck", DateTime.Now.ToString("o"));
+                var permissions = await permissionApiClient.GetUserPermissionCodesAsync(userId);
+                if (permissions != null)
+                {
+                    context.Session.SetString("Permissions", string.Join(",", permissions));
+                    context.Session.SetString("LastValidationCheck", DateTime.Now.ToString("o"));
+                }
                 return true;
             }
             catch
             {
-                return false;
+                // Bỏ qua lỗi để tránh bắt người dùng đăng nhập lại khi mạng chập chờn
+                return true;
             }
         }
-        private async Task SetUserSession(
-            HttpContext context,
-            Domain.Models.User user,
-            IPermissionService permissionService)
+        private void SetUserSessionFromApiResult(HttpContext context, LoginResponseDto dto)
         {
-            context.Session.SetInt32("UserId", user.Id);
-            context.Session.SetString("Username", user.Username);
-            context.Session.SetString("Email", user.Email);
-
-            // Luu tên d?y d?
-            var fullName = user.Staff?.Full_name ?? user.Customer?.Full_name ?? user.Username;
-            context.Session.SetString("FullName", fullName);
-
-            // Luu roles
-            var roles = user.User_roles?
-                .Where(ur => !ur.Is_deleted && ur.Role != null && !ur.Role.Is_deleted)
-                .Select(ur => ur.Role!.Role_name)
-                .ToList() ?? new List<string>();
-            context.Session.SetString("Roles", string.Join(",", roles));
-
-            // Luu permissions
-            var permissions = await permissionService.GetUserPermissionsAsync(user.Id);
-            context.Session.SetString("Permissions", string.Join(",", permissions));
-
-            // Luu lo?i user
-            if (user.Staff != null)
-            {
-                context.Session.SetString("UserType", "Staff");
-                context.Session.SetString("StaffCode", user.Staff.Staff_code ?? "");
-            }
-            else if (user.Customer != null)
-            {
-                context.Session.SetString("UserType", "Customer");
-                context.Session.SetString("CustomerCode", user.Customer.Customer_code ?? "");
-            }
-
-            // Luu th?i gian dang nh?p
+            context.Session.SetInt32("UserId", dto.UserId);
+            context.Session.SetString("Username", dto.Username);
+            context.Session.SetString("Email", dto.Email ?? "");
+            context.Session.SetString("FullName", dto.FullName ?? dto.Username);
+            context.Session.SetString("Roles", string.Join(",", dto.Roles ?? new List<string>()));
+            context.Session.SetString("Permissions", string.Join(",", dto.Permissions ?? new List<string>()));
+            context.Session.SetString("UserType", dto.UserType ?? "");
+            context.Session.SetString("StaffCode", dto.StaffCode ?? "");
+            context.Session.SetString("CustomerCode", dto.CustomerCode ?? "");
             context.Session.SetString("LoginTime", DateTime.Now.ToString("o"));
             context.Session.SetString("LastValidationCheck", DateTime.Now.ToString("o"));
         }

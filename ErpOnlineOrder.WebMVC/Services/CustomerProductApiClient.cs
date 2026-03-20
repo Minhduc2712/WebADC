@@ -4,67 +4,45 @@ using ErpOnlineOrder.WebMVC.Services.Interfaces;
 
 namespace ErpOnlineOrder.WebMVC.Services
 {
-    public class CustomerProductApiClient : ICustomerProductApiClient
+    public class CustomerProductApiClient : BaseApiClient, ICustomerProductApiClient
     {
-        private readonly HttpClient _http;
-
-        public CustomerProductApiClient(IHttpClientFactory factory)
+        public CustomerProductApiClient(IHttpClientFactory factory) : base(factory.CreateClient("ErpApi"))
         {
-            _http = factory.CreateClient("ErpApi");
         }
 
         public async Task<IEnumerable<CustomerProductDto>> GetByCustomerIdAsync(int customerId, CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync($"customerproduct/customer/{customerId}", cancellationToken);
-            if (!response.IsSuccessStatusCode) return new List<CustomerProductDto>();
-            var list = await response.Content.ReadFromJsonAsync<List<CustomerProductDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
-            return list ?? new List<CustomerProductDto>();
+            return await GetAsync<IEnumerable<CustomerProductDto>>($"customerproduct/customer/{customerId}", cancellationToken) ?? new List<CustomerProductDto>();
         }
 
         public async Task<IEnumerable<CustomerProductDto>> GetByProductIdAsync(int productId, CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync($"customerproduct/product/{productId}", cancellationToken);
-            if (!response.IsSuccessStatusCode) return new List<CustomerProductDto>();
-            var list = await response.Content.ReadFromJsonAsync<List<CustomerProductDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
-            return list ?? new List<CustomerProductDto>();
+            return await GetAsync<IEnumerable<CustomerProductDto>>($"customerproduct/product/{productId}", cancellationToken) ?? new List<CustomerProductDto>();
         }
 
         public async Task<CustomerProductDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync($"customerproduct/{id}", cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
-            return await response.Content.ReadFromJsonAsync<CustomerProductDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return await GetAsync<CustomerProductDto>($"customerproduct/{id}", cancellationToken);
         }
 
         public async Task<(CustomerProductDto? Data, string? Error)> CreateAsync(CreateCustomerProductDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PostAsJsonAsync("customerproduct", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (!response.IsSuccessStatusCode)
-                return (null, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
-
-            var data = await response.Content.ReadFromJsonAsync<CustomerProductDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
-            return (data, null);
+            return await PostAsync<CreateCustomerProductDto, CustomerProductDto>("customerproduct", dto, cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> AssignProductsAsync(AssignProductsToCustomerDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PostAsJsonAsync("customerproduct/assign", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await PostWithoutReturnAsync("customerproduct/assign", dto, cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> UpdateAsync(int id, UpdateCustomerProductDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PutAsJsonAsync($"customerproduct/{id}", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await PutAsync($"customerproduct/{id}", dto, cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> DeleteAsync(int id, CancellationToken cancellationToken = default)
         {
-            var response = await _http.DeleteAsync($"customerproduct/{id}", cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await DeleteAsync($"customerproduct/{id}", cancellationToken);
         }
     }
 }

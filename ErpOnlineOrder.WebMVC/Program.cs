@@ -1,11 +1,5 @@
-using ErpOnlineOrder.Application.Interfaces.Services;
-using ErpOnlineOrder.Application.Services;
-using ErpOnlineOrder.Application.Interfaces.Repositories;
-using ErpOnlineOrder.Application.Interfaces.Security;
-using ErpOnlineOrder.Infrastructure.Repositories;
-using ErpOnlineOrder.Infrastructure.Persistence;
+using ErpOnlineOrder.WebMVC.Services;
 using ErpOnlineOrder.WebMVC.Middleware;
-using Microsoft.EntityFrameworkCore;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -71,68 +65,6 @@ builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IInvoiceApi
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IWarehouseExportApiClient, ErpOnlineOrder.WebMVC.Services.WarehouseExportApiClient>();
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IStockApiClient, ErpOnlineOrder.WebMVC.Services.StockApiClient>();
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.ISettingApiClient, ErpOnlineOrder.WebMVC.Services.SettingApiClient>();
-
-// Add AutoMapper
-builder.Services.AddAutoMapper(typeof(ErpOnlineOrder.Infrastructure.Mappers.RepositoryMappingProfile).Assembly);
-
-// Add DbContext
-builder.Services.AddDbContext<ErpOnlineOrderDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-// Add repositories
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IRoleRepository, RoleRepository>();
-builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
-builder.Services.AddScoped<IRolePermissionRepository, RolePermissionRepository>();
-builder.Services.AddScoped<IUserPermissionRepository, UserPermissionRepository>();
-builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
-builder.Services.AddScoped<IOrganizationRepository, OrganizationRepository>();
-builder.Services.AddScoped<IProductRepository, ProductRepository>();
-builder.Services.AddScoped<IOrderRepository, OrderRepository>();
-builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
-builder.Services.AddScoped<IRegionRepository, RegionRepository>();
-builder.Services.AddScoped<IProvinceRepository, ProvinceRepository>();
-builder.Services.AddScoped<IDistributorRepository, DistributorRepository>();
-builder.Services.AddScoped<ICustomerManagementRepository, CustomerManagementRepository>();
-builder.Services.AddScoped<ICustomerProductRepository, CustomerProductRepository>();
-builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
-builder.Services.AddScoped<IWarehouseExportRepository, WarehouseExportRepository>();
-builder.Services.AddScoped<IAuthorRepository, AuthorRepository>();
-builder.Services.AddScoped<IPublisherRepository, PublisherRepository>();
-builder.Services.AddScoped<ICoverTypeRepository, CoverTypeRepository>();
-builder.Services.AddScoped<IWarehouseRepository, WarehouseRepository>();
-builder.Services.AddScoped<IStockRepository, StockRepository>();
-builder.Services.AddScoped<IStaffRepository, StaffRepository>();
-builder.Services.AddScoped<ISystemSettingRepository, SystemSettingRepository>();
-
-
-// Add security services
-builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
-
-// Add services
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IRememberMeService, RememberMeService>();
-builder.Services.AddScoped<IPermissionService, PermissionService>();
-builder.Services.AddScoped<IAdminService, AdminService>();
-builder.Services.AddScoped<IProductService, ProductService>();
-builder.Services.AddScoped<ICustomerService, CustomerService>();
-builder.Services.AddScoped<IOrderService, OrderService>();
-builder.Services.AddScoped<ICategoryService, CategoryService>();
-builder.Services.AddScoped<IRegionService, RegionService>();
-builder.Services.AddScoped<IProvinceService, ProvinceService>();
-builder.Services.AddScoped<IDistributorService, DistributorService>();
-builder.Services.AddScoped<IOrganizationService, OrganizationService>();
-builder.Services.AddScoped<ICustomerManagementService, CustomerManagementService>();
-builder.Services.AddScoped<ICustomerProductService, CustomerProductService>();
-builder.Services.AddScoped<IInvoiceService, InvoiceService>();
-builder.Services.AddScoped<IWarehouseExportService, WarehouseExportService>();
-builder.Services.AddScoped<IAuthorService, AuthorService>();
-builder.Services.AddScoped<IPublisherService, PublisherService>();
-builder.Services.AddScoped<ICoverTypeService, CoverTypeService>();
-builder.Services.AddScoped<IWarehouseService, WarehouseService>();
-builder.Services.AddScoped<IStockService, StockService>();
-builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddScoped<ISettingService, SettingService>();
 
 // Logging
 builder.Services.AddLogging(logging =>

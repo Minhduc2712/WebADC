@@ -6,23 +6,18 @@ using Microsoft.Extensions.Logging;
 
 namespace ErpOnlineOrder.WebMVC.Services
 {
-    public class AdminApiClient : IAdminApiClient
+    public class AdminApiClient : BaseApiClient, IAdminApiClient
     {
-        private readonly HttpClient _http;
         private readonly ILogger<AdminApiClient> _logger;
 
-        public AdminApiClient(IHttpClientFactory factory, ILogger<AdminApiClient> logger)
+        public AdminApiClient(IHttpClientFactory factory, ILogger<AdminApiClient> logger) : base(factory.CreateClient("ErpApi"))
         {
-            _http = factory.CreateClient("ErpApi");
             _logger = logger;
         }
 
         public async Task<IEnumerable<StaffAccountDto>> GetAllStaffAsync(CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync("admin/staff", cancellationToken);
-            if (!response.IsSuccessStatusCode) return Array.Empty<StaffAccountDto>();
-            var list = await response.Content.ReadFromJsonAsync<List<StaffAccountDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
-            return list ?? new List<StaffAccountDto>();
+            return await GetAsync<IEnumerable<StaffAccountDto>>("admin/staff", cancellationToken) ?? Array.Empty<StaffAccountDto>();
         }
 
         public async Task<PagedResult<StaffAccountDto>> GetStaffPagedAsync(int page = 1, int pageSize = 20, int? roleId = null, bool? isActive = null, string? searchTerm = null, CancellationToken cancellationToken = default)
@@ -32,63 +27,37 @@ namespace ErpOnlineOrder.WebMVC.Services
             if (isActive.HasValue) query.Add("isActive=" + isActive.Value.ToString().ToLowerInvariant());
             if (!string.IsNullOrEmpty(searchTerm)) query.Add("searchTerm=" + Uri.EscapeDataString(searchTerm));
             var path = "admin/staff/paged?" + string.Join("&", query);
-            var response = await _http.GetAsync(path, cancellationToken);
-            if (!response.IsSuccessStatusCode)
-            {
-                var body = await response.Content.ReadAsStringAsync(cancellationToken);
-                _logger.LogError("GetStaffPagedAsync failed: {StatusCode} - {Body}", (int)response.StatusCode, body);
-                return new PagedResult<StaffAccountDto> { Items = new List<StaffAccountDto>(), Page = page, PageSize = pageSize, TotalCount = 0 };
-            }
-            var result = await response.Content.ReadFromJsonAsync<PagedResult<StaffAccountDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
-            return result ?? new PagedResult<StaffAccountDto>();
+            return await GetAsync<PagedResult<StaffAccountDto>>(path, cancellationToken) ?? new PagedResult<StaffAccountDto> { Items = new List<StaffAccountDto>(), Page = page, PageSize = pageSize, TotalCount = 0 };
         }
 
         public async Task<StaffAccountDto?> GetStaffByIdAsync(int userId, CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync($"admin/staff/{userId}", cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
-            return await response.Content.ReadFromJsonAsync<StaffAccountDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return await GetAsync<StaffAccountDto>($"admin/staff/{userId}", cancellationToken);
         }
 
         public async Task<(StaffAccountDto? Staff, string? Error)> CreateStaffAsync(CreateStaffAccountDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PostAsJsonAsync("admin/staff", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (!response.IsSuccessStatusCode)
-            {
-                var error = await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken);
-                _logger.LogError("CreateStaffAsync failed: {StatusCode} - {Error}", (int)response.StatusCode, error);
-                return (null, error);
-            }
-            var staff = await response.Content.ReadFromJsonAsync<StaffAccountDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
-            return (staff, null);
+            return await PostAsync<CreateStaffAccountDto, StaffAccountDto>("admin/staff", dto, cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> UpdateStaffAsync(int userId, UpdateStaffAccountDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PutAsJsonAsync($"admin/staff/{userId}", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await PutAsync($"admin/staff/{userId}", dto, cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> DeleteStaffAsync(int userId, CancellationToken cancellationToken = default)
         {
-            var response = await _http.DeleteAsync($"admin/staff/{userId}", cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await DeleteAsync($"admin/staff/{userId}", cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> ToggleStaffStatusAsync(int userId, bool isActive, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PatchAsync($"admin/staff/{userId}/status?isActive={isActive}", null, cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await PatchAsync($"admin/staff/{userId}/status?isActive={isActive}", cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> ResetPasswordAsync(ResetPasswordDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PostAsJsonAsync($"admin/staff/{dto.User_id}/reset-password", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await PostWithoutReturnAsync($"admin/staff/{dto.User_id}/reset-password", dto, cancellationToken);
         }
     }
 }

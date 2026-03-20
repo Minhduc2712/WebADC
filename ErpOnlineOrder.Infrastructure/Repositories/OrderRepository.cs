@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ErpOnlineOrder.Application.DTOs;
 using System.Linq.Expressions;
+using Microsoft.Data.SqlClient;
 
 namespace ErpOnlineOrder.Infrastructure.Repositories
 {
@@ -134,42 +135,132 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<PagedResult<OrderDTO>> GetPagedOrdersDTOAsync(OrderFilterRequest request, IEnumerable<int>? customerIds = null)
         {
-            var query = GetBaseQuery()
-                .AsQueryable();
+            var parameters = new List<SqlParameter>();
+            string filterSql = "WHERE o.Parent_order_id IS NULL AND o.Is_deleted = 0";
 
             if (customerIds != null)
             {
-                var ids = customerIds.ToList();
-                if (ids.Count > 0)
-                    query = query.Where(o => ids.Contains(o.Customer_id));
+                var idsList = customerIds.ToList();
+                if (idsList.Count > 0)
+                {
+                    var ids = string.Join(",", idsList);
+                    filterSql += $" AND o.Customer_id IN ({ids})"; 
+                }
                 else
+                {
                     return new PagedResult<OrderDTO> { Items = new List<OrderDTO>(), Page = request.Page, PageSize = request.PageSize, TotalCount = 0 };
+                }
             }
 
             if (!string.IsNullOrWhiteSpace(request.Status))
-                query = query.Where(o => o.Order_status == request.Status);
+            {
+                filterSql += " AND o.Order_status = @status";
+                parameters.Add(new SqlParameter("@status", request.Status));
+            }
 
             if (request.DateFrom.HasValue)
-                query = query.Where(o => o.Order_date >= request.DateFrom.Value);
+            {
+                filterSql += " AND o.Order_date >= @dateFrom";
+                parameters.Add(new SqlParameter("@dateFrom", request.DateFrom.Value));
+            }
 
             if (request.DateTo.HasValue)
             {
                 var toDate = request.DateTo.Value.Date.AddDays(1);
-                query = query.Where(o => o.Order_date < toDate);
+                filterSql += " AND o.Order_date < @dateTo";
+                parameters.Add(new SqlParameter("@dateTo", toDate));
             }
 
             if (!string.IsNullOrWhiteSpace(request.SearchTerm))
             {
-                var search = request.SearchTerm.Trim().ToLowerInvariant();
-                query = query.Where(o =>
-                    (o.Order_code != null && o.Order_code.ToLower().Contains(search)) ||
-                    (o.Customer != null && o.Customer.Full_name != null && o.Customer.Full_name.ToLower().Contains(search))
-                );
+                var search = $"%{request.SearchTerm.Trim().ToLowerInvariant()}%";
+                filterSql += " AND (LOWER(o.Order_code) LIKE @search OR LOWER(c.Full_name) LIKE @search)";
+                parameters.Add(new SqlParameter("@search", search));
             }
 
-            query = query.OrderByDescending(o => o.Order_date);
-            var projectedQuery = ProjectToOrderDto(query);
-            return await projectedQuery.ToPagedListAsync(request);
+            int skip = (request.Page - 1) * request.PageSize;
+            parameters.Add(new SqlParameter("@skip", skip));
+            parameters.Add(new SqlParameter("@take", request.PageSize));
+
+            string sql = $@"
+                WITH OrderTree AS (
+                    SELECT 
+                        o.Id, o.Parent_order_id, o.Order_date,
+                        0 AS IndentLevel,
+                        o.Order_date AS RootOrderDate,
+                        CAST(RIGHT('0000000000' + CAST(o.Id AS VARCHAR(10)), 10) AS VARCHAR(MAX)) AS SortPath
+                    FROM Orders o
+                    LEFT JOIN Customers c ON o.Customer_id = c.Id
+                    {filterSql}
+
+                    UNION ALL
+
+                    SELECT 
+                        child.Id, child.Parent_order_id, child.Order_date,
+                        ot.IndentLevel + 1,
+                        ot.RootOrderDate,
+                        ot.SortPath + '-' + CAST(RIGHT('0000000000' + CAST(child.Id AS VARCHAR(10)), 10) AS VARCHAR(MAX))
+                    FROM Orders child
+                    INNER JOIN OrderTree ot ON child.Parent_order_id = ot.Id
+                    WHERE child.Is_deleted = 0
+                )
+                SELECT Id, IndentLevel, COUNT(1) OVER() AS TotalCount 
+                FROM OrderTree
+                ORDER BY RootOrderDate DESC, SortPath ASC
+                OFFSET @skip ROWS FETCH NEXT @take ROWS ONLY;
+            ";
+
+            var idList = new List<int>();
+            var indentDict = new Dictionary<int, int>();
+            int totalCount = 0;
+
+            using (var command = _context.Database.GetDbConnection().CreateCommand())
+            {
+                command.CommandText = sql;
+                command.CommandType = System.Data.CommandType.Text;
+                foreach (var p in parameters) command.Parameters.Add(p);
+
+                if (command.Connection.State != System.Data.ConnectionState.Open)
+                    await command.Connection.OpenAsync();
+
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        int id = reader.GetInt32(0);
+                        int indent = reader.GetInt32(1);
+                        totalCount = reader.GetInt32(2);
+
+                        idList.Add(id);
+                        indentDict[id] = indent;
+                    }
+                }
+            }
+
+            if (idList.Count == 0)
+                return new PagedResult<OrderDTO> { Items = new List<OrderDTO>(), Page = request.Page, PageSize = request.PageSize, TotalCount = 0 };
+
+            var query = GetBaseQuery().Where(o => idList.Contains(o.Id));
+            var dtosList = await ProjectToOrderDto(query).ToListAsync();
+
+            var sortedDtos = new List<OrderDTO>();
+            foreach (var id in idList)
+            {
+                var dto = dtosList.FirstOrDefault(d => d.Id == id);
+                if (dto != null)
+                {
+                    dto.IndentLevel = indentDict[id];
+                    sortedDtos.Add(dto);
+                }
+            }
+
+            return new PagedResult<OrderDTO>
+            {
+                Items = sortedDtos,
+                Page = request.Page,
+                PageSize = request.PageSize,
+                TotalCount = totalCount
+            };
         }
 
         public async Task<IEnumerable<Order>> GetByCustomerIdsAsync(IEnumerable<int> customerIds)

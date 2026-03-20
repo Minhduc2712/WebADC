@@ -3,6 +3,7 @@ using ErpOnlineOrder.Application.DTOs.CoverTypeDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.Mappers;
 using ErpOnlineOrder.Domain.Models;
+using ErpOnlineOrder.Application.DTOs;
 
 namespace ErpOnlineOrder.WebAPI.Controllers
 {
@@ -21,15 +22,15 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         public async Task<IActionResult> GetAll()
         {
             var list = await _coverTypeService.GetAllAsync();
-            return Ok(list.Select(EntityMappers.ToCoverTypeDto));
+            return Ok(ApiResponse<object>.Ok(list.Select(EntityMappers.ToCoverTypeDto)));
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
             var item = await _coverTypeService.GetByIdAsync(id);
-            if (item == null) return NotFound();
-            return Ok(EntityMappers.ToCoverTypeDto(item));
+            if (item == null) return NotFound(ApiResponse<object>.Fail("Không tìm thấy loại bìa."));
+            return Ok(ApiResponse<object>.Ok(EntityMappers.ToCoverTypeDto(item)));
         }
 
         [HttpPost]
@@ -38,26 +39,26 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var created = await _coverTypeService.CreateAsync(dto, GetCurrentUserId());
-                return Ok(EntityMappers.ToCoverTypeDto(created));
+                return Ok(ApiResponse<object>.Ok(EntityMappers.ToCoverTypeDto(created)));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateCoverTypeDto dto)
         {
-            if (id != dto.Id) return BadRequest();
+            if (id != dto.Id) return BadRequest(ApiResponse<object>.Fail("ID không khớp."));
             try
             {
                 var result = await _coverTypeService.UpdateAsync(id, dto, GetCurrentUserId());
-                return Ok(new { success = result });
+                return Ok(ApiResponse<object>.Ok(new { success = result }));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
@@ -67,11 +68,11 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var result = await _coverTypeService.DeleteAsync(id);
-                return Ok(new { success = result });
+                return Ok(ApiResponse<object>.Ok(new { success = result }));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
     }

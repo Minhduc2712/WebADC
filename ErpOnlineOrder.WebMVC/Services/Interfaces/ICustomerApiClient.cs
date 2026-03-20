@@ -1,5 +1,6 @@
 using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.DTOs.CustomerDTOs;
+using ErpOnlineOrder.Domain.Models;
 
 namespace ErpOnlineOrder.WebMVC.Services.Interfaces
 {
@@ -12,5 +13,8 @@ namespace ErpOnlineOrder.WebMVC.Services.Interfaces
         Task<(CustomerDTO? Data, string? Error)> CreateAsync(CreateCustomerDto dto, CancellationToken cancellationToken = default);
         Task<(bool Success, string? Error)> UpdateAsync(int id, UpdateCustomerByAdminDto dto, CancellationToken cancellationToken = default);
         Task<(bool Success, string? Error)> DeleteAsync(int id, CancellationToken cancellationToken = default);
+        Task<CustomerDTO?> GetByUserIdAsync(int userId, CancellationToken cancellationToken = default);
+        Task<UpdateOrganizationByCustomerDto?> GetOrganizationByCustomerIdAsync(int customerId, CancellationToken cancellationToken = default);
+        Task<bool> UpdateOrganizationAsync(UpdateOrganizationByCustomerDto model, CancellationToken cancellationToken = default);
     }
 }

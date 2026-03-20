@@ -5,6 +5,7 @@ using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.Services;
 using ErpOnlineOrder.Application.Mappers;
 using ErpOnlineOrder.Domain.Models;
+using ErpOnlineOrder.Application.DTOs;
 
 namespace ErpOnlineOrder.WebAPI.Controllers
 {
@@ -25,7 +26,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         public async Task<IActionResult> GetForSelect()
         {
             var list = await _warehouseService.GetForSelectAsync();
-            return Ok(list);
+            return Ok(ApiResponse<object>.Ok(list));
         }
 
         [HttpGet]
@@ -40,19 +41,19 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 foreach (var dto in dtos)
                     RecordPermissionEnricher.Enrich(dto, permissions, PermissionCodes.WarehouseUpdate, PermissionCodes.WarehouseDelete);
             }
-            return Ok(dtos);
+            return Ok(ApiResponse<object>.Ok(dtos));
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
             var item = await _warehouseService.GetByIdAsync(id);
-            if (item == null) return NotFound();
+            if (item == null) return NotFound(ApiResponse<object>.Fail("Không tìm thấy kho hàng."));
             var dto = EntityMappers.ToWarehouseDto(item);
             var userId = TryGetCurrentUserId();
             if (userId.HasValue && userId.Value > 0)
                 await RecordPermissionEnricher.EnrichAsync(dto, userId.Value, _permissionService, PermissionCodes.WarehouseUpdate, PermissionCodes.WarehouseDelete);
-            return Ok(dto);
+            return Ok(ApiResponse<object>.Ok(dto));
         }
 
         [HttpGet("province/{provinceId}")]
@@ -67,7 +68,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 foreach (var dto in dtos)
                     RecordPermissionEnricher.Enrich(dto, permissions, PermissionCodes.WarehouseUpdate, PermissionCodes.WarehouseDelete);
             }
-            return Ok(dtos);
+            return Ok(ApiResponse<object>.Ok(dtos));
         }
 
         [HttpPost]
@@ -76,26 +77,26 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var created = await _warehouseService.CreateAsync(dto, GetCurrentUserId());
-                return Ok(EntityMappers.ToWarehouseDto(created));
+                return Ok(ApiResponse<object>.Ok(EntityMappers.ToWarehouseDto(created)));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateWarehouseDto dto)
         {
-            if (id != dto.Id) return BadRequest();
+            if (id != dto.Id) return BadRequest(ApiResponse<object>.Fail("ID không khớp."));
             try
             {
                 var result = await _warehouseService.UpdateAsync(dto, GetCurrentUserId());
-                return Ok(new { success = result });
+                return Ok(ApiResponse<object>.Ok(new { success = result }));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
@@ -105,11 +106,11 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var result = await _warehouseService.DeleteAsync(id);
-                return Ok(new { success = result });
+                return Ok(ApiResponse<object>.Ok(new { success = result }));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
     }

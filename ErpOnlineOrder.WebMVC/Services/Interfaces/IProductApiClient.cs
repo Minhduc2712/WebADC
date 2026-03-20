@@ -16,5 +16,9 @@ namespace ErpOnlineOrder.WebMVC.Services.Interfaces
         Task<(bool Success, string? Error)> UpdateAsync(int id, UpdateProductDto dto, CancellationToken cancellationToken = default);
         Task<(bool Success, string? Error)> DeleteAsync(int id, CancellationToken cancellationToken = default);
         Task<byte[]> ExportToExcelAsync(string? search = null, CancellationToken cancellationToken = default);
+        Task<PagedResult<ProductDTO>> GetProductsForShopPagedAsync(int? customerId, ProductForShopFilterRequest request, CancellationToken cancellationToken = default);
+        Task<IEnumerable<string>> GetCategoriesForShopAsync(int? customerId, CancellationToken cancellationToken = default);
+        Task<bool> IsProductAssignedToCustomerAsync(int productId, int customerId, CancellationToken cancellationToken = default);
+        Task<IEnumerable<ProductDTO>> GetRelatedProductsForShopAsync(int productId, int? customerId, int limit, CancellationToken cancellationToken = default);
     }
 }

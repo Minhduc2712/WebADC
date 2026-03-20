@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ErpOnlineOrder.Application.Constants;
+using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.DTOs.InvoiceDTOs;
-using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Constants;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.WebMVC.Attributes;
@@ -14,25 +14,17 @@ namespace ErpOnlineOrder.WebMVC.Controllers
     public class InvoiceController : BaseController
     {
         private readonly IInvoiceApiClient _invoiceApiClient;
-        private readonly IInvoiceService _invoiceService;
         private readonly IPermissionApiClient _permissionApiClient;
         private readonly ILogger<InvoiceController> _logger;
 
         public InvoiceController(
             IInvoiceApiClient invoiceApiClient,
-            IInvoiceService invoiceService,
             IPermissionApiClient permissionApiClient,
             ILogger<InvoiceController> logger)
         {
             _invoiceApiClient = invoiceApiClient;
-            _invoiceService = invoiceService;
             _permissionApiClient = permissionApiClient;
             _logger = logger;
-        }
-
-        private int GetCurrentUserId()
-        {
-            return HttpContext.Session.GetInt32("UserId") ?? 0;
         }
 
         public async Task<IActionResult> Index(int page = 1, int pageSize = 20, string? status = null, string? search = null)
@@ -235,7 +227,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var bytes = await _invoiceService.ExportInvoicesToExcelAsync(status);
+                var bytes = await _invoiceApiClient.ExportToExcelAsync(status);
                 if (bytes == null || bytes.Length == 0)
                 {
                     SetErrorMessage("Không có dữ liệu để xuất.");

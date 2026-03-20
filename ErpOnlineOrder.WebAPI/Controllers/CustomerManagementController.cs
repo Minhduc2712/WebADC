@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using ErpOnlineOrder.Application.DTOs.CustomerManagementDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Models;
+using ErpOnlineOrder.Application.DTOs;
 
 namespace ErpOnlineOrder.WebAPI.Controllers
 {
@@ -39,22 +40,22 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             {
                 customerManagements = await _customerManagementService.GetAllAsync();
             }
-            return Ok(customerManagements);
+            return Ok(ApiResponse<object>.Ok(customerManagements));
         }
 
         [HttpGet("customer/{customerId}")]
         public async Task<IActionResult> GetByCustomer(int customerId)
         {
             var list = await _customerManagementService.GetByCustomerAsync(customerId);
-            return Ok(list);
+            return Ok(ApiResponse<object>.Ok(list));
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetCustomerManagement(int id)
         {
             var customerManagement = await _customerManagementService.GetByIdAsync(id);
-            if (customerManagement == null) return NotFound();
-            return Ok(customerManagement);
+            if (customerManagement == null) return NotFound(ApiResponse<object>.Fail("Không tìm thấy phân công khách hàng"));
+            return Ok(ApiResponse<object>.Ok(customerManagement));
         }
 
         [HttpPost("assign")]
@@ -65,15 +66,15 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             {
                 var created = await _customerManagementService.AssignStaffToCustomerAsync(
                     request.Staff_id, request.Customer_id, request.Province_id, createdBy);
-                return Ok(created);
+                return Ok(ApiResponse<object>.Ok(created));
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
@@ -81,7 +82,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         public async Task<IActionResult> IsAlreadyAssigned([FromQuery] int staffId, [FromQuery] int customerId)
         {
             var result = await _customerManagementService.IsAlreadyAssignedAsync(staffId, customerId);
-            return Ok(new { already_assigned = result });
+            return Ok(ApiResponse<object>.Ok(new { already_assigned = result }));
         }
 
         [HttpPost]
@@ -90,27 +91,27 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var created = await _customerManagementService.CreateCustomerManagementAsync(dto, GetCurrentUserId());
-                return Ok(created);
+                return Ok(ApiResponse<object>.Ok(created));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateCustomerManagement(int id, [FromBody] UpdateCustomerManagementDto dto)
         {
-            if (id != dto.Id) return BadRequest();
+            if (id != dto.Id) return BadRequest(ApiResponse<object>.Fail("ID không khớp."));
 
             try
             {
                 var result = await _customerManagementService.UpdateCustomerManagementAsync(id, dto, GetCurrentUserId());
-                return Ok(new { success = result });
+                return Ok(ApiResponse<object>.Ok(new { success = result }));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
@@ -121,11 +122,11 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var result = await _customerManagementService.DeleteCustomerManagementAsync(id);
-                return Ok(new { success = result });
+                return Ok(ApiResponse<object>.Ok(new { success = result }));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
     }

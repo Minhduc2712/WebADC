@@ -31,10 +31,6 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             _provinceApiClient = provinceApiClient;
             _logger = logger;
         }
-        private int GetCurrentUserId()
-        {
-            return HttpContext.Session.GetInt32("UserId") ?? 0;
-        }
         private void LoadCurrentUserPermissions()
         {
             var roles = HttpContext.Session.GetString("Roles") ?? "";

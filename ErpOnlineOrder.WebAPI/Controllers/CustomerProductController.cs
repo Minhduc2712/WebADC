@@ -3,6 +3,7 @@ using ErpOnlineOrder.Application.DTOs.CustomerProductDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.WebAPI.Attributes;
 using Microsoft.AspNetCore.Mvc;
+using ErpOnlineOrder.Application.DTOs;
 
 namespace ErpOnlineOrder.WebAPI.Controllers
 {
@@ -22,21 +23,21 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         public async Task<IActionResult> GetAll()
         {
             var result = await _customerProductService.GetAllAsync();
-            return Ok(result);
+            return Ok(ApiResponse<object>.Ok(result));
         }
         [HttpGet("customer/{customerId}")]
         [RequirePermission(PermissionCodes.CustomerProductView)]
         public async Task<IActionResult> GetByCustomerId(int customerId)
         {
             var result = await _customerProductService.GetProductsByCustomerIdAsync(customerId);
-            return Ok(result);
+            return Ok(ApiResponse<object>.Ok(result));
         }
         [HttpGet("product/{productId}")]
         [RequirePermission(PermissionCodes.CustomerProductView)]
         public async Task<IActionResult> GetByProductId(int productId)
         {
             var result = await _customerProductService.GetCustomersByProductIdAsync(productId);
-            return Ok(result);
+            return Ok(ApiResponse<object>.Ok(result));
         }
         [HttpGet("{id}")]
         [RequirePermission(PermissionCodes.CustomerProductView)]
@@ -45,9 +46,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _customerProductService.GetByIdAsync(id);
             if (result == null)
             {
-                return NotFound();
+                return NotFound(ApiResponse<object>.Fail("Không tìm thấy dữ liệu."));
             }
-            return Ok(result);
+            return Ok(ApiResponse<object>.Ok(result));
         }
         [HttpPost]
         [RequirePermission(PermissionCodes.CustomerProductAssign)]
@@ -58,9 +59,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _customerProductService.AddProductToCustomerAsync(dto, createdBy);
             if (result == null)
             {
-                return BadRequest("Sản phẩm đã được gán cho khách hàng này hoặc dữ liệu không hợp lệ.");
+                return BadRequest(ApiResponse<object>.Fail("Sản phẩm đã được gán cho khách hàng này hoặc dữ liệu không hợp lệ."));
             }
-            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+            return CreatedAtAction(nameof(GetById), new { id = result.Id }, ApiResponse<object>.Ok(result));
         }
         [HttpPost("assign")]
         [RequirePermission(PermissionCodes.CustomerProductAssign)]
@@ -71,9 +72,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _customerProductService.AssignProductsToCustomerAsync(dto, createdBy);
             if (!result)
             {
-                return BadRequest("Không thể gán sản phẩm cho khách hàng. Có thể sản phẩm đã được gán trước đó hoặc dữ liệu gửi lên không hợp lệ.");
+                return BadRequest(ApiResponse<object>.Fail("Không thể gán sản phẩm cho khách hàng. Có thể sản phẩm đã được gán trước đó hoặc dữ liệu gửi lên không hợp lệ."));
             }
-            return Ok(new { message = "Gán sản phẩm thành công." });
+            return Ok(ApiResponse<object>.Ok(null, "Gán sản phẩm thành công."));
         }
         [HttpPut("{id}")]
         [RequirePermission(PermissionCodes.CustomerProductAssign)]
@@ -81,7 +82,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             if (id != dto.Id)
             {
-                return BadRequest("ID trên URL không khớp với ID bản ghi phân quyền sản phẩm khách hàng.");
+                return BadRequest(ApiResponse<object>.Fail("ID không khớp."));
             }
 
             int updatedBy = GetCurrentUserId();
@@ -89,9 +90,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _customerProductService.UpdateCustomerProductAsync(dto, updatedBy);
             if (!result)
             {
-                return NotFound(new { message = "Không tìm thấy bản ghi gán sản phẩm của khách hàng để cập nhật." });
+                return NotFound(ApiResponse<object>.Fail("Không tìm thấy bản ghi gán sản phẩm của khách hàng để cập nhật."));
             }
-            return NoContent();
+            return Ok(ApiResponse<object>.Ok(null));
         }
         [HttpDelete("{id}")]
         [RequirePermission(PermissionCodes.CustomerProductAssign)]
@@ -102,16 +103,16 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _customerProductService.RemoveProductFromCustomerAsync(id, deletedBy);
             if (!result)
             {
-                return NotFound(new { message = "Không tìm thấy bản ghi gán sản phẩm của khách hàng để xóa." });
+                return NotFound(ApiResponse<object>.Fail("Không tìm thấy bản ghi gán sản phẩm của khách hàng để xóa."));
             }
-            return NoContent();
+            return Ok(ApiResponse<object>.Ok(null));
         }
         [HttpGet("check/{customerId}/{productId}")]
         [RequirePermission(PermissionCodes.CustomerProductView)]
         public async Task<IActionResult> CheckPermission(int customerId, int productId)
         {
             var canOrder = await _customerProductService.CanCustomerOrderProductAsync(customerId, productId);
-            return Ok(new { canOrder });
+            return Ok(ApiResponse<object>.Ok(new { canOrder }));
         }
     }
 }

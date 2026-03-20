@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.DTOs.OrderDTOs;
-using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.WebMVC.Attributes;
 using ErpOnlineOrder.WebMVC.Services;
@@ -16,7 +15,6 @@ namespace ErpOnlineOrder.WebMVC.Controllers
     public class OrderController : BaseController
     {
         private readonly IOrderApiClient _orderApiClient;
-        private readonly IOrderService _orderService;
         private readonly ICustomerApiClient _customerApiClient;
         private readonly IProductApiClient _productApiClient;
         private readonly IPermissionApiClient _permissionApiClient;
@@ -25,7 +23,6 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         public OrderController(
             IOrderApiClient orderApiClient,
-            IOrderService orderService,
             ICustomerApiClient customerApiClient,
             IProductApiClient productApiClient,
             IPermissionApiClient permissionApiClient,
@@ -33,7 +30,6 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             ILogger<OrderController> logger)
         {
             _orderApiClient = orderApiClient;
-            _orderService = orderService;
             _customerApiClient = customerApiClient;
             _productApiClient = productApiClient;
             _permissionApiClient = permissionApiClient;
@@ -45,11 +41,6 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             var customers = await _customerApiClient.GetForSelectAsync();
             return new SelectList(customers, "Id", "Display_text", selectedId);
-        }
-
-        private int GetCurrentUserId()
-        {
-            return HttpContext.Session.GetInt32("UserId") ?? 0;
         }
 
         public async Task<IActionResult> Index(int page = 1, int pageSize = 20, string? status = null, string? search = null)
@@ -75,8 +66,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var userId = GetCurrentUserId();
-                var order = await _orderService.GetByIdAsync(id, userId);
+                var order = await _orderApiClient.GetByIdAsync(id);
                 if (order == null)
                 {
                     SetErrorMessage("Không tìm thấy đơn hàng.");
@@ -102,7 +92,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             if (userId == 0)
                 return RedirectToAction("Login", "Auth");
 
-            var order = await _orderService.GetByIdAsync(id, userId);
+            var order = await _orderApiClient.GetByIdAsync(id);
             if (order == null)
             {
                 SetErrorMessage("Không tìm thấy đơn hàng.");
@@ -362,7 +352,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var bytes = await _orderService.ExportOrdersToExcelAsync();
+                var bytes = await _orderApiClient.ExportOrdersToExcelAsync();
                 return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     $"DonHang_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
             }

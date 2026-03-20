@@ -3,6 +3,7 @@ using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Constants;
 using ErpOnlineOrder.Domain.Models;
+using ErpOnlineOrder.Application.DTOs;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErpOnlineOrder.WebAPI.Controllers
@@ -25,14 +26,14 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         public async Task<IActionResult> GetAll()
         {
             var exports = await _exportService.GetAllAsync(TryGetCurrentUserId());
-            return Ok(exports);
+            return Ok(ApiResponse<object>.Ok(exports));
         }
 
         [HttpGet("paged")]
         public async Task<IActionResult> GetAllPaged([FromQuery] WarehouseExportFilterRequest request)
         {
             var result = await _exportService.GetAllPagedAsync(request, TryGetCurrentUserId());
-            return Ok(result);
+            return Ok(ApiResponse<object>.Ok(result));
         }
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -40,41 +41,41 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var export = await _exportService.GetByIdAsync(id, TryGetCurrentUserId());
             if (export == null)
             {
-                return NotFound(new { message = "Phiếu xuất kho không tồn tại" });
+                return NotFound(ApiResponse<object>.Fail("Phiếu xuất kho không tồn tại"));
             }
-            return Ok(export);
+            return Ok(ApiResponse<object>.Ok(export));
         }
         [HttpGet("invoice/{invoiceId}")]
         public async Task<IActionResult> GetByInvoice(int invoiceId)
         {
             var exports = await _exportService.GetByInvoiceIdAsync(invoiceId);
-            return Ok(exports);
+            return Ok(ApiResponse<object>.Ok(exports));
         }
         [HttpGet("customer/{customerId}")]
         public async Task<IActionResult> GetByCustomer(int customerId)
         {
             var exports = await _exportService.GetByCustomerIdAsync(customerId);
-            return Ok(exports);
+            return Ok(ApiResponse<object>.Ok(exports));
         }
         [HttpGet("my-exports")]
         public async Task<IActionResult> GetMyExports()
         {
             var userId = TryGetCurrentUserId();
             if (!userId.HasValue || userId.Value <= 0)
-                return Unauthorized(new { message = "Vui lòng đăng nhập" });
+                return Unauthorized(ApiResponse<object>.Fail("Vui lòng đăng nhập"));
 
             var customer = await _customerRepository.GetByUserIdAsync(userId.Value);
             if (customer == null)
-                return Ok(new List<WarehouseExportDto>());
+                return Ok(ApiResponse<object>.Ok(new List<WarehouseExportDto>()));
 
             var exports = await _exportService.GetByCustomerIdAsync(customer.Id);
-            return Ok(exports);
+            return Ok(ApiResponse<object>.Ok(exports));
         }
         [HttpGet("warehouse/{warehouseId}")]
         public async Task<IActionResult> GetByWarehouse(int warehouseId)
         {
             var exports = await _exportService.GetByWarehouseIdAsync(warehouseId);
-            return Ok(exports);
+            return Ok(ApiResponse<object>.Ok(exports));
         }
         [HttpPost]
         public async Task<IActionResult> CreateExport([FromBody] CreateWarehouseExportDto dto)
@@ -84,13 +85,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _exportService.CreateExportFromInvoiceAsync(dto, GetCurrentUserId());
                 if (result == null)
                 {
-                    return BadRequest(new { message = "Không thể tạo phiếu xuất kho. Dữ liệu không hợp lệ hoặc chưa đủ điều kiện xuất kho." });
+                    return BadRequest(ApiResponse<object>.Fail("Không thể tạo phiếu xuất kho. Dữ liệu không hợp lệ hoặc chưa đủ điều kiện xuất kho."));
                 }
-                return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+                return CreatedAtAction(nameof(GetById), new { id = result.Id }, ApiResponse<object>.Ok(result));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
         [HttpPut("{id}")]
@@ -101,13 +102,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _exportService.UpdateExportAsync(id, dto, GetCurrentUserId());
                 if (!result)
                 {
-                    return NotFound(new { message = "Phiếu xuất kho không tồn tại" });
+                    return NotFound(ApiResponse<object>.Fail("Phiếu xuất kho không tồn tại"));
                 }
-                return Ok(new { success = true, message = "Đã cập nhật phiếu xuất kho" });
+                return Ok(ApiResponse<object>.Ok(null, "Đã cập nhật phiếu xuất kho"));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
         [HttpPatch("{id}/delivery-status")]
@@ -118,13 +119,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _exportService.UpdateDeliveryStatusAsync(id, status, GetCurrentUserId());
                 if (!result)
                 {
-                    return NotFound(new { message = "Phiếu xuất kho không tồn tại" });
+                    return NotFound(ApiResponse<object>.Fail("Phiếu xuất kho không tồn tại"));
                 }
-                return Ok(new { success = true, message = $"Đã cập nhật trạng thái giao hàng thành: {status}" });
+                return Ok(ApiResponse<object>.Ok(null, $"Đã cập nhật trạng thái giao hàng thành: {status}"));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
         [HttpPost("{id}/confirm")]
@@ -135,13 +136,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _exportService.ConfirmExportAsync(id, GetCurrentUserId());
                 if (!result)
                 {
-                    return NotFound(new { message = "Phiếu xuất kho không tồn tại" });
+                    return NotFound(ApiResponse<object>.Fail("Phiếu xuất kho không tồn tại"));
                 }
-                return Ok(new { success = true, message = "Đã xác nhận phiếu xuất kho" });
+                return Ok(ApiResponse<object>.Ok(null, "Đã xác nhận phiếu xuất kho"));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
         [HttpPatch("{id}/status")]
@@ -151,12 +152,12 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             {
                 var result = await _exportService.UpdateStatusAsync(id, status, GetCurrentUserId());
                 if (!result)
-                    return NotFound(new { message = "Phiếu xuất kho không tồn tại" });
-                return Ok(new { success = true, message = $"Đã cập nhật trạng thái phiếu xuất kho thành: {ExportStatuses.ToDisplayText(status)}" });
+                    return NotFound(ApiResponse<object>.Fail("Phiếu xuất kho không tồn tại"));
+                return Ok(ApiResponse<object>.Ok(null, $"Đã cập nhật trạng thái phiếu xuất kho thành: {ExportStatuses.ToDisplayText(status)}"));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
         [HttpPost("{id}/cancel")]
@@ -167,13 +168,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _exportService.CancelExportAsync(id, GetCurrentUserId());
                 if (!result)
                 {
-                    return NotFound(new { message = "Phiếu xuất kho không tồn tại" });
+                    return NotFound(ApiResponse<object>.Fail("Phiếu xuất kho không tồn tại"));
                 }
-                return Ok(new { success = true, message = "Đã hủy phiếu xuất kho" });
+                return Ok(ApiResponse<object>.Ok(null, "Đã hủy phiếu xuất kho"));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
         [HttpDelete("{id}")]
@@ -182,9 +183,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _exportService.DeleteExportAsync(id);
             if (!result)
             {
-                return NotFound(new { message = "Phiếu xuất kho không tồn tại" });
+                return NotFound(ApiResponse<object>.Fail("Phiếu xuất kho không tồn tại"));
             }
-            return Ok(new { success = true, message = "Đã xóa phiếu xuất kho" });
+            return Ok(ApiResponse<object>.Ok(null, "Đã xóa phiếu xuất kho"));
         }
 
         #endregion
@@ -198,13 +199,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _exportService.SplitExportAsync(dto, GetCurrentUserId());
                 if (!result.Success)
                 {
-                    return BadRequest(result);
+                    return BadRequest(ApiResponse<object>.Fail(result.Message ?? "Lỗi khi tách phiếu"));
                 }
-                return Ok(result);
+                return Ok(ApiResponse<object>.Ok(result));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { success = false, message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
         [HttpPost("merge")]
@@ -215,13 +216,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _exportService.MergeExportsAsync(dto, GetCurrentUserId());
                 if (!result.Success)
                 {
-                    return BadRequest(result);
+                    return BadRequest(ApiResponse<object>.Fail(result.Message ?? "Lỗi khi gộp phiếu"));
                 }
-                return Ok(result);
+                return Ok(ApiResponse<object>.Ok(result));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { success = false, message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
         [HttpPost("{id}/undo-split")]
@@ -232,13 +233,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _exportService.UndoSplitAsync(id, GetCurrentUserId());
                 if (!result)
                 {
-                    return BadRequest(new { message = "Không thể hoàn tác tách phiếu xuất kho. Phiếu không tồn tại hoặc không ở trạng thái Đã tách." });
+                    return BadRequest(ApiResponse<object>.Fail("Không thể hoàn tác tách phiếu xuất kho. Phiếu không tồn tại hoặc không ở trạng thái Đã tách."));
                 }
-                return Ok(new { success = true, message = "Đã hoàn tác tách phiếu xuất kho" });
+                return Ok(ApiResponse<object>.Ok(null, "Đã hoàn tác tách phiếu xuất kho"));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
         [HttpPost("{id}/undo-merge")]
@@ -249,26 +250,26 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _exportService.UndoMergeAsync(id, GetCurrentUserId());
                 if (!result)
                 {
-                    return BadRequest(new { message = "Không thể hoàn tác gộp phiếu xuất kho. Phiếu không tồn tại hoặc không ở trạng thái đã gộp hợp lệ." });
+                    return BadRequest(ApiResponse<object>.Fail("Không thể hoàn tác gộp phiếu xuất kho. Phiếu không tồn tại hoặc không ở trạng thái đã gộp hợp lệ."));
                 }
-                return Ok(new { success = true, message = "Đã hoàn tác gộp phiếu xuất kho" });
+                return Ok(ApiResponse<object>.Ok(null, "Đã hoàn tác gộp phiếu xuất kho"));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
         [HttpGet("{id}/children")]
         public async Task<IActionResult> GetChildExports(int id)
         {
             var childExports = await _exportService.GetChildExportsAsync(id);
-            return Ok(childExports);
+            return Ok(ApiResponse<object>.Ok(childExports));
         }
         [HttpGet("check-invoice/{invoiceId}")]
         public async Task<IActionResult> CheckInvoiceHasExport(int invoiceId)
         {
             var hasExport = await _exportService.HasExportForInvoiceAsync(invoiceId);
-            return Ok(new { invoice_id = invoiceId, has_export = hasExport });
+            return Ok(ApiResponse<object>.Ok(new { invoice_id = invoiceId, has_export = hasExport }));
         }
 
         [HttpGet("export")]
@@ -280,5 +281,12 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         }
 
         #endregion
+
+        [HttpGet("customer/{customerId}/paged")]
+        public async Task<IActionResult> GetByCustomerIdPaged(int customerId, [FromQuery] WarehouseExportFilterRequest request)
+        {
+            var paged = await _exportService.GetByCustomerIdPagedAsync(customerId, request);
+            return Ok(ApiResponse<PagedResult<WarehouseExportDto>>.Ok(paged));
+        }
     }
 }

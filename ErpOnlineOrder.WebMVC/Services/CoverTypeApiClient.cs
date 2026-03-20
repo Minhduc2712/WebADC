@@ -4,52 +4,35 @@ using ErpOnlineOrder.WebMVC.Services.Interfaces;
 
 namespace ErpOnlineOrder.WebMVC.Services
 {
-    public class CoverTypeApiClient : ICoverTypeApiClient
+    public class CoverTypeApiClient : BaseApiClient, ICoverTypeApiClient
     {
-        private readonly HttpClient _http;
-
-        public CoverTypeApiClient(IHttpClientFactory factory)
+        public CoverTypeApiClient(IHttpClientFactory factory) : base(factory.CreateClient("ErpApi"))
         {
-            _http = factory.CreateClient("ErpApi");
         }
 
         public async Task<IEnumerable<CoverTypeDto>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync("covertype", cancellationToken);
-            if (!response.IsSuccessStatusCode) return Array.Empty<CoverTypeDto>();
-            var list = await response.Content.ReadFromJsonAsync<List<CoverTypeDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
-            return list ?? new List<CoverTypeDto>();
+            return await GetAsync<IEnumerable<CoverTypeDto>>("covertype", cancellationToken) ?? Array.Empty<CoverTypeDto>();
         }
 
         public async Task<CoverTypeDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync($"covertype/{id}", cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
-            return await response.Content.ReadFromJsonAsync<CoverTypeDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return await GetAsync<CoverTypeDto>($"covertype/{id}", cancellationToken);
         }
 
         public async Task<(CoverTypeDto? Data, string? Error)> CreateAsync(CreateCoverTypeDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PostAsJsonAsync("covertype", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (!response.IsSuccessStatusCode)
-                return (null, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
-
-            var data = await response.Content.ReadFromJsonAsync<CoverTypeDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
-            return (data, null);
+            return await PostAsync<CreateCoverTypeDto, CoverTypeDto>("covertype", dto, cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> UpdateAsync(int id, UpdateCoverTypeDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PutAsJsonAsync($"covertype/{id}", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await PutAsync($"covertype/{id}", dto, cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> DeleteAsync(int id, CancellationToken cancellationToken = default)
         {
-            var response = await _http.DeleteAsync($"covertype/{id}", cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await DeleteAsync($"covertype/{id}", cancellationToken);
         }
     }
 }

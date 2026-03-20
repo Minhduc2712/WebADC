@@ -4,6 +4,7 @@ using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Constants;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.WebAPI.Attributes;
+using ErpOnlineOrder.Application.DTOs;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErpOnlineOrder.WebAPI.Controllers
@@ -23,36 +24,36 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         public async Task<IActionResult> GetAll()
         {
             var list = await _invoiceService.GetAllAsync(TryGetCurrentUserId());
-            return Ok(list);
+            return Ok(ApiResponse<object>.Ok(list));
         }
 
         [HttpGet("for-merge")]
         public async Task<IActionResult> GetForMerge()
         {
             var list = await _invoiceService.GetForMergeAsync(TryGetCurrentUserId());
-            return Ok(list);
+            return Ok(ApiResponse<object>.Ok(list));
         }
 
         [HttpGet("for-warehouse-export")]
         public async Task<IActionResult> GetForWarehouseExport()
         {
             var list = await _invoiceService.GetForWarehouseExportSelectAsync(TryGetCurrentUserId());
-            return Ok(list);
+            return Ok(ApiResponse<object>.Ok(list));
         }
 
         [HttpGet("paged")]
         public async Task<IActionResult> GetAllPaged([FromQuery] InvoiceFilterRequest request)
         {
             var result = await _invoiceService.GetAllPagedAsync(request, TryGetCurrentUserId());
-            return Ok(result);
+            return Ok(ApiResponse<object>.Ok(result));
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
             var invoice = await _invoiceService.GetByIdAsync(id, TryGetCurrentUserId());
-            if (invoice == null) return NotFound();
-            return Ok(invoice);
+            if (invoice == null) return NotFound(ApiResponse<object>.Fail("Không tìm thấy hóa đơn."));
+            return Ok(ApiResponse<object>.Ok(invoice));
         }
 
         [HttpPost("split")]
@@ -62,9 +63,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _invoiceService.SplitInvoiceAsync(dto, userId);
             if (!result.Success)
             {
-                return BadRequest(result);
+                return BadRequest(ApiResponse<object>.Fail(result.Message ?? "Lỗi khi tách hóa đơn"));
             }
-            return Ok(result);
+            return Ok(ApiResponse<object>.Ok(result));
         }
         [HttpPost("merge")]
         public async Task<IActionResult> MergeInvoices([FromBody] MergeInvoicesDto dto)
@@ -73,9 +74,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _invoiceService.MergeInvoicesAsync(dto, userId);
             if (!result.Success)
             {
-                return BadRequest(result);
+                return BadRequest(ApiResponse<object>.Fail(result.Message ?? "Lỗi khi gộp hóa đơn"));
             }
-            return Ok(result);
+            return Ok(ApiResponse<object>.Ok(result));
         }
         [HttpPost("{id}/undo-split")]
         public async Task<IActionResult> UndoSplit(int id)
@@ -86,13 +87,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _invoiceService.UndoSplitAsync(id, userId);
                 if (!result)
                 {
-                    return BadRequest(new { message = "Không thể hoàn tác tách hóa đơn. Hóa đơn không tồn tại hoặc không ở trạng thái Đã tách." });
+                    return BadRequest(ApiResponse<object>.Fail("Không thể hoàn tác tách hóa đơn. Hóa đơn không tồn tại hoặc không ở trạng thái Đã tách."));
                 }
-                return Ok(new { success = true, message = "Đã hoàn tác tách hóa đơn" });
+                return Ok(ApiResponse<object>.Ok(null, "Đã hoàn tác tách hóa đơn"));
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
         [HttpPost("{id}/undo-merge")]
@@ -102,9 +103,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _invoiceService.UndoMergeAsync(id, userId);
             if (!result)
             {
-                return BadRequest(new { message = "Không thể hoàn tác gộp hóa đơn. Hóa đơn không tồn tại hoặc không ở trạng thái đã gộp hợp lệ." });
+                return BadRequest(ApiResponse<object>.Fail("Không thể hoàn tác gộp hóa đơn. Hóa đơn không tồn tại hoặc không ở trạng thái đã gộp hợp lệ."));
             }
-            return Ok(new { success = true, message = "Đã hoàn tác gộp hóa đơn" });
+            return Ok(ApiResponse<object>.Ok(null, "Đã hoàn tác gộp hóa đơn"));
         }
 
         // [HttpPost("create-from-order/{orderId}")]
@@ -125,12 +126,12 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             {
                 var result = await _invoiceService.UpdateStatusAsync(id, status, GetCurrentUserId());
                 if (!result)
-                    return NotFound(new { message = "Hóa đơn không tồn tại" });
-                return Ok(new { success = true, message = $"Đã cập nhật trạng thái hóa đơn thành: {InvoiceStatuses.ToDisplayText(status)}" });
+                    return NotFound(ApiResponse<object>.Fail("Hóa đơn không tồn tại"));
+                return Ok(ApiResponse<object>.Ok(null, $"Đã cập nhật trạng thái hóa đơn thành: {InvoiceStatuses.ToDisplayText(status)}"));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
@@ -140,6 +141,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var bytes = await _invoiceService.ExportInvoicesToExcelAsync(status);
             return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 $"HoaDon_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+        }
+
+        [HttpGet("customer/{customerId}/paged")]
+        public async Task<IActionResult> GetByCustomerIdPaged(int customerId, [FromQuery] InvoiceFilterRequest request)
+        {
+            var paged = await _invoiceService.GetByCustomerIdPagedAsync(customerId, request);
+            return Ok(ApiResponse<PagedResult<InvoiceDto>>.Ok(paged));
         }
     }
 }

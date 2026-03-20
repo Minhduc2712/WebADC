@@ -5,102 +5,26 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 {
     public class BaseController : Controller
     {
-                
+        protected int GetCurrentUserId()
+        {
+            return HttpContext.Session.GetInt32("UserId") ?? 0;
+        }
+
         protected string GetDetailedErrorMessage(Exception ex)
         {
-            if (ex is Microsoft.EntityFrameworkCore.DbUpdateException dbEx)
+            // Tầng MVC chỉ nên xử lý lỗi HTTP, Argument, Timeout hoặc lỗi chung.
+            // Các lỗi DB (SqlException) đã được WebAPI bắt và bóc tách thành message gửi về thông qua ApiClient.
+            
+            if (ex is HttpRequestException httpEx)
             {
-                if (dbEx.InnerException != null)
-                {
-                    var innerMessage = dbEx.InnerException.Message;
-
-                    if (innerMessage.Contains("UNIQUE KEY constraint") || innerMessage.Contains("duplicate key"))
-                    {
-                        return "Dữ liệu đã tồn tại. Vui lòng kiểm tra và thử lại.";
-                    }
-                    else if (innerMessage.Contains("FOREIGN KEY constraint") || innerMessage.Contains("conflicted with the FOREIGN KEY constraint"))
-                    {
-                        return "Không thể thực hiện thao tác vì dữ liệu đang được sử dụng bởi các bản ghi khác.";
-                    }
-                    else if (innerMessage.Contains("CHECK constraint") || innerMessage.Contains("conflicted with the CHECK constraint"))
-                    {
-                        return "Dữ liệu không hợp lệ. Vui lòng kiểm tra các ràng buộc.";
-                    }
-                    else if (innerMessage.Contains("cannot insert the value NULL") || innerMessage.Contains("cannot be null"))
-                    {
-                        return "Thiếu thông tin bắt buộc. Vui lòng điền đầy đủ các trường.";
-                    }
-                    else if (innerMessage.Contains("String or binary data would be truncated"))
-                    {
-                        return "Dữ liệu quá dài. Vui lòng rút ngắn nội dung.";
-                    }
-                    else if (innerMessage.Contains("timeout") || innerMessage.Contains("Timeout"))
-                    {
-                        return "Hệ thống bận. Vui lòng thử lại sau.";
-                    }
-                    else if (innerMessage.Contains("connection") || innerMessage.Contains("Connection"))
-                    {
-                        return "Không thể kết nối đến cơ sở dữ liệu. Vui lòng thử lại sau.";
-                    }
-                    else
-                    {
-                        return $"Lỗi cơ sở dữ liệu: {innerMessage}";
-                    }
-                }
-                else
-                {
-                    return "Lỗi khi lưu dữ liệu vào cơ sở dữ liệu.";
-                }
-            }
-            // Xử lý các loại exception khác
-            else if (ex is Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
-            {
-                return "Dữ liệu đã được thay đổi bởi người dùng khác. Vui lòng tải lại trang và thử lại.";
-            }
-            else if (ex is InvalidOperationException)
-            {
-                // Chỉ trả về thông báo mặc định nếu message rỗng
-                return !string.IsNullOrEmpty(ex.Message)
-                    ? ex.Message
-                    : "Thao tác không hợp lệ. Vui lòng kiểm tra dữ liệu và thử lại.";
-            }
-            else if (ex is ArgumentException argEx)
-            {
-                // Giữ nguyên thông báo cụ thể từ service
-                return !string.IsNullOrEmpty(argEx.Message)
-                    ? argEx.Message
-                    : "Dữ liệu không hợp lệ. Vui lòng kiểm tra và thử lại.";
+                return $"Không thể kết nối đến máy chủ API: {httpEx.Message}";
             }
             else if (ex is TimeoutException)
             {
                 return "Hệ thống phản hồi chậm. Vui lòng thử lại sau.";
             }
-            else if (ex is Microsoft.Data.SqlClient.SqlException sqlEx)
-            {
-                // Xử lý các lỗi SQL Server cụ thể
-                switch (sqlEx.Number)
-                {
-                    case 2627: // Unique constraint violation
-                        return "Dữ liệu đã tồn tại. Vui lòng kiểm tra và thử lại.";
-                    case 547: // Foreign key constraint violation
-                        return "Không thể thực hiện thao tác vì dữ liệu đang được sử dụng bởi các bản ghi khác.";
-                    case 2601: // Duplicate key
-                        return "Dữ liệu đã tồn tại. Vui lòng kiểm tra và thử lại.";
-                    case 515: // Cannot insert null
-                        return "Thiếu thông tin bắt buộc. Vui lòng điền đầy đủ các trường.";
-                    case 8152: // String or binary data would be truncated
-                        return "Dữ liệu quá dài. Vui lòng rút ngắn nội dung.";
-                    case -2: // Timeout
-                        return "Hệ thống bận. Vui lòng thử lại sau.";
-                    default:
-                        return $"Lỗi SQL Server: {sqlEx.Message}";
-                }
-            }
-            else
-            {
-                // Trả về thông báo lỗi gốc nếu không thể xử lý
-                return ex.Message;
-            }
+            
+            return !string.IsNullOrEmpty(ex.Message) ? ex.Message : "Đã có lỗi xảy ra. Vui lòng thử lại.";
         }
 
         protected void SetSuccessMessage(string message)

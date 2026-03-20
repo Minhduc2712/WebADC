@@ -54,6 +54,14 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .FirstOrDefaultAsync(s => s.Warehouse_id == warehouseId && s.Product_id == productId);
         }
 
+        public async Task<IEnumerable<Stock>> GetByWarehouseAndProductsAsync(int warehouseId, IEnumerable<int> productIds)
+        {
+            var pIds = productIds.ToList();
+            return await GetBaseQuery()
+                .Where(s => s.Warehouse_id == warehouseId && pIds.Contains(s.Product_id))
+                .ToListAsync();
+        }
+
         public async Task<Stock> AddAsync(Stock stock)
         {
             _context.Stocks.Add(stock);

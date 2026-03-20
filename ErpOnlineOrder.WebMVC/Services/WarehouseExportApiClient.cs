@@ -5,21 +5,15 @@ using ErpOnlineOrder.WebMVC.Services.Interfaces;
 
 namespace ErpOnlineOrder.WebMVC.Services
 {
-    public class WarehouseExportApiClient : IWarehouseExportApiClient
+    public class WarehouseExportApiClient : BaseApiClient, IWarehouseExportApiClient
     {
-        private readonly HttpClient _http;
-
-        public WarehouseExportApiClient(IHttpClientFactory factory)
+        public WarehouseExportApiClient(IHttpClientFactory factory) : base(factory.CreateClient("ErpApi"))
         {
-            _http = factory.CreateClient("ErpApi");
         }
 
         public async Task<IEnumerable<WarehouseExportDto>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync("warehouseexport", cancellationToken);
-            if (!response.IsSuccessStatusCode) return Array.Empty<WarehouseExportDto>();
-            var list = await response.Content.ReadFromJsonAsync<List<WarehouseExportDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
-            return list ?? new List<WarehouseExportDto>();
+            return await GetAsync<IEnumerable<WarehouseExportDto>>("warehouseexport", cancellationToken) ?? Array.Empty<WarehouseExportDto>();
         }
 
         public async Task<PagedResult<WarehouseExportDto>> GetPagedAsync(int page = 1, int pageSize = 20, string? status = null, string? searchTerm = null, CancellationToken cancellationToken = default)
@@ -28,118 +22,87 @@ namespace ErpOnlineOrder.WebMVC.Services
             if (!string.IsNullOrEmpty(status)) query.Add("status=" + Uri.EscapeDataString(status));
             if (!string.IsNullOrEmpty(searchTerm)) query.Add("searchTerm=" + Uri.EscapeDataString(searchTerm));
             var path = "warehouseexport/paged?" + string.Join("&", query);
-            var response = await _http.GetAsync(path, cancellationToken);
-            if (!response.IsSuccessStatusCode) return new PagedResult<WarehouseExportDto> { Items = new List<WarehouseExportDto>(), Page = page, PageSize = pageSize, TotalCount = 0 };
-            var result = await response.Content.ReadFromJsonAsync<PagedResult<WarehouseExportDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
-            return result ?? new PagedResult<WarehouseExportDto>();
+            return await GetAsync<PagedResult<WarehouseExportDto>>(path, cancellationToken) ?? new PagedResult<WarehouseExportDto> { Items = new List<WarehouseExportDto>(), Page = page, PageSize = pageSize, TotalCount = 0 };
         }
 
         public async Task<WarehouseExportDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync($"warehouseexport/{id}", cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
-            return await response.Content.ReadFromJsonAsync<WarehouseExportDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return await GetAsync<WarehouseExportDto>($"warehouseexport/{id}", cancellationToken);
         }
 
         public async Task<IEnumerable<WarehouseExportDto>> GetByInvoiceIdAsync(int invoiceId, CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync($"warehouseexport/invoice/{invoiceId}", cancellationToken);
-            if (!response.IsSuccessStatusCode) return Array.Empty<WarehouseExportDto>();
-            var list = await response.Content.ReadFromJsonAsync<List<WarehouseExportDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
-            return list ?? new List<WarehouseExportDto>();
+            return await GetAsync<IEnumerable<WarehouseExportDto>>($"warehouseexport/invoice/{invoiceId}", cancellationToken) ?? Array.Empty<WarehouseExportDto>();
         }
 
         public async Task<IEnumerable<WarehouseExportDto>> GetByCustomerIdAsync(int customerId, CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync($"warehouseexport/customer/{customerId}", cancellationToken);
-            if (!response.IsSuccessStatusCode) return Array.Empty<WarehouseExportDto>();
-            var list = await response.Content.ReadFromJsonAsync<List<WarehouseExportDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
-            return list ?? new List<WarehouseExportDto>();
+            return await GetAsync<IEnumerable<WarehouseExportDto>>($"warehouseexport/customer/{customerId}", cancellationToken) ?? Array.Empty<WarehouseExportDto>();
         }
 
         public async Task<(WarehouseExportDto? Data, string? Error)> CreateAsync(CreateWarehouseExportDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PostAsJsonAsync("warehouseexport", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (!response.IsSuccessStatusCode)
-                return (null, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
-            var data = await response.Content.ReadFromJsonAsync<WarehouseExportDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
-            return (data, null);
+            return await PostAsync<CreateWarehouseExportDto, WarehouseExportDto>("warehouseexport", dto, cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> UpdateAsync(int id, UpdateWarehouseExportDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PutAsJsonAsync($"warehouseexport/{id}", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await PutAsync($"warehouseexport/{id}", dto, cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> UpdateDeliveryStatusAsync(int id, string status, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PatchAsync($"warehouseexport/{id}/delivery-status?status={Uri.EscapeDataString(status)}", null, cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await PatchAsync($"warehouseexport/{id}/delivery-status?status={Uri.EscapeDataString(status)}", cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> ConfirmAsync(int id, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PostAsync($"warehouseexport/{id}/confirm", null, cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await PostWithoutReturnAsync($"warehouseexport/{id}/confirm", cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> CancelAsync(int id, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PostAsync($"warehouseexport/{id}/cancel", null, cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await PostWithoutReturnAsync($"warehouseexport/{id}/cancel", cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> DeleteAsync(int id, CancellationToken cancellationToken = default)
         {
-            var response = await _http.DeleteAsync($"warehouseexport/{id}", cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await DeleteAsync($"warehouseexport/{id}", cancellationToken);
         }
 
         public async Task<SplitExportResultDto?> SplitAsync(SplitWarehouseExportDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PostAsJsonAsync("warehouseexport/split", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
-            return await response.Content.ReadFromJsonAsync<SplitExportResultDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            var (data, _) = await PostAsync<SplitWarehouseExportDto, SplitExportResultDto>("warehouseexport/split", dto, cancellationToken);
+            return data;
         }
 
         public async Task<MergeExportResultDto?> MergeAsync(MergeWarehouseExportsDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PostAsJsonAsync("warehouseexport/merge", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
-            return await response.Content.ReadFromJsonAsync<MergeExportResultDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            var (data, _) = await PostAsync<MergeWarehouseExportsDto, MergeExportResultDto>("warehouseexport/merge", dto, cancellationToken);
+            return data;
         }
 
         public async Task<bool> UndoSplitAsync(int id, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PostAsync($"warehouseexport/{id}/undo-split", null, cancellationToken);
-            return response.IsSuccessStatusCode;
+            var (success, _) = await PostWithoutReturnAsync($"warehouseexport/{id}/undo-split", cancellationToken);
+            return success;
         }
 
         public async Task<bool> UndoMergeAsync(int id, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PostAsync($"warehouseexport/{id}/undo-merge", null, cancellationToken);
-            return response.IsSuccessStatusCode;
+            var (success, _) = await PostWithoutReturnAsync($"warehouseexport/{id}/undo-merge", cancellationToken);
+            return success;
         }
 
         public async Task<bool> HasExportForInvoiceAsync(int invoiceId, CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync($"warehouseexport/check-invoice/{invoiceId}", cancellationToken);
-            if (!response.IsSuccessStatusCode) return false;
-            var obj = await response.Content.ReadFromJsonAsync<CheckInvoiceResponse>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            var obj = await GetAsync<CheckInvoiceResponse>($"warehouseexport/check-invoice/{invoiceId}", cancellationToken);
             return obj?.has_export ?? false;
         }
 
         public async Task<(bool Success, string? Error)> UpdateStatusAsync(int id, string status, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PatchAsync($"warehouseexport/{id}/status?status={Uri.EscapeDataString(status)}", null, cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await PatchAsync($"warehouseexport/{id}/status?status={Uri.EscapeDataString(status)}", cancellationToken);
         }
 
         public async Task<byte[]> ExportToExcelAsync(string? status = null, CancellationToken cancellationToken = default)
@@ -147,14 +110,17 @@ namespace ErpOnlineOrder.WebMVC.Services
             var path = !string.IsNullOrEmpty(status)
                 ? "warehouseexport/export?status=" + Uri.EscapeDataString(status)
                 : "warehouseexport/export";
-            using var request = new HttpRequestMessage(HttpMethod.Get, path);
-            request.Headers.Accept.Clear();
-            request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
-            var response = await _http.SendAsync(request, cancellationToken);
-            if (!response.IsSuccessStatusCode) return Array.Empty<byte>();
-            return await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            return await GetByteArrayAsync(path, cancellationToken);
         }
 
         private class CheckInvoiceResponse { public bool has_export { get; set; } }
+
+        public async Task<PagedResult<WarehouseExportDto>> GetByCustomerIdPagedAsync(int customerId, WarehouseExportFilterRequest request, CancellationToken cancellationToken = default)
+        {
+            var query = new List<string> { $"page={request.Page}", $"pageSize={request.PageSize}" };
+            if (!string.IsNullOrEmpty(request.Status)) query.Add($"status={Uri.EscapeDataString(request.Status)}");
+            var path = $"warehouseexport/customer/{customerId}/paged?" + string.Join("&", query);
+            return await GetAsync<PagedResult<WarehouseExportDto>>(path, cancellationToken) ?? new PagedResult<WarehouseExportDto> { Items = new List<WarehouseExportDto>(), Page = request.Page, PageSize = request.PageSize, TotalCount = 0 };
+        }
     }
 }

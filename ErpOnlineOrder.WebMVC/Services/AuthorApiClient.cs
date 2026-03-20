@@ -4,52 +4,35 @@ using ErpOnlineOrder.WebMVC.Services.Interfaces;
 
 namespace ErpOnlineOrder.WebMVC.Services
 {
-    public class AuthorApiClient : IAuthorApiClient
+    public class AuthorApiClient : BaseApiClient, IAuthorApiClient
     {
-        private readonly HttpClient _http;
-
-        public AuthorApiClient(IHttpClientFactory factory)
+        public AuthorApiClient(IHttpClientFactory factory) : base(factory.CreateClient("ErpApi"))
         {
-            _http = factory.CreateClient("ErpApi");
         }
 
         public async Task<IEnumerable<AuthorDto>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync("author", cancellationToken);
-            if (!response.IsSuccessStatusCode) return Array.Empty<AuthorDto>();
-            var list = await response.Content.ReadFromJsonAsync<List<AuthorDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
-            return list ?? new List<AuthorDto>();
+            return await GetAsync<IEnumerable<AuthorDto>>("author", cancellationToken) ?? Array.Empty<AuthorDto>();
         }
 
         public async Task<AuthorDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync($"author/{id}", cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
-            return await response.Content.ReadFromJsonAsync<AuthorDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return await GetAsync<AuthorDto>($"author/{id}", cancellationToken);
         }
 
         public async Task<(AuthorDto? Data, string? Error)> CreateAsync(CreateAuthorDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PostAsJsonAsync("author", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (!response.IsSuccessStatusCode)
-                return (null, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
-
-            var data = await response.Content.ReadFromJsonAsync<AuthorDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
-            return (data, null);
+            return await PostAsync<CreateAuthorDto, AuthorDto>("author", dto, cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> UpdateAsync(int id, UpdateAuthorDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PutAsJsonAsync($"author/{id}", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await PutAsync($"author/{id}", dto, cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> DeleteAsync(int id, CancellationToken cancellationToken = default)
         {
-            var response = await _http.DeleteAsync($"author/{id}", cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await DeleteAsync($"author/{id}", cancellationToken);
         }
     }
 }

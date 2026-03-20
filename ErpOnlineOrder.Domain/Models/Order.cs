@@ -20,6 +20,10 @@ namespace ErpOnlineOrder.Domain.Models
 
         public string? note { get; set; }
 
+        public int? Parent_order_id { get; set; }
+        [ForeignKey("Parent_order_id")]
+        public virtual Order? Parent_order { get; set; }
+        public bool Is_auto_confirm { get; set; } = false;
         public int Created_by { get; set; }
         public DateTime Created_at { get; set; }
         public int Updated_by { get; set; }

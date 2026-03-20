@@ -4,52 +4,35 @@ using ErpOnlineOrder.WebMVC.Services.Interfaces;
 
 namespace ErpOnlineOrder.WebMVC.Services
 {
-    public class RegionApiClient : IRegionApiClient
+    public class RegionApiClient : BaseApiClient, IRegionApiClient
     {
-        private readonly HttpClient _http;
-
-        public RegionApiClient(IHttpClientFactory factory)
+        public RegionApiClient(IHttpClientFactory factory) : base(factory.CreateClient("ErpApi"))
         {
-            _http = factory.CreateClient("ErpApi");
         }
 
         public async Task<IEnumerable<RegionDTO>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync("region", cancellationToken);
-            if (!response.IsSuccessStatusCode) return new List<RegionDTO>();
-            var list = await response.Content.ReadFromJsonAsync<List<RegionDTO>>(ErpApiClientHelper.JsonOptions, cancellationToken);
-            return list ?? new List<RegionDTO>();
+            return await GetAsync<IEnumerable<RegionDTO>>("region", cancellationToken) ?? new List<RegionDTO>();
         }
 
         public async Task<RegionDTO?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync("region/" + id, cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
-            return await response.Content.ReadFromJsonAsync<RegionDTO>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return await GetAsync<RegionDTO>($"region/{id}", cancellationToken);
         }
 
         public async Task<(RegionDTO? Data, string? Error)> CreateAsync(CreateRegionDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PostAsJsonAsync("region", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (!response.IsSuccessStatusCode)
-                return (null, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
-
-            var data = await response.Content.ReadFromJsonAsync<RegionDTO>(ErpApiClientHelper.JsonOptions, cancellationToken);
-            return (data, null);
+            return await PostAsync<CreateRegionDto, RegionDTO>("region", dto, cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> UpdateAsync(int id, UpdateRegionDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PutAsJsonAsync("region/" + id, dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await PutAsync($"region/{id}", dto, cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> DeleteAsync(int id, CancellationToken cancellationToken = default)
         {
-            var response = await _http.DeleteAsync("region/" + id, cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await DeleteAsync($"region/{id}", cancellationToken);
         }
     }
 }

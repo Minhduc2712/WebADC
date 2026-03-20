@@ -20,6 +20,7 @@ namespace ErpOnlineOrder.Application.Services
         private readonly ICustomerManagementRepository _customerManagementRepository;
         private readonly IOrderRepository _orderRepository;
         private readonly IStockRepository _stockRepository;
+        private readonly IDbTransactionManager _transactionManager;
 
         public WarehouseExportService(
             IWarehouseExportRepository exportRepository,
@@ -29,7 +30,8 @@ namespace ErpOnlineOrder.Application.Services
             IStaffRepository staffRepository,
             ICustomerManagementRepository customerManagementRepository,
             IOrderRepository orderRepository,
-            IStockRepository stockRepository)
+            IStockRepository stockRepository,
+            IDbTransactionManager transactionManager)
         {
             _exportRepository = exportRepository;
             _invoiceRepository = invoiceRepository;
@@ -39,6 +41,7 @@ namespace ErpOnlineOrder.Application.Services
             _customerManagementRepository = customerManagementRepository;
             _orderRepository = orderRepository;
             _stockRepository = stockRepository;
+            _transactionManager = transactionManager;
         }
 
         private async Task<IEnumerable<int>?> GetAllowedCustomerIdsAsync(int userId)
@@ -77,7 +80,7 @@ namespace ErpOnlineOrder.Application.Services
                 {
                     var idList = customerIds.ToList();
                     if (idList.Count == 0) return new List<WarehouseExportDto>();
-                    exports = (await _exportRepository.GetAllAsync()).Where(e => idList.Contains(e.Customer_id));
+                    exports = await _exportRepository.GetByCustomerIdsAsync(idList);
                 }
                 else
                     exports = await _exportRepository.GetAllAsync();
@@ -101,8 +104,12 @@ namespace ErpOnlineOrder.Application.Services
             if (userId.HasValue && userId.Value > 0)
                 customerIds = await GetAllowedCustomerIdsAsync(userId.Value);
 
-            var paged = await _exportRepository.GetPagedWarehouseExportsAsync(request, customerIds);
-            var dtos = paged.Items.Select(EntityMappers.ToWarehouseExportDto).ToList();
+            var paged = await _exportRepository.GetPagedHierarchicalExportsAsync(request, customerIds);
+            var dtos = paged.Items.Select(item => {
+                var dto = EntityMappers.ToWarehouseExportDto(item.Export);
+                dto.IndentLevel = item.IndentLevel;
+                return dto;
+            }).ToList();
             if (userId.HasValue && userId.Value > 0)
             {
                 var userPermissions = (await _permissionService.GetUserPermissionsAsync(userId.Value)).ToHashSet();
@@ -132,8 +139,12 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<PagedResult<WarehouseExportDto>> GetByCustomerIdPagedAsync(int customerId, WarehouseExportFilterRequest request)
         {
-            var paged = await _exportRepository.GetPagedWarehouseExportsAsync(request, new[] { customerId });
-            var dtos = paged.Items.Select(EntityMappers.ToWarehouseExportDto).ToList();
+            var paged = await _exportRepository.GetPagedHierarchicalExportsAsync(request, new[] { customerId });
+            var dtos = paged.Items.Select(item => {
+                var dto = EntityMappers.ToWarehouseExportDto(item.Export);
+                dto.IndentLevel = item.IndentLevel;
+                return dto;
+            }).ToList();
             return new PagedResult<WarehouseExportDto>
             {
                 Items = dtos,
@@ -249,6 +260,10 @@ namespace ErpOnlineOrder.Application.Services
                 .Select(g => new { ProductId = g.Key, Quantity = g.Sum(x => x.Quantity_shipped) })
                 .ToList();
 
+            var productIds = requestedByProduct.Select(x => x.ProductId).ToList();
+            var stocks = await _stockRepository.GetByWarehouseAndProductsAsync(dto.Warehouse_id, productIds);
+            var stockDict = stocks.ToDictionary(s => s.Product_id, s => s);
+
             foreach (var item in requestedByProduct)
             {
                 if (item.Quantity <= 0)
@@ -256,8 +271,7 @@ namespace ErpOnlineOrder.Application.Services
                     throw new Exception($"Số lượng xuất không hợp lệ cho sản phẩm {item.ProductId}");
                 }
 
-                var stock = await _stockRepository.GetByWarehouseAndProductAsync(dto.Warehouse_id, item.ProductId);
-                if (stock == null)
+                if (!stockDict.TryGetValue(item.ProductId, out var stock))
                 {
                     throw new Exception($"Kho chưa được gán sản phẩm {item.ProductId} trong tồn kho");
                 }
@@ -268,18 +282,26 @@ namespace ErpOnlineOrder.Application.Services
                 }
             }
 
-            foreach (var item in requestedByProduct)
+            await using var transaction = await _transactionManager.BeginTransactionAsync();
+            try
             {
-                var stock = await _stockRepository.GetByWarehouseAndProductAsync(dto.Warehouse_id, item.ProductId);
-                if (stock == null) continue;
-
-                stock.Quantity -= item.Quantity;
-                stock.Updated_by = userId;
-                stock.Updated_at = now;
-                await _stockRepository.UpdateAsync(stock);
+                foreach (var item in requestedByProduct)
+                {
+                    var stock = stockDict[item.ProductId];
+                    stock.Quantity -= item.Quantity;
+                    stock.Updated_by = userId;
+                    stock.Updated_at = now;
+                    await _stockRepository.UpdateAsync(stock);
+                }
+    
+                await _exportRepository.AddAsync(export);
+                await transaction.CommitAsync();
             }
-
-            await _exportRepository.AddAsync(export);
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
 
             var created = await _exportRepository.GetByIdAsync(export.Id);
             return created != null ? EntityMappers.ToWarehouseExportDto(created) : null;
@@ -527,77 +549,88 @@ namespace ErpOnlineOrder.Application.Services
             var codePrefix = $"{sourceExport.Warehouse_export_code}-S";
             var startIndex = await _exportRepository.GetMaxChildSuffixAsync(codePrefix);
 
-            int partIndex = 0;
-            foreach (var part in dto.Split_parts)
+            await using var transaction = await _transactionManager.BeginTransactionAsync();
+            try
             {
-                var newExport = new Warehouse_export
+                int partIndex = 0;
+                foreach (var part in dto.Split_parts)
                 {
-                    Warehouse_export_code = $"{codePrefix}{startIndex + partIndex + 1}",
-                    Warehouse_id = sourceExport.Warehouse_id,
-                    Invoice_id = newInvoiceIds.Count > partIndex ? newInvoiceIds[partIndex] : sourceExport.Invoice_id,
-                    Order_id = sourceExport.Order_id,
-                    Customer_id = sourceExport.Customer_id,
-                    Staff_id = sourceExport.Staff_id,
-                    Export_date = now,
-                    Delivery_status = DeliveryStatuses.Pending,
-                    Status = ExportStatuses.Draft,
-                    Parent_export_id = sourceExport.Id,
-                    Split_merge_note = dto.Note ?? $"Tách từ phiếu {sourceExport.Warehouse_export_code}",
-                    Created_by = userId,
-                    Updated_by = userId,
-                    Created_at = now,
-                    Updated_at = now,
-                    Is_deleted = false,
-                    Warehouse_Export_Details = new List<Warehouse_export_detail>()
-                };
-
-                foreach (var item in part.Items)
-                {
-                    var sourceDetail = sourceExport.Warehouse_Export_Details
-                        .FirstOrDefault(d => d.Id == item.Export_detail_id);
-
-                    if (sourceDetail == null) continue;
-
-                    var newDetail = new Warehouse_export_detail
+                    var newExport = new Warehouse_export
                     {
-                        Warehouse_id = sourceDetail.Warehouse_id,
-                        Product_id = sourceDetail.Product_id,
-                        Quantity_shipped = item.Quantity,
-                        Unit_price = sourceDetail.Unit_price,
-                        Total_price = item.Quantity * sourceDetail.Unit_price,
+                        Warehouse_export_code = $"{codePrefix}{startIndex + partIndex + 1}",
+                        Warehouse_id = sourceExport.Warehouse_id,
+                        Invoice_id = newInvoiceIds.Count > partIndex ? newInvoiceIds[partIndex] : sourceExport.Invoice_id,
+                        Order_id = sourceExport.Order_id,
+                        Customer_id = sourceExport.Customer_id,
+                        Staff_id = sourceExport.Staff_id,
+                        Export_date = now,
+                        Delivery_status = DeliveryStatuses.Pending,
+                        Status = ExportStatuses.Draft,
+                        Parent_export_id = sourceExport.Id,
+                        Split_merge_note = dto.Note ?? $"Tách từ phiếu {sourceExport.Warehouse_export_code}",
                         Created_by = userId,
                         Updated_by = userId,
                         Created_at = now,
                         Updated_at = now,
-                        Is_deleted = false
+                        Is_deleted = false,
+                        Warehouse_Export_Details = new List<Warehouse_export_detail>()
                     };
-
-                    newExport.Warehouse_Export_Details.Add(newDetail);
-
-                    // Giảm số lượng trong phiếu gốc
-                    sourceDetail.Quantity_shipped -= item.Quantity;
-                    if (sourceDetail.Quantity_shipped <= 0)
+    
+                    foreach (var item in part.Items)
                     {
-                        sourceDetail.Is_deleted = true;
+                        var sourceDetail = sourceExport.Warehouse_Export_Details
+                            .FirstOrDefault(d => d.Id == item.Export_detail_id);
+    
+                        if (sourceDetail == null) continue;
+    
+                        var newDetail = new Warehouse_export_detail
+                        {
+                            Warehouse_id = sourceDetail.Warehouse_id,
+                            Product_id = sourceDetail.Product_id,
+                            Quantity_shipped = item.Quantity,
+                            Unit_price = sourceDetail.Unit_price,
+                            Total_price = item.Quantity * sourceDetail.Unit_price,
+                            Created_by = userId,
+                            Updated_by = userId,
+                            Created_at = now,
+                            Updated_at = now,
+                            Is_deleted = false
+                        };
+    
+                        newExport.Warehouse_Export_Details.Add(newDetail);
+    
+                        // Giảm số lượng trong phiếu gốc
+                        sourceDetail.Quantity_shipped -= item.Quantity;
+                        if (sourceDetail.Quantity_shipped <= 0)
+                        {
+                            sourceDetail.Is_deleted = true;
+                        }
+                        else
+                        {
+                            sourceDetail.Total_price = sourceDetail.Quantity_shipped * sourceDetail.Unit_price;
+                        }
                     }
-                    else
-                    {
-                        sourceDetail.Total_price = sourceDetail.Quantity_shipped * sourceDetail.Unit_price;
-                    }
+    
+                    await _exportRepository.AddAsync(newExport);
+                    newExports.Add(newExport);
+                    partIndex++;
                 }
-
-                await _exportRepository.AddAsync(newExport);
-                newExports.Add(newExport);
-                partIndex++;
+    
+                // 5. Cập nhật phiếu xuất kho gốc
+                sourceExport.Status = ExportStatuses.Split;
+                sourceExport.Split_merge_note = dto.Note ?? $"Đã tách thành {newExports.Count} phiếu";
+                sourceExport.Updated_by = userId;
+                sourceExport.Updated_at = now;
+    
+                await _exportRepository.UpdateAsync(sourceExport);
+                
+                await transaction.CommitAsync();
             }
-
-            // 5. Cập nhật phiếu xuất kho gốc
-            sourceExport.Status = ExportStatuses.Split;
-            sourceExport.Split_merge_note = dto.Note ?? $"Đã tách thành {newExports.Count} phiếu";
-            sourceExport.Updated_by = userId;
-            sourceExport.Updated_at = now;
-
-            await _exportRepository.UpdateAsync(sourceExport);
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
 
             result.Success = true;
             result.Message = $"Đã tách thành công thành {newExports.Count} phiếu xuất kho mới";
@@ -715,52 +748,63 @@ namespace ErpOnlineOrder.Application.Services
                 Warehouse_Export_Details = new List<Warehouse_export_detail>()
             };
 
-            // 4. Gộp tất cả chi tiết
-            foreach (var export in exports)
+            await using var transaction = await _transactionManager.BeginTransactionAsync();
+            try
             {
-                foreach (var detail in export.Warehouse_Export_Details.Where(d => !d.Is_deleted))
+                // 4. Gộp tất cả chi tiết
+                foreach (var export in exports)
                 {
-                    // Kiểm tra sản phẩm đã có trong phiếu gộp chưa
-                    var existingDetail = mergedExport.Warehouse_Export_Details
-                        .FirstOrDefault(d => d.Product_id == detail.Product_id && d.Unit_price == detail.Unit_price);
-
-                    if (existingDetail != null)
+                    foreach (var detail in export.Warehouse_Export_Details.Where(d => !d.Is_deleted))
                     {
-                        // Cộng dồn số lượng
-                        existingDetail.Quantity_shipped += detail.Quantity_shipped;
-                        existingDetail.Total_price = existingDetail.Quantity_shipped * existingDetail.Unit_price;
-                    }
-                    else
-                    {
-                        // Thêm mới
-                        mergedExport.Warehouse_Export_Details.Add(new Warehouse_export_detail
+                        // Kiểm tra sản phẩm đã có trong phiếu gộp chưa
+                        var existingDetail = mergedExport.Warehouse_Export_Details
+                            .FirstOrDefault(d => d.Product_id == detail.Product_id && d.Unit_price == detail.Unit_price);
+    
+                        if (existingDetail != null)
                         {
-                            Warehouse_id = dto.Warehouse_id,
-                            Product_id = detail.Product_id,
-                            Quantity_shipped = detail.Quantity_shipped,
-                            Unit_price = detail.Unit_price,
-                            Total_price = detail.Total_price,
-                            Created_by = userId,
-                            Updated_by = userId,
-                            Created_at = now,
-                            Updated_at = now,
-                            Is_deleted = false
-                        });
+                            // Cộng dồn số lượng
+                            existingDetail.Quantity_shipped += detail.Quantity_shipped;
+                            existingDetail.Total_price = existingDetail.Quantity_shipped * existingDetail.Unit_price;
+                        }
+                        else
+                        {
+                            // Thêm mới
+                            mergedExport.Warehouse_Export_Details.Add(new Warehouse_export_detail
+                            {
+                                Warehouse_id = dto.Warehouse_id,
+                                Product_id = detail.Product_id,
+                                Quantity_shipped = detail.Quantity_shipped,
+                                Unit_price = detail.Unit_price,
+                                Total_price = detail.Total_price,
+                                Created_by = userId,
+                                Updated_by = userId,
+                                Created_at = now,
+                                Updated_at = now,
+                                Is_deleted = false
+                            });
+                        }
                     }
                 }
+    
+                await _exportRepository.AddAsync(mergedExport);
+    
+                // 5. Cập nhật trạng thái các phiếu đã gộp
+                foreach (var export in exports)
+                {
+                    export.Status = ExportStatuses.Merged;
+                    export.Merged_into_export_id = mergedExport.Id;
+                    export.Split_merge_note = $"Đã gộp vào phiếu {mergedExport.Warehouse_export_code}";
+                    export.Updated_by = userId;
+                    export.Updated_at = now;
+                    await _exportRepository.UpdateAsync(export);
+                }
+                
+                await transaction.CommitAsync();
             }
-
-            await _exportRepository.AddAsync(mergedExport);
-
-            // 5. Cập nhật trạng thái các phiếu đã gộp
-            foreach (var export in exports)
+            catch
             {
-                export.Status = ExportStatuses.Merged;
-                export.Merged_into_export_id = mergedExport.Id;
-                export.Split_merge_note = $"Đã gộp vào phiếu {mergedExport.Warehouse_export_code}";
-                export.Updated_by = userId;
-                export.Updated_at = now;
-                await _exportRepository.UpdateAsync(export);
+                await transaction.RollbackAsync();
+                throw;
             }
 
             result.Success = true;

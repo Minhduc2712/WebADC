@@ -1,5 +1,6 @@
 using ErpOnlineOrder.Application.DTOs.RegionDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Application.DTOs;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErpOnlineOrder.WebAPI.Controllers
@@ -18,7 +19,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         public async Task<IActionResult> GetAll()
         {
             var regions = await _regionService.GetAllAsync();
-            return Ok(regions);
+            return Ok(ApiResponse<object>.Ok(regions));
         }
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -26,9 +27,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var region = await _regionService.GetByIdAsync(id);
             if (region == null)
             {
-                return NotFound(new { message = "Không tìm thấy khu vực." });
+                return NotFound(ApiResponse<object>.Fail("Không tìm thấy khu vực."));
             }
-            return Ok(region);
+            return Ok(ApiResponse<object>.Ok(region));
         }
         [HttpPost]
         public async Task<IActionResult> CreateRegion([FromBody] CreateRegionDto dto)
@@ -38,13 +39,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var created = await _regionService.CreateRegionAsync(dto, GetCurrentUserId());
                 if (created == null)
                 {
-                    return BadRequest(new { message = "Không thể tạo khu vực. Mã khu vực có thể đã tồn tại hoặc dữ liệu chưa hợp lệ." });
+                    return BadRequest(ApiResponse<object>.Fail("Không thể tạo khu vực. Mã khu vực có thể đã tồn tại hoặc dữ liệu chưa hợp lệ."));
                 }
-                return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+                return CreatedAtAction(nameof(GetById), new { id = created.Id }, ApiResponse<object>.Ok(created));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
         [HttpPut("{id}")]
@@ -56,13 +57,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _regionService.UpdateRegionAsync(dto, GetCurrentUserId());
                 if (!result)
                 {
-                    return NotFound(new { message = "Không tìm thấy khu vực cần cập nhật." });
+                    return NotFound(ApiResponse<object>.Fail("Không tìm thấy khu vực cần cập nhật."));
                 }
-                return Ok(new { success = true, message = "Cập nhật khu vực thành công" });
+                return Ok(ApiResponse<object>.Ok(null, "Cập nhật khu vực thành công"));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
         [HttpDelete("{id}")]
@@ -71,9 +72,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _regionService.DeleteRegionAsync(id);
             if (!result)
             {
-                return NotFound(new { message = "Không tìm thấy khu vực cần xóa." });
+                return NotFound(ApiResponse<object>.Fail("Không tìm thấy khu vực cần xóa."));
             }
-            return Ok(new { success = true, message = "Xóa khu vực thành công" });
+            return Ok(ApiResponse<object>.Ok(null, "Xóa khu vực thành công"));
         }
     }
 }

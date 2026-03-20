@@ -4,52 +4,35 @@ using ErpOnlineOrder.WebMVC.Services.Interfaces;
 
 namespace ErpOnlineOrder.WebMVC.Services
 {
-    public class CategoryApiClient : ICategoryApiClient
+    public class CategoryApiClient : BaseApiClient, ICategoryApiClient
     {
-        private readonly HttpClient _http;
-
-        public CategoryApiClient(IHttpClientFactory factory)
+        public CategoryApiClient(IHttpClientFactory factory) : base(factory.CreateClient("ErpApi"))
         {
-            _http = factory.CreateClient("ErpApi");
         }
 
         public async Task<IEnumerable<CategoryDto>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync("category", cancellationToken);
-            if (!response.IsSuccessStatusCode) return Array.Empty<CategoryDto>();
-            var list = await response.Content.ReadFromJsonAsync<List<CategoryDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
-            return list ?? new List<CategoryDto>();
+            return await GetAsync<IEnumerable<CategoryDto>>("category", cancellationToken) ?? Array.Empty<CategoryDto>();
         }
 
         public async Task<CategoryDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync($"category/{id}", cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
-            return await response.Content.ReadFromJsonAsync<CategoryDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return await GetAsync<CategoryDto>($"category/{id}", cancellationToken);
         }
 
         public async Task<(CategoryDto? Data, string? Error)> CreateAsync(CreateCategoryDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PostAsJsonAsync("category", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (!response.IsSuccessStatusCode)
-                return (null, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
-
-            var data = await response.Content.ReadFromJsonAsync<CategoryDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
-            return (data, null);
+            return await PostAsync<CreateCategoryDto, CategoryDto>("category", dto, cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> UpdateAsync(int id, UpdateCategoryDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PutAsJsonAsync($"category/{id}", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await PutAsync($"category/{id}", dto, cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> DeleteAsync(int id, CancellationToken cancellationToken = default)
         {
-            var response = await _http.DeleteAsync($"category/{id}", cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await DeleteAsync($"category/{id}", cancellationToken);
         }
     }
 }

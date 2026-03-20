@@ -1,3 +1,4 @@
+
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.Mappers;
@@ -25,6 +26,7 @@ namespace ErpOnlineOrder.Application.Services
         private readonly IStockRepository _stockRepository;
         private readonly IEmailService _emailService;
         private readonly IPermissionService _permissionService;
+        private readonly IDbTransactionManager _transactionManager;
 
         public OrderService(
             IOrderRepository orderRepository,
@@ -37,7 +39,8 @@ namespace ErpOnlineOrder.Application.Services
             IWarehouseExportRepository warehouseExportRepository,
             IStockRepository stockRepository,
             IEmailService emailService,
-            IPermissionService permissionService)
+            IPermissionService permissionService,
+            IDbTransactionManager transactionManager)
         {
             _orderRepository = orderRepository;
             _staffRepository = staffRepository;
@@ -50,6 +53,7 @@ namespace ErpOnlineOrder.Application.Services
             _stockRepository = stockRepository;
             _emailService = emailService;
             _permissionService = permissionService;
+            _transactionManager = transactionManager;
         }
 
         private async Task<string?> ResolveShippingAddressAsync(int customerId, string? requestedAddress)
@@ -438,13 +442,16 @@ namespace ErpOnlineOrder.Application.Services
             var warehouses = (await _warehouseRepository.GetAllAsync()).ToList();
             if (warehouses.Count == 0) return null;
 
+            var productIds = order.Order_Details.Where(x => !x.Is_deleted).Select(x => x.Product_id).ToList();
+
             foreach (var warehouse in warehouses)
             {
+                var stocks = await _stockRepository.GetByWarehouseAndProductsAsync(warehouse.Id, productIds);
+                var stockDict = stocks.ToDictionary(s => s.Product_id, s => s);
                 var enoughStock = true;
                 foreach (var detail in order.Order_Details.Where(x => !x.Is_deleted))
                 {
-                    var stock = await _stockRepository.GetByWarehouseAndProductAsync(warehouse.Id, detail.Product_id);
-                    if (stock == null || stock.Quantity < detail.Quantity)
+                    if (!stockDict.TryGetValue(detail.Product_id, out var stock) || stock.Quantity < detail.Quantity)
                     {
                         enoughStock = false;
                         break;
@@ -489,10 +496,13 @@ namespace ErpOnlineOrder.Application.Services
                 Warehouse_Export_Details = new List<Warehouse_export_detail>()
             };
 
+            var productIds = order.Order_Details.Where(d => !d.Is_deleted).Select(d => d.Product_id).ToList();
+            var stocks = await _stockRepository.GetByWarehouseAndProductsAsync(warehouseId, productIds);
+            var stockDict = stocks.ToDictionary(s => s.Product_id, s => s);
+
             foreach (var od in order.Order_Details.Where(d => !d.Is_deleted))
             {
-                var stock = await _stockRepository.GetByWarehouseAndProductAsync(warehouseId, od.Product_id);
-                if (stock == null || stock.Quantity < od.Quantity)
+                if (!stockDict.TryGetValue(od.Product_id, out var stock) || stock.Quantity < od.Quantity)
                 {
                     throw new Exception($"Tồn kho không đủ cho sản phẩm {od.Product_id}.");
                 }
@@ -663,82 +673,94 @@ namespace ErpOnlineOrder.Application.Services
 
             order.Total_amount = order.Order_Details.Sum(od => od.Quantity);
             order.Total_price = order.Order_Details.Sum(od => od.Total_price);
-
-            order.Order_status = "Exporting";
             order.Updated_by = dto.Updated_by;
             order.Updated_at = now;
 
-            ConfirmOrderResultDto result;
+            ConfirmOrderResultDto result = new ConfirmOrderResultDto { Success = true };
+
+            bool shouldCreateExport = false;
+
             if (remainingDetails.Count > 0)
             {
                 var childOrder = new Order
                 {
                     Order_code = $"ORD-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString()[..6].ToUpper()}",
+                    Parent_order_id = order.Id,
+                    Order_status = "Pending",
+                    Order_Details = remainingDetails,
                     Order_date = now,
                     Customer_id = order.Customer_id,
                     Shipping_address = order.Shipping_address,
-                    note = string.IsNullOrWhiteSpace(order.note)
-                        ? $"Đơn hàng con tách từ {order.Order_code}"
-                        : $"{order.note} | Đơn hàng con tách từ {order.Order_code}",
+                    note = $"Đơn hàng con tách từ {order.Order_code}",
                     Total_amount = remainingDetails.Sum(x => x.Quantity),
                     Total_price = remainingDetails.Sum(x => x.Total_price),
-                    Order_status = "Pending",
                     Created_by = dto.Updated_by,
                     Updated_by = dto.Updated_by,
                     Created_at = now,
                     Updated_at = now,
                     Is_deleted = false,
-                    Order_Details = remainingDetails
                 };
 
                 await _orderRepository.AddAsync(childOrder);
+                result.Is_split = true;
+                result.Child_order_id = childOrder.Id;
+                result.Child_order_code = childOrder.Order_code;
 
-                result = new ConfirmOrderResultDto
+                if (order.Is_auto_confirm)
                 {
-                    Success = true,
-                    Message = "Đã duyệt đơn và tách phần còn lại thành đơn hàng con.",
-                    Is_split = true,
-                    Child_order_id = childOrder.Id,
-                    Child_order_code = childOrder.Order_code
-                };
+                    order.Order_status = "Exporting";
+                    shouldCreateExport = true;
+                    result.Message = "Đã tách đơn và tự động đẩy phần có sẵn sang kho.";
+                }
+                else
+                {
+                    order.Order_status = "WaitingCustomer";
+                    shouldCreateExport = false;
+                    result.Message = "Đơn đã tách. Đang chờ khách hàng xác nhận đợt 1.";
+                }
             }
             else
             {
-                await _orderRepository.UpdateAsync(order);
-
-                result = new ConfirmOrderResultDto
-                {
-                    Success = true,
-                    Message = "Đã duyệt đơn hàng thành công.",
-                    Is_split = false
-                };
+                order.Order_status = "Exporting";
+                shouldCreateExport = true;
+                result.Message = "Đã duyệt toàn bộ đơn hàng.";
             }
 
-            Warehouse_export? export = null;
-            try
+            await _orderRepository.UpdateAsync(order);
+
+            if (shouldCreateExport)
             {
-                var warehouseId = await ResolveWarehouseForOrderAsync(order);
-                if (!warehouseId.HasValue)
+                try
                 {
-                    throw new Exception("Không đủ tồn kho ở bất kỳ kho nào để tạo phiếu xuất kho.");
+                    var warehouseId = await ResolveWarehouseForOrderAsync(order);
+                    if (warehouseId.HasValue)
+                    {
+                        var export = await CreateExportFromOrderAsync(order, warehouseId.Value, dto.Updated_by);
+                        result.Warehouse_export_id = export.Id;
+                        result.Warehouse_export_code = export.Warehouse_export_code;
+                        result.Message += $" Đã tạo phiếu xuất {export.Warehouse_export_code}.";
+
+                        try { await _emailService.SendWarehouseExportNotificationForStaffAndAdminAsync(export.Id); } catch { }
+                    }
+                    else
+                    {
+                        result.Message += " Cảnh báo: Không đủ tồn kho để tạo phiếu xuất.";
+                    }
                 }
-
-                export = await CreateExportFromOrderAsync(order, warehouseId.Value, dto.Updated_by);
-                result.Warehouse_export_id = export.Id;
-                result.Warehouse_export_code = export.Warehouse_export_code;
-
-                result.Message = $"{result.Message} Đã tạo phiếu xuất kho {export.Warehouse_export_code} và gửi cho bên vận chuyển.";
-
-                try { await _emailService.SendWarehouseExportNotificationForStaffAndAdminAsync(export.Id); } catch { }
-            }
-            catch (Exception ex)
-            {
-                result.Message = $"{result.Message} Cảnh báo: chưa tạo được luồng xuất kho tự động ({ex.Message}).";
+                catch (Exception ex)
+                {
+                    result.Message += $" Lỗi hệ thống khi tạo phiếu kho: {ex.Message}";
+                }
             }
 
             if (!string.Equals(dto.Notify_method, "download", StringComparison.OrdinalIgnoreCase))
             {
-                try { await _emailService.SendOrderConfirmedNotificationForCustomerAsync(order.Id); } catch { }
+                try 
+                { 
+                    // Bạn có thể cân nhắc viết thêm 1 hàm SendOrderWaitingConfirmation nếu order.Order_status == "WaitingCustomer"
+                    await _emailService.SendOrderConfirmedNotificationForCustomerAsync(order.Id); 
+                } 
+                catch { }
             }
 
             return result;

@@ -3,6 +3,7 @@ using ErpOnlineOrder.Application.DTOs.StockDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.Mappers;
 using ErpOnlineOrder.Application.Services;
+using ErpOnlineOrder.Application.DTOs;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErpOnlineOrder.WebAPI.Controllers
@@ -34,21 +35,21 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                     RecordPermissionEnricher.Enrich(dto, permissions, PermissionCodes.StockUpdate, PermissionCodes.StockDelete);
             }
 
-            return Ok(dtos);
+            return Ok(ApiResponse<object>.Ok(dtos));
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
             var stock = await _stockService.GetByIdAsync(id);
-            if (stock == null) return NotFound(new { message = "Không tìm thấy bản ghi tồn kho." });
+            if (stock == null) return NotFound(ApiResponse<object>.Fail("Không tìm thấy bản ghi tồn kho."));
 
             var dto = EntityMappers.ToStockDto(stock);
             var userId = TryGetCurrentUserId();
             if (userId.HasValue && userId.Value > 0)
                 await RecordPermissionEnricher.EnrichAsync(dto, userId.Value, _permissionService, PermissionCodes.StockUpdate, PermissionCodes.StockDelete);
 
-            return Ok(dto);
+            return Ok(ApiResponse<object>.Ok(dto));
         }
 
         [HttpPost]
@@ -58,30 +59,30 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             {
                 var stock = await _stockService.CreateAsync(dto, GetCurrentUserId());
                 var resultDto = EntityMappers.ToStockDto(stock);
-                return CreatedAtAction(nameof(GetById), new { id = resultDto.Id }, resultDto);
+                return CreatedAtAction(nameof(GetById), new { id = resultDto.Id }, ApiResponse<object>.Ok(resultDto));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateStockDto dto)
         {
-            if (id != dto.Id) return BadRequest(new { message = "ID trên URL không khớp với ID dữ liệu cập nhật tồn kho." });
+            if (id != dto.Id) return BadRequest(ApiResponse<object>.Fail("ID trên URL không khớp với ID dữ liệu cập nhật tồn kho."));
 
             try
             {
                 var result = await _stockService.UpdateQuantityAsync(id, dto.Quantity, GetCurrentUserId());
                 if (!result)
-                    return NotFound(new { message = "Không tìm thấy bản ghi tồn kho cần cập nhật." });
+                    return NotFound(ApiResponse<object>.Fail("Không tìm thấy bản ghi tồn kho cần cập nhật."));
 
-                return Ok(new { success = true, message = "Đã cập nhật tồn kho thành công." });
+                return Ok(ApiResponse<object>.Ok(null, "Đã cập nhật tồn kho thành công."));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
     }

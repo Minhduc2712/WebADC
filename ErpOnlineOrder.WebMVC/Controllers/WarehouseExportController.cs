@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs;
-using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Constants;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.WebMVC.Attributes;
@@ -15,7 +14,6 @@ namespace ErpOnlineOrder.WebMVC.Controllers
     public class WarehouseExportController : BaseController
     {
         private readonly IWarehouseExportApiClient _warehouseExportApiClient;
-        private readonly IWarehouseExportService _warehouseExportService;
         private readonly IInvoiceApiClient _invoiceApiClient;
         private readonly IWarehouseApiClient _warehouseApiClient;
         private readonly IPermissionApiClient _permissionApiClient;
@@ -23,23 +21,16 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         public WarehouseExportController(
             IWarehouseExportApiClient warehouseExportApiClient,
-            IWarehouseExportService warehouseExportService,
             IInvoiceApiClient invoiceApiClient,
             IWarehouseApiClient warehouseApiClient,
             IPermissionApiClient permissionApiClient,
             ILogger<WarehouseExportController> logger)
         {
             _warehouseExportApiClient = warehouseExportApiClient;
-            _warehouseExportService = warehouseExportService;
             _invoiceApiClient = invoiceApiClient;
             _warehouseApiClient = warehouseApiClient;
             _permissionApiClient = permissionApiClient;
             _logger = logger;
-        }
-
-        private int GetCurrentUserId()
-        {
-            return HttpContext.Session.GetInt32("UserId") ?? 0;
         }
 
         public async Task<IActionResult> Index(int page = 1, int pageSize = 20, string? status = null, string? search = null)
@@ -434,7 +425,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var bytes = await _warehouseExportService.ExportWarehouseExportsToExcelAsync(status);
+                var bytes = await _warehouseExportApiClient.ExportToExcelAsync(status);
                 if (bytes == null || bytes.Length == 0)
                 {
                     SetErrorMessage("Không có dữ liệu để xuất.");

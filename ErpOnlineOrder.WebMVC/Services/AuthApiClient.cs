@@ -5,91 +5,79 @@ using ErpOnlineOrder.WebMVC.Services.Interfaces;
 
 namespace ErpOnlineOrder.WebMVC.Services
 {
-    public class AuthApiClient : IAuthApiClient
+    public class AuthApiClient : BaseApiClient, IAuthApiClient
     {
-        private readonly HttpClient _httpClient;
-        private static readonly JsonSerializerOptions JsonOptions = new()
+        public AuthApiClient(IHttpClientFactory factory) : base(factory.CreateClient("ErpApi"))
         {
-            PropertyNameCaseInsensitive = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        };
-
-        public AuthApiClient(IHttpClientFactory httpClientFactory)
-        {
-            _httpClient = httpClientFactory.CreateClient("ErpApi");
         }
 
         public async Task<LoginResponseDto?> LoginAsync(LoginUserDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _httpClient.PostAsJsonAsync("auth/login", dto, JsonOptions, cancellationToken);
-            if (!response.IsSuccessStatusCode)
-                return null;
-
-            var wrapper = await response.Content.ReadFromJsonAsync<LoginApiResponse>(JsonOptions, cancellationToken);
-            return wrapper?.Success == true ? wrapper.User : null;
+            var (data, _) = await PostAsync<LoginUserDto, LoginResponseDto>("auth/login", dto, cancellationToken);
+            return data;
         }
 
         public async Task<(bool Success, string? ErrorMessage)> RegisterCustomerAsync(RegisterCustomerDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _httpClient.PostAsJsonAsync("auth/register-customer", dto, JsonOptions, cancellationToken);
-            if (!response.IsSuccessStatusCode)
-                return (false, await ReadErrorMessageAsync(response, cancellationToken));
-
-            var body = await response.Content.ReadFromJsonAsync<SuccessApiResponse>(JsonOptions, cancellationToken);
-            return body?.Success == true ? (true, null) : (false, "Không thể đăng ký tài khoản khách hàng. Dữ liệu đăng ký có thể chưa hợp lệ.");
+            return await PostWithoutReturnAsync("auth/register-customer", dto, cancellationToken);
         }
 
         public async Task<(bool Success, string? ErrorMessage)> FinalizeCustomerRegistrationAsync(FinalizeCustomerRegistrationDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _httpClient.PostAsJsonAsync("auth/register-customer-finalize", dto, JsonOptions, cancellationToken);
-            if (!response.IsSuccessStatusCode)
-                return (false, await ReadErrorMessageAsync(response, cancellationToken));
-
-            var body = await response.Content.ReadFromJsonAsync<SuccessApiResponse>(JsonOptions, cancellationToken);
-            return body?.Success == true ? (true, null) : (false, "Không thể hoàn tất đăng ký khách hàng.");
+            return await PostWithoutReturnAsync("auth/register-customer-finalize", dto, cancellationToken);
         }
 
         public async Task<(bool Success, string? ErrorMessage)> RegisterStaffAsync(RegisterStaffDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _httpClient.PostAsJsonAsync("auth/register-staff", dto, JsonOptions, cancellationToken);
-            if (!response.IsSuccessStatusCode)
-                return (false, await ReadErrorMessageAsync(response, cancellationToken));
-
-            var body = await response.Content.ReadFromJsonAsync<SuccessApiResponse>(JsonOptions, cancellationToken);
-            return body?.Success == true ? (true, null) : (false, "Không thể tạo tài khoản nhân viên. Dữ liệu đăng ký có thể chưa hợp lệ.");
+            return await PostWithoutReturnAsync("auth/register-staff", dto, cancellationToken);
         }
 
         public async Task<(bool Success, string? ErrorMessage)> ChangePasswordAsync(ChangePasswordDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _httpClient.PostAsJsonAsync("auth/change-password", dto, JsonOptions, cancellationToken);
-            if (!response.IsSuccessStatusCode)
-                return (false, await ReadErrorMessageAsync(response, cancellationToken));
-
-            var body = await response.Content.ReadFromJsonAsync<SuccessApiResponse>(JsonOptions, cancellationToken);
-            return body?.Success == true ? (true, null) : (false, "Không thể đổi mật khẩu. Vui lòng kiểm tra mật khẩu hiện tại và mật khẩu mới.");
+            return await PostWithoutReturnAsync("auth/change-password", dto, cancellationToken);
         }
 
-        private static async Task<string?> ReadErrorMessageAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+        public async Task<string?> GenerateTokenAsync(string username, CancellationToken cancellationToken = default)
         {
-            try
+            var response = await _httpClient.PostAsJsonAsync("auth/generate-token", new { Username = username }, _jsonOptions, cancellationToken);
+            if (response.IsSuccessStatusCode)
             {
-                var json = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);
-                if (json.TryGetProperty("message", out var msg))
-                    return msg.GetString();
+                var content = await response.Content.ReadAsStringAsync(cancellationToken);
+                var json = JsonDocument.Parse(content);
+                if (json.RootElement.TryGetProperty("success", out var success) && success.GetBoolean() && json.RootElement.TryGetProperty("token", out var token))
+                {
+                    return token.GetString();
+                }
             }
-            catch { /* ignore */ }
-            return response.ReasonPhrase ?? "Lỗi không xác định.";
+            return null;
         }
 
-        private class LoginApiResponse
+        public async Task<LoginResponseDto?> AutoLoginAsync(string username, string token, CancellationToken cancellationToken = default)
         {
-            public bool Success { get; set; }
-            public LoginResponseDto? User { get; set; }
+            var response = await _httpClient.PostAsJsonAsync("auth/auto-login", new { Username = username, Token = token }, _jsonOptions, cancellationToken);
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync(cancellationToken);
+                var json = JsonDocument.Parse(content);
+                if (json.RootElement.TryGetProperty("success", out var success) && success.GetBoolean() && json.RootElement.TryGetProperty("user", out var userEl))
+                {
+                    return JsonSerializer.Deserialize<LoginResponseDto>(userEl.GetRawText(), _jsonOptions);
+                }
+            }
+            return null;
         }
 
-        private class SuccessApiResponse
+        public async Task<bool> CheckEmailExistsAsync(string email, CancellationToken cancellationToken = default)
         {
-            public bool Success { get; set; }
+            var response = await _httpClient.GetAsync($"auth/check-email?email={Uri.EscapeDataString(email)}", cancellationToken);
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync(cancellationToken);
+                var json = JsonDocument.Parse(content);
+                if (json.RootElement.TryGetProperty("exists", out var exists))
+                    return exists.GetBoolean();
+            }
+            return false;
         }
     }
 }

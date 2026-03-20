@@ -1,18 +1,36 @@
 using Microsoft.AspNetCore.Mvc;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.DTOs.AuthDTOs;
+using ErpOnlineOrder.Application.Interfaces.Repositories;
 
 namespace ErpOnlineOrder.WebAPI.Controllers
 {
+    public class GenerateTokenRequest
+    {
+        public string Username { get; set; } = string.Empty;
+    }
+
+    public class AutoLoginRequest
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Token { get; set; } = string.Empty;
+    }
+
     [ApiController]
     [Route("api/[controller]")]
     public class AuthController : ApiController
     {
         private readonly IAuthService _authService;
+        private readonly IRememberMeService _rememberMeService;
+        private readonly IUserRepository _userRepository;
+        private readonly IPermissionService _permissionService;
 
-        public AuthController(IAuthService authService)
+        public AuthController(IAuthService authService, IRememberMeService rememberMeService, IUserRepository userRepository, IPermissionService permissionService)
         {
             _authService = authService;
+            _rememberMeService = rememberMeService;
+            _userRepository = userRepository;
+            _permissionService = permissionService;
         }
 
         [HttpGet("check-permissions/{userId}")]
@@ -154,6 +172,55 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             }
         }
 
+        [HttpPost("generate-token")]
+        public async Task<IActionResult> GenerateToken([FromBody] GenerateTokenRequest request)
+        {
+            try
+            {
+                var user = await _userRepository.GetByUsernameBasicAsync(request.Username);
+                if (user == null) return BadRequest(new { message = "User not found" });
+                var token = _rememberMeService.GenerateToken(user);
+                return Ok(new { success = true, token = token });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPost("auto-login")]
+        public async Task<IActionResult> AutoLogin([FromBody] AutoLoginRequest request)
+        {
+            try
+            {
+                var isValid = await _rememberMeService.ValidateTokenAsync(request.Username, request.Token);
+                if (!isValid) return BadRequest(new { message = "Invalid token" });
+
+                var user = await _userRepository.GetByUsernameAsync(request.Username);
+                if (user == null || !user.Is_active || user.Is_deleted)
+                    return BadRequest(new { message = "User invalid" });
+
+                var response = new LoginResponseDto
+                {
+                    UserId = user.Id,
+                    Username = user.Username,
+                    Email = user.Email,
+                    FullName = user.Staff?.Full_name ?? user.Customer?.Full_name ?? user.Username,
+                    UserType = user.Staff != null ? "Staff" : (user.Customer != null ? "Customer" : "Admin"),
+                    StaffCode = user.Staff?.Staff_code,
+                    CustomerCode = user.Customer?.Customer_code,
+                    Roles = user.User_roles?.Where(ur => !ur.Is_deleted && ur.Role != null && !ur.Role.Is_deleted).Select(ur => ur.Role!.Role_name).ToList() ?? new List<string>(),
+                    Permissions = (await _permissionService.GetUserPermissionsAsync(user.Id)).ToList()
+                };
+
+                return Ok(new { success = true, user = response });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         [HttpPost("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto model)
         {
@@ -179,6 +246,20 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             catch (Exception ex)
             {
                 return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("check-email")]
+        public async Task<IActionResult> CheckEmail([FromQuery] string email)
+        {
+            try
+            {
+                var exists = await _userRepository.ExistsByEmailAsync(email);
+                return Ok(new { exists });
+            }
+            catch (Exception)
+            {
+                return Ok(new { exists = false });
             }
         }
 

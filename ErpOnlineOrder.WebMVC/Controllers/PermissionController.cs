@@ -23,8 +23,6 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             _logger = logger;
         }
 
-        private int GetCurrentUserId() => HttpContext.Session.GetInt32("UserId") ?? 0;
-
         #region Danh sách Permission
         [HttpGet]
         [RequirePermission(PermissionCodes.PermissionView)]

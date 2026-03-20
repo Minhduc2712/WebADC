@@ -4,118 +4,83 @@ using ErpOnlineOrder.WebMVC.Services.Interfaces;
 
 namespace ErpOnlineOrder.WebMVC.Services
 {
-    public class PermissionApiClient : IPermissionApiClient
+    public class PermissionApiClient : BaseApiClient, IPermissionApiClient
     {
-        private readonly HttpClient _http;
-
-        public PermissionApiClient(IHttpClientFactory factory)
+        public PermissionApiClient(IHttpClientFactory factory) : base(factory.CreateClient("ErpApi"))
         {
-            _http = factory.CreateClient("ErpApi");
         }
 
         public async Task<IEnumerable<string>> GetUserPermissionCodesAsync(int userId, CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync($"permission/user/{userId}", cancellationToken);
-            if (!response.IsSuccessStatusCode) return Array.Empty<string>();
-            var dto = await response.Content.ReadFromJsonAsync<UserPermissionDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            var dto = await GetAsync<UserPermissionDto>($"permission/user/{userId}", cancellationToken);
             return (IEnumerable<string>)(dto?.Permissions ?? new List<string>());
         }
 
         public async Task<IEnumerable<RoleDto>> GetAllRolesAsync(CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync("permission/roles", cancellationToken);
-            if (!response.IsSuccessStatusCode) return Array.Empty<RoleDto>();
-            var list = await response.Content.ReadFromJsonAsync<List<RoleDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
-            return list ?? new List<RoleDto>();
+            return await GetAsync<IEnumerable<RoleDto>>("permission/roles", cancellationToken) ?? Array.Empty<RoleDto>();
         }
 
         public async Task<UserFullPermissionDto?> GetUserFullPermissionsAsync(int userId, CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync($"permission/user/{userId}/full", cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
-            return await response.Content.ReadFromJsonAsync<UserFullPermissionDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return await GetAsync<UserFullPermissionDto>($"permission/user/{userId}/full", cancellationToken);
         }
 
         public async Task<IEnumerable<PermissionDto>> GetAllPermissionsAsync(CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync("permission/permissions", cancellationToken);
-            if (!response.IsSuccessStatusCode) return Array.Empty<PermissionDto>();
-            var list = await response.Content.ReadFromJsonAsync<List<PermissionDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
-            return list ?? new List<PermissionDto>();
+            return await GetAsync<IEnumerable<PermissionDto>>("permission/permissions", cancellationToken) ?? Array.Empty<PermissionDto>();
         }
 
         public async Task<IEnumerable<PermissionDto>> GetPermissionsTreeAsync(CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync("permission/permissions/tree", cancellationToken);
-            if (!response.IsSuccessStatusCode) return Array.Empty<PermissionDto>();
-            var list = await response.Content.ReadFromJsonAsync<List<PermissionDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
-            return list ?? new List<PermissionDto>();
+            return await GetAsync<IEnumerable<PermissionDto>>("permission/permissions/tree", cancellationToken) ?? Array.Empty<PermissionDto>();
         }
 
         public async Task<IEnumerable<PermissionDto>> GetSpecialPermissionsAsync(CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync("permission/permissions/special", cancellationToken);
-            if (!response.IsSuccessStatusCode) return Array.Empty<PermissionDto>();
-            var list = await response.Content.ReadFromJsonAsync<List<PermissionDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
-            return list ?? new List<PermissionDto>();
+            return await GetAsync<IEnumerable<PermissionDto>>("permission/permissions/special", cancellationToken) ?? Array.Empty<PermissionDto>();
         }
 
         public async Task<(bool Success, string? Error)> AssignPermissionsToUserAsync(AssignPermissionsToUserDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PostAsJsonAsync("permission/user/assign-permissions", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await PostWithoutReturnAsync("permission/user/assign-permissions", dto, cancellationToken);
         }
 
         public async Task<RolePermissionDto?> GetRolePermissionsAsync(int roleId, CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync($"permission/roles/{roleId}/permissions", cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
-            return await response.Content.ReadFromJsonAsync<RolePermissionDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return await GetAsync<RolePermissionDto>($"permission/roles/{roleId}/permissions", cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> CreateRoleAsync(CreateRoleDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PostAsJsonAsync("permission/roles", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await PostWithoutReturnAsync("permission/roles", dto, cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> UpdateRoleAsync(int id, UpdateRoleDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PutAsJsonAsync($"permission/roles/{id}", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await PutAsync($"permission/roles/{id}", dto, cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> DeleteRoleAsync(int id, CancellationToken cancellationToken = default)
         {
-            var response = await _http.DeleteAsync($"permission/roles/{id}", cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await DeleteAsync($"permission/roles/{id}", cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> AssignPermissionsToRoleAsync(int roleId, AssignPermissionsToRoleDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PostAsJsonAsync($"permission/roles/{roleId}/permissions", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await PostWithoutReturnAsync($"permission/roles/{roleId}/permissions", dto, cancellationToken);
         }
 
         public async Task<PermissionDto?> GetPermissionByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync($"permission/permissions/{id}", cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
-            return await response.Content.ReadFromJsonAsync<PermissionDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return await GetAsync<PermissionDto>($"permission/permissions/{id}", cancellationToken);
         }
 
         public async Task<bool> IsPermissionCodeExistsAsync(string code, int? excludeId = null, CancellationToken cancellationToken = default)
         {
             var url = "permission/permissions/check?code=" + Uri.EscapeDataString(code);
             if (excludeId.HasValue) url += "&excludeId=" + excludeId.Value;
-            var response = await _http.GetAsync(url, cancellationToken);
-            if (!response.IsSuccessStatusCode) return false;
-            var obj = await response.Content.ReadFromJsonAsync<CheckExistsResponse>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            var obj = await GetAsync<CheckExistsResponse>(url, cancellationToken);
             return obj?.exists ?? false;
         }
 
@@ -123,30 +88,22 @@ namespace ErpOnlineOrder.WebMVC.Services
 
         public async Task<(bool Success, string? Error)> CreatePermissionAsync(string permissionCode, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PostAsJsonAsync("permission/permissions", new { Permission_code = permissionCode }, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await PostWithoutReturnAsync("permission/permissions", new { Permission_code = permissionCode }, cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> UpdatePermissionAsync(int id, string permissionCode, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PutAsJsonAsync($"permission/permissions/{id}", new { Permission_code = permissionCode }, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await PutAsync($"permission/permissions/{id}", new { Permission_code = permissionCode }, cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> DeletePermissionAsync(int id, CancellationToken cancellationToken = default)
         {
-            var response = await _http.DeleteAsync($"permission/permissions/{id}", cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await DeleteAsync($"permission/permissions/{id}", cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> RemoveAllDirectPermissionsFromUserAsync(int userId, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PostAsync($"permission/user/{userId}/remove-all-direct", null, cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await PostWithoutReturnAsync($"permission/user/{userId}/remove-all-direct", cancellationToken);
         }
     }
 }

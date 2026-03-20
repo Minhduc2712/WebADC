@@ -1,6 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using ErpOnlineOrder.Application.Interfaces.Services;
-using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.DTOs.OrderDTOs;
 using ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs;
@@ -18,46 +16,39 @@ namespace ErpOnlineOrder.WebMVC.Controllers
     [RequireAuth]
     public class ShopController : BaseController
     {
-        private readonly IProductService _productService;
-        private readonly IOrderService _orderService;
-        private readonly IWarehouseExportService _warehouseExportService;
-        private readonly IInvoiceService _invoiceService;
-        private readonly ICustomerRepository _customerRepository;
-        private readonly IOrganizationService _organizationService;
-        private readonly ICustomerService _customerService;
+        private readonly IProductApiClient _productApiClient;
+        private readonly IOrderApiClient _orderApiClient;
+        private readonly IWarehouseExportApiClient _warehouseExportApiClient;
+        private readonly IInvoiceApiClient _invoiceApiClient;
+        private readonly ICustomerApiClient _customerApiClient;
         private readonly IAuthApiClient _authApiClient;
         private readonly ILogger<ShopController> _logger;
 
         public ShopController(
-            IProductService productService,
-            IOrderService orderService,
-            IWarehouseExportService warehouseExportService,
-            IInvoiceService invoiceService,
-            ICustomerRepository customerRepository,
-            IOrganizationService organizationService,
-            ICustomerService customerService,
+            IProductApiClient productApiClient,
+            IOrderApiClient orderApiClient,
+            IWarehouseExportApiClient warehouseExportApiClient,
+            IInvoiceApiClient invoiceApiClient,
+            ICustomerApiClient customerApiClient,
             IAuthApiClient authApiClient,
             ILogger<ShopController> logger)
         {
-            _productService = productService;
-            _orderService = orderService;
-            _warehouseExportService = warehouseExportService;
-            _invoiceService = invoiceService;
-            _customerRepository = customerRepository;
-            _organizationService = organizationService;
-            _customerService = customerService;
+            _productApiClient = productApiClient;
+            _orderApiClient = orderApiClient;
+            _warehouseExportApiClient = warehouseExportApiClient;
+            _invoiceApiClient = invoiceApiClient;
+            _customerApiClient = customerApiClient;
             _authApiClient = authApiClient;
             _logger = logger;
         }
-
-        private int GetCurrentUserId() => HttpContext.Session.GetInt32("UserId") ?? 0;
 
         private async Task<int?> GetCurrentCustomerIdAsync()
         {
             if (!HttpContext.Session.IsCustomer()) return null;
             var userId = GetCurrentUserId();
             if (userId == 0) return null;
-            var customer = await _customerRepository.GetByUserIdAsync(userId);
+            // (Cần bổ sung endpoint bên WebAPI)
+            var customer = await _customerApiClient.GetByUserIdAsync(userId);
             return customer?.Id;
         }
 
@@ -80,14 +71,14 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     Sort = sort
                 };
 
-                var paged = await _productService.GetProductsForShopPagedAsync(customerId, request);
-                var categories = (await _productService.GetCategoriesForShopAsync(customerId)).ToList();
+                var paged = await _productApiClient.GetProductsForShopPagedAsync(customerId, request);
+                var categories = await _productApiClient.GetCategoriesForShopAsync(customerId);
 
                 ViewBag.Search = search;
                 ViewBag.Category = category;
                 ViewBag.Sort = sort;
                 ViewBag.PageSize = pageSize;
-                ViewBag.Categories = categories;
+                ViewData["Categories"] = categories.ToList();
                 ViewBag.TotalCount = paged.TotalCount;
                 ViewBag.PaginationAction = "Products";
 
@@ -105,19 +96,19 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             try
             {
                 var customerId = await GetCurrentCustomerIdAsync();
-                var product = await _productService.GetByIdAsync(id);
+                var product = await _productApiClient.GetByIdAsync(id);
                 if (product == null)
                     return NotFound();
 
                 // Khách hàng chỉ xem được sản phẩm đã được gán
                 if (customerId.HasValue)
                 {
-                    var hasAccess = await _productService.IsProductAssignedToCustomerAsync(id, customerId.Value);
+                    var hasAccess = await _productApiClient.IsProductAssignedToCustomerAsync(id, customerId.Value);
                     if (!hasAccess)
                         return NotFound();
                 }
 
-                var relatedProducts = await _productService.GetRelatedProductsForShopAsync(id, product.Categories, customerId, 4);
+                var relatedProducts = await _productApiClient.GetRelatedProductsForShopAsync(id, customerId, 4);
                 ViewData["RelatedProducts"] = relatedProducts.ToList();
 
                 return View(product);
@@ -140,7 +131,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             var customerId = await GetCurrentCustomerIdAsync();
             if (customerId.HasValue)
             {
-                var org = await _organizationService.GetByCustomerIdAsync(customerId.Value);
+                var org = await _customerApiClient.GetOrganizationByCustomerIdAsync(customerId.Value);
                 organizationAddress = org?.Recipient_address;
                 if (string.IsNullOrWhiteSpace(organizationAddress))
                     organizationAddress = org?.Address;
@@ -161,7 +152,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
             try
             {
-                var customer = await _customerRepository.GetByUserIdAsync(userId);
+                var customer = await _customerApiClient.GetByUserIdAsync(userId);
                 if (customer == null)
                 {
                     ViewData["ErrorMessage"] = "Không tìm thấy thông tin khách hàng.";
@@ -169,7 +160,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 }
 
                 var request = new OrderFilterRequest { Page = page, PageSize = pageSize, Status = status };
-                var paged = await _orderService.GetOrdersByCustomerPagedAsync(customer.Id, request);
+                var paged = await _orderApiClient.GetOrdersByCustomerPagedAsync(customer.Id, request);
                 ViewBag.Status = status;
                 ViewBag.PageSize = pageSize;
                 ViewBag.PaginationAction = "Orders";
@@ -183,6 +174,30 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             }
         }
 
+        /// <summary>Chi tiết và theo dõi trạng thái đơn hàng.</summary>
+        [HttpGet]
+        public async Task<IActionResult> OrderDetail(int id)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == 0)
+                return RedirectToAction("Login", "Auth");
+
+            var customer = await _customerApiClient.GetByUserIdAsync(userId);
+            if (customer == null)
+                return NotFound();
+
+            var order = await _orderApiClient.GetByIdAsync(id);
+            if (order == null)
+                return NotFound();
+
+            // Đảm bảo đơn hàng thuộc về khách hàng này
+            var myOrders = await _orderApiClient.GetOrdersByCustomerAsync(customer.Id);
+            if (!myOrders.Any(o => o.Id == id))
+                return Forbid();
+
+            return View(order);
+        }
+
         /// <summary>In đơn đặt hàng theo mẫu. Chỉ khách hàng sở hữu đơn mới in được.</summary>
         [HttpGet]
         public async Task<IActionResult> PrintOrder(int id)
@@ -191,15 +206,15 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             if (userId == 0)
                 return RedirectToAction("Login", "Auth");
 
-            var customer = await _customerRepository.GetByUserIdAsync(userId);
+            var customer = await _customerApiClient.GetByUserIdAsync(userId);
             if (customer == null)
                 return NotFound();
 
-            var order = await _orderService.GetByIdAsync(id);
+            var order = await _orderApiClient.GetByIdAsync(id);
             if (order == null)
                 return NotFound();
 
-            var myOrders = await _orderService.GetOrdersByCustomerAsync(customer.Id);
+            var myOrders = await _orderApiClient.GetOrdersByCustomerAsync(customer.Id);
             if (!myOrders.Any(o => o.Id == id))
                 return Forbid();
 
@@ -217,7 +232,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return Json(new { success = false, message = "Vui lòng đăng nhập để đặt hàng." });
                 }
 
-                var customer = await _customerRepository.GetByUserIdAsync(userId);
+                var customer = await _customerApiClient.GetByUserIdAsync(userId);
                 if (customer == null)
                 {
                     return Json(new { success = false, message = "Không tìm thấy thông tin khách hàng." });
@@ -243,7 +258,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     }).ToList()
                 };
 
-                var result = await _orderService.CreateOrderWithoutValidationAsync(createOrderDto);
+                var result = await _orderApiClient.CreateOrderCustomerAsync(createOrderDto);
 
                 if (result.Success)
                 {
@@ -272,20 +287,20 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return Json(new { success = false, message = "Vui lòng đăng nhập." });
                 }
 
-                var customer = await _customerRepository.GetByUserIdAsync(userId);
+                var customer = await _customerApiClient.GetByUserIdAsync(userId);
                 if (customer == null)
                 {
                     return Json(new { success = false, message = "Không tìm thấy thông tin khách hàng." });
                 }
 
                 // Verify order belongs to this customer
-                var order = await _orderService.GetByIdAsync(id);
+                var order = await _orderApiClient.GetByIdAsync(id);
                 if (order == null)
                 {
                     return Json(new { success = false, message = "Không tìm thấy đơn hàng." });
                 }
 
-                var result = await _orderService.CancelOrderAsync(new CancelOrderDto { OrderId = id, Updated_by = userId });
+                var result = await _orderApiClient.CancelOrderAsync(id);
                 if (result)
                 {
                     return Json(new { success = true, message = "Hủy đơn hàng thành công." });
@@ -306,7 +321,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             if (userId == 0)
                 return RedirectToAction("Login", "Auth");
 
-            var customer = await _customerRepository.GetByUserIdAsync(userId);
+            var customer = await _customerApiClient.GetByUserIdAsync(userId);
             if (customer == null)
             {
                 ViewData["ErrorMessage"] = "Không tìm thấy thông tin khách hàng.";
@@ -316,7 +331,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             try
             {
                 var request = new InvoiceFilterRequest { Page = page, PageSize = pageSize, Status = status };
-                var paged = await _invoiceService.GetByCustomerIdPagedAsync(customer.Id, request);
+                var paged = await _invoiceApiClient.GetByCustomerIdPagedAsync(customer.Id, request);
                 ViewBag.Status = status;
                 ViewBag.PageSize = pageSize;
                 ViewBag.PaginationAction = "Invoices";
@@ -337,7 +352,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             if (userId == 0)
                 return RedirectToAction("Login", "Auth");
 
-            var customer = await _customerRepository.GetByUserIdAsync(userId);
+            var customer = await _customerApiClient.GetByUserIdAsync(userId);
             if (customer == null)
             {
                 ViewData["ErrorMessage"] = "Không tìm thấy thông tin khách hàng.";
@@ -347,7 +362,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             try
             {
                 var request = new WarehouseExportFilterRequest { Page = page, PageSize = pageSize, Status = status };
-                var paged = await _warehouseExportService.GetByCustomerIdPagedAsync(customer.Id, request);
+                var paged = await _warehouseExportApiClient.GetByCustomerIdPagedAsync(customer.Id, request);
                 ViewBag.Status = status;
                 ViewBag.PageSize = pageSize;
                 ViewBag.PaginationAction = "Exports";
@@ -369,11 +384,11 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             if (userId == 0)
                 return RedirectToAction("Login", "Auth");
 
-            var customer = await _customerRepository.GetByUserIdAsync(userId);
+            var customer = await _customerApiClient.GetByUserIdAsync(userId);
             if (customer == null)
                 return NotFound();
 
-            var export = await _warehouseExportService.GetByIdAsync(exportId);
+            var export = await _warehouseExportApiClient.GetByIdAsync(exportId);
             if (export == null)
                 return NotFound();
 
@@ -392,7 +407,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 return RedirectToAction(nameof(Exports));
             }
 
-            var invoice = await _invoiceService.GetByIdAsync(export.Invoice_id.Value);
+            var invoice = await _invoiceApiClient.GetByIdAsync(export.Invoice_id.Value);
             if (invoice == null)
             {
                 TempData["Error"] = "Không tìm thấy hóa đơn liên quan.";
@@ -424,11 +439,11 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             if (userId == 0)
                 return RedirectToAction("Login", "Auth");
 
-            var customer = await _customerRepository.GetByUserIdAsync(userId);
+            var customer = await _customerApiClient.GetByUserIdAsync(userId);
             if (customer == null)
                 return NotFound();
 
-            var export = await _warehouseExportService.GetByIdAsync(exportId);
+            var export = await _warehouseExportApiClient.GetByIdAsync(exportId);
             if (export == null)
                 return NotFound();
 
@@ -441,7 +456,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 return RedirectToAction(nameof(Exports));
             }
 
-            var invoice = await _invoiceService.GetByIdAsync(export.Invoice_id.Value);
+            var invoice = await _invoiceApiClient.GetByIdAsync(export.Invoice_id.Value);
             if (invoice == null)
             {
                 TempData["Error"] = "Không tìm thấy hóa đơn.";
@@ -482,7 +497,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
             try
             {
-                var result = await _invoiceService.SplitInvoiceAsync(dto, userId);
+                var result = await _invoiceApiClient.SplitAsync(dto);
                 if (result?.Success == true)
                 {
                     TempData["Success"] = result.Message;
@@ -557,7 +572,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             if (!customerId.HasValue)
                 return RedirectToAction("Login", "Auth");
 
-            var org = await _organizationService.GetByCustomerIdAsync(customerId.Value);
+            var org = await _customerApiClient.GetOrganizationByCustomerIdAsync(customerId.Value);
             var model = new UpdateOrganizationByCustomerDto
             {
                 Customer_id = customerId.Value,
@@ -590,7 +605,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
             try
             {
-                var result = await _customerService.UpdateOrganizationAsync(model);
+                var result = await _customerApiClient.UpdateOrganizationAsync(model);
                 if (result)
                 {
                     SetSuccessMessage("Cập nhật thông tin đơn vị thành công.");

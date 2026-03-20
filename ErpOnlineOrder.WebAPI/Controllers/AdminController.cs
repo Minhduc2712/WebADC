@@ -3,6 +3,7 @@ using ErpOnlineOrder.Application.DTOs.AdminDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.WebAPI.Attributes;
+using ErpOnlineOrder.Application.DTOs;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ErpOnlineOrder.WebAPI.Controllers
@@ -26,7 +27,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         public async Task<IActionResult> GetAllStaff()
         {
             var staff = await _adminService.GetAllStaffAsync(TryGetCurrentUserId());
-            return Ok(staff);
+            return Ok(ApiResponse<object>.Ok(staff));
         }
 
         [HttpGet("staff/paged")]
@@ -34,7 +35,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         public async Task<IActionResult> GetStaffPaged([FromQuery] StaffFilterRequest request)
         {
             var result = await _adminService.GetStaffPagedAsync(request, TryGetCurrentUserId());
-            return Ok(result);
+            return Ok(ApiResponse<object>.Ok(result));
         }
         [HttpGet("staff/{userId}")]
         [RequirePermission(PermissionCodes.StaffView)]
@@ -43,9 +44,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var staff = await _adminService.GetStaffByIdAsync(userId, TryGetCurrentUserId());
             if (staff == null)
             {
-                return NotFound(new { message = "Không tìm thấy nhân viên." });
+                return NotFound(ApiResponse<object>.Fail("Không tìm thấy nhân viên."));
             }
-            return Ok(staff);
+            return Ok(ApiResponse<object>.Ok(staff));
         }
         [HttpPost("staff")]
         [RequirePermission(PermissionCodes.StaffCreate)]
@@ -56,13 +57,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _adminService.CreateStaffAccountAsync(dto, GetCurrentUserId());
                 if (result == null)
                 {
-                    return BadRequest(new { message = "Không thể tạo tài khoản nhân viên. Tên đăng nhập, email hoặc mã nhân viên có thể đã tồn tại." });
+                    return BadRequest(ApiResponse<object>.Fail("Không thể tạo tài khoản nhân viên. Tên đăng nhập, email hoặc mã nhân viên có thể đã tồn tại."));
                 }
-                return CreatedAtAction(nameof(GetStaffById), new { userId = result.User_id }, result);
+                return CreatedAtAction(nameof(GetStaffById), new { userId = result.User_id }, ApiResponse<object>.Ok(result));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
         [HttpPut("staff/{userId}")]
@@ -71,7 +72,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             if (userId != dto.User_id)
             {
-                return BadRequest(new { message = "User ID trên URL không khớp với dữ liệu cập nhật nhân viên." });
+                return BadRequest(ApiResponse<object>.Fail("User ID trên URL không khớp với dữ liệu cập nhật nhân viên."));
             }
 
             try
@@ -79,13 +80,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 var result = await _adminService.UpdateStaffAccountAsync(dto, GetCurrentUserId());
                 if (!result)
                 {
-                    return NotFound(new { message = "Không tìm thấy nhân viên cần cập nhật." });
+                    return NotFound(ApiResponse<object>.Fail("Không tìm thấy nhân viên cần cập nhật."));
                 }
-                return Ok(new { success = true, message = "Cập nhật thành công" });
+                return Ok(ApiResponse<object>.Ok(null, "Cập nhật thành công"));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
         [HttpDelete("staff/{userId}")]
@@ -95,9 +96,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _adminService.DeleteStaffAccountAsync(userId, GetCurrentUserId());
             if (!result)
             {
-                return NotFound(new { message = "Không tìm thấy nhân viên cần xóa." });
+                return NotFound(ApiResponse<object>.Fail("Không tìm thấy nhân viên cần xóa."));
             }
-            return Ok(new { success = true, message = "Xóa thành công" });
+            return Ok(ApiResponse<object>.Ok(null, "Xóa thành công"));
         }
         [HttpPatch("staff/{userId}/status")]
         [RequirePermission(PermissionCodes.StaffUpdate)]
@@ -106,9 +107,9 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _adminService.ToggleStaffStatusAsync(userId, isActive, GetCurrentUserId());
             if (!result)
             {
-                return NotFound(new { message = "Không tìm thấy nhân viên để cập nhật trạng thái hoạt động." });
+                return NotFound(ApiResponse<object>.Fail("Không tìm thấy nhân viên để cập nhật trạng thái hoạt động."));
             }
-            return Ok(new { success = true, message = isActive ? "Đã kích hoạt tài khoản" : "Đã vô hiệu hóa tài khoản" });
+            return Ok(ApiResponse<object>.Ok(null, isActive ? "Đã kích hoạt tài khoản" : "Đã vô hiệu hóa tài khoản"));
         }
         [HttpPost("staff/{userId}/reset-password")]
         [RequirePermission(PermissionCodes.StaffUpdate)]
@@ -116,15 +117,15 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             if (userId != dto.User_id)
             {
-                return BadRequest(new { message = "User ID trên URL không khớp với dữ liệu đặt lại mật khẩu." });
+                return BadRequest(ApiResponse<object>.Fail("User ID trên URL không khớp với dữ liệu đặt lại mật khẩu."));
             }
 
             var result = await _adminService.ResetPasswordAsync(dto, GetCurrentUserId());
             if (!result)
             {
-                return NotFound(new { message = "Không tìm thấy nhân viên để đặt lại mật khẩu." });
+                return NotFound(ApiResponse<object>.Fail("Không tìm thấy nhân viên để đặt lại mật khẩu."));
             }
-            return Ok(new { success = true, message = "Đã reset mật khẩu thành công" });
+            return Ok(ApiResponse<object>.Ok(null, "Đã reset mật khẩu thành công"));
         }
 
         #endregion
@@ -134,7 +135,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         public async Task<IActionResult> GetAllRoles()
         {
             var roles = await _permissionService.GetAllRolesAsync();
-            return Ok(roles);
+            return Ok(ApiResponse<object>.Ok(roles));
         }
 
         #endregion

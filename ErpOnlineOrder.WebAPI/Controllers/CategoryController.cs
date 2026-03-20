@@ -21,15 +21,15 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         public async Task<IActionResult> GetCategories()
         {
             var categories = await _categoryService.GetAllAsync();
-            return Ok(categories.Select(EntityMappers.ToCategoryDto));
+            return Ok(ApiResponse<object>.Ok(categories.Select(EntityMappers.ToCategoryDto)));
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetCategory(int id)
         {
             var category = await _categoryService.GetByIdAsync(id);
-            if (category == null) return NotFound();
-            return Ok(EntityMappers.ToCategoryDto(category));
+            if (category == null) return NotFound(ApiResponse<object>.Fail("Không tìm thấy danh mục."));
+            return Ok(ApiResponse<object>.Ok(EntityMappers.ToCategoryDto(category)));
         }
 
         [HttpPost]
@@ -38,27 +38,27 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var created = await _categoryService.CreateCategoryAsync(dto, GetCurrentUserId());
-                return Ok(EntityMappers.ToCategoryDto(created));
+                return Ok(ApiResponse<object>.Ok(EntityMappers.ToCategoryDto(created)));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateCategory(int id, [FromBody] UpdateCategoryDto dto)
         {
-            if (id != dto.Id) return BadRequest();
+            if (id != dto.Id) return BadRequest(ApiResponse<object>.Fail("ID không khớp."));
 
             try
             {
                 var result = await _categoryService.UpdateCategoryAsync(id, dto, GetCurrentUserId());
-                return Ok(new { success = result });
+                return Ok(ApiResponse<object>.Ok(new { success = result }));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
@@ -69,11 +69,11 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var result = await _categoryService.DeleteCategoryAsync(id);
-                return Ok(new { success = result });
+                return Ok(ApiResponse<object>.Ok(new { success = result }));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
     }

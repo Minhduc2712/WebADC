@@ -4,68 +4,45 @@ using ErpOnlineOrder.WebMVC.Services.Interfaces;
 
 namespace ErpOnlineOrder.WebMVC.Services
 {
-    public class WarehouseApiClient : IWarehouseApiClient
+    public class WarehouseApiClient : BaseApiClient, IWarehouseApiClient
     {
-        private readonly HttpClient _http;
-
-        public WarehouseApiClient(IHttpClientFactory factory)
+        public WarehouseApiClient(IHttpClientFactory factory) : base(factory.CreateClient("ErpApi"))
         {
-            _http = factory.CreateClient("ErpApi");
         }
 
         public async Task<IEnumerable<WarehouseDto>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync("warehouse", cancellationToken);
-            if (!response.IsSuccessStatusCode) return Array.Empty<WarehouseDto>();
-            var list = await response.Content.ReadFromJsonAsync<List<WarehouseDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
-            return list ?? new List<WarehouseDto>();
+            return await GetAsync<IEnumerable<WarehouseDto>>("warehouse", cancellationToken) ?? Array.Empty<WarehouseDto>();
         }
 
         public async Task<IEnumerable<WarehouseSelectDto>> GetForSelectAsync(CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync("warehouse/for-select", cancellationToken);
-            if (!response.IsSuccessStatusCode) return Array.Empty<WarehouseSelectDto>();
-            var list = await response.Content.ReadFromJsonAsync<List<WarehouseSelectDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
-            return list ?? new List<WarehouseSelectDto>();
+            return await GetAsync<IEnumerable<WarehouseSelectDto>>("warehouse/for-select", cancellationToken) ?? Array.Empty<WarehouseSelectDto>();
         }
 
         public async Task<WarehouseDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync($"warehouse/{id}", cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
-            return await response.Content.ReadFromJsonAsync<WarehouseDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
+            return await GetAsync<WarehouseDto>($"warehouse/{id}", cancellationToken);
         }
 
         public async Task<IEnumerable<WarehouseDto>> GetByProvinceIdAsync(int provinceId, CancellationToken cancellationToken = default)
         {
-            var response = await _http.GetAsync($"warehouse/province/{provinceId}", cancellationToken);
-            if (!response.IsSuccessStatusCode) return Array.Empty<WarehouseDto>();
-            var list = await response.Content.ReadFromJsonAsync<List<WarehouseDto>>(ErpApiClientHelper.JsonOptions, cancellationToken);
-            return list ?? new List<WarehouseDto>();
+            return await GetAsync<IEnumerable<WarehouseDto>>($"warehouse/province/{provinceId}", cancellationToken) ?? Array.Empty<WarehouseDto>();
         }
 
         public async Task<(WarehouseDto? Data, string? Error)> CreateAsync(CreateWarehouseDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PostAsJsonAsync("warehouse", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (!response.IsSuccessStatusCode)
-                return (null, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
-
-            var data = await response.Content.ReadFromJsonAsync<WarehouseDto>(ErpApiClientHelper.JsonOptions, cancellationToken);
-            return (data, null);
+            return await PostAsync<CreateWarehouseDto, WarehouseDto>("warehouse", dto, cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> UpdateAsync(int id, UpdateWarehouseDto dto, CancellationToken cancellationToken = default)
         {
-            var response = await _http.PutAsJsonAsync($"warehouse/{id}", dto, ErpApiClientHelper.JsonOptions, cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await PutAsync($"warehouse/{id}", dto, cancellationToken);
         }
 
         public async Task<(bool Success, string? Error)> DeleteAsync(int id, CancellationToken cancellationToken = default)
         {
-            var response = await _http.DeleteAsync($"warehouse/{id}", cancellationToken);
-            if (response.IsSuccessStatusCode) return (true, null);
-            return (false, await ErpApiClientHelper.ReadErrorMessageAsync(response, cancellationToken));
+            return await DeleteAsync($"warehouse/{id}", cancellationToken);
         }
     }
 }

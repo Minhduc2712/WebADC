@@ -33,6 +33,8 @@ namespace ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs
         
         public decimal Total_amount { get; set; }
         public int Total_quantity { get; set; }
+
+        public int IndentLevel { get; set; }
         
         public DateTime Created_at { get; set; }
         

@@ -3,6 +3,7 @@ using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.Application.DTOs.ProvinceDTOs;
 using ErpOnlineOrder.WebAPI.Attributes;
+using ErpOnlineOrder.Application.DTOs;
 
 namespace ErpOnlineOrder.WebAPI.Controllers
 {
@@ -21,22 +22,22 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         public async Task<IActionResult> GetProvinces()
         {
             var provinces = await _provinceService.GetAllAsync();
-            return Ok(provinces);
+            return Ok(ApiResponse<object>.Ok(provinces));
         }
         [HttpGet("region/{regionId}")]
         [RequirePermission(PermissionCodes.ProvinceView)]
         public async Task<IActionResult> GetProvincesByRegion(int regionId)
         {
             var provinces = await _provinceService.GetByRegionIdAsync(regionId);
-            return Ok(provinces);
+            return Ok(ApiResponse<object>.Ok(provinces));
         }
         [HttpGet("{id}")]
         [RequirePermission(PermissionCodes.ProvinceView)]
         public async Task<IActionResult> GetProvince(int id)
         {
             var province = await _provinceService.GetByIdAsync(id);
-            if (province == null) return NotFound(new { message = "Không tìm thấy tỉnh/thành phố." });
-            return Ok(province);
+            if (province == null) return NotFound(ApiResponse<object>.Fail("Không tìm thấy tỉnh/thành phố."));
+            return Ok(ApiResponse<object>.Ok(province));
         }
         [HttpPost]
         [RequirePermission(PermissionCodes.ProvinceCreate)]
@@ -45,28 +46,28 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var created = await _provinceService.CreateProvinceAsync(dto, GetCurrentUserId());
-                return CreatedAtAction(nameof(GetProvince), new { id = created?.Id }, created);
+                return CreatedAtAction(nameof(GetProvince), new { id = created?.Id }, ApiResponse<object>.Ok(created));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
         [HttpPut("{id}")]
         [RequirePermission(PermissionCodes.ProvinceUpdate)]
         public async Task<IActionResult> UpdateProvince(int id, [FromBody] UpdateProvinceDto dto)
         {
-            if (id != dto.Id) return BadRequest(new { message = "ID trên URL không khớp với dữ liệu cập nhật tỉnh/thành phố." });
+            if (id != dto.Id) return BadRequest(ApiResponse<object>.Fail("ID trên URL không khớp với dữ liệu cập nhật tỉnh/thành phố."));
 
             try
             {
                 var result = await _provinceService.UpdateProvinceAsync(dto, GetCurrentUserId());
-                if (!result) return NotFound(new { message = "Không tìm thấy tỉnh/thành phố cần cập nhật." });
-                return Ok(new { success = true, message = "Cập nhật tỉnh/thành phố thành công" });
+                if (!result) return NotFound(ApiResponse<object>.Fail("Không tìm thấy tỉnh/thành phố cần cập nhật."));
+                return Ok(ApiResponse<object>.Ok(null, "Cập nhật tỉnh/thành phố thành công"));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
         [HttpDelete("{id}")]
@@ -76,12 +77,12 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var result = await _provinceService.DeleteProvinceAsync(id);
-                if (!result) return NotFound(new { message = "Không tìm thấy tỉnh/thành phố cần xóa." });
-                return Ok(new { success = true, message = "Xóa tỉnh/thành phố thành công" });
+                if (!result) return NotFound(ApiResponse<object>.Fail("Không tìm thấy tỉnh/thành phố cần xóa."));
+                return Ok(ApiResponse<object>.Ok(null, "Xóa tỉnh/thành phố thành công"));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
     }

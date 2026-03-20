@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using ErpOnlineOrder.Application.DTOs.AuthDTOs;
-using ErpOnlineOrder.Application.Interfaces.Services;
-using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.WebMVC.Extensions;
 using ErpOnlineOrder.WebMVC.Services;
 using ErpOnlineOrder.WebMVC.Services.Interfaces;
@@ -12,9 +10,6 @@ namespace ErpOnlineOrder.WebMVC.Controllers
     public class AuthController : BaseController
     {
         private readonly IAuthApiClient _authApiClient;
-        private readonly IUserRepository _userRepository;
-        private readonly IPermissionService _permissionService;
-        private readonly IRememberMeService _rememberMeService;
         private readonly ILogger<AuthController> _logger;
 
         private const int RememberMeDays = 30;
@@ -24,15 +19,9 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         public AuthController(
             IAuthApiClient authApiClient,
-            IUserRepository userRepository,
-            IPermissionService permissionService,
-            IRememberMeService rememberMeService,
             ILogger<AuthController> logger)
         {
             _authApiClient = authApiClient;
-            _userRepository = userRepository;
-            _permissionService = permissionService;
-            _rememberMeService = rememberMeService;
             _logger = logger;
         }
 
@@ -78,9 +67,9 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
                     if (model.RememberMe)
                     {
-                        var user = await _userRepository.GetByUsernameBasicAsync(apiResult.Username);
-                        if (user != null)
-                            SetRememberMeCookies(user.Username, _rememberMeService.GenerateToken(user));
+                        var token = await _authApiClient.GenerateTokenAsync(apiResult.Username);
+                        if (!string.IsNullOrEmpty(token))
+                            SetRememberMeCookies(apiResult.Username, token);
                     }
                     else
                     {
@@ -340,7 +329,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
             try
             {
-                var userExists = await _userRepository.ExistsByEmailAsync(email);
+                var userExists = await _authApiClient.CheckEmailExistsAsync(email);
 
                 SetSuccessMessage("Nếu email tồn tại trong hệ thống, bạn sẽ nhận được hướng dẫn đặt lại mật khẩu.");
 
@@ -416,21 +405,14 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return false;
                 }
 
-                var user = await _userRepository.GetByUsernameAsync(username);
-
-                if (user == null || !user.Is_active || user.Is_deleted)
+                var response = await _authApiClient.AutoLoginAsync(username, token);
+                if (response == null)
                 {
                     ClearRememberMeCookies();
                     return false;
                 }
 
-                if (!await _rememberMeService.ValidateTokenAsync(username, token))
-                {
-                    ClearRememberMeCookies();
-                    return false;
-                }
-
-                await SetUserSession(user);
+                SetUserSessionFromApiResult(response);
                 _logger.LogInformation("Auto-login from cookie for user: {Username}", username);
                 return true;
             }
@@ -481,37 +463,6 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             HttpContext.Session.SetString("LoginTime", DateTime.Now.ToString("o"));
         }
 
-        private async Task SetUserSession(Domain.Models.User user)
-        {
-            HttpContext.Session.SetInt32("UserId", user.Id);
-            HttpContext.Session.SetString("Username", user.Username);
-            HttpContext.Session.SetString("Email", user.Email);
-
-            var fullName = user.Staff?.Full_name ?? user.Customer?.Full_name ?? user.Username;
-            HttpContext.Session.SetString("FullName", fullName);
-
-            var roles = user.User_roles?
-                .Where(ur => !ur.Is_deleted && ur.Role != null && !ur.Role.Is_deleted)
-                .Select(ur => ur.Role!.Role_name)
-                .ToList() ?? new List<string>();
-            HttpContext.Session.SetString("Roles", string.Join(",", roles));
-
-            var permissions = await _permissionService.GetUserPermissionsAsync(user.Id);
-            HttpContext.Session.SetString("Permissions", string.Join(",", permissions));
-
-            if (user.Staff != null)
-            {
-                HttpContext.Session.SetString("UserType", "Staff");
-                HttpContext.Session.SetString("StaffCode", user.Staff.Staff_code ?? "");
-            }
-            else if (user.Customer != null)
-            {
-                HttpContext.Session.SetString("UserType", "Customer");
-                HttpContext.Session.SetString("CustomerCode", user.Customer.Customer_code ?? "");
-            }
-
-            HttpContext.Session.SetString("LoginTime", DateTime.Now.ToString("o"));
-        }
         private void SetRememberMeCookies(string username, string token)
         {
             var cookieOptions = new CookieOptions

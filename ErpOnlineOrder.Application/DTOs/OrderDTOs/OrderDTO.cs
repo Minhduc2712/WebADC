@@ -16,6 +16,8 @@ namespace ErpOnlineOrder.Application.DTOs
         public string Customer_name { get; set; } = null!;
         public string? Shipping_address { get; set; }
         public string? note { get; set; }
+        public int? Parent_order_id { get; set; }
+        public int IndentLevel { get; set; } 
         public List<OrderDetailDTO> Order_details { get; set; } = new();
         public bool AllowUpdate { get; set; }
         public bool AllowDelete { get; set; }
