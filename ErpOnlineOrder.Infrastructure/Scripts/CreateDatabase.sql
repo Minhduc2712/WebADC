@@ -383,12 +383,15 @@ CREATE TABLE Orders (
     Shipping_address NVARCHAR(500) NULL,
     note NVARCHAR(MAX) NULL,
     Customer_id INT NOT NULL,
+    Parent_order_id INT NULL,
+    Is_auto_confirm BIT NOT NULL DEFAULT 0,
     Created_by INT NOT NULL DEFAULT 0,
     Created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
     Updated_by INT NOT NULL DEFAULT 0,
     Updated_at DATETIME2 NOT NULL DEFAULT GETDATE(),
     Is_deleted BIT NOT NULL DEFAULT 0,
-    CONSTRAINT FK_Orders_Customers FOREIGN KEY (Customer_id) REFERENCES Customers(Id) ON DELETE NO ACTION
+    CONSTRAINT FK_Orders_Customers FOREIGN KEY (Customer_id) REFERENCES Customers(Id) ON DELETE NO ACTION,
+    CONSTRAINT FK_Orders_Parent FOREIGN KEY (Parent_order_id) REFERENCES Orders(Id) ON DELETE NO ACTION
 );
 GO
 
@@ -472,7 +475,6 @@ CREATE TABLE WarehouseExports (
     Warehouse_export_code NVARCHAR(50) NOT NULL,
     Warehouse_id INT NOT NULL,
     Order_id INT NULL,
-    Invoice_id INT NULL,
     Staff_id INT NOT NULL,
     Customer_id INT NOT NULL,
     Export_date DATETIME2 NOT NULL,
@@ -488,7 +490,6 @@ CREATE TABLE WarehouseExports (
     Updated_at DATETIME2 NOT NULL DEFAULT GETDATE(),
     Is_deleted BIT NOT NULL DEFAULT 0,
     CONSTRAINT FK_WarehouseExports_Warehouses FOREIGN KEY (Warehouse_id) REFERENCES Warehouses(Id) ON DELETE NO ACTION,
-    CONSTRAINT FK_WarehouseExports_Invoices FOREIGN KEY (Invoice_id) REFERENCES Invoices(Id) ON DELETE NO ACTION,
     CONSTRAINT FK_WarehouseExports_Orders FOREIGN KEY (Order_id) REFERENCES Orders(Id) ON DELETE NO ACTION,
     CONSTRAINT FK_WarehouseExports_Customers FOREIGN KEY (Customer_id) REFERENCES Customers(Id) ON DELETE NO ACTION,
     CONSTRAINT FK_WarehouseExports_Staffs FOREIGN KEY (Staff_id) REFERENCES Staffs(Id) ON DELETE NO ACTION,
@@ -515,6 +516,14 @@ CREATE TABLE WarehouseExportDetails (
     CONSTRAINT FK_WarehouseExportDetails_Warehouses FOREIGN KEY (Warehouse_id) REFERENCES Warehouses(Id) ON DELETE NO ACTION,
     CONSTRAINT FK_WarehouseExportDetails_Products FOREIGN KEY (Product_id) REFERENCES Products(Id) ON DELETE NO ACTION
 );
+GO
+
+-- Thêm khóa ngoại cho Invoices trỏ đến WarehouseExports
+IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_Invoices_WarehouseExports')
+BEGIN
+    ALTER TABLE Invoices
+    ADD CONSTRAINT FK_Invoices_WarehouseExports FOREIGN KEY (Warehouse_export_id) REFERENCES WarehouseExports(Id) ON DELETE NO ACTION;
+END
 GO
 
 -- =============================================

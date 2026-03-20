@@ -223,6 +223,9 @@ namespace ErpOnlineOrder.Infrastructure.Migrations
                         .HasColumnType("int")
                         .HasColumnName("Customer_id");
 
+                    b.Property<bool>("Is_auto_confirm")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("Is_deleted")
                         .HasColumnType("bit");
 
@@ -524,6 +527,9 @@ namespace ErpOnlineOrder.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<int?>("Parent_order_id")
+                        .HasColumnType("int");
+
                     b.Property<string>("Shipping_address")
                         .HasColumnType("nvarchar(max)");
 
@@ -545,6 +551,8 @@ namespace ErpOnlineOrder.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Customer_id");
+
+                    b.HasIndex("Parent_order_id");
 
                     b.ToTable("Orders", (string)null);
                 });
@@ -1459,10 +1467,6 @@ namespace ErpOnlineOrder.Infrastructure.Migrations
                     b.Property<DateTime>("Export_date")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("Invoice_id")
-                        .HasColumnType("int")
-                        .HasColumnName("Invoice_id");
-
                     b.Property<bool>("Is_deleted")
                         .HasColumnType("bit");
 
@@ -1509,8 +1513,6 @@ namespace ErpOnlineOrder.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Customer_id");
-
-                    b.HasIndex("Invoice_id");
 
                     b.HasIndex("Merged_into_export_id");
 
@@ -1666,7 +1668,7 @@ namespace ErpOnlineOrder.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("ErpOnlineOrder.Domain.Models.Warehouse", "Warehouse_export")
+                    b.HasOne("ErpOnlineOrder.Domain.Models.Warehouse_export", "Warehouse_export")
                         .WithMany()
                         .HasForeignKey("Warehouse_export_id");
 
@@ -1710,7 +1712,13 @@ namespace ErpOnlineOrder.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("ErpOnlineOrder.Domain.Models.Order", "Parent_order")
+                        .WithMany()
+                        .HasForeignKey("Parent_order_id");
+
                     b.Navigation("Customer");
+
+                    b.Navigation("Parent_order");
                 });
 
             modelBuilder.Entity("ErpOnlineOrder.Domain.Models.Order_detail", b =>
@@ -1943,11 +1951,6 @@ namespace ErpOnlineOrder.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("ErpOnlineOrder.Domain.Models.Invoice", "Invoice")
-                        .WithMany()
-                        .HasForeignKey("Invoice_id")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("ErpOnlineOrder.Domain.Models.Warehouse_export", "Merged_into_export")
                         .WithMany("Merged_exports")
                         .HasForeignKey("Merged_into_export_id")
@@ -1976,8 +1979,6 @@ namespace ErpOnlineOrder.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Customer");
-
-                    b.Navigation("Invoice");
 
                     b.Navigation("Merged_into_export");
 
