@@ -1,6 +1,7 @@
 using ErpOnlineOrder.Application.Constants;
 using ErpOnlineOrder.Application.DTOs.InvoiceDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Domain.Constants;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.WebAPI.Attributes;
@@ -14,10 +15,12 @@ namespace ErpOnlineOrder.WebAPI.Controllers
     public class InvoiceController : ApiController
     {
         private readonly IInvoiceService _invoiceService;
+        private readonly ICustomerRepository _customerRepository;
 
-        public InvoiceController(IInvoiceService invoiceService)
+        public InvoiceController(IInvoiceService invoiceService, ICustomerRepository customerRepository)
         {
             _invoiceService = invoiceService;
+            _customerRepository = customerRepository;
         }
 
         [HttpGet]
@@ -46,6 +49,21 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             var result = await _invoiceService.GetAllPagedAsync(request, TryGetCurrentUserId());
             return Ok(ApiResponse<object>.Ok(result));
+        }
+
+        [HttpGet("my-invoices")]
+        public async Task<IActionResult> GetMyInvoices()
+        {
+            var userId = TryGetCurrentUserId();
+            if (!userId.HasValue || userId.Value <= 0)
+                return Unauthorized(ApiResponse<object>.Fail("Vui lòng đăng nhập"));
+
+            var customer = await _customerRepository.GetByUserIdAsync(userId.Value);
+            if (customer == null)
+                return Ok(ApiResponse<object>.Ok(new List<InvoiceDto>()));
+
+            var invoices = await _invoiceService.GetByCustomerIdAsync(customer.Id);
+            return Ok(ApiResponse<object>.Ok(invoices));
         }
 
         [HttpGet("{id}")]
@@ -108,6 +126,21 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             return Ok(ApiResponse<object>.Ok(null, "Đã hoàn tác gộp hóa đơn"));
         }
 
+        [HttpPost("create-from-export/{exportId}")]
+        public async Task<IActionResult> CreateFromExport(int exportId)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var result = await _invoiceService.CreateInvoiceFromExportAsync(exportId, userId);
+                return Ok(ApiResponse<object>.Ok(result, "Tạo hóa đơn thành công"));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+        }
+
         // [HttpPost("create-from-order/{orderId}")]
         // // [RequirePermission(PermissionCodes.InvoiceCreate)]
         // public async Task<IActionResult> CreateFromOrder(int orderId)
@@ -118,6 +151,26 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         //         return BadRequest(result);
         //     return Ok(result);
         // }
+
+        [HttpPost("customer-request")]
+        public async Task<IActionResult> CustomerRequestInvoice([FromBody] CustomerInvoiceRequestDto dto)
+        {
+            try
+            {
+                var userId = TryGetCurrentUserId();
+                if (!userId.HasValue) return Unauthorized(ApiResponse<object>.Fail("Vui lòng đăng nhập"));
+
+                var customer = await _customerRepository.GetByUserIdAsync(userId.Value);
+                if (customer == null) return Forbid();
+
+                var result = await _invoiceService.CustomerRequestInvoiceAsync(dto, customer.Id, userId.Value);
+                return Ok(ApiResponse<object>.Ok(result, "Đã gửi yêu cầu xuất hóa đơn thành công!"));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+        }
 
         [HttpPatch("{id}/status")]
         public async Task<IActionResult> UpdateStatus(int id, [FromQuery] string status)

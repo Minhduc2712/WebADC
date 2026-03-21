@@ -39,32 +39,14 @@ namespace ErpOnlineOrder.WebMVC.Services
 
         public async Task<string?> GenerateTokenAsync(string username, CancellationToken cancellationToken = default)
         {
-            var response = await _httpClient.PostAsJsonAsync("auth/generate-token", new { Username = username }, _jsonOptions, cancellationToken);
-            if (response.IsSuccessStatusCode)
-            {
-                var content = await response.Content.ReadAsStringAsync(cancellationToken);
-                var json = JsonDocument.Parse(content);
-                if (json.RootElement.TryGetProperty("success", out var success) && success.GetBoolean() && json.RootElement.TryGetProperty("token", out var token))
-                {
-                    return token.GetString();
-                }
-            }
-            return null;
+            var (data, _) = await PostAsync<object, string>("auth/generate-token", new { Username = username }, cancellationToken);
+            return data;
         }
 
         public async Task<LoginResponseDto?> AutoLoginAsync(string username, string token, CancellationToken cancellationToken = default)
         {
-            var response = await _httpClient.PostAsJsonAsync("auth/auto-login", new { Username = username, Token = token }, _jsonOptions, cancellationToken);
-            if (response.IsSuccessStatusCode)
-            {
-                var content = await response.Content.ReadAsStringAsync(cancellationToken);
-                var json = JsonDocument.Parse(content);
-                if (json.RootElement.TryGetProperty("success", out var success) && success.GetBoolean() && json.RootElement.TryGetProperty("user", out var userEl))
-                {
-                    return JsonSerializer.Deserialize<LoginResponseDto>(userEl.GetRawText(), _jsonOptions);
-                }
-            }
-            return null;
+            var (data, _) = await PostAsync<object, LoginResponseDto>("auth/auto-login", new { Username = username, Token = token }, cancellationToken);
+            return data;
         }
 
         public async Task<bool> CheckEmailExistsAsync(string email, CancellationToken cancellationToken = default)
@@ -74,6 +56,8 @@ namespace ErpOnlineOrder.WebMVC.Services
             {
                 var content = await response.Content.ReadAsStringAsync(cancellationToken);
                 var json = JsonDocument.Parse(content);
+                if (json.RootElement.TryGetProperty("data", out var dataEl) && dataEl.TryGetProperty("exists", out var existsEl1))
+                    return existsEl1.GetBoolean();
                 if (json.RootElement.TryGetProperty("exists", out var exists))
                     return exists.GetBoolean();
             }

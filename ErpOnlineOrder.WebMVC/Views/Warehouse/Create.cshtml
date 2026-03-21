@@ -36,6 +36,17 @@
                             <span asp-validation-for="Warehouse_name" class="text-danger"></span>
                         </div>
                         <div class="mb-3">
+                            <label asp-for="Warehouse_phone" class="form-label">Số điện thoại</label>
+                            <input asp-for="Warehouse_phone" class="form-control" placeholder="Nhập số điện thoại kho" />
+                            <span asp-validation-for="Warehouse_phone" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Warehouse_email" class="form-label">Email kho</label>
+                            <input asp-for="Warehouse_email" type="email" class="form-control" placeholder="Nhập email kho" />
+                            <span asp-validation-for="Warehouse_email" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
                             <label asp-for="Province_id" class="form-label">Tỉnh/Thành phố <span class="text-danger">*</span></label>
                             @Html.DropDownListFor(m => m.Province_id, ViewBag.Provinces as SelectList, "-- Chọn tỉnh/thành --", new { @class = "form-select" })
                             <span asp-validation-for="Province_id" class="text-danger"></span>

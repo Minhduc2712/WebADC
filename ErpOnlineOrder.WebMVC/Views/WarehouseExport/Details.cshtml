@@ -122,9 +122,14 @@
                 <div class="mb-3">
                     <label class="text-muted small">Hóa đơn liên quan</label>
                     <p class="mb-0">
-                        <a href="@Url.Action("Details", "Invoice", new { id = Model.Invoice_id })" class="badge bg-info text-decoration-none">
-                            @Model.Invoice_code
-                        </a>
+                        @if (!string.IsNullOrEmpty(Model.Invoice_code))
+                        {
+                            <span class="badge bg-info text-dark">@Model.Invoice_code</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">-</span>
+                        }
                     </p>
                 </div>
                 @if (Model.Parent_export_id.HasValue)

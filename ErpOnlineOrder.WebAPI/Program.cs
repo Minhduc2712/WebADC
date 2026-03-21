@@ -35,19 +35,23 @@ builder.Services.AddCors(options =>
                 "http://localhost:5181",
                 "https://localhost:7181",
                 "http://localhost:5140",
-                "https://localhost:7243"
+                "https://localhost:7243",
+                "http://localhost:3000", // Dành cho React / NextJS
+                "http://localhost:5173", // Dành cho Vite / Vue
+                "http://localhost:4200"  // Dành cho Angular
             )
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials();
     });
     
-    // Ho?c cho phép t?t c? origins trong development
+    // Hoặc cho phép tất cả origins trong development (có hỗ trợ gửi kèm token/cookie)
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.SetIsOriginAllowed(_ => true)
             .AllowAnyMethod()
-            .AllowAnyHeader();
+            .AllowAnyHeader()
+            .AllowCredentials();
     });
 });
 
@@ -83,12 +87,14 @@ builder.Services.AddScoped<IWarehouseRepository, WarehouseRepository>();
 builder.Services.AddScoped<IStockRepository, StockRepository>();
 builder.Services.AddScoped<ISystemSettingRepository, SystemSettingRepository>();
 builder.Services.AddScoped<IStaffRepository, StaffRepository>();
+builder.Services.AddScoped<IDbTransactionManager, DbTransactionManager>();
 
 // Add security services
 builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 
 // Add services
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IRememberMeService, RememberMeService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IProductService, ProductService>();

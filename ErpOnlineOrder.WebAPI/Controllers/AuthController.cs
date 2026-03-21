@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.DTOs.AuthDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
+using ErpOnlineOrder.Application.DTOs;
 
 namespace ErpOnlineOrder.WebAPI.Controllers
 {
@@ -40,12 +41,12 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             {
                 var result = await _authService.CheckUserPermissionsAsync(userId);
                 if (result == null)
-                    return NotFound(new { message = $"User ID {userId} khong ton tai" });
-                return Ok(result);
+                    return NotFound(ApiResponse<object>.Fail($"User ID {userId} khong ton tai"));
+                return Ok(ApiResponse<object>.Ok(result));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
@@ -59,14 +60,14 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             {
                 var result = await _authService.GrantAllPermissionsAsync(userId);
                 if (result == null)
-                    return NotFound(new { message = $"User ID {userId} khong ton tai" });
+                    return NotFound(ApiResponse<object>.Fail($"User ID {userId} khong ton tai"));
                 if (!result.Success)
-                    return BadRequest(new { message = result.Message });
-                return Ok(result);
+                    return BadRequest(ApiResponse<object>.Fail(result.Message));
+                return Ok(ApiResponse<object>.Ok(result));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
@@ -87,12 +88,12 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             try
             {
-                var result = await _authService.SeedAdminAsync(GetCurrentUserId());
-                return Ok(result);
+                var result = await _authService.SeedAdminAsync(0); // Dùng ID 0 cho tài khoản hệ thống thay vì bắt buộc phải có user đăng nhập
+                return Ok(ApiResponse<object>.Ok(result));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message, stackTrace = ex.StackTrace });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
@@ -103,12 +104,12 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             {
                 var result = await _authService.CheckAdminAsync();
                 if (result == null)
-                    return NotFound(new { message = "User admin khong ton tai" });
-                return Ok(result);
+                    return NotFound(ApiResponse<object>.Fail("User admin khong ton tai"));
+                return Ok(ApiResponse<object>.Ok(result));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 #endif
@@ -120,11 +121,11 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var result = await _authService.RegisterByAdminAsync(model);
-                return Ok(new { success = result });
+                return Ok(ApiResponse<object>.Ok(null, "Đăng ký thành công"));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
@@ -134,11 +135,11 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var result = await _authService.RegisterByCustomerAsync(model);
-                return Ok(new { success = result });
+                return Ok(ApiResponse<object>.Ok(null, "Đăng ký thành công"));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
@@ -148,11 +149,11 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var result = await _authService.FinalizeCustomerRegistrationAsync(model);
-                return Ok(new { success = result });
+                return Ok(ApiResponse<object>.Ok(null, "Đăng ký thành công"));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
@@ -163,12 +164,12 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             {
                 var response = await _authService.GetLoginResponseAsync(model);
                 if (response == null)
-                    return BadRequest(new { message = "Tên đăng nhập hoặc mật khẩu không đúng." });
-                return Ok(new { success = true, user = response });
+                    return BadRequest(ApiResponse<object>.Fail("Tên đăng nhập hoặc mật khẩu không đúng."));
+                return Ok(ApiResponse<LoginResponseDto>.Ok(response));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
@@ -178,13 +179,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var user = await _userRepository.GetByUsernameBasicAsync(request.Username);
-                if (user == null) return BadRequest(new { message = "User not found" });
+                if (user == null) return BadRequest(ApiResponse<object>.Fail("User not found"));
                 var token = _rememberMeService.GenerateToken(user);
-                return Ok(new { success = true, token = token });
+                return Ok(ApiResponse<string>.Ok(token));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
@@ -194,11 +195,11 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var isValid = await _rememberMeService.ValidateTokenAsync(request.Username, request.Token);
-                if (!isValid) return BadRequest(new { message = "Invalid token" });
+                if (!isValid) return BadRequest(ApiResponse<object>.Fail("Invalid token"));
 
                 var user = await _userRepository.GetByUsernameAsync(request.Username);
                 if (user == null || !user.Is_active || user.Is_deleted)
-                    return BadRequest(new { message = "User invalid" });
+                    return BadRequest(ApiResponse<object>.Fail("User invalid"));
 
                 var response = new LoginResponseDto
                 {
@@ -213,11 +214,11 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                     Permissions = (await _permissionService.GetUserPermissionsAsync(user.Id)).ToList()
                 };
 
-                return Ok(new { success = true, user = response });
+                return Ok(ApiResponse<LoginResponseDto>.Ok(response));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
@@ -227,11 +228,11 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var result = await _authService.ChangePasswordAsync(model);
-                return Ok(new { success = result });
+                return Ok(ApiResponse<object>.Ok(null, "Đổi mật khẩu thành công"));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
@@ -241,11 +242,11 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 await _authService.DeleteUserAsync(id);
-                return Ok(new { success = true });
+                return Ok(ApiResponse<object>.Ok(null, "Xóa người dùng thành công"));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
@@ -255,11 +256,11 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var exists = await _userRepository.ExistsByEmailAsync(email);
-                return Ok(new { exists });
+                return Ok(ApiResponse<object>.Ok(new { exists }));
             }
             catch (Exception)
             {
-                return Ok(new { exists = false });
+                return Ok(ApiResponse<object>.Ok(new { exists = false }));
             }
         }
 
@@ -272,12 +273,12 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             {
                 var result = await _authService.DebugUserPermissionsAsync(userId);
                 if (result == null)
-                    return NotFound(new { message = $"User ID {userId} khong ton tai" });
-                return Ok(result);
+                    return NotFound(ApiResponse<object>.Fail($"User ID {userId} khong ton tai"));
+                return Ok(ApiResponse<object>.Ok(result));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message, innerException = ex.InnerException?.Message, stackTrace = ex.StackTrace });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 
@@ -288,12 +289,12 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             {
                 var result = await _authService.DebugRolePermissionsAsync(roleId);
                 if (result == null)
-                    return NotFound(new { message = $"Role ID {roleId} khong ton tai" });
-                return Ok(result);
+                    return NotFound(ApiResponse<object>.Fail($"Role ID {roleId} khong ton tai"));
+                return Ok(ApiResponse<object>.Ok(result));
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message, stackTrace = ex.StackTrace });
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
 #endif

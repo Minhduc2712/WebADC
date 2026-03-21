@@ -74,59 +74,6 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             }
         }
 
-        [RequirePermission(PermissionCodes.WarehouseExportCreate)]
-        public async Task<IActionResult> Create()
-        {
-            try
-            {
-                var invoices = await _invoiceApiClient.GetForWarehouseExportAsync();
-                var warehouses = await _warehouseApiClient.GetForSelectAsync();
-
-                ViewBag.Invoices = new SelectList(invoices, "Id", "Invoice_code");
-                ViewBag.Warehouses = new SelectList(warehouses, "Id", "Warehouse_name");
-
-                return View();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error loading create form");
-                SetErrorMessage(GetDetailedErrorMessage(ex));
-                return RedirectToAction(nameof(Index));
-            }
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [RequirePermission(PermissionCodes.WarehouseExportCreate)]
-        public async Task<IActionResult> Create(CreateWarehouseExportDto model)
-        {
-            try
-            {
-                var (result, error) = await _warehouseExportApiClient.CreateAsync(model);
-
-                if (result != null)
-                {
-                    SetSuccessMessage("Tạo phiếu xuất kho thành công!");
-                    return RedirectToAction(nameof(Details), new { id = result.Id });
-                }
-                else
-                {
-                    SetErrorMessage(error ?? "Không thể tạo phiếu xuất kho. Vui lòng kiểm tra trạng thái hóa đơn, tồn kho và dữ liệu chi tiết xuất.");
-                    var invoices = await _invoiceApiClient.GetForWarehouseExportAsync();
-                    var warehouses = await _warehouseApiClient.GetForSelectAsync();
-                    ViewBag.Invoices = new SelectList(invoices, "Id", "Invoice_code");
-                    ViewBag.Warehouses = new SelectList(warehouses, "Id", "Warehouse_name");
-                    return View(model);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating export");
-                SetErrorMessage(GetDetailedErrorMessage(ex));
-                return RedirectToAction(nameof(Index));
-            }
-        }
-
         [HttpGet]
         [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
         public async Task<IActionResult> Edit(int id)

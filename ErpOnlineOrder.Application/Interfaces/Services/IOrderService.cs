@@ -22,6 +22,8 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
         Task<IEnumerable<OrderDTO>> GetOrdersByCustomerAsync(int customerId);
         Task<PagedResult<OrderDTO>> GetOrdersByCustomerPagedAsync(int customerId, OrderFilterRequest request);
         Task<ConfirmOrderResultDto> ConfirmOrderAsync(ConfirmOrderDto dto);
+        Task<bool> CustomerApproveOrderAsync(int orderId, int userId);
+        Task<bool> CustomerRejectOrderAsync(int orderId, int userId);
         Task<bool> CancelOrderAsync(CancelOrderDto dto);
         Task<byte[]> ExportOrdersToExcelAsync();
         Task<IEnumerable<OrderDTO>> GetOrdersByStatusAsync(string status, int? userId = null);

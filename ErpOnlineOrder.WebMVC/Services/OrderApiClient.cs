@@ -68,6 +68,16 @@ namespace ErpOnlineOrder.WebMVC.Services
             return new ConfirmOrderResultDto { Success = false, Message = err ?? "Không thể duyệt đơn hàng." };
         }
 
+        public async Task<(bool Success, string? ErrorMessage)> CustomerApproveOrderAsync(int id, CancellationToken cancellationToken = default)
+        {
+            return await PostWithoutReturnAsync($"order/{id}/customer-approve", cancellationToken);
+        }
+
+        public async Task<(bool Success, string? ErrorMessage)> CustomerRejectOrderAsync(int id, CancellationToken cancellationToken = default)
+        {
+            return await PostWithoutReturnAsync($"order/{id}/customer-reject", cancellationToken);
+        }
+
         public async Task<bool> CancelOrderAsync(int id, CancellationToken cancellationToken = default)
         {
             var (success, _) = await PostWithoutReturnAsync($"order/{id}/cancel", cancellationToken);
@@ -96,6 +106,11 @@ namespace ErpOnlineOrder.WebMVC.Services
         public async Task<IEnumerable<OrderDTO>> GetOrdersByCustomerAsync(int customerId, CancellationToken cancellationToken = default)
         {
             return await GetAsync<IEnumerable<OrderDTO>>($"order/customer/{customerId}", cancellationToken) ?? Array.Empty<OrderDTO>();
+        }
+
+        public async Task<IEnumerable<OrderDTO>> GetMyOrdersAsync(CancellationToken cancellationToken = default)
+        {
+            return await GetAsync<IEnumerable<OrderDTO>>("order/my-orders", cancellationToken) ?? Array.Empty<OrderDTO>();
         }
 
         public async Task<CreateOrderResultDto> CreateOrderCustomerAsync(CreateOrderDto model, CancellationToken cancellationToken = default)

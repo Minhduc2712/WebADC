@@ -40,9 +40,9 @@ namespace ErpOnlineOrder.WebMVC.Services
             return await GetAsync<IEnumerable<WarehouseExportDto>>($"warehouseexport/customer/{customerId}", cancellationToken) ?? Array.Empty<WarehouseExportDto>();
         }
 
-        public async Task<(WarehouseExportDto? Data, string? Error)> CreateAsync(CreateWarehouseExportDto dto, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<WarehouseExportDto>> GetMyExportsAsync(CancellationToken cancellationToken = default)
         {
-            return await PostAsync<CreateWarehouseExportDto, WarehouseExportDto>("warehouseexport", dto, cancellationToken);
+            return await GetAsync<IEnumerable<WarehouseExportDto>>("warehouseexport/my-exports", cancellationToken) ?? Array.Empty<WarehouseExportDto>();
         }
 
         public async Task<(bool Success, string? Error)> UpdateAsync(int id, UpdateWarehouseExportDto dto, CancellationToken cancellationToken = default)

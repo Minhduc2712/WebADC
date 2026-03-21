@@ -186,16 +186,24 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             if (customer == null)
                 return NotFound();
 
-            var order = await _orderApiClient.GetByIdAsync(id);
-            if (order == null)
+            try
+            {
+                var order = await _orderApiClient.GetByIdAsync(id);
+                if (order == null)
+                    return NotFound();
+
+                // Đảm bảo đơn hàng thuộc về khách hàng này
+                var myOrders = await _orderApiClient.GetOrdersByCustomerAsync(customer.Id);
+                if (!myOrders.Any(o => o.Id == id))
+                    return Forbid();
+
+                return View(order);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading order detail {OrderId}", id);
                 return NotFound();
-
-            // Đảm bảo đơn hàng thuộc về khách hàng này
-            var myOrders = await _orderApiClient.GetOrdersByCustomerAsync(customer.Id);
-            if (!myOrders.Any(o => o.Id == id))
-                return Forbid();
-
-            return View(order);
+            }
         }
 
         /// <summary>In đơn đặt hàng theo mẫu. Chỉ khách hàng sở hữu đơn mới in được.</summary>
@@ -210,15 +218,23 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             if (customer == null)
                 return NotFound();
 
-            var order = await _orderApiClient.GetByIdAsync(id);
-            if (order == null)
+            try
+            {
+                var order = await _orderApiClient.GetByIdAsync(id);
+                if (order == null)
+                    return NotFound();
+
+                var myOrders = await _orderApiClient.GetOrdersByCustomerAsync(customer.Id);
+                if (!myOrders.Any(o => o.Id == id))
+                    return Forbid();
+
+                return View(order);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading print order {OrderId}", id);
                 return NotFound();
-
-            var myOrders = await _orderApiClient.GetOrdersByCustomerAsync(customer.Id);
-            if (!myOrders.Any(o => o.Id == id))
-                return Forbid();
-
-            return View(order);
+            }
         }
 
         [HttpPost]
@@ -281,25 +297,6 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var userId = GetCurrentUserId();
-                if (userId == 0)
-                {
-                    return Json(new { success = false, message = "Vui lòng đăng nhập." });
-                }
-
-                var customer = await _customerApiClient.GetByUserIdAsync(userId);
-                if (customer == null)
-                {
-                    return Json(new { success = false, message = "Không tìm thấy thông tin khách hàng." });
-                }
-
-                // Verify order belongs to this customer
-                var order = await _orderApiClient.GetByIdAsync(id);
-                if (order == null)
-                {
-                    return Json(new { success = false, message = "Không tìm thấy đơn hàng." });
-                }
-
                 var result = await _orderApiClient.CancelOrderAsync(id);
                 if (result)
                 {
@@ -311,6 +308,44 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 _logger.LogError(ex, "Error cancelling order {OrderId}", id);
                 return Json(new { success = false, message = "Không thể hủy đơn hàng lúc này. Vui lòng thử lại sau." });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CustomerRejectOrder(int id)
+        {
+            try
+            {
+                var (success, error) = await _orderApiClient.CustomerRejectOrderAsync(id);
+                if (error != null && error.Contains("JSON"))
+                {
+                    return Json(new { success = false, message = "Máy chủ WebAPI chưa nhận code mới. Vui lòng tắt và khởi động lại dự án WebAPI." });
+                }
+                return Json(new { success = success, message = success ? "Đã không duyệt. Đơn hàng gốc đã được khôi phục về trạng thái Chờ xử lý." : (error ?? "Không thể thao tác lúc này.") });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error customer rejecting order {OrderId}", id);
+                return Json(new { success = false, message = "Lỗi kết nối máy chủ." });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CustomerApproveOrder(int id)
+        {
+            try
+            {
+                var (success, error) = await _orderApiClient.CustomerApproveOrderAsync(id);
+                if (error != null && error.Contains("JSON"))
+                {
+                    return Json(new { success = false, message = "Máy chủ WebAPI chưa nhận code mới. Vui lòng tắt và khởi động lại dự án WebAPI." });
+                }
+                return Json(new { success = success, message = success ? "Đã duyệt đơn hàng thành công!" : (error ?? "Không thể duyệt đơn hàng lúc này.") });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error customer approving order {OrderId}", id);
+                return Json(new { success = false, message = "Lỗi kết nối máy chủ." });
             }
         }
 
@@ -376,7 +411,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             }
         }
 
-        /// <summary>Yêu cầu tách hóa đơn từ phiếu xuất kho - khách chỉ định số lượng cụ thể cho từng sản phẩm.</summary>
+        /// <summary>Yêu cầu xuất/tách hóa đơn từ phiếu xuất kho</summary>
         [HttpGet]
         public async Task<IActionResult> RequestInvoiceSplit(int exportId)
         {
@@ -388,47 +423,40 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             if (customer == null)
                 return NotFound();
 
-            var export = await _warehouseExportApiClient.GetByIdAsync(exportId);
-            if (export == null)
+            try
+            {
+                var export = await _warehouseExportApiClient.GetByIdAsync(exportId);
+                if (export == null)
+                    return NotFound();
+
+                if (export.Customer_id != customer.Id)
+                    return Forbid();
+
+                if (export.Status == ExportStatuses.Cancelled)
+                {
+                    TempData["Error"] = "Phiếu xuất kho đã hủy.";
+                    return RedirectToAction(nameof(Exports));
+                }
+
+                if (!string.IsNullOrEmpty(export.Invoice_code))
+                {
+                    TempData["Error"] = "Phiếu xuất kho này đã được xử lý hóa đơn.";
+                    return RedirectToAction(nameof(Exports));
+                }
+
+                if (export.Details == null || !export.Details.Any())
+                {
+                    TempData["Error"] = "Phiếu xuất kho không có sản phẩm.";
+                    return RedirectToAction(nameof(Exports));
+                }
+
+                return View(export);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading export {ExportId} for split request", exportId);
                 return NotFound();
-
-            if (export.Customer_id != customer.Id)
-                return Forbid();
-
-            if (export.Status == ExportStatuses.Cancelled)
-            {
-                TempData["Error"] = "Phiếu xuất kho đã hủy.";
-                return RedirectToAction(nameof(Exports));
             }
-
-            if (!export.Invoice_id.HasValue)
-            {
-                TempData["Error"] = "Phiếu xuất kho này chưa có hóa đơn.";
-                return RedirectToAction(nameof(Exports));
-            }
-
-            var invoice = await _invoiceApiClient.GetByIdAsync(export.Invoice_id.Value);
-            if (invoice == null)
-            {
-                TempData["Error"] = "Không tìm thấy hóa đơn liên quan.";
-                return RedirectToAction(nameof(Exports));
-            }
-
-            if (invoice.Status == InvoiceStatuses.Split || invoice.Status == InvoiceStatuses.Merged)
-            {
-                TempData["Error"] = "Hóa đơn này đã được tách hoặc gộp.";
-                return RedirectToAction(nameof(Exports));
-            }
-
-            if (invoice.Details == null || invoice.Details.Count < 2)
-            {
-                TempData["Error"] = "Hóa đơn chỉ có 1 sản phẩm, không thể tách.";
-                return RedirectToAction(nameof(Exports));
-            }
-
-            ViewBag.Export = export;
-            ViewBag.Invoice = invoice;
-            return View(invoice);
         }
 
         [HttpPost]
@@ -443,67 +471,68 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             if (customer == null)
                 return NotFound();
 
-            var export = await _warehouseExportApiClient.GetByIdAsync(exportId);
-            if (export == null)
+            WarehouseExportDto export;
+            try
+            {
+                export = await _warehouseExportApiClient.GetByIdAsync(exportId);
+                if (export == null)
+                    return NotFound();
+
+                if (export.Customer_id != customer.Id)
+                    return Forbid();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading export {ExportId}", exportId);
                 return NotFound();
+            }
 
-            if (export.Customer_id != customer.Id)
-                return Forbid();
-
-            if (!export.Invoice_id.HasValue)
+            if (!string.IsNullOrEmpty(export.Invoice_code))
             {
-                TempData["Error"] = "Phiếu xuất kho này chưa có hóa đơn.";
+                TempData["Error"] = "Phiếu xuất kho này đã được xử lý hóa đơn.";
                 return RedirectToAction(nameof(Exports));
             }
 
-            var invoice = await _invoiceApiClient.GetByIdAsync(export.Invoice_id.Value);
-            if (invoice == null)
-            {
-                TempData["Error"] = "Không tìm thấy hóa đơn.";
-                return RedirectToAction(nameof(Exports));
-            }
+            var items = new List<CustomerInvoiceSplitItemDto>();
+            bool hasInvalidQuantity = false;
 
-            var items = new List<SplitInvoiceItem>();
-            foreach (var detail in invoice.Details ?? new List<InvoiceDetailDto>())
+            foreach (var detail in export.Details ?? new List<WarehouseExportDetailDto>())
             {
-                var key = $"qty_{detail.Id}";
+                var key = $"qty_{detail.Product_id}";
                 if (form.TryGetValue(key, out var val) && int.TryParse(val, out var qty) && qty > 0)
                 {
-                    if (qty > detail.Quantity)
+                    if (qty > detail.Quantity_shipped)
                     {
-                        TempData["Error"] = $"Số lượng sản phẩm '{detail.Product_name}' vượt quá {detail.Quantity}.";
-                        ViewBag.Export = export;
-                        ViewBag.Invoice = invoice;
-                        return View(invoice);
+                        TempData["Error"] = $"Số lượng sản phẩm '{detail.Product_name}' vượt quá số lượng xuất ({detail.Quantity_shipped}).";
+                        hasInvalidQuantity = true;
+                        break;
                     }
-                    items.Add(new SplitInvoiceItem { Invoice_detail_id = detail.Id, Quantity = qty });
+                    items.Add(new CustomerInvoiceSplitItemDto { ProductId = detail.Product_id, Quantity = qty });
                 }
             }
 
-            if (items.Count == 0)
+            if (hasInvalidQuantity)
             {
-                TempData["Error"] = "Vui lòng nhập ít nhất một sản phẩm với số lượng > 0.";
-                ViewBag.Export = export;
-                ViewBag.Invoice = invoice;
-                return View(invoice);
+                return View(export);
             }
 
-            var dto = new SplitInvoiceDto
+            var requestDto = new CustomerInvoiceRequestDto
             {
-                Source_invoice_id = invoice.Id,
-                Split_parts = new List<SplitInvoicePart> { new SplitInvoicePart { Items = items } },
-                Note = $"Khách hàng yêu cầu tách từ phiếu xuất {export.Warehouse_export_code}"
+                WarehouseExportId = export.Id,
+                Note = form["note"].ToString() ?? "Khách hàng yêu cầu xuất hóa đơn",
+                // Nếu khách có nhập SL thì tách part, nếu không hệ thống sẽ tạo 1 hóa đơn tổng
+                SplitParts = items.Count > 0 ? new List<CustomerInvoiceSplitPartDto> { new CustomerInvoiceSplitPartDto { Items = items } } : null
             };
 
             try
             {
-                var result = await _invoiceApiClient.SplitAsync(dto);
-                if (result?.Success == true)
+                var (data, error) = await _invoiceApiClient.CustomerRequestInvoiceAsync(requestDto);
+                if (data != null && data.Any())
                 {
-                    TempData["Success"] = result.Message;
+                    TempData["Success"] = "Đã gửi yêu cầu xuất hóa đơn thành công!";
                     return RedirectToAction(nameof(Exports));
                 }
-                TempData["Error"] = result?.Message ?? "Không thể tách hóa đơn. Vui lòng kiểm tra số lượng tách và trạng thái hóa đơn.";
+                TempData["Error"] = error ?? "Không thể gửi yêu cầu xuất hóa đơn. Vui lòng kiểm tra lại.";
             }
             catch (Exception ex)
             {
@@ -511,9 +540,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 TempData["Error"] = "Không thể xử lý yêu cầu tách hóa đơn lúc này. Vui lòng thử lại sau.";
             }
 
-            ViewBag.Export = export;
-            ViewBag.Invoice = invoice;
-            return View(invoice);
+            return View(export);
         }
 
         public IActionResult Account()

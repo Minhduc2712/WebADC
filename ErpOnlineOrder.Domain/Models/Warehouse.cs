@@ -11,6 +11,8 @@ namespace ErpOnlineOrder.Domain.Models
         public string Warehouse_name { get; set; } = string.Empty;
         [Required]
         public string Warehouse_address { get; set; } = string.Empty;
+        public string? Warehouse_phone { get; set; }
+        public string? Warehouse_email { get; set; }
         public int Created_by { get; set; }
         public DateTime Created_at { get; set; }
         public int Updated_by { get; set; }

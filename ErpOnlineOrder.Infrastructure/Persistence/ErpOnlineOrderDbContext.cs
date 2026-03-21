@@ -246,7 +246,6 @@ namespace ErpOnlineOrder.Infrastructure.Persistence
                 entity.Property(x => x.Arrival_date).HasColumnType("date");
                 entity.Property(x => x.Split_merge_note).HasMaxLength(500);
                 entity.Property(x => x.Warehouse_id).HasColumnName("Warehouse_id");
-                entity.Property(x => x.Invoice_id).HasColumnName("Invoice_id");
                 entity.Property(x => x.Order_id).HasColumnName("Order_id");
                 entity.Property(x => x.Customer_id).HasColumnName("Customer_id");
                 entity.Property(x => x.Staff_id).HasColumnName("Staff_id");
@@ -256,7 +255,6 @@ namespace ErpOnlineOrder.Infrastructure.Persistence
                     .WithMany(x => x.Warehouse_Exports)
                     .HasForeignKey(x => x.Warehouse_id)
                     .OnDelete(DeleteBehavior.Restrict);
-                entity.HasOne(x => x.Invoice).WithMany().HasForeignKey(x => x.Invoice_id).OnDelete(DeleteBehavior.Restrict);
                 entity.HasOne(x => x.Order).WithMany().HasForeignKey(x => x.Order_id).OnDelete(DeleteBehavior.Restrict);
                 entity.HasOne(x => x.Customer).WithMany().HasForeignKey(x => x.Customer_id).OnDelete(DeleteBehavior.Restrict);
                 entity.HasOne(x => x.Parent_export).WithMany(x => x.Child_exports).HasForeignKey(x => x.Parent_export_id).OnDelete(DeleteBehavior.Restrict);

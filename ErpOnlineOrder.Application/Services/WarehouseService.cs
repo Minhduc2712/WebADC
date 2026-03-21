@@ -49,6 +49,8 @@ namespace ErpOnlineOrder.Application.Services
                 Warehouse_code = dto.Warehouse_code,
                 Warehouse_name = dto.Warehouse_name,
                 Warehouse_address = dto.Warehouse_address,
+                Warehouse_email = dto.Warehouse_email,
+                Warehouse_phone = dto.Warehouse_phone,
                 Province_id = dto.Province_id,
                 Created_by = createdBy,
                 Updated_by = createdBy,
@@ -75,6 +77,8 @@ namespace ErpOnlineOrder.Application.Services
             existing.Warehouse_code = dto.Warehouse_code;
             existing.Warehouse_name = dto.Warehouse_name;
             existing.Warehouse_address = dto.Warehouse_address;
+            existing.Warehouse_email = dto.Warehouse_email;
+            existing.Warehouse_phone = dto.Warehouse_phone;
             existing.Province_id = dto.Province_id;
             existing.Updated_by = updatedBy;
             existing.Updated_at = DateTime.UtcNow;

@@ -10,6 +10,7 @@
         "Confirmed" => "bg-primary",
         "Completed" => "bg-success",
         "Cancelled" => "bg-danger",
+        "Split" => "bg-secondary",
         _ => "bg-secondary"
     };
     var statusText = Model.Order_status switch
@@ -19,6 +20,7 @@
         "Confirmed" => "Đã xác nhận",
         "Completed" => "Hoàn thành",
         "Cancelled" => "Đã hủy",
+        "Split" => "Đã tách",
         _ => Model.Order_status
     };
 }
@@ -156,7 +158,6 @@
         const rows = items.map((item, index) => {
             return `<tr>
                 <td>
-                    <input class="form-check-input" type="hidden" name="Approved_items[${index}].Is_selected" value="false" />
                     <input class="form-check-input" type="checkbox" name="Approved_items[${index}].Is_selected" value="true" checked />
                     <input type="hidden" name="Approved_items[${index}].Product_id" value="${item.product_id}" />
                 </td>

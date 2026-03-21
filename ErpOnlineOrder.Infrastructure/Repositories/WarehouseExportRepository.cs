@@ -25,12 +25,12 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         {
             return await GetBaseQuery()
                 .Include(e => e.Warehouse)
-                .Include(e => e.Invoice)
                 .Include(e => e.Order)
                 .Include(e => e.Customer)
                 .Include(e => e.Staff)
                 .Include(e => e.Parent_export)
                 .Include(e => e.Merged_into_export)
+                .Include(e => e.Invoices)
                 .Include(e => e.Warehouse_Export_Details)
                     .ThenInclude(d => d.Product)
                 .Include(e => e.Warehouse_Export_Details)
@@ -42,8 +42,8 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         {
             return await GetBaseQuery()
                 .Include(e => e.Warehouse)
-                .Include(e => e.Invoice)
                 .Include(e => e.Customer)
+                .Include(e => e.Invoices)
                 .FirstOrDefaultAsync(e => e.Warehouse_export_code == code);
         }
 
@@ -51,9 +51,9 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         {
             return await GetBaseQuery()
                 .Include(e => e.Warehouse)
-                .Include(e => e.Invoice)
                 .Include(e => e.Customer)
                 .Include(e => e.Staff)
+                .Include(e => e.Invoices)
                 .Include(e => e.Warehouse_Export_Details)
                     .ThenInclude(d => d.Product)
                 .OrderByDescending(e => e.Created_at)
@@ -64,9 +64,9 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         {
             var query = GetBaseQuery()
                 .Include(e => e.Warehouse)
-                .Include(e => e.Invoice)
                 .Include(e => e.Customer)
                 .Include(e => e.Staff)
+                .Include(e => e.Invoices)
                 .Include(e => e.Warehouse_Export_Details)
                     .ThenInclude(d => d.Product)
                 .AsQueryable();
@@ -192,9 +192,9 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
             var entities = await GetBaseQuery()
                 .Include(e => e.Warehouse)
-                .Include(e => e.Invoice)
                 .Include(e => e.Customer)
                 .Include(e => e.Staff)
+                .Include(e => e.Invoices)
                 .Include(e => e.Warehouse_Export_Details)
                     .ThenInclude(d => d.Product)
                 .Where(e => idList.Contains(e.Id))
@@ -219,17 +219,6 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             };
         }
 
-        public async Task<IEnumerable<Warehouse_export>> GetByInvoiceIdAsync(int invoiceId)
-        {
-            return await GetBaseQuery()
-                .Include(e => e.Warehouse)
-                .Include(e => e.Invoice)
-                .Include(e => e.Warehouse_Export_Details)
-                    .ThenInclude(d => d.Product)
-                .Where(e => e.Invoice_id == invoiceId)
-                .ToListAsync();
-        }
-
         public async Task<IEnumerable<Warehouse_export>> GetByCustomerIdsAsync(IEnumerable<int> customerIds)
         {
             var ids = customerIds.ToList();
@@ -237,9 +226,9 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
             return await GetBaseQuery()
                 .Include(e => e.Warehouse)
-                .Include(e => e.Invoice)
                 .Include(e => e.Customer)
                 .Include(e => e.Staff)
+                .Include(e => e.Invoices)
                 .Include(e => e.Warehouse_Export_Details)
                     .ThenInclude(d => d.Product)
                 .Where(e => ids.Contains(e.Customer_id))
@@ -251,7 +240,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         {
             return await GetBaseQuery()
                 .Include(e => e.Warehouse)
-                .Include(e => e.Invoice)
+                .Include(e => e.Invoices)
                 .Include(e => e.Warehouse_Export_Details)
                     .ThenInclude(d => d.Product)
                 .Where(e => e.Customer_id == customerId)
@@ -262,8 +251,8 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         public async Task<IEnumerable<Warehouse_export>> GetByWarehouseIdAsync(int warehouseId)
         {
             return await GetBaseQuery()
-                .Include(e => e.Invoice)
                 .Include(e => e.Customer)
+                .Include(e => e.Invoices)
                 .Include(e => e.Warehouse_Export_Details)
                     .ThenInclude(d => d.Product)
                 .Where(e => e.Warehouse_id == warehouseId)
@@ -275,8 +264,8 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         {
             return await GetBaseQuery()
                 .Include(e => e.Warehouse)
-                .Include(e => e.Invoice)
                 .Include(e => e.Customer)
+                .Include(e => e.Invoices)
                 .Where(e => e.Status == status)
                 .OrderByDescending(e => e.Created_at)
                 .ToListAsync();
@@ -286,7 +275,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         {
             return await GetBaseQuery()
                 .Include(e => e.Warehouse)
-                .Include(e => e.Invoice)
+                .Include(e => e.Invoices)
                 .Include(e => e.Warehouse_Export_Details)
                     .ThenInclude(d => d.Product)
                 .Where(e => e.Parent_export_id == parentExportId)

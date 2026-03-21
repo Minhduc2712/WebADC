@@ -21,6 +21,8 @@ namespace ErpOnlineOrder.Application.Services
         private readonly IOrderRepository _orderRepository;
         private readonly IStockRepository _stockRepository;
         private readonly IDbTransactionManager _transactionManager;
+        private readonly IEmailService _emailService;
+        private readonly ICustomerRepository _customerRepository;
 
         public WarehouseExportService(
             IWarehouseExportRepository exportRepository,
@@ -31,7 +33,9 @@ namespace ErpOnlineOrder.Application.Services
             ICustomerManagementRepository customerManagementRepository,
             IOrderRepository orderRepository,
             IStockRepository stockRepository,
-            IDbTransactionManager transactionManager)
+            IDbTransactionManager transactionManager,
+            IEmailService emailService,
+            ICustomerRepository customerRepository)
         {
             _exportRepository = exportRepository;
             _invoiceRepository = invoiceRepository;
@@ -42,6 +46,8 @@ namespace ErpOnlineOrder.Application.Services
             _orderRepository = orderRepository;
             _stockRepository = stockRepository;
             _transactionManager = transactionManager;
+            _emailService = emailService;
+            _customerRepository = customerRepository;
         }
 
         private async Task<IEnumerable<int>?> GetAllowedCustomerIdsAsync(int userId)
@@ -59,9 +65,20 @@ namespace ErpOnlineOrder.Application.Services
 
             if (userId.HasValue && userId.Value > 0)
             {
+                if (!await _permissionService.IsAdminAsync(userId.Value))
+                {
+                    var customer = await _customerRepository.GetByUserIdAsync(userId.Value);
+                    if (customer != null && customer.Id == export.Customer_id)
+                    {
+                        // Là chủ sở hữu phiếu xuất
+                    }
+                    else
+                    {
                 var customerIds = await GetAllowedCustomerIdsAsync(userId.Value);
                 if (customerIds != null && !customerIds.Contains(export.Customer_id))
                     return null;
+                    }
+                }
             }
 
             var dto = EntityMappers.ToWarehouseExportDto(export);
@@ -127,8 +144,14 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<IEnumerable<WarehouseExportDto>> GetByInvoiceIdAsync(int invoiceId)
         {
-            var exports = await _exportRepository.GetByInvoiceIdAsync(invoiceId);
-            return exports.Select(EntityMappers.ToWarehouseExportDto);
+            var invoice = await _invoiceRepository.GetByIdAsync(invoiceId);
+            if (invoice != null && invoice.Warehouse_export_id.HasValue)
+            {
+                var export = await _exportRepository.GetByIdAsync(invoice.Warehouse_export_id.Value);
+                if (export != null)
+                    return new List<WarehouseExportDto> { EntityMappers.ToWarehouseExportDto(export) };
+            }
+            return new List<WarehouseExportDto>();
         }
 
         public async Task<IEnumerable<WarehouseExportDto>> GetByCustomerIdAsync(int customerId)
@@ -158,153 +181,6 @@ namespace ErpOnlineOrder.Application.Services
         {
             var exports = await _exportRepository.GetByWarehouseIdAsync(warehouseId);
             return exports.Select(EntityMappers.ToWarehouseExportDto);
-        }
-
-        public async Task<WarehouseExportDto?> CreateExportFromInvoiceAsync(CreateWarehouseExportDto dto, int userId)
-        {
-            // Kiểm tra hóa đơn tồn tại
-            var invoice = await _invoiceRepository.GetByIdAsync(dto.Invoice_id);
-            if (invoice == null)
-            {
-                throw new Exception("Hóa đơn không tồn tại");
-            }
-
-            // Kiểm tra hóa đơn đã có phiếu xuất kho chưa
-            var existingExport = await HasExportForInvoiceAsync(dto.Invoice_id);
-            if (existingExport)
-            {
-                throw new Exception("Hóa đơn này đã có phiếu xuất kho");
-            }
-
-            // Kiểm tra trạng thái hóa đơn
-            if (invoice.Status != InvoiceStatuses.Confirmed && invoice.Status != InvoiceStatuses.Draft && invoice.Status != InvoiceStatuses.Split)
-            {
-                throw new Exception($"Không thể tạo phiếu xuất kho cho hóa đơn có trạng thái: {InvoiceStatuses.ToDisplayText(invoice.Status)}");
-            }
-
-            // Xác định Staff_id: ưu tiên từ dto, nếu không có thì lấy từ userId
-            var staffId = dto.Staff_id;
-            if (staffId <= 0)
-            {
-                var staff = await _staffRepository.GetByUserIdAsync(userId);
-                staffId = staff?.Id ?? throw new Exception("Không tìm thấy nhân viên tương ứng với tài khoản đang đăng nhập");
-            }
-
-            var now = DateTime.UtcNow;
-
-            var export = new Warehouse_export
-            {
-                Warehouse_export_code = $"EXP-{now:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 6).ToUpper()}",
-                Warehouse_id = dto.Warehouse_id,
-                Invoice_id = dto.Invoice_id,
-                Order_id = invoice.Order_id,
-                Customer_id = invoice.Customer_id,
-                Staff_id = staffId,
-                Export_date = dto.Export_date ?? now,
-                Arrival_date = dto.Arrival_date,
-                Delivery_status = "Pending",
-                Status = "Draft",
-                Created_by = userId,
-                Updated_by = userId,
-                Created_at = now,
-                Updated_at = now,
-                Is_deleted = false,
-                Warehouse_Export_Details = new List<Warehouse_export_detail>()
-            };
-
-            // Nếu có chi tiết, sử dụng chi tiết được cung cấp
-            if (dto.Details != null && dto.Details.Any())
-            {
-                foreach (var detail in dto.Details)
-                {
-                    export.Warehouse_Export_Details.Add(new Warehouse_export_detail
-                    {
-                        Warehouse_id = dto.Warehouse_id,
-                        Product_id = detail.Product_id,
-                        Quantity_shipped = detail.Quantity_shipped,
-                        Unit_price = detail.Unit_price,
-                        Total_price = detail.Quantity_shipped * detail.Unit_price,
-                        Created_by = userId,
-                        Updated_by = userId,
-                        Created_at = now,
-                        Updated_at = now,
-                        Is_deleted = false
-                    });
-                }
-            }
-            else
-            {
-                // Tự động lấy từ hóa đơn
-                foreach (var invoiceDetail in invoice.Invoice_Details.Where(d => !d.Is_deleted))
-                {
-                    export.Warehouse_Export_Details.Add(new Warehouse_export_detail
-                    {
-                        Warehouse_id = dto.Warehouse_id,
-                        Product_id = invoiceDetail.Product_id,
-                        Quantity_shipped = invoiceDetail.Quantity,
-                        Unit_price = invoiceDetail.Unit_price,
-                        Total_price = invoiceDetail.Total_price,
-                        Created_by = userId,
-                        Updated_by = userId,
-                        Created_at = now,
-                        Updated_at = now,
-                        Is_deleted = false
-                    });
-                }
-            }
-
-            // Kiểm tra tồn kho theo kho + sản phẩm và trừ tồn khi tạo phiếu xuất
-            var requestedByProduct = export.Warehouse_Export_Details
-                .Where(d => !d.Is_deleted)
-                .GroupBy(d => d.Product_id)
-                .Select(g => new { ProductId = g.Key, Quantity = g.Sum(x => x.Quantity_shipped) })
-                .ToList();
-
-            var productIds = requestedByProduct.Select(x => x.ProductId).ToList();
-            var stocks = await _stockRepository.GetByWarehouseAndProductsAsync(dto.Warehouse_id, productIds);
-            var stockDict = stocks.ToDictionary(s => s.Product_id, s => s);
-
-            foreach (var item in requestedByProduct)
-            {
-                if (item.Quantity <= 0)
-                {
-                    throw new Exception($"Số lượng xuất không hợp lệ cho sản phẩm {item.ProductId}");
-                }
-
-                if (!stockDict.TryGetValue(item.ProductId, out var stock))
-                {
-                    throw new Exception($"Kho chưa được gán sản phẩm {item.ProductId} trong tồn kho");
-                }
-
-                if (stock.Quantity < item.Quantity)
-                {
-                    throw new Exception($"Tồn kho không đủ cho sản phẩm {item.ProductId}. Tồn hiện tại: {stock.Quantity}, yêu cầu xuất: {item.Quantity}");
-                }
-            }
-
-            await using var transaction = await _transactionManager.BeginTransactionAsync();
-            try
-            {
-                foreach (var item in requestedByProduct)
-                {
-                    var stock = stockDict[item.ProductId];
-                    stock.Quantity -= item.Quantity;
-                    stock.Updated_by = userId;
-                    stock.Updated_at = now;
-                    await _stockRepository.UpdateAsync(stock);
-                }
-    
-                await _exportRepository.AddAsync(export);
-                await transaction.CommitAsync();
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
-
-            var created = await _exportRepository.GetByIdAsync(export.Id);
-            return created != null ? EntityMappers.ToWarehouseExportDto(created) : null;
         }
 
         public async Task<bool> UpdateExportAsync(int id, UpdateWarehouseExportDto dto, int userId)
@@ -377,6 +253,19 @@ namespace ErpOnlineOrder.Application.Services
             // Sync: auto Completed → hóa đơn cũng hoàn thành
             if (autoCompleted)
                 await SyncStatusToInvoiceAsync(export, ExportStatuses.Completed, userId);
+
+            // Gửi email thông báo trạng thái vận chuyển cho khách hàng
+            try
+            {
+                if (status == DeliveryStatuses.Shipped || status == DeliveryStatuses.Delivered)
+                {
+                    await _emailService.SendExportDeliveryStatusToCustomerAsync(export.Id);
+                }
+            }
+            catch 
+            {
+                // Bỏ qua lỗi gửi email
+            }
 
             return true;
         }
@@ -512,11 +401,14 @@ namespace ErpOnlineOrder.Application.Services
             var newInvoiceIds = new List<int>();
 
             // 3. Tách hóa đơn trước (nếu cần)
-            if (dto.Auto_split_invoice && sourceExport.Invoice != null)
+            var sourceInvoices = await _invoiceRepository.GetByWarehouseExportIdAsync(sourceExport.Id);
+            var sourceInvoice = sourceInvoices.FirstOrDefault();
+
+            if (dto.Auto_split_invoice && sourceInvoice != null)
             {
                 var splitInvoiceDto = new SplitInvoiceDto
                 {
-                    Source_invoice_id = sourceExport.Invoice_id ?? 0,
+                    Source_invoice_id = sourceInvoice.Id,
                     Note = dto.Note ?? $"Tách theo phiếu xuất kho {sourceExport.Warehouse_export_code}",
                     Split_parts = dto.Split_parts.Select(part => new SplitInvoicePart
                     {
@@ -526,7 +418,7 @@ namespace ErpOnlineOrder.Application.Services
                                 .FirstOrDefault(d => d.Id == item.Export_detail_id);
                             
                             // Tìm invoice detail tương ứng
-                            var invoiceDetail = sourceExport.Invoice?.Invoice_Details
+                            var invoiceDetail = sourceInvoice.Invoice_Details
                                 .FirstOrDefault(d => d.Product_id == exportDetail?.Product_id);
                             
                             return new SplitInvoiceItem
@@ -553,13 +445,17 @@ namespace ErpOnlineOrder.Application.Services
             try
             {
                 int partIndex = 0;
+                
+                var remainingDetails = sourceExport.Warehouse_Export_Details
+                    .Where(d => !d.Is_deleted)
+                    .ToDictionary(d => d.Id, d => d.Quantity_shipped);
+
                 foreach (var part in dto.Split_parts)
                 {
                     var newExport = new Warehouse_export
                     {
                         Warehouse_export_code = $"{codePrefix}{startIndex + partIndex + 1}",
                         Warehouse_id = sourceExport.Warehouse_id,
-                        Invoice_id = newInvoiceIds.Count > partIndex ? newInvoiceIds[partIndex] : sourceExport.Invoice_id,
                         Order_id = sourceExport.Order_id,
                         Customer_id = sourceExport.Customer_id,
                         Staff_id = sourceExport.Staff_id,
@@ -599,26 +495,73 @@ namespace ErpOnlineOrder.Application.Services
     
                         newExport.Warehouse_Export_Details.Add(newDetail);
     
-                        // Giảm số lượng trong phiếu gốc
-                        sourceDetail.Quantity_shipped -= item.Quantity;
-                        if (sourceDetail.Quantity_shipped <= 0)
+                        // Trừ đi số lượng đã tách khỏi biến tạm
+                        if (remainingDetails.ContainsKey(item.Export_detail_id))
                         {
-                            sourceDetail.Is_deleted = true;
-                        }
-                        else
-                        {
-                            sourceDetail.Total_price = sourceDetail.Quantity_shipped * sourceDetail.Unit_price;
+                            remainingDetails[item.Export_detail_id] -= item.Quantity;
                         }
                     }
     
                     await _exportRepository.AddAsync(newExport);
                     newExports.Add(newExport);
+
+                    if (newInvoiceIds.Count > partIndex)
+                    {
+                        var newInv = await _invoiceRepository.GetByIdAsync(newInvoiceIds[partIndex]);
+                        if (newInv != null)
+                        {
+                            newInv.Warehouse_export_id = newExport.Id;
+                            newInv.Updated_by = userId;
+                            newInv.Updated_at = now;
+                            await _invoiceRepository.UpdateAsync(newInv);
+                        }
+                    }
                     partIndex++;
                 }
     
-                // 5. Cập nhật phiếu xuất kho gốc
+                // TẠO PHIẾU CON THỨ 2: Chứa các sản phẩm còn lại
+                if (remainingDetails.Any(r => r.Value > 0))
+                {
+                    var remainExport = new Warehouse_export
+                    {
+                        Warehouse_export_code = $"{codePrefix}{startIndex + partIndex + 1}",
+                        Warehouse_id = sourceExport.Warehouse_id,
+                        Order_id = sourceExport.Order_id,
+                        Customer_id = sourceExport.Customer_id,
+                        Staff_id = sourceExport.Staff_id,
+                        Export_date = now,
+                        Delivery_status = DeliveryStatuses.Pending,
+                        Status = ExportStatuses.Draft,
+                        Parent_export_id = sourceExport.Id,
+                        Split_merge_note = dto.Note != null ? $"{dto.Note} (Phần còn lại)" : $"Phần còn lại từ phiếu {sourceExport.Warehouse_export_code}",
+                        Created_by = userId, Updated_by = userId, Created_at = now, Updated_at = now, Is_deleted = false,
+                        Warehouse_Export_Details = new List<Warehouse_export_detail>()
+                    };
+
+                    foreach (var remain in remainingDetails.Where(r => r.Value > 0))
+                    {
+                        var sourceDetail = sourceExport.Warehouse_Export_Details.First(d => d.Id == remain.Key);
+                        remainExport.Warehouse_Export_Details.Add(new Warehouse_export_detail
+                        {
+                            Warehouse_id = sourceDetail.Warehouse_id, Product_id = sourceDetail.Product_id,
+                            Quantity_shipped = remain.Value, Unit_price = sourceDetail.Unit_price,
+                            Total_price = remain.Value * sourceDetail.Unit_price,
+                            Created_by = userId, Updated_by = userId, Created_at = now, Updated_at = now, Is_deleted = false
+                        });
+                    }
+                    await _exportRepository.AddAsync(remainExport);
+                    newExports.Add(remainExport);
+
+                    if (newInvoiceIds.Count > partIndex)
+                    {
+                        var newInv = await _invoiceRepository.GetByIdAsync(newInvoiceIds[partIndex]);
+                        if (newInv != null) { newInv.Warehouse_export_id = remainExport.Id; newInv.Updated_by = userId; newInv.Updated_at = now; await _invoiceRepository.UpdateAsync(newInv); }
+                    }
+                }
+
+                // 5. Cập nhật phiếu xuất kho gốc (GIỮ NGUYÊN SỐ LƯỢNG)
                 sourceExport.Status = ExportStatuses.Split;
-                sourceExport.Split_merge_note = dto.Note ?? $"Đã tách thành {newExports.Count} phiếu";
+                sourceExport.Split_merge_note = dto.Note ?? $"Đã tách thành {newExports.Count} phiếu con";
                 sourceExport.Updated_by = userId;
                 sourceExport.Updated_at = now;
     
@@ -630,6 +573,14 @@ namespace ErpOnlineOrder.Application.Services
             {
                 await transaction.RollbackAsync();
                 throw;
+            }
+
+            // Gửi email thông báo cho kho về các phiếu xuất mới vừa được tách
+            foreach (var newExport in newExports)
+            {
+                try {
+                    await _emailService.SendWarehouseExportNotificationForStaffAndAdminAsync(newExport.Id);
+                } catch { }
             }
 
             result.Success = true;
@@ -698,15 +649,16 @@ namespace ErpOnlineOrder.Application.Services
             int? mergedInvoiceId = dto.Merged_invoice_id;
 
             // 2. Gộp hóa đơn trước (nếu cần)
-            if (dto.Auto_merge_invoices && !mergedInvoiceId.HasValue)
+            var invoiceIds = new List<int>();
+            foreach (var e in exports)
             {
-                var invoiceIds = exports
-                    .Where(e => e.Invoice_id.HasValue)
-                    .Select(e => e.Invoice_id!.Value)
-                    .Distinct()
-                    .ToList();
-                if (invoiceIds.Count > 1)
-                {
+                var invs = await _invoiceRepository.GetByWarehouseExportIdAsync(e.Id);
+                invoiceIds.AddRange(invs.Select(i => i.Id));
+            }
+            invoiceIds = invoiceIds.Distinct().ToList();
+
+            if (dto.Auto_merge_invoices && !mergedInvoiceId.HasValue && invoiceIds.Count > 1)
+            {
                     var mergeInvoiceDto = new MergeInvoicesDto
                     {
                         Invoice_ids = invoiceIds,
@@ -720,11 +672,6 @@ namespace ErpOnlineOrder.Application.Services
                     {
                         mergedInvoiceId = invoiceMergeResult.Merged_invoice.Id;
                     }
-                }
-                else
-                {
-                    mergedInvoiceId = invoiceIds.FirstOrDefault();
-                }
             }
 
             // 3. Tạo phiếu xuất kho gộp mới
@@ -732,7 +679,6 @@ namespace ErpOnlineOrder.Application.Services
             {
                 Warehouse_export_code = $"EXP-M-{now:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 6).ToUpper()}",
                 Warehouse_id = dto.Warehouse_id,
-                Invoice_id = mergedInvoiceId ?? exports.First().Invoice_id,
                 Order_id = null, // Phiếu gộp không liên kết trực tiếp với order
                 Customer_id = customerId!.Value,
                 Staff_id = dto.Staff_id,
@@ -798,6 +744,33 @@ namespace ErpOnlineOrder.Application.Services
                     export.Updated_at = now;
                     await _exportRepository.UpdateAsync(export);
                 }
+
+                // Cập nhật hóa đơn gộp (nếu có) hoặc các hóa đơn đang bị chắp nối vào Phiếu Xuất gộp
+                if (mergedInvoiceId.HasValue)
+                {
+                    var mInv = await _invoiceRepository.GetByIdAsync(mergedInvoiceId.Value);
+                    if (mInv != null)
+                    {
+                        mInv.Warehouse_export_id = mergedExport.Id;
+                        mInv.Updated_by = userId;
+                        mInv.Updated_at = now;
+                        await _invoiceRepository.UpdateAsync(mInv);
+                    }
+                }
+                else if (invoiceIds.Any())
+                {
+                    foreach (var invId in invoiceIds)
+                    {
+                        var inv = await _invoiceRepository.GetByIdAsync(invId);
+                        if (inv != null)
+                        {
+                            inv.Warehouse_export_id = mergedExport.Id;
+                            inv.Updated_by = userId;
+                            inv.Updated_at = now;
+                            await _invoiceRepository.UpdateAsync(inv);
+                        }
+                    }
+                }
                 
                 await transaction.CommitAsync();
             }
@@ -806,6 +779,11 @@ namespace ErpOnlineOrder.Application.Services
                 await transaction.RollbackAsync();
                 throw;
             }
+
+            // Gửi email thông báo cho kho về phiếu xuất gộp mới
+            try {
+                await _emailService.SendWarehouseExportNotificationForStaffAndAdminAsync(mergedExport.Id);
+            } catch { }
 
             result.Success = true;
             result.Message = $"Đã gộp thành công {exports.Count} phiếu xuất kho";
@@ -848,26 +826,6 @@ namespace ErpOnlineOrder.Application.Services
             // Khôi phục số lượng về phiếu gốc
             foreach (var childExport in childExports)
             {
-                foreach (var childDetail in childExport.Warehouse_Export_Details.Where(d => !d.Is_deleted))
-                {
-                    var parentDetail = parentExport.Warehouse_Export_Details
-                        .FirstOrDefault(d => d.Product_id == childDetail.Product_id);
-
-                    if (parentDetail != null)
-                    {
-                        if (parentDetail.Is_deleted)
-                        {
-                            parentDetail.Is_deleted = false;
-                            parentDetail.Quantity_shipped = childDetail.Quantity_shipped;
-                        }
-                        else
-                        {
-                            parentDetail.Quantity_shipped += childDetail.Quantity_shipped;
-                        }
-                        parentDetail.Total_price = parentDetail.Quantity_shipped * parentDetail.Unit_price;
-                    }
-                }
-
                 // Xóa phiếu con
                 childExport.Is_deleted = true;
                 childExport.Updated_by = userId;
@@ -926,46 +884,46 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<bool> HasExportForInvoiceAsync(int invoiceId)
         {
-            var exports = await _exportRepository.GetByInvoiceIdAsync(invoiceId);
-            return exports.Any(e => !e.Is_deleted && e.Status != ExportStatuses.Cancelled);
+            var invoice = await _invoiceRepository.GetByIdAsync(invoiceId);
+            if (invoice != null && invoice.Warehouse_export_id.HasValue)
+            {
+                var export = await _exportRepository.GetByIdAsync(invoice.Warehouse_export_id.Value);
+                return export != null && !export.Is_deleted && export.Status != ExportStatuses.Cancelled;
+            }
+            return false;
         }
 
         private async Task SyncStatusToInvoiceAsync(Warehouse_export export, string exportStatus, int userId)
         {
-            if (!export.Invoice_id.HasValue || export.Invoice_id.Value <= 0) return;
-
-            var invoice = await _invoiceRepository.GetByIdAsync(export.Invoice_id.Value);
-            if (invoice == null || invoice.Status == InvoiceStatuses.Cancelled) return;
-
-            var changed = false;
-
-            if (exportStatus == ExportStatuses.Confirmed && invoice.Status == InvoiceStatuses.Draft)
+            var invoices = await _invoiceRepository.GetByWarehouseExportIdAsync(export.Id);
+            foreach (var invoice in invoices)
             {
-                invoice.Status = InvoiceStatuses.Confirmed;
-                changed = true;
-            }
-            else if (exportStatus == ExportStatuses.Completed && invoice.Status != InvoiceStatuses.Completed)
-            {
-                invoice.Status = InvoiceStatuses.Completed;
-                changed = true;
-            }
-            else if (exportStatus == ExportStatuses.Cancelled)
-            {
-                // Chỉ hủy hóa đơn nếu không còn phiếu xuất kho active nào khác
-                var otherExports = await _exportRepository.GetByInvoiceIdAsync(export.Invoice_id.Value);
-                var hasOtherActive = otherExports.Any(e => !e.Is_deleted && e.Id != export.Id && e.Status != ExportStatuses.Cancelled);
-                if (!hasOtherActive)
+                if (invoice.Status == InvoiceStatuses.Cancelled) continue;
+
+                var changed = false;
+
+                if (exportStatus == ExportStatuses.Confirmed && invoice.Status == InvoiceStatuses.Draft)
+                {
+                    invoice.Status = InvoiceStatuses.Confirmed;
+                    changed = true;
+                }
+                else if (exportStatus == ExportStatuses.Completed && invoice.Status != InvoiceStatuses.Completed)
+                {
+                    invoice.Status = InvoiceStatuses.Completed;
+                    changed = true;
+                }
+                else if (exportStatus == ExportStatuses.Cancelled)
                 {
                     invoice.Status = InvoiceStatuses.Cancelled;
                     changed = true;
                 }
-            }
 
-            if (changed)
-            {
-                invoice.Updated_by = userId;
-                invoice.Updated_at = DateTime.UtcNow;
-                await _invoiceRepository.UpdateAsync(invoice);
+                if (changed)
+                {
+                    invoice.Updated_by = userId;
+                    invoice.Updated_at = DateTime.UtcNow;
+                    await _invoiceRepository.UpdateAsync(invoice);
+                }
             }
         }
 

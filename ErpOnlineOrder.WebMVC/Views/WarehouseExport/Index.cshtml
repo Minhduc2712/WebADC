@@ -17,12 +17,6 @@
         </nav>
     </div>
     <div>
-        @if (Context.Session.HasPermission("WAREHOUSE_CREATE"))
-        {
-            <a href="@Url.Action("Create")" class="btn btn-primary me-2">
-                <i class="fas fa-plus me-1"></i>Tạo phiếu xuất
-            </a>
-        }
         @if (Context.Session.HasPermission("WAREHOUSE_UPDATE"))
         {
             <a href="@Url.Action("Merge")" class="btn btn-outline-primary me-2">
@@ -165,18 +159,25 @@
                     }
                     else
                     {
-                        @foreach (var export in items.OrderByDescending(e => e.Export_date))
+                        @foreach (var export in items)
                         {
                             var statusClass = ErpOnlineOrder.Domain.Constants.ExportStatuses.ToCssClass(export.Status);
                             var statusText = ErpOnlineOrder.Domain.Constants.ExportStatuses.ToDisplayText(export.Status);
                             var deliveryClass = ErpOnlineOrder.Domain.Constants.DeliveryStatuses.ToCssClass(export.Delivery_status);
                             var deliveryText = ErpOnlineOrder.Domain.Constants.DeliveryStatuses.ToDisplayText(export.Delivery_status);
-                            <tr>
-                                <td>
-                                    <span class="badge bg-secondary">@export.Warehouse_export_code</span>
+                            
+                            var paddingLeft = export.IndentLevel * 20;
+                            
+                            <tr class="@(export.Status == "Split" ? "table-light text-muted" : "")">
+                                <td style="padding-left: @(paddingLeft + 8)px;">
+                                    @if (export.IndentLevel > 0)
+                                    {
+                                        <span class="text-primary fw-bold me-1">↳</span>
+                                    }
+                                    <span class="badge bg-secondary @(export.Status == "Split" ? "text-decoration-line-through opacity-75" : "")">@export.Warehouse_export_code</span>
                                     @if (export.Parent_export_id.HasValue)
                                     {
-                                        <br /><small class="text-muted">Từ: @export.Parent_export_code</small>
+                                        <br /><small class="text-muted ms-2">Từ: @export.Parent_export_code</small>
                                     }
                                 </td>
                                 <td><span class="badge bg-info">@export.Invoice_code</span></td>
@@ -247,7 +248,7 @@
                                                 <i class="fas fa-check"></i>
                                             </button>
                                         }
-                                        @if (export.Status != "Completed" && export.Status != "Cancelled" && export.Details.Count > 1)
+                                        @if (export.Status != "Completed" && export.Status != "Cancelled" && export.Status != "Split" && export.Details.Count > 1)
                                         {
                                             <a asp-action="Split" asp-route-id="@export.Id" class="btn btn-outline-info" title="Tách phiếu">
                                                 <i class="fas fa-expand-arrows-alt"></i>

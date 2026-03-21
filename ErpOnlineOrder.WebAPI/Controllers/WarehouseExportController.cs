@@ -77,23 +77,6 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var exports = await _exportService.GetByWarehouseIdAsync(warehouseId);
             return Ok(ApiResponse<object>.Ok(exports));
         }
-        [HttpPost]
-        public async Task<IActionResult> CreateExport([FromBody] CreateWarehouseExportDto dto)
-        {
-            try
-            {
-                var result = await _exportService.CreateExportFromInvoiceAsync(dto, GetCurrentUserId());
-                if (result == null)
-                {
-                    return BadRequest(ApiResponse<object>.Fail("Không thể tạo phiếu xuất kho. Dữ liệu không hợp lệ hoặc chưa đủ điều kiện xuất kho."));
-                }
-                return CreatedAtAction(nameof(GetById), new { id = result.Id }, ApiResponse<object>.Ok(result));
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ApiResponse<object>.Fail(ex.Message));
-            }
-        }
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateExport(int id, [FromBody] UpdateWarehouseExportDto dto)
         {

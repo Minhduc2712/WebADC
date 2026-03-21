@@ -27,7 +27,7 @@ namespace ErpOnlineOrder.Domain.Models
         
         public int? Warehouse_export_id { get; set; }
         [ForeignKey("Warehouse_export_id")]
-        public virtual Warehouse? Warehouse_export { get; set; }
+        public virtual Warehouse_export? Warehouse_export { get; set; }
         
         public decimal Total_amount { get; set; }
         public decimal Tax_amount { get; set; }

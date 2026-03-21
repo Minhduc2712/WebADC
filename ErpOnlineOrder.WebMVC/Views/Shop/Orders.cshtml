@@ -36,6 +36,7 @@
                                     <option value="Approved" selected="@(ViewBag.Status == "Approved")">Đã duyệt</option>
                                     <option value="Completed" selected="@(ViewBag.Status == "Completed")">Hoàn thành</option>
                                     <option value="Cancelled" selected="@(ViewBag.Status == "Cancelled")">Đã hủy</option>
+                                    <option value="Split" selected="@(ViewBag.Status == "Split")">Đã tách</option>
                                 </select>
                             </form>
                         </div>
@@ -81,15 +82,27 @@
                                                 <td class="text-end"><strong class="text-danger">@item.Total_price.ToString("N0") đ</strong></td>
                                                 <td class="text-center">
                                                     @if(item.Order_status == "Pending") { <span class="badge bg-warning text-dark">Chờ xử lý</span> }
+                                                    else if(item.Order_status == "Exporting") { <span class="badge bg-primary">Xuất kho</span> }
                                                     else if(item.Order_status == "Approved") { <span class="badge bg-primary">Đã duyệt</span> }
                                                     else if(item.Order_status == "Completed") { <span class="badge bg-success">Hoàn thành</span> }
                                                     else if(item.Order_status == "Cancelled") { <span class="badge bg-danger">Đã hủy</span> }
+                                                    else if(item.Order_status == "WaitingCustomer") { <span class="badge bg-warning text-dark">Chờ xác nhận</span> }
+                                                    else if(item.Order_status == "Split") { <span class="badge bg-secondary">Đã tách</span> }
                                                     else { <span class="badge bg-secondary">@item.Order_status</span> }
                                                 </td>
                                                 <td class="text-end">
                                                     <a asp-action="OrderDetail" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary rounded-pill px-3">
                                                         <i class="fas fa-eye"></i> Theo dõi
                                                     </a>
+                                                    @if (item.Order_status == "WaitingCustomer")
+                                                    {
+                                                        <button type="button" class="btn btn-sm btn-success rounded-pill px-3 ms-1" onclick="approveOrder(@item.Id)">
+                                                            <i class="fas fa-check"></i> Duyệt
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 ms-1" onclick="rejectOrder(@item.Id)">
+                                                            <i class="fas fa-times"></i> Không duyệt
+                                                        </button>
+                                                    }
                                                 </td>
                                             </tr>
                                         }
@@ -133,3 +146,64 @@
         </div>
     </div>
 </section>
+
+@section Scripts {
+<script>
+    async function handlePost(url, payload = null) {
+        try {
+            const options = {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest' // Báo cho server biết đây là AJAX
+                }
+            };
+            
+            // Chỉ gửi Content-Type JSON khi thực sự có dữ liệu truyền đi
+            if (payload) {
+                options.headers['Content-Type'] = 'application/json';
+                options.body = JSON.stringify(payload);
+            }
+            
+            const res = await fetch(url, options);
+            
+            // Xử lý mượt mà nếu bị mất Session đăng nhập
+            if (res.status === 401 || res.status === 403 || res.redirected) {
+                window.location.href = '/Auth/Login';
+                return { success: false, message: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại." };
+            }
+            
+            const contentType = res.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                return await res.json();
+            } else {
+                const text = await res.text();
+                console.error("Non-JSON response from server:", text);
+                return { success: false, message: "Lỗi hệ thống: Máy chủ phản hồi sai định dạng. Vui lòng xem Console (F12) để biết chi tiết." };
+            }
+        } catch (error) {
+            console.error("Fetch error:", error);
+            return { success: false, message: "Không thể kết nối đến máy chủ." };
+        }
+    }
+
+    function approveOrder(id) {
+        if (confirm('Bạn xác nhận đồng ý nhận phần đơn hàng có sẵn này?')) {
+            handlePost('@Url.Action("CustomerApproveOrder", "Shop")?id=' + id)
+            .then(data => {
+                if (data.success) location.reload();
+                else alert(data.message || 'Có lỗi xảy ra.');
+            });
+        }
+    }
+
+    function rejectOrder(id) {
+        if (confirm('Bạn không đồng ý nhận phần đơn hàng này? Hệ thống sẽ hoàn tác và đưa đơn hàng gốc về trạng thái Chờ xử lý.')) {
+            handlePost('@Url.Action("CustomerRejectOrder", "Shop")?id=' + id)
+            .then(data => {
+                if (data.success) location.reload();
+                else alert(data.message || 'Có lỗi xảy ra.');
+            });
+        }
+    }
+</script>
+}

@@ -223,9 +223,6 @@ namespace ErpOnlineOrder.Infrastructure.Migrations
                         .HasColumnType("int")
                         .HasColumnName("Customer_id");
 
-                    b.Property<bool>("Is_auto_confirm")
-                        .HasColumnType("bit");
-
                     b.Property<bool>("Is_deleted")
                         .HasColumnType("bit");
 
@@ -511,6 +508,9 @@ namespace ErpOnlineOrder.Infrastructure.Migrations
                     b.Property<int>("Customer_id")
                         .HasColumnType("int")
                         .HasColumnName("Customer_id");
+
+                    b.Property<bool>("Is_auto_confirm")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("Is_deleted")
                         .HasColumnType("bit");

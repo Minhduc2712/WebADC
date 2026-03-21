@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.DTOs.OrderDTOs;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.Application.DTOs;
@@ -11,10 +12,12 @@ namespace ErpOnlineOrder.WebAPI.Controllers
     public class OrderController : ApiController
     {
         private readonly IOrderService _orderService;
+        private readonly ICustomerRepository _customerRepository;
 
-        public OrderController(IOrderService orderService)
+        public OrderController(IOrderService orderService, ICustomerRepository customerRepository)
         {
             _orderService = orderService;
+            _customerRepository = customerRepository;
         }
 
         [HttpGet]
@@ -164,6 +167,38 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 }
 
                 return Ok(ApiResponse<object>.Ok(result));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+        }
+
+        [HttpPost("{id}/customer-approve")]
+        public async Task<IActionResult> CustomerApproveOrder(int id)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var result = await _orderService.CustomerApproveOrderAsync(id, userId);
+                if (!result) return BadRequest(ApiResponse<object>.Fail("Không thể thao tác."));
+                return Ok(ApiResponse<object>.Ok(new { success = result }));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+        }
+
+        [HttpPost("{id}/customer-reject")]
+        public async Task<IActionResult> CustomerRejectOrder(int id)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var result = await _orderService.CustomerRejectOrderAsync(id, userId);
+                if (!result) return BadRequest(ApiResponse<object>.Fail("Không thể thao tác."));
+                return Ok(ApiResponse<object>.Ok(new { success = result }));
             }
             catch (Exception ex)
             {

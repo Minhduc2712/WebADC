@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using ErpOnlineOrder.Application.DTOs.InvoiceDTOs;
 using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.WebMVC.Services.Interfaces;
+using ErpOnlineOrder.Application.DTOs;
 
 namespace ErpOnlineOrder.WebMVC.Services
 {
@@ -64,6 +65,36 @@ namespace ErpOnlineOrder.WebMVC.Services
             return success;
         }
 
+        public async Task<IEnumerable<InvoiceDto>> GetMyInvoicesAsync(CancellationToken cancellationToken = default)
+        {
+            return await GetAsync<IEnumerable<InvoiceDto>>("invoice/my-invoices", cancellationToken) ?? Array.Empty<InvoiceDto>();
+        }
+
+        public async Task<(List<InvoiceDto>? Data, string? Error)> CustomerRequestInvoiceAsync(CustomerInvoiceRequestDto dto, CancellationToken cancellationToken = default)
+        {
+            return await PostAsync<CustomerInvoiceRequestDto, List<InvoiceDto>>("invoice/customer-request", dto, cancellationToken);
+        }
+
+        public async Task<ApiResponse<InvoiceDto>?> CreateFromExportAsync(int exportId, CancellationToken cancellationToken = default)
+        {
+            var response = await _httpClient.PostAsync($"invoice/create-from-export/{exportId}", null, cancellationToken);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<ApiResponse<InvoiceDto>>(new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }, cancellationToken);
+            }
+
+            var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            try
+            {
+                var apiResponse = System.Text.Json.JsonSerializer.Deserialize<ApiResponse<InvoiceDto>>(errorContent, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (apiResponse != null) return apiResponse;
+            }
+            catch { }
+
+            return new ApiResponse<InvoiceDto> { Success = false, Message = "Lỗi khi gọi API tạo hóa đơn từ phiếu xuất kho." };
+        }
+
         // public async Task<CreateInvoiceFromOrderResultDto?> CreateFromOrderAsync(int orderId, CancellationToken cancellationToken = default)
         // {
         //     var response = await _http.PostAsync($"invoice/create-from-order/{orderId}", null, cancellationToken);
@@ -91,5 +122,7 @@ namespace ErpOnlineOrder.WebMVC.Services
             var path = $"invoice/customer/{customerId}/paged?" + string.Join("&", query);
             return await GetAsync<PagedResult<InvoiceDto>>(path, cancellationToken) ?? new PagedResult<InvoiceDto> { Items = new List<InvoiceDto>(), Page = request.Page, PageSize = request.PageSize, TotalCount = 0 };
         }
+
+        
     }
 }

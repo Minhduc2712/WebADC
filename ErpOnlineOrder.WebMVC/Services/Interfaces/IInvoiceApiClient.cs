@@ -1,3 +1,4 @@
+using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.DTOs.InvoiceDTOs;
 
 namespace ErpOnlineOrder.WebMVC.Services.Interfaces
@@ -14,9 +15,14 @@ namespace ErpOnlineOrder.WebMVC.Services.Interfaces
         Task<bool> UndoSplitAsync(int parentInvoiceId, CancellationToken cancellationToken = default);
         Task<bool> UndoMergeAsync(int mergedInvoiceId, CancellationToken cancellationToken = default);
         
+        Task<IEnumerable<InvoiceDto>> GetMyInvoicesAsync(CancellationToken cancellationToken = default);
+        Task<(List<InvoiceDto>? Data, string? Error)> CustomerRequestInvoiceAsync(CustomerInvoiceRequestDto dto, CancellationToken cancellationToken = default);
         // Task<CreateInvoiceFromOrderResultDto?> CreateFromOrderAsync(int orderId, CancellationToken cancellationToken = default);
         Task<byte[]> ExportToExcelAsync(string? status = null, CancellationToken cancellationToken = default);
         Task<(bool Success, string? Error)> UpdateStatusAsync(int id, string status, CancellationToken cancellationToken = default);
+    
+        Task<ApiResponse<InvoiceDto>?> CreateFromExportAsync(int exportId, CancellationToken cancellationToken = default);
+
         Task<PagedResult<InvoiceDto>> GetByCustomerIdPagedAsync(int customerId, InvoiceFilterRequest request, CancellationToken cancellationToken = default);
     }
 }

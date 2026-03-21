@@ -38,6 +38,7 @@
                         <option value="Approved" selected="@(ViewBag.Status == "Approved")">Đã duyệt</option>
                         <option value="Completed" selected="@(ViewBag.Status == "Completed")">Hoàn thành</option>
                         <option value="Cancelled" selected="@(ViewBag.Status == "Cancelled")">Đã hủy</option>
+                        <option value="Split" selected="@(ViewBag.Status == "Split")">Đã tách</option>
                     </select>
                 </div>
                 <div class="col-md-2">
@@ -72,19 +73,19 @@
                                 var isChild = item.IndentLevel > 0;
                                 var paddingLeft = item.IndentLevel * 30; 
                                 
-                                <tr>
+                                <tr class="@(item.Order_status == "Split" ? "table-light text-muted" : "")">
                                     <!-- Cột Mã đơn hàng (Có phân cấp) -->
                                     <td class="ps-3" style="padding-left: @(paddingLeft + 15)px !important;">
                                         @if (isChild)
                                         {
                                             <i class="fas fa-level-up-alt fa-rotate-90 text-muted me-2" style="font-size: 0.8em;"></i>
-                                            <span class="badge bg-light text-dark border border-secondary shadow-sm" title="Đơn con tách từ @item.Parent_order_id">
+                                            <span class="badge bg-light text-dark border border-secondary shadow-sm @(item.Order_status == "Split" ? "text-decoration-line-through opacity-75" : "")" title="Đơn con tách từ @item.Parent_order_id">
                                                 #@item.Order_code
                                             </span>
                                         }
                                         else
                                         {
-                                            <span class="fw-bold text-primary fs-6">#@item.Order_code</span>
+                                            <span class="fw-bold fs-6 @(item.Order_status == "Split" ? "text-secondary text-decoration-line-through opacity-75" : "text-primary")">#@item.Order_code</span>
                                         }
                                     </td>
                                     
@@ -95,9 +96,11 @@
                                     <td class="text-end font-weight-bold text-danger">@item.Total_price.ToString("N0") đ</td>
                                     <td class="text-center">
                                         @if(item.Order_status == "Pending") { <span class="badge bg-warning text-dark px-2 py-1">Chờ xử lý</span> }
+                                        else if(item.Order_status == "Exporting") { <span class="badge bg-primary px-2 py-1">Xuất kho</span> }
                                         else if(item.Order_status == "Approved") { <span class="badge bg-info px-2 py-1">Đã duyệt</span> }
                                         else if(item.Order_status == "Completed") { <span class="badge bg-success px-2 py-1">Hoàn thành</span> }
                                         else if(item.Order_status == "Cancelled") { <span class="badge bg-danger px-2 py-1">Đã hủy</span> }
+                                        else if(item.Order_status == "Split") { <span class="badge bg-secondary px-2 py-1">Đã tách</span> }
                                         else { <span class="badge bg-secondary px-2 py-1">@item.Order_status</span> }
                                     </td>
                                     <td class="text-center pe-3">

@@ -342,6 +342,8 @@ CREATE TABLE Warehouses (
     Warehouse_code NVARCHAR(50) NOT NULL,
     Warehouse_name NVARCHAR(200) NOT NULL,
     Warehouse_address NVARCHAR(500) NOT NULL,
+    Warehouse_phone NVARCHAR(20) NULL,
+    Warehouse_email NVARCHAR(100) NULL,
     Province_id INT NOT NULL,
     Created_by INT NOT NULL DEFAULT 0,
     Created_at DATETIME2 NOT NULL DEFAULT GETDATE(),

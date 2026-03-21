@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.WebMVC.Services.Interfaces;
 
 namespace ErpOnlineOrder.WebMVC.Attributes
 {
@@ -20,18 +20,18 @@ namespace ErpOnlineOrder.WebMVC.Attributes
     {
         private readonly string[] _permissions;
         private readonly bool _requireAll;
-        private readonly IPermissionService _permissionService;
+        private readonly IPermissionApiClient _permissionApiClient;
         private readonly ILogger<RequirePermissionFilter> _logger;
 
         public RequirePermissionFilter(
             string[] permissions,
             bool requireAll,
-            IPermissionService permissionService,
+            IPermissionApiClient permissionApiClient,
             ILogger<RequirePermissionFilter> logger)
         {
             _permissions = permissions;
             _requireAll = requireAll;
-            _permissionService = permissionService;
+            _permissionApiClient = permissionApiClient;
             _logger = logger;
         }
 
@@ -69,16 +69,17 @@ namespace ErpOnlineOrder.WebMVC.Attributes
 
             // Kiểm tra quyền cụ thể cho user không phải admin
             bool hasPermission;
+            var userPermissions = await _permissionApiClient.GetUserPermissionCodesAsync(userId.Value);
 
             if (_requireAll)
             {
                 // Cần tất cả quyền
-                hasPermission = await _permissionService.HasAllPermissionsAsync(userId.Value, _permissions);
+                hasPermission = _permissions.All(p => userPermissions.Contains(p));
             }
             else
             {
                 // Chỉ cần 1 trong các quyền
-                hasPermission = await _permissionService.HasAnyPermissionAsync(userId.Value, _permissions);
+                hasPermission = _permissions.Any(p => userPermissions.Contains(p));
             }
 
             if (!hasPermission)

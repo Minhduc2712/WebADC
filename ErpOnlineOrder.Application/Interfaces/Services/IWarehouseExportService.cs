@@ -13,7 +13,6 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
         Task<IEnumerable<WarehouseExportDto>> GetByCustomerIdAsync(int customerId);
         Task<PagedResult<WarehouseExportDto>> GetByCustomerIdPagedAsync(int customerId, WarehouseExportFilterRequest request);
         Task<IEnumerable<WarehouseExportDto>> GetByWarehouseIdAsync(int warehouseId);
-        Task<WarehouseExportDto?> CreateExportFromInvoiceAsync(CreateWarehouseExportDto dto, int userId);
         Task<bool> UpdateExportAsync(int id, UpdateWarehouseExportDto dto, int userId);
         
         Task<bool> UpdateDeliveryStatusAsync(int id, string status, int userId);

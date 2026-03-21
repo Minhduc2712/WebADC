@@ -18,9 +18,6 @@ namespace ErpOnlineOrder.Domain.Models
         public int? Order_id { get; set; }
         [ForeignKey("Order_id")]
         public virtual Order? Order { get; set; }
-        public int? Invoice_id { get; set; }
-        [ForeignKey("Invoice_id")]
-        public virtual Invoice? Invoice { get; set; }
         
         public int Staff_id { get; set; }
         [ForeignKey("Staff_id")]
@@ -49,6 +46,7 @@ namespace ErpOnlineOrder.Domain.Models
         public DateTime Updated_at { get; set; }
         public bool Is_deleted { get; set; }
 
+        public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
         public virtual ICollection<Warehouse_export_detail> Warehouse_Export_Details { get; set; } = new List<Warehouse_export_detail>();
         public virtual ICollection<Warehouse_export> Child_exports { get; set; } = new List<Warehouse_export>();
         public virtual ICollection<Warehouse_export> Merged_exports { get; set; } = new List<Warehouse_export>();

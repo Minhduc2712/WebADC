@@ -159,6 +159,14 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             return await ProjectToInvoiceSelectDto(query.OrderByDescending(i => i.Created_at)).ToListAsync();
         }
 
+        public async Task<IEnumerable<Invoice>> GetByWarehouseExportIdAsync(int exportId)
+        {
+            return await _context.Invoices
+                .Include(i => i.Invoice_Details)
+                .Where(i => i.Warehouse_export_id == exportId && !i.Is_deleted)
+                .ToListAsync();
+        }
+
         public async Task<IEnumerable<Invoice>> GetChildInvoicesAsync(int parentInvoiceId)
         {
             return await GetBaseQuery()
