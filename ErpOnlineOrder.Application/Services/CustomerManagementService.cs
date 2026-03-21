@@ -52,6 +52,7 @@ namespace ErpOnlineOrder.Application.Services
                 Staff_id = dto.Staff_id,
                 Customer_id = dto.Customer_id,
                 Province_id = dto.Province_id,
+                Ward_id = dto.Ward_id,
                 Created_by = createdBy,
                 Updated_by = createdBy,
                 Created_at = DateTime.UtcNow,
@@ -74,6 +75,7 @@ namespace ErpOnlineOrder.Application.Services
             existing.Staff_id = dto.Staff_id;
             existing.Customer_id = dto.Customer_id;
             existing.Province_id = dto.Province_id;
+            existing.Ward_id = dto.Ward_id;
             existing.Updated_by = updatedBy;
             existing.Updated_at = DateTime.UtcNow;
             await _customerManagementRepository.UpdateAsync(existing);
@@ -86,7 +88,7 @@ namespace ErpOnlineOrder.Application.Services
             return true;
         }
 
-        public async Task<Customer_management> AssignStaffToCustomerAsync(int staffId, int customerId, int provinceId, int createdBy)
+        public async Task<Customer_management> AssignStaffToCustomerAsync(int staffId, int customerId, int provinceId, int? wardId, int createdBy)
         {
             // Kiểm tra đã gán chưa (active)
             var alreadyAssigned = await _customerManagementRepository.ExistsAsync(staffId, customerId);
@@ -100,6 +102,7 @@ namespace ErpOnlineOrder.Application.Services
             if (deleted != null)
             {
                 deleted.Province_id = provinceId;
+                deleted.Ward_id = wardId;
                 deleted.Updated_by = createdBy;
                 deleted.Updated_at = DateTime.UtcNow;
                 deleted.Is_deleted = false;
@@ -112,6 +115,7 @@ namespace ErpOnlineOrder.Application.Services
                 Staff_id = staffId,
                 Customer_id = customerId,
                 Province_id = provinceId,
+                Ward_id = wardId,
                 Created_by = createdBy,
                 Updated_by = createdBy,
                 Created_at = DateTime.UtcNow,
@@ -132,6 +136,11 @@ namespace ErpOnlineOrder.Application.Services
         public async Task<bool> IsAlreadyAssignedAsync(int staffId, int customerId)
         {
             return await _customerManagementRepository.ExistsAsync(staffId, customerId);
+        }
+
+        public async Task<Customer_management?> FindAssignmentByProvinceAndWardAsync(int provinceId, int? wardId)
+        {
+            return await _customerManagementRepository.FindAssignmentByProvinceAndWardAsync(provinceId, wardId);
         }
     }
 }

@@ -15,8 +15,12 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
         Task<Customer_management> CreateCustomerManagementAsync(CreateCustomerManagementDto dto, int createdBy);
         Task<bool> UpdateCustomerManagementAsync(int id, UpdateCustomerManagementDto dto, int updatedBy);
         Task<bool> DeleteCustomerManagementAsync(int id);
-        Task<Customer_management> AssignStaffToCustomerAsync(int staffId, int customerId, int provinceId, int createdBy);
+        Task<Customer_management> AssignStaffToCustomerAsync(int staffId, int customerId, int provinceId, int? wardId, int createdBy);
         Task<bool> RemoveAssignmentAsync(int id);
         Task<bool> IsAlreadyAssignedAsync(int staffId, int customerId);
+        /// <summary>
+        /// Tìm cán bộ quản lý thích hợp theo tỉnh + phường (dùng khi tự động gán cán bộ lúc đăng kí).
+        /// </summary>
+        Task<Customer_management?> FindAssignmentByProvinceAndWardAsync(int provinceId, int? wardId);
     }
 }

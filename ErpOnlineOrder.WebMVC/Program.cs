@@ -54,6 +54,7 @@ builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IWarehouseA
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IDistributorApiClient, ErpOnlineOrder.WebMVC.Services.DistributorApiClient>();
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IRegionApiClient, ErpOnlineOrder.WebMVC.Services.RegionApiClient>();
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IProvinceApiClient, ErpOnlineOrder.WebMVC.Services.ProvinceApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IWardApiClient, ErpOnlineOrder.WebMVC.Services.WardApiClient>();
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IProductApiClient, ErpOnlineOrder.WebMVC.Services.ProductApiClient>();
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.ICustomerApiClient, ErpOnlineOrder.WebMVC.Services.CustomerApiClient>();
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IOrderApiClient, ErpOnlineOrder.WebMVC.Services.OrderApiClient>();

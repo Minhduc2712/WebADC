@@ -11,6 +11,8 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         public int Staff_id { get; set; }
         public int Customer_id { get; set; }
         public int Province_id { get; set; }
+        /// <summary>NULL = quản lý toàn tỉnh; có giá trị = chỉ quản lý phường cụ thể</summary>
+        public int? Ward_id { get; set; }
     }
 
     [ApiController]
@@ -65,7 +67,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var created = await _customerManagementService.AssignStaffToCustomerAsync(
-                    request.Staff_id, request.Customer_id, request.Province_id, createdBy);
+                    request.Staff_id, request.Customer_id, request.Province_id, request.Ward_id, createdBy);
                 return Ok(ApiResponse<object>.Ok(created));
             }
             catch (InvalidOperationException ex)

@@ -18,7 +18,6 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             _provinceService = provinceService;
         }
         [HttpGet]
-        [RequirePermission(PermissionCodes.ProvinceView)]
         public async Task<IActionResult> GetProvinces()
         {
             var provinces = await _provinceService.GetAllAsync();

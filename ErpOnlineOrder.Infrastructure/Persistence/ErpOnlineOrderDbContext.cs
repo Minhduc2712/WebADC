@@ -45,6 +45,7 @@ namespace ErpOnlineOrder.Infrastructure.Persistence
         public DbSet<Distributor> Distributors => Set<Distributor>();
         public DbSet<Region> Regions => Set<Region>();
         public DbSet<Province> Provinces => Set<Province>();
+        public DbSet<Ward> Wards => Set<Ward>();
         public DbSet<Customer_management> CustomerManagements => Set<Customer_management>();
         public DbSet<Organization_information> OrganizationInformations => Set<Organization_information>();
         public DbSet<Customer_product> CustomerProducts => Set<Customer_product>();
@@ -478,6 +479,19 @@ namespace ErpOnlineOrder.Infrastructure.Persistence
                 entity.Property(x => x.Province_name).HasMaxLength(100).IsRequired();
                 entity.Property(x => x.Region_id).HasColumnName("Region_id");
                 entity.HasOne(x => x.Region).WithMany(x => x.Provinces).HasForeignKey(x => x.Region_id).OnDelete(DeleteBehavior.Restrict);
+                entity.HasMany(x => x.Wards).WithOne(x => x.Province).HasForeignKey(x => x.Province_id).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // Ward configuration
+            modelBuilder.Entity<Ward>(entity =>
+            {
+                entity.ToTable("Wards");
+                entity.HasKey(x => x.Id);
+                entity.HasQueryFilter(w => !w.Is_deleted);
+                entity.Property(x => x.Ward_code).HasMaxLength(20).IsRequired();
+                entity.Property(x => x.Ward_name).HasMaxLength(100).IsRequired();
+                entity.Property(x => x.Province_id).HasColumnName("Province_id");
+                entity.HasOne(x => x.Province).WithMany(x => x.Wards).HasForeignKey(x => x.Province_id).OnDelete(DeleteBehavior.Restrict);
             });
 
             // Distributor configuration
@@ -514,6 +528,7 @@ namespace ErpOnlineOrder.Infrastructure.Persistence
                 entity.Property(x => x.Customer_id).HasColumnName("Customer_id");
                 entity.Property(x => x.Staff_id).HasColumnName("Staff_id");
                 entity.Property(x => x.Province_id).HasColumnName("Province_id");
+                entity.Property(x => x.Ward_id).HasColumnName("Ward_id").IsRequired(false);
                 entity.HasOne(x => x.Customer)
                     .WithMany(x => x.Customer_managements)
                     .HasForeignKey(x => x.Customer_id)
@@ -525,6 +540,11 @@ namespace ErpOnlineOrder.Infrastructure.Persistence
                 entity.HasOne(x => x.Province)
                     .WithMany(x => x.Customer_managements)
                     .HasForeignKey(x => x.Province_id)
+                    .OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(x => x.Ward)
+                    .WithMany(x => x.Customer_managements)
+                    .HasForeignKey(x => x.Ward_id)
+                    .IsRequired(false)
                     .OnDelete(DeleteBehavior.Restrict);
                 entity.HasIndex(x => new { x.Staff_id, x.Customer_id }).IsUnique();
             });

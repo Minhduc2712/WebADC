@@ -3,8 +3,10 @@ using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Models;
 using MailKit.Net.Smtp;
 using MailKit.Security;
+using Microsoft.Extensions.Logging;
 using MimeKit;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
@@ -22,6 +24,9 @@ namespace ErpOnlineOrder.Application.Services
         private readonly IRoleRepository _roleRepository;
         private readonly ICustomerManagementRepository _customerManagementRepository;
         private readonly IInvoiceRepository _invoiceRepository;
+        private readonly ICustomerRepository _customerRepository;
+        private readonly IStaffRepository _staffRepository;
+        private readonly ILogger<EmailService> _logger;
 
         public EmailService(
             ISettingService settingService,
@@ -30,7 +35,10 @@ namespace ErpOnlineOrder.Application.Services
             IRoleRepository roleRepository,
             IUserRepository userRepository,
             ICustomerManagementRepository customerManagementRepository,
-            IInvoiceRepository invoiceRepository)
+            IInvoiceRepository invoiceRepository,
+            ICustomerRepository customerRepository,
+            IStaffRepository staffRepository,
+            ILogger<EmailService> logger)
         {
             _settingService = settingService;
             _orderRepository = orderRepository;
@@ -39,6 +47,9 @@ namespace ErpOnlineOrder.Application.Services
             _userRepository = userRepository;
             _customerManagementRepository = customerManagementRepository;
             _invoiceRepository = invoiceRepository;
+            _customerRepository = customerRepository;
+            _staffRepository = staffRepository;
+            _logger = logger;
         }
 
         public async Task SendWarehouseExportNotificationForStaffAndAdminAsync(int warehouseExportId, CancellationToken cancellationToken = default)
@@ -47,6 +58,8 @@ namespace ErpOnlineOrder.Application.Services
             {
                 var export = await _warehouseExportRepository.GetByIdAsync(warehouseExportId);
                 if (export == null) return;
+
+                var customer = export.Customer ?? await _customerRepository.GetByIdAsync(export.Customer_id);
 
                 var smtp = await _settingService.GetSmtpSettingsAsync();
                 if (!IsSmtpValid(smtp)) return;
@@ -60,11 +73,11 @@ namespace ErpOnlineOrder.Application.Services
                 }
                 if (staffAdminEmails.Count == 0) return;
 
-            var invoices = await _invoiceRepository.GetByWarehouseExportIdAsync(export.Id);
-            var invoiceCodes = string.Join(", ", invoices.Select(i => i.Invoice_code));
+                var invoices = await _invoiceRepository.GetByWarehouseExportIdAsync(export.Id);
+                var invoiceCodes = string.Join(", ", invoices.Select(i => i.Invoice_code));
 
                 var subject = $"[Vận chuyển] Phiếu xuất kho mới #{export.Warehouse_export_code}";
-            var body = BuildWarehouseExportNotificationBody(export, invoiceCodes);
+                var body = BuildWarehouseExportNotificationBody(export, invoiceCodes, customer);
 
                 foreach (var email in staffAdminEmails)
                 {
@@ -72,9 +85,9 @@ namespace ErpOnlineOrder.Application.Services
                     await SendEmailAsync(smtp!, email.Trim(), subject, body, cancellationToken);
                 }
             }
-            catch
+            catch (System.Exception ex)
             {
-                // Email gửi thất bại - có thể do SMTP chưa cấu hình hoặc lỗi kết nối
+                _logger.LogError(ex, "Lỗi khi gửi email thông báo phiếu xuất kho {ExportId}", warehouseExportId);
             }
         }
 
@@ -85,6 +98,8 @@ namespace ErpOnlineOrder.Application.Services
                 var order = await _orderRepository.GetByIdAsync(OrderId);
                 if (order == null) return;
 
+                var customer = order.Customer ?? await _customerRepository.GetByIdAsync(order.Customer_id);
+
                 var smtp = await _settingService.GetSmtpSettingsAsync();
                 if (!IsSmtpValid(smtp)) return;
 
@@ -92,7 +107,7 @@ namespace ErpOnlineOrder.Application.Services
                 if (staffAdminEmails.Count == 0) return;
 
                 var subject = $"[Thông báo] Đơn hàng mới đã được tạo - Đơn hàng #{order.Order_code}";
-                var body = BuildOrderNotificationBodyForStaffAndAdmin(order);
+                var body = BuildOrderNotificationBodyForStaffAndAdmin(order, customer);
 
                 foreach (var email in staffAdminEmails)
                 {
@@ -100,9 +115,9 @@ namespace ErpOnlineOrder.Application.Services
                     await SendEmailAsync(smtp!, email.Trim(), subject, body, cancellationToken);
                 }
             }
-            catch (System.Exception)
+            catch (System.Exception ex)
             {
-                // Email gửi thất bại - có thể do SMTP chưa cấu hình hoặc lỗi kết nối
+                _logger.LogError(ex, "Lỗi khi gửi email thông báo nhân viên/admin cho đơn hàng {OrderId}", OrderId);
             }
         }
 
@@ -113,20 +128,22 @@ namespace ErpOnlineOrder.Application.Services
                 var order = await _orderRepository.GetByIdAsync(OrderId);
                 if (order == null) return;
 
+                var customer = order.Customer ?? await _customerRepository.GetByIdAsync(order.Customer_id);
+
                 var smtp = await _settingService.GetSmtpSettingsAsync();
                 if (!IsSmtpValid(smtp)) return;
 
-                var customerEmail = GetCustomerEmail(order);
+                var customerEmail = await GetCustomerEmailAsync(order.Customer_id, customer);
                 if (string.IsNullOrWhiteSpace(customerEmail)) return;
 
                 var subject = $"[Xác nhận] Đơn hàng của bạn đã được tạo - Đơn hàng #{order.Order_code}";
-                var body = BuildOrderNotificationBodyCustomer(order);
+                var body = BuildOrderNotificationBodyCustomer(order, customer);
 
                 await SendEmailAsync(smtp!, customerEmail, subject, body, cancellationToken);
             }
-            catch (System.Exception)
+            catch (System.Exception ex)
             {
-                // Email gửi thất bại - có thể do SMTP chưa cấu hình hoặc lỗi kết nối
+                _logger.LogError(ex, "Lỗi khi gửi email thông báo tạo đơn hàng cho khách hàng (Đơn {OrderId})", OrderId);
             }
         }
 
@@ -137,20 +154,22 @@ namespace ErpOnlineOrder.Application.Services
                 var order = await _orderRepository.GetByIdAsync(OrderId);
                 if (order == null) return;
 
+                var customer = order.Customer ?? await _customerRepository.GetByIdAsync(order.Customer_id);
+
                 var smtp = await _settingService.GetSmtpSettingsAsync();
                 if (!IsSmtpValid(smtp)) return;
 
-                var customerEmail = GetCustomerEmail(order);
+                var customerEmail = await GetCustomerEmailAsync(order.Customer_id, customer);
                 if (string.IsNullOrWhiteSpace(customerEmail)) return;
 
                 var subject = $"[Thông báo] Đơn hàng của bạn đã được duyệt - Đơn hàng #{order.Order_code}";
-                var body = BuildOrderConfirmedBodyCustomer(order);
+                var body = BuildOrderConfirmedBodyCustomer(order, customer);
 
                 await SendEmailAsync(smtp!, customerEmail, subject, body, cancellationToken);
             }
-            catch (System.Exception)
+            catch (System.Exception ex)
             {
-                // Email gửi thất bại
+                _logger.LogError(ex, "Lỗi khi gửi email xác nhận duyệt đơn hàng cho khách hàng (Đơn {OrderId})", OrderId);
             }
         }
 
@@ -159,23 +178,26 @@ namespace ErpOnlineOrder.Application.Services
             try
             {
                 var export = await _warehouseExportRepository.GetByIdAsync(warehouseExportId);
-                if (export == null || export.Order == null) return;
+                if (export == null) return;
+
+                var customer = export.Customer ?? await _customerRepository.GetByIdAsync(export.Customer_id);
 
                 var smtp = await _settingService.GetSmtpSettingsAsync();
                 if (!IsSmtpValid(smtp)) return;
 
-                var customerEmail = GetCustomerEmail(export.Order);
+                var customerEmail = await GetCustomerEmailAsync(export.Customer_id, customer);
                 if (string.IsNullOrWhiteSpace(customerEmail)) return;
 
                 var statusText = export.Delivery_status == "Delivered" ? "đã giao thành công" : "đang được giao đến bạn";
-                var subject = $"[Vận chuyển] Đơn hàng #{export.Order.Order_code} {statusText}";
-                var body = BuildDeliveryStatusBodyCustomer(export);
+                var orderCodeText = export.Order != null ? $"Đơn hàng #{export.Order.Order_code}" : $"Phiếu xuất kho #{export.Warehouse_export_code}";
+                var subject = $"[Vận chuyển] {orderCodeText} {statusText}";
+                var body = BuildDeliveryStatusBodyCustomer(export, customer);
 
                 await SendEmailAsync(smtp!, customerEmail, subject, body, cancellationToken);
             }
-            catch
+            catch (System.Exception ex)
             {
-                // Lỗi gửi email
+                _logger.LogError(ex, "Lỗi khi gửi email thông báo trạng thái vận chuyển cho phiếu xuất {ExportId}", warehouseExportId);
             }
         }
 
@@ -186,20 +208,78 @@ namespace ErpOnlineOrder.Application.Services
                 var order = await _orderRepository.GetByIdAsync(OrderId);
                 if (order == null) return;
 
+                var customer = order.Customer ?? await _customerRepository.GetByIdAsync(order.Customer_id);
+
                 var smtp = await _settingService.GetSmtpSettingsAsync();
                 if (!IsSmtpValid(smtp)) return;
 
-                var customerEmail = GetCustomerEmail(order);
+                var customerEmail = await GetCustomerEmailAsync(order.Customer_id, customer);
                 if (string.IsNullOrWhiteSpace(customerEmail)) return;
 
                 var subject = $"[Cần xác nhận] Đơn hàng #{order.Order_code} giao một phần";
-                var body = BuildOrderWaitingCustomerBodyCustomer(order);
+                var body = BuildOrderWaitingCustomerBodyCustomer(order, customer);
 
                 await SendEmailAsync(smtp!, customerEmail, subject, body, cancellationToken);
             }
-            catch (System.Exception)
+            catch (System.Exception ex)
             {
-                // Email gửi thất bại
+                _logger.LogError(ex, "Lỗi khi gửi email yêu cầu xác nhận đơn hàng chờ {OrderId}", OrderId);
+            }
+        }
+
+        public async Task SendOrderUpdatedNotificationForCustomerAsync(int orderId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var order = await _orderRepository.GetByIdAsync(orderId);
+                if (order == null) return;
+
+                var customer = order.Customer ?? await _customerRepository.GetByIdAsync(order.Customer_id);
+
+                var smtp = await _settingService.GetSmtpSettingsAsync();
+                if (!IsSmtpValid(smtp)) return;
+
+                var customerEmail = await GetCustomerEmailAsync(order.Customer_id, customer);
+                if (string.IsNullOrWhiteSpace(customerEmail)) return;
+
+                var subject = $"[Thông báo] Đơn hàng #{order.Order_code} của bạn đã được cập nhật";
+                var body = BuildOrderUpdatedBodyCustomer(order, customer);
+
+                await SendEmailAsync(smtp!, customerEmail, subject, body, cancellationToken);
+            }
+            catch (System.Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi gửi email thông báo cập nhật đơn hàng {OrderId}", orderId);
+            }
+        }
+
+        public async Task SendOrderRejectedByCustomerNotificationAsync(int orderId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var order = await _orderRepository.GetByIdAsync(orderId);
+                if (order == null) return;
+
+                var customer = order.Customer ?? await _customerRepository.GetByIdAsync(order.Customer_id);
+
+                var smtp = await _settingService.GetSmtpSettingsAsync();
+                if (!IsSmtpValid(smtp)) return;
+
+                var staffAdminEmails = await GetStaffAndAdminEmailsAsync(order.Customer_id);
+                if (staffAdminEmails.Count == 0) return;
+
+                var subject = $"[Thông báo] Khách hàng từ chối nhận một phần - Đơn hàng #{order.Order_code}";
+                var body = BuildOrderRejectedNotificationBody(order, customer);
+
+                foreach (var email in staffAdminEmails)
+                {
+                    if (string.IsNullOrWhiteSpace(email)) continue;
+                    await SendEmailAsync(smtp!, email.Trim(), subject, body, cancellationToken);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi gửi email thông báo khách hàng từ chối đơn {OrderId}", orderId);
             }
         }
 
@@ -210,14 +290,17 @@ namespace ErpOnlineOrder.Application.Services
                 var export = await _warehouseExportRepository.GetByIdAsync(exportId);
                 if (export == null) return;
 
+                var customer = export.Customer ?? await _customerRepository.GetByIdAsync(export.Customer_id);
+
                 var smtp = await _settingService.GetSmtpSettingsAsync();
                 if (!IsSmtpValid(smtp)) return;
 
                 var staffAdminEmails = await GetStaffAndAdminEmailsAsync(export.Customer_id);
                 if (staffAdminEmails.Count == 0) return;
 
-                var subject = $"[Yêu cầu xuất hóa đơn] Khách hàng yêu cầu HĐ cho phiếu {export.Warehouse_export_code}";
-                var body = BuildCustomerInvoiceRequestNotificationBody(export, invoiceCount);
+                var customerName = customer?.Full_name ?? customer?.Customer_code ?? "-";
+                var subject = $"[Yêu cầu hóa đơn] Khách hàng {customerName} yêu cầu HĐ cho phiếu {export.Warehouse_export_code}";
+                var body = BuildCustomerInvoiceRequestNotificationBody(export, invoiceCount, customer);
 
                 foreach (var email in staffAdminEmails)
                 {
@@ -225,18 +308,25 @@ namespace ErpOnlineOrder.Application.Services
                     await SendEmailAsync(smtp!, email.Trim(), subject, body, cancellationToken);
                 }
             }
-            catch (System.Exception) { /* Bỏ qua lỗi gửi email */ }
+            catch (System.Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi gửi email yêu cầu xuất hóa đơn cho phiếu {ExportId}", exportId);
+            }
         }
 
         private static bool IsSmtpValid(SmtpSettingsDto? smtp)
         {
-            return smtp != null && !string.IsNullOrWhiteSpace(smtp.FromEmail);
+            return smtp != null && !string.IsNullOrWhiteSpace(smtp.FromEmail) && !string.IsNullOrWhiteSpace(smtp.Host);
         }
 
-        private static string? GetCustomerEmail(Order order)
+        private async Task<string?> GetCustomerEmailAsync(int customerId, Customer? loadedCustomer)
         {
-            var user = order.Customer?.User;
+            var customer = loadedCustomer ?? await _customerRepository.GetByIdAsync(customerId);
+            if (customer == null) return null;
+
+            var user = customer.User ?? await _userRepository.GetByIdBasicAsync(customer.User_id);
             if (user == null || user.Is_deleted) return null;
+            
             return string.IsNullOrWhiteSpace(user.Email) ? null : user.Email.Trim();
         }
 
@@ -260,9 +350,20 @@ namespace ErpOnlineOrder.Application.Services
             {
                 foreach (var mgmt in managementStaff)
                 {
-                    if (mgmt.Staff != null && !mgmt.Staff.Is_deleted)
+                    int? staffUserId = mgmt.Staff?.User_id;
+
+                    if (staffUserId == null && mgmt.Staff_id > 0)
                     {
-                        var staffUser = await _userRepository.GetByIdBasicAsync(mgmt.Staff.User_id);
+                        var staff = await _staffRepository.GetByIdAsync(mgmt.Staff_id);
+                        if (staff != null && !staff.Is_deleted)
+                        {
+                            staffUserId = staff.User_id;
+                        }
+                    }
+
+                    if (staffUserId.HasValue)
+                    {
+                        var staffUser = await _userRepository.GetByIdBasicAsync(staffUserId.Value);
                         if (staffUser != null && staffUser.Is_active && !staffUser.Is_deleted && !string.IsNullOrWhiteSpace(staffUser.Email))
                             emails.Add(staffUser.Email.Trim());
                     }
@@ -272,20 +373,45 @@ namespace ErpOnlineOrder.Application.Services
             return emails;
         }
 
-        private static string BuildOrderNotificationBodyForStaffAndAdmin(Order order)
+        private static string TranslateOrderStatus(string? status)
+        {
+            return status switch
+            {
+                "Pending" => "Chờ xử lý",
+                "Exporting" => "Đang xuất kho",
+                "WaitingCustomer" => "Chờ khách xác nhận",
+                "Completed" => "Đã hoàn thành",
+                "Cancelled" => "Đã hủy",
+                "Split" => "Đã tách đơn",
+                _ => status ?? "Không xác định"
+            };
+        }
+
+        private static string TranslateDeliveryStatus(string? status)
+        {
+            return status switch
+            {
+                "Pending" => "Chờ lấy hàng",
+                "Shipped" => "Đang vận chuyển",
+                "Delivered" => "Đã giao thành công",
+                _ => status ?? "Chờ xử lý"
+            };
+        }
+
+        private static string BuildOrderNotificationBodyForStaffAndAdmin(Order order, Customer? customer)
         {
             var sb = new StringBuilder();
             sb.Append("<html><body style='font-family: Arial, sans-serif;'>");
             sb.Append("<h2>Đơn hàng mới - Thông báo</h2>");
             sb.Append($"<p><strong>Mã đơn:</strong> {WebUtility.HtmlEncode(order.Order_code)}</p>");
             sb.Append($"<p><strong>Ngày đặt:</strong> {order.Order_date:dd/MM/yyyy HH:mm}</p>");
-            sb.Append($"<p><strong>Trạng thái:</strong> {WebUtility.HtmlEncode(order.Order_status ?? "Pending")}</p>");
+            sb.Append($"<p><strong>Trạng thái:</strong> {WebUtility.HtmlEncode(TranslateOrderStatus(order.Order_status))}</p>");
 
-            if (order.Customer != null)
+            if (customer != null)
             {
-                sb.Append($"<p><strong>Khách hàng:</strong> {WebUtility.HtmlEncode(order.Customer.Full_name ?? order.Customer.Customer_code)}</p>");
-                sb.Append($"<p><strong>Điện thoại:</strong> {WebUtility.HtmlEncode(order.Customer.Phone_number ?? "")}</p>");
-                sb.Append($"<p><strong>Địa chỉ giao:</strong> {WebUtility.HtmlEncode(order.Shipping_address ?? order.Customer.Address ?? "")}</p>");
+                sb.Append($"<p><strong>Khách hàng:</strong> {WebUtility.HtmlEncode(customer.Full_name ?? customer.Customer_code)}</p>");
+                sb.Append($"<p><strong>Điện thoại:</strong> {WebUtility.HtmlEncode(customer.Phone_number ?? "")}</p>");
+                sb.Append($"<p><strong>Địa chỉ giao:</strong> {WebUtility.HtmlEncode(order.Shipping_address ?? customer.Address ?? "")}</p>");
             }
 
             if (!string.IsNullOrWhiteSpace(order.note))
@@ -296,7 +422,7 @@ namespace ErpOnlineOrder.Application.Services
             sb.Append("<tr style='background: #f0f0f0;'><th>STT</th><th>Sản phẩm</th><th>SL</th><th>Đơn giá</th><th>Thành tiền</th></tr>");
 
             int stt = 1;
-            foreach (var od in order.Order_Details ?? [])
+            foreach (var od in order.Order_Details?.Where(d => !d.Is_deleted) ?? Enumerable.Empty<Order_detail>())
             {
                 var productName = od.Product?.Product_name ?? $"Product #{od.Product_id}";
                 sb.Append($"<tr><td>{stt}</td><td>{WebUtility.HtmlEncode(productName)}</td><td>{od.Quantity}</td><td>{od.Unit_price:N0}</td><td>{od.Total_price:N0}</td></tr>");
@@ -309,20 +435,20 @@ namespace ErpOnlineOrder.Application.Services
             return sb.ToString();
         }
 
-        private static string BuildOrderNotificationBodyCustomer(Order order)
+        private static string BuildOrderNotificationBodyCustomer(Order order, Customer? customer)
         {
             var sb = new StringBuilder();
             sb.Append("<html><body style='font-family: Arial, sans-serif;'>");
             sb.Append("<h2>Xác nhận đơn hàng</h2>");
             sb.Append($"<p><strong>Mã đơn:</strong> {WebUtility.HtmlEncode(order.Order_code)}</p>");
             sb.Append($"<p><strong>Ngày đặt:</strong> {order.Order_date:dd/MM/yyyy HH:mm}</p>");
-            sb.Append($"<p><strong>Trạng thái:</strong> {WebUtility.HtmlEncode(order.Order_status ?? "Pending")}</p>");
+            sb.Append($"<p><strong>Trạng thái:</strong> {WebUtility.HtmlEncode(TranslateOrderStatus(order.Order_status))}</p>");
 
-            if (order.Customer != null)
+            if (customer != null)
             {
-                sb.Append($"<p><strong>Khách hàng:</strong> {WebUtility.HtmlEncode(order.Customer.Full_name ?? order.Customer.Customer_code)}</p>");
-                sb.Append($"<p><strong>Điện thoại:</strong> {WebUtility.HtmlEncode(order.Customer.Phone_number ?? "")}</p>");
-                sb.Append($"<p><strong>Địa chỉ giao:</strong> {WebUtility.HtmlEncode(order.Shipping_address ?? order.Customer.Address ?? "")}</p>");
+                sb.Append($"<p><strong>Khách hàng:</strong> {WebUtility.HtmlEncode(customer.Full_name ?? customer.Customer_code)}</p>");
+                sb.Append($"<p><strong>Điện thoại:</strong> {WebUtility.HtmlEncode(customer.Phone_number ?? "")}</p>");
+                sb.Append($"<p><strong>Địa chỉ giao:</strong> {WebUtility.HtmlEncode(order.Shipping_address ?? customer.Address ?? "")}</p>");
             }
 
             if (!string.IsNullOrWhiteSpace(order.note))
@@ -333,7 +459,7 @@ namespace ErpOnlineOrder.Application.Services
             sb.Append("<tr style='background: #f0f0f0;'><th>STT</th><th>Sản phẩm</th><th>SL</th><th>Đơn giá</th><th>Thành tiền</th></tr>");
 
             int stt = 1;
-            foreach (var od in order.Order_Details ?? [])
+            foreach (var od in order.Order_Details?.Where(d => !d.Is_deleted) ?? Enumerable.Empty<Order_detail>())
             {
                 var productName = od.Product?.Product_name ?? $"Product #{od.Product_id}";
                 sb.Append($"<tr><td>{stt}</td><td>{WebUtility.HtmlEncode(productName)}</td><td>{od.Quantity}</td><td>{od.Unit_price:N0}</td><td>{od.Total_price:N0}</td></tr>");
@@ -346,7 +472,7 @@ namespace ErpOnlineOrder.Application.Services
             return sb.ToString();
         }
 
-        private static string BuildOrderConfirmedBodyCustomer(Order order)
+        private static string BuildOrderConfirmedBodyCustomer(Order order, Customer? customer)
         {
             var sb = new StringBuilder();
             sb.Append("<html><body style='font-family: Arial, sans-serif;'>");
@@ -354,12 +480,12 @@ namespace ErpOnlineOrder.Application.Services
             sb.Append("<p>Đơn hàng của bạn đã được duyệt và đang được xử lý.</p>");
             sb.Append($"<p><strong>Mã đơn:</strong> {WebUtility.HtmlEncode(order.Order_code)}</p>");
             sb.Append($"<p><strong>Ngày đặt:</strong> {order.Order_date:dd/MM/yyyy HH:mm}</p>");
-            sb.Append($"<p><strong>Trạng thái:</strong> {WebUtility.HtmlEncode(order.Order_status ?? "Confirmed")}</p>");
+            sb.Append($"<p><strong>Trạng thái:</strong> {WebUtility.HtmlEncode(TranslateOrderStatus(order.Order_status))}</p>");
 
-            if (order.Customer != null)
+            if (customer != null)
             {
-                sb.Append($"<p><strong>Khách hàng:</strong> {WebUtility.HtmlEncode(order.Customer.Full_name ?? order.Customer.Customer_code)}</p>");
-                sb.Append($"<p><strong>Địa chỉ giao:</strong> {WebUtility.HtmlEncode(order.Shipping_address ?? order.Customer.Address ?? "")}</p>");
+                sb.Append($"<p><strong>Khách hàng:</strong> {WebUtility.HtmlEncode(customer.Full_name ?? customer.Customer_code)}</p>");
+                sb.Append($"<p><strong>Địa chỉ giao:</strong> {WebUtility.HtmlEncode(order.Shipping_address ?? customer.Address ?? "")}</p>");
             }
 
             sb.Append("<h3>Chi tiết đơn hàng</h3>");
@@ -367,7 +493,7 @@ namespace ErpOnlineOrder.Application.Services
             sb.Append("<tr style='background: #f0f0f0;'><th>STT</th><th>Sản phẩm</th><th>SL</th><th>Đơn giá</th><th>Thành tiền</th></tr>");
 
             int stt = 1;
-            foreach (var od in order.Order_Details ?? [])
+            foreach (var od in order.Order_Details?.Where(d => !d.Is_deleted) ?? Enumerable.Empty<Order_detail>())
             {
                 var productName = od.Product?.Product_name ?? $"Product #{od.Product_id}";
                 sb.Append($"<tr><td>{stt}</td><td>{WebUtility.HtmlEncode(productName)}</td><td>{od.Quantity}</td><td>{od.Unit_price:N0}</td><td>{od.Total_price:N0}</td></tr>");
@@ -381,7 +507,7 @@ namespace ErpOnlineOrder.Application.Services
             return sb.ToString();
         }
 
-        private static string BuildOrderWaitingCustomerBodyCustomer(Order order)
+        private static string BuildOrderWaitingCustomerBodyCustomer(Order order, Customer? customer)
         {
             var sb = new StringBuilder();
             sb.Append("<html><body style='font-family: Arial, sans-serif;'>");
@@ -392,9 +518,9 @@ namespace ErpOnlineOrder.Application.Services
             sb.Append($"<p><strong>Mã đơn (phần có sẵn):</strong> {WebUtility.HtmlEncode(order.Order_code)}</p>");
             sb.Append($"<p><strong>Ngày đặt:</strong> {order.Order_date:dd/MM/yyyy HH:mm}</p>");
 
-            if (order.Customer != null)
+            if (customer != null)
             {
-                sb.Append($"<p><strong>Khách hàng:</strong> {WebUtility.HtmlEncode(order.Customer.Full_name ?? order.Customer.Customer_code)}</p>");
+                sb.Append($"<p><strong>Khách hàng:</strong> {WebUtility.HtmlEncode(customer.Full_name ?? customer.Customer_code)}</p>");
             }
 
             sb.Append("<h3>Chi tiết hàng có sẵn</h3>");
@@ -402,7 +528,7 @@ namespace ErpOnlineOrder.Application.Services
             sb.Append("<tr style='background: #f0f0f0;'><th>STT</th><th>Sản phẩm</th><th>SL</th><th>Đơn giá</th><th>Thành tiền</th></tr>");
 
             int stt = 1;
-            foreach (var od in order.Order_Details ?? [])
+            foreach (var od in order.Order_Details?.Where(d => !d.Is_deleted) ?? Enumerable.Empty<Order_detail>())
             {
                 var productName = od.Product?.Product_name ?? $"Product #{od.Product_id}";
                 sb.Append($"<tr><td>{stt}</td><td>{WebUtility.HtmlEncode(productName)}</td><td>{od.Quantity}</td><td>{od.Unit_price:N0}</td><td>{od.Total_price:N0}</td></tr>");
@@ -416,7 +542,56 @@ namespace ErpOnlineOrder.Application.Services
             return sb.ToString();
         }
 
-        private static string BuildWarehouseExportNotificationBody(Warehouse_export export, string invoiceCodes)
+        private static string BuildOrderUpdatedBodyCustomer(Order order, Customer? customer)
+        {
+            var sb = new StringBuilder();
+            sb.Append("<html><body style='font-family: Arial, sans-serif;'>");
+            sb.Append("<h2>Thông báo cập nhật đơn hàng</h2>");
+            sb.Append("<p>Kính gửi Quý khách,</p>");
+            sb.Append($"<p>Đơn hàng <strong>#{WebUtility.HtmlEncode(order.Order_code)}</strong> của quý khách vừa được nhân viên cập nhật thông tin.</p>");
+            sb.Append($"<p><strong>Ngày đặt:</strong> {order.Order_date:dd/MM/yyyy HH:mm}</p>");
+            sb.Append($"<p><strong>Trạng thái:</strong> {WebUtility.HtmlEncode(TranslateOrderStatus(order.Order_status))}</p>");
+
+            if (customer != null)
+            {
+                sb.Append($"<p><strong>Địa chỉ giao:</strong> {WebUtility.HtmlEncode(order.Shipping_address ?? customer.Address ?? "")}</p>");
+            }
+
+            if (!string.IsNullOrWhiteSpace(order.note))
+                sb.Append($"<p><strong>Ghi chú:</strong> {WebUtility.HtmlEncode(order.note)}</p>");
+
+            sb.Append("<h3>Chi tiết đơn hàng cập nhật</h3>");
+            sb.Append("<table border='1' cellpadding='8' cellspacing='0' style='border-collapse: collapse; width: 100%;'>");
+            sb.Append("<tr style='background: #f0f0f0;'><th>STT</th><th>Sản phẩm</th><th>SL</th><th>Đơn giá</th><th>Thành tiền</th></tr>");
+
+            int stt = 1;
+            foreach (var od in order.Order_Details?.Where(d => !d.Is_deleted) ?? Enumerable.Empty<Order_detail>())
+            {
+                var productName = od.Product?.Product_name ?? $"Product #{od.Product_id}";
+                sb.Append($"<tr><td>{stt}</td><td>{WebUtility.HtmlEncode(productName)}</td><td>{od.Quantity}</td><td>{od.Unit_price:N0}</td><td>{od.Total_price:N0}</td></tr>");
+                stt++;
+            }
+
+            sb.Append("</table>");
+            sb.Append($"<p><strong>Tổng tiền:</strong> {order.Total_price:N0} VNĐ</p>");
+            sb.Append("<p>Cảm ơn quý khách!</p>");
+            sb.Append("</body></html>");
+            return sb.ToString();
+        }
+
+        private static string BuildOrderRejectedNotificationBody(Order order, Customer? customer)
+        {
+            var sb = new StringBuilder();
+            sb.Append("<html><body style='font-family: Arial, sans-serif;'>");
+            sb.Append("<h2>Khách hàng từ chối nhận hàng một phần</h2>");
+            sb.Append($"<p>Khách hàng <strong>{WebUtility.HtmlEncode(customer?.Full_name ?? customer?.Customer_code ?? "")}</strong> đã <strong>TỪ CHỐI</strong> nhận trước phần hàng có sẵn cho đơn hàng <strong>{WebUtility.HtmlEncode(order.Order_code)}</strong>.</p>");
+            sb.Append("<p>Hệ thống đã tự động hoàn tác việc tách đơn và khôi phục đơn hàng gốc về trạng thái <strong>Chờ xử lý (Pending)</strong>.</p>");
+            sb.Append("<p>Vui lòng kiểm tra lại đơn hàng và có phương án xử lý (nhập thêm tồn kho hoặc liên hệ lại với khách hàng).</p>");
+            sb.Append("</body></html>");
+            return sb.ToString();
+        }
+
+        private static string BuildWarehouseExportNotificationBody(Warehouse_export export, string invoiceCodes, Customer? customer)
         {
             var sb = new StringBuilder();
             sb.Append("<html><body style='font-family: Arial, sans-serif;'>");
@@ -425,17 +600,17 @@ namespace ErpOnlineOrder.Application.Services
             sb.Append($"<p><strong>Mã đơn:</strong> {WebUtility.HtmlEncode(export.Order?.Order_code ?? "-")}</p>");
             sb.Append($"<p><strong>Mã hóa đơn:</strong> {WebUtility.HtmlEncode(string.IsNullOrEmpty(invoiceCodes) ? "-" : invoiceCodes)}</p>");
             sb.Append($"<p><strong>Kho:</strong> {WebUtility.HtmlEncode(export.Warehouse?.Warehouse_name ?? export.Warehouse_id.ToString())}</p>");
-            sb.Append($"<p><strong>Khách hàng:</strong> {WebUtility.HtmlEncode(export.Customer?.Full_name ?? export.Customer?.Customer_code ?? "-")}</p>");
+            sb.Append($"<p><strong>Khách hàng:</strong> {WebUtility.HtmlEncode(customer?.Full_name ?? customer?.Customer_code ?? "-")}</p>");
             sb.Append($"<p><strong>Ngày xuất:</strong> {export.Export_date:dd/MM/yyyy HH:mm}</p>");
-            sb.Append($"<p><strong>Trạng thái vận chuyển:</strong> {WebUtility.HtmlEncode(export.Delivery_status ?? "Pending")}</p>");
-            sb.Append($"<p><strong>Địa chỉ giao:</strong> {WebUtility.HtmlEncode(export.Order?.Shipping_address ?? export.Customer?.Address ?? "")}</p>");
+            sb.Append($"<p><strong>Trạng thái vận chuyển:</strong> {WebUtility.HtmlEncode(TranslateDeliveryStatus(export.Delivery_status))}</p>");
+            sb.Append($"<p><strong>Địa chỉ giao:</strong> {WebUtility.HtmlEncode(export.Order?.Shipping_address ?? customer?.Address ?? "")}</p>");
 
             sb.Append("<h3>Chi tiết xuất kho</h3>");
             sb.Append("<table border='1' cellpadding='8' cellspacing='0' style='border-collapse: collapse; width: 100%;'>");
             sb.Append("<tr style='background: #f0f0f0;'><th>STT</th><th>Sản phẩm</th><th>SL xuất</th><th>Đơn giá</th><th>Thành tiền</th></tr>");
 
             var stt = 1;
-            foreach (var detail in export.Warehouse_Export_Details ?? [])
+            foreach (var detail in export.Warehouse_Export_Details?.Where(d => !d.Is_deleted) ?? Enumerable.Empty<Warehouse_export_detail>())
             {
                 var productName = detail.Product?.Product_name ?? $"Product #{detail.Product_id}";
                 sb.Append($"<tr><td>{stt}</td><td>{WebUtility.HtmlEncode(productName)}</td><td>{detail.Quantity_shipped}</td><td>{detail.Unit_price:N0}</td><td>{detail.Total_price:N0}</td></tr>");
@@ -448,7 +623,7 @@ namespace ErpOnlineOrder.Application.Services
             return sb.ToString();
         }
 
-        private static string BuildDeliveryStatusBodyCustomer(Warehouse_export export)
+        private static string BuildDeliveryStatusBodyCustomer(Warehouse_export export, Customer? customer)
         {
             var sb = new StringBuilder();
             var statusText = export.Delivery_status == "Delivered" ? "ĐÃ GIAO THÀNH CÔNG" : "ĐANG ĐƯỢC VẬN CHUYỂN";
@@ -456,21 +631,28 @@ namespace ErpOnlineOrder.Application.Services
             sb.Append("<html><body style='font-family: Arial, sans-serif;'>");
             sb.Append($"<h2>Thông báo trạng thái giao hàng: {statusText}</h2>");
             sb.Append($"<p>Kính gửi Quý khách,</p>");
-            sb.Append($"<p>Đơn hàng <strong>#{export.Order?.Order_code}</strong> của quý khách hiện có trạng thái vận chuyển: <strong>{export.Delivery_status}</strong>.</p>");
+            if (export.Order != null)
+            {
+                sb.Append($"<p>Đơn hàng <strong>#{export.Order.Order_code}</strong> của quý khách hiện có trạng thái vận chuyển: <strong>{TranslateDeliveryStatus(export.Delivery_status)}</strong>.</p>");
+            }
+            else
+            {
+                sb.Append($"<p>Các sản phẩm của quý khách hiện có trạng thái vận chuyển: <strong>{TranslateDeliveryStatus(export.Delivery_status)}</strong>.</p>");
+            }
             sb.Append($"<p><strong>Mã phiếu xuất kho:</strong> {WebUtility.HtmlEncode(export.Warehouse_export_code)}</p>");
             
-            sb.Append($"<p><strong>Địa chỉ nhận hàng:</strong> {WebUtility.HtmlEncode(export.Order?.Shipping_address ?? export.Customer?.Address ?? "")}</p>");
+            sb.Append($"<p><strong>Địa chỉ nhận hàng:</strong> {WebUtility.HtmlEncode(export.Order?.Shipping_address ?? customer?.Address ?? "")}</p>");
             sb.Append("<p>Cảm ơn quý khách đã tin tưởng và sử dụng dịch vụ của chúng tôi!</p>");
             sb.Append("</body></html>");
             return sb.ToString();
         }
 
-        private static string BuildCustomerInvoiceRequestNotificationBody(Warehouse_export export, int invoiceCount)
+        private static string BuildCustomerInvoiceRequestNotificationBody(Warehouse_export export, int invoiceCount, Customer? customer)
         {
             var sb = new StringBuilder();
             sb.Append("<html><body style='font-family: Arial, sans-serif;'>");
             sb.Append("<h2>Yêu cầu xuất hóa đơn mới từ Khách hàng</h2>");
-            sb.Append($"<p>Khách hàng <strong>{WebUtility.HtmlEncode(export.Customer?.Full_name ?? export.Customer?.Customer_code ?? "-")}</strong> vừa gửi yêu cầu xuất hóa đơn thông qua Cổng thông tin cho Phiếu xuất kho <strong>{WebUtility.HtmlEncode(export.Warehouse_export_code)}</strong>.</p>");
+            sb.Append($"<p>Khách hàng <strong>{WebUtility.HtmlEncode(customer?.Full_name ?? customer?.Customer_code ?? "-")}</strong> vừa gửi yêu cầu xuất hóa đơn thông qua Cổng thông tin cho Phiếu xuất kho <strong>{WebUtility.HtmlEncode(export.Warehouse_export_code)}</strong>.</p>");
             sb.Append($"<p>Hệ thống đã tự động ghi nhận và tạo <strong>{invoiceCount}</strong> hóa đơn Nháp (Draft) tương ứng. Vui lòng đăng nhập vào phần Quản lý Hóa đơn để kiểm tra, bổ sung thuế (nếu cần) và duyệt xuất hóa đơn.</p>");
             sb.Append("</body></html>");
             return sb.ToString();

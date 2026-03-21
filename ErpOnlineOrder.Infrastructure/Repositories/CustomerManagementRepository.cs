@@ -24,7 +24,8 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             {
                 query = query.Include(cm => cm.Customer)
                              .Include(cm => cm.Staff)
-                             .Include(cm => cm.Province);
+                             .Include(cm => cm.Province)
+                             .Include(cm => cm.Ward);
             }
             return query;
         }
@@ -128,6 +129,24 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 customerManagement.Updated_at = DateTime.Now;
                 await _context.SaveChangesAsync();
             }
+        }
+
+        public async Task<Customer_management?> FindAssignmentByProvinceAndWardAsync(int provinceId, int? wardId)
+        {
+            // Try exact match first (same province + same ward, or same province + null ward for province-wide)
+            var result = await GetBaseQuery()
+                .Where(cm => cm.Province_id == provinceId && cm.Ward_id == wardId)
+                .FirstOrDefaultAsync();
+
+            // If looking for a specific ward and no exact match, fall back to province-wide (Ward_id = null)
+            if (result == null && wardId.HasValue)
+            {
+                result = await GetBaseQuery()
+                    .Where(cm => cm.Province_id == provinceId && cm.Ward_id == null)
+                    .FirstOrDefaultAsync();
+            }
+
+            return result;
         }
     }
 }

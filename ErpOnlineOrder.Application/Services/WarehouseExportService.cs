@@ -324,9 +324,13 @@ namespace ErpOnlineOrder.Application.Services
 
             export.Status = newStatus;
 
+            bool deliveryChangedToDelivered = false;
             // Sync: Completed → delivery auto Delivered
             if (newStatus == ExportStatuses.Completed && export.Delivery_status != DeliveryStatuses.Delivered)
+            {
                 export.Delivery_status = DeliveryStatuses.Delivered;
+                deliveryChangedToDelivered = true;
+            }
 
             export.Updated_by = userId;
             export.Updated_at = DateTime.UtcNow;
@@ -346,6 +350,11 @@ namespace ErpOnlineOrder.Application.Services
 
             // Sync: trạng thái phiếu xuất kho → hóa đơn
             await SyncStatusToInvoiceAsync(export, newStatus, userId);
+
+            if (deliveryChangedToDelivered)
+            {
+                try { await _emailService.SendExportDeliveryStatusToCustomerAsync(export.Id); } catch { }
+            }
 
             return true;
         }
@@ -394,6 +403,31 @@ namespace ErpOnlineOrder.Application.Services
                 result.Success = false;
                 result.Message = "Không thể tách phiếu xuất kho đã giao hàng";
                 return result;
+            }
+
+            var remainingDetails = sourceExport.Warehouse_Export_Details
+                .Where(d => !d.Is_deleted)
+                .ToDictionary(d => d.Id, d => d.Quantity_shipped);
+
+            foreach (var part in dto.Split_parts)
+            {
+                foreach (var item in part.Items)
+                {
+                    if (!remainingDetails.ContainsKey(item.Export_detail_id))
+                    {
+                        result.Success = false;
+                        result.Message = $"Chi tiết phiếu xuất kho không tồn tại (ID: {item.Export_detail_id})";
+                        return result;
+                    }
+
+                    if (item.Quantity <= 0 || item.Quantity > remainingDetails[item.Export_detail_id])
+                    {
+                        result.Success = false;
+                        result.Message = $"Số lượng tách không hợp lệ hoặc vượt quá số lượng có sẵn (chi tiết ID: {item.Export_detail_id})";
+                        return result;
+                    }
+                    remainingDetails[item.Export_detail_id] -= item.Quantity;
+                }
             }
 
             var now = DateTime.UtcNow;
@@ -446,7 +480,7 @@ namespace ErpOnlineOrder.Application.Services
             {
                 int partIndex = 0;
                 
-                var remainingDetails = sourceExport.Warehouse_Export_Details
+                remainingDetails = sourceExport.Warehouse_Export_Details
                     .Where(d => !d.Is_deleted)
                     .ToDictionary(d => d.Id, d => d.Quantity_shipped);
 

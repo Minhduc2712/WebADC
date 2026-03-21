@@ -14,7 +14,10 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
        Task SendOrderWaitingCustomerNotificationAsync(int OrderId, CancellationToken cancellationToken = default);
        Task SendWarehouseExportNotificationForStaffAndAdminAsync(int warehouseExportId, CancellationToken cancellationToken = default);
        Task SendExportDeliveryStatusToCustomerAsync(int warehouseExportId, CancellationToken cancellationToken = default);
-       Task SendCustomerInvoiceRequestNotificationAsync(int exportId, int invoiceCount, CancellationToken cancellationToken = default);
+        Task SendCustomerInvoiceRequestNotificationAsync(int exportId, int invoiceCount, CancellationToken cancellationToken = default);
+       Task SendOrderUpdatedNotificationForCustomerAsync(int orderId, CancellationToken cancellationToken = default);
+        Task SendOrderRejectedByCustomerNotificationAsync(int orderId, CancellationToken cancellationToken = default);
+
 
         //    Task SendOrderConfirmationAsync(string toEmail, string subject, string body);
         //    Task SendOrderCancellationAsync(string toEmail, string subject, string body);

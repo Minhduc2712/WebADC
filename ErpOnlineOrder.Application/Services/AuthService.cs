@@ -18,17 +18,20 @@ namespace ErpOnlineOrder.Application.Services
         private readonly IRoleRepository _roleRepository;
         private readonly IPermissionService _permissionService;
         private readonly IPasswordHasher _passwordHasher;
+        private readonly ICustomerManagementRepository _customerManagementRepository;
 
         public AuthService(
             IUserRepository userRepository,
             IRoleRepository roleRepository,
             IPermissionService permissionService,
-            IPasswordHasher passwordHasher)
+            IPasswordHasher passwordHasher,
+            ICustomerManagementRepository customerManagementRepository)
         {
             _userRepository = userRepository;
             _roleRepository = roleRepository;
             _permissionService = permissionService;
             _passwordHasher = passwordHasher;
+            _customerManagementRepository = customerManagementRepository;
         }
 
         public async Task<bool> RegisterByAdminAsync(RegisterStaffDto dto)
@@ -195,6 +198,30 @@ namespace ErpOnlineOrder.Application.Services
             };
 
             await _userRepository.AddAsync(user);
+
+            // Auto-assign managing staff based on province/ward selection
+            if (dto.Personal.Province_id.HasValue && user.Customer != null)
+            {
+                var assignment = await _customerManagementRepository.FindAssignmentByProvinceAndWardAsync(
+                    dto.Personal.Province_id.Value, dto.Personal.Ward_id);
+
+                if (assignment != null)
+                {
+                    await _customerManagementRepository.AddAsync(new Customer_management
+                    {
+                        Staff_id = assignment.Staff_id,
+                        Customer_id = user.Customer.Id,
+                        Province_id = dto.Personal.Province_id.Value,
+                        Ward_id = dto.Personal.Ward_id,
+                        Created_by = 0,
+                        Created_at = now,
+                        Updated_by = 0,
+                        Updated_at = now,
+                        Is_deleted = false
+                    });
+                }
+            }
+
             return true;
         }
 

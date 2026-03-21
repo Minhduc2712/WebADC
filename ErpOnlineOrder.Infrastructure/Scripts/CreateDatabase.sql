@@ -180,6 +180,21 @@ CREATE TABLE Provinces (
 );
 GO
 
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Wards')
+CREATE TABLE Wards (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Ward_code NVARCHAR(20) NOT NULL,
+    Ward_name NVARCHAR(100) NOT NULL,
+    Province_id INT NOT NULL,
+    Created_by INT NOT NULL DEFAULT 0,
+    Created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    Updated_by INT NOT NULL DEFAULT 0,
+    Updated_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    Is_deleted BIT NOT NULL DEFAULT 0,
+    CONSTRAINT FK_Wards_Provinces FOREIGN KEY (Province_id) REFERENCES Provinces(Id) ON DELETE NO ACTION
+);
+GO
+
 -- =============================================
 -- 4. DANH MUC SAN PHAM
 -- =============================================
@@ -558,6 +573,7 @@ CREATE TABLE CustomerManagements (
     Staff_id INT NOT NULL,
     Customer_id INT NOT NULL,
     Province_id INT NOT NULL,
+    Ward_id INT NULL,
     Created_by INT NOT NULL DEFAULT 0,
     Created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
     Updated_by INT NOT NULL DEFAULT 0,
@@ -566,6 +582,7 @@ CREATE TABLE CustomerManagements (
     CONSTRAINT FK_CustomerManagements_Staffs FOREIGN KEY (Staff_id) REFERENCES Staffs(Id) ON DELETE NO ACTION,
     CONSTRAINT FK_CustomerManagements_Customers FOREIGN KEY (Customer_id) REFERENCES Customers(Id) ON DELETE NO ACTION,
     CONSTRAINT FK_CustomerManagements_Provinces FOREIGN KEY (Province_id) REFERENCES Provinces(Id) ON DELETE NO ACTION,
+    CONSTRAINT FK_CustomerManagements_Wards FOREIGN KEY (Ward_id) REFERENCES Wards(Id) ON DELETE NO ACTION,
     CONSTRAINT UQ_CustomerManagements UNIQUE (Staff_id, Customer_id)
 );
 GO

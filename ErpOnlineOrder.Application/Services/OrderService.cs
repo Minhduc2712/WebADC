@@ -360,8 +360,9 @@ namespace ErpOnlineOrder.Application.Services
             result.Message = "Cập nhật đơn hàng thành công";
             result.Order_id = order.Id;
             result.Order_code = order.Order_code;
-            try { await _emailService.SendOrderNotificationForStaffAndAdminAsync(order.Id); } catch { }
-            try { await _emailService.SendOrderNotificationForCustomerAsync(order.Id); } catch { }
+            
+            try { await _emailService.SendOrderUpdatedNotificationForCustomerAsync(order.Id); } catch { }
+            
             return result;
         }
 
@@ -923,6 +924,8 @@ namespace ErpOnlineOrder.Application.Services
                     parentOrder.Updated_at = DateTime.UtcNow;
                     await _orderRepository.UpdateAsync(parentOrder);
 
+                    try { await _emailService.SendOrderRejectedByCustomerNotificationAsync(parentOrder.Id); } catch { }
+
                     return true;
                 }
             }
@@ -932,6 +935,8 @@ namespace ErpOnlineOrder.Application.Services
             order.Updated_by = userId;
             order.Updated_at = DateTime.UtcNow;
             await _orderRepository.UpdateAsync(order);
+
+            try { await _emailService.SendOrderRejectedByCustomerNotificationAsync(order.Id); } catch { }
 
             return true;
         }
@@ -964,6 +969,9 @@ namespace ErpOnlineOrder.Application.Services
             order.Updated_at = DateTime.UtcNow;
 
             await _orderRepository.UpdateAsync(order);
+            
+            try { await _emailService.SendOrderUpdatedNotificationForCustomerAsync(order.Id); } catch { }
+            
             return true;
         }
 

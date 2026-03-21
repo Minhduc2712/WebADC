@@ -10,6 +10,8 @@ namespace ErpOnlineOrder.WebMVC.Controllers
     public class AuthController : BaseController
     {
         private readonly IAuthApiClient _authApiClient;
+        private readonly IProvinceApiClient _provinceApiClient;
+        private readonly IWardApiClient _wardApiClient;
         private readonly ILogger<AuthController> _logger;
 
         private const int RememberMeDays = 30;
@@ -19,9 +21,13 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         public AuthController(
             IAuthApiClient authApiClient,
+            IProvinceApiClient provinceApiClient,
+            IWardApiClient wardApiClient,
             ILogger<AuthController> logger)
         {
             _authApiClient = authApiClient;
+            _provinceApiClient = provinceApiClient;
+            _wardApiClient = wardApiClient;
             _logger = logger;
         }
 
@@ -119,7 +125,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         }
 
         [HttpGet]
-        public IActionResult CustomerRegisterPersonal()
+        public async Task<IActionResult> CustomerRegisterPersonal()
         {
             if (HttpContext.Session.IsAuthenticated())
                 return RedirectToAction("Index", "Order");
@@ -128,18 +134,26 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 return RedirectToAction(nameof(CustomerRegister));
 
             var model = GetFromSession<RegisterCustomerPersonalStepDto>(CustomerRegisterPersonalSessionKey) ?? new RegisterCustomerPersonalStepDto();
+
+            var provinces = await _provinceApiClient.GetAllAsync();
+            ViewBag.Provinces = provinces.OrderBy(p => p.Province_name).ToList();
+
             return View(model);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CustomerRegisterPersonal(RegisterCustomerPersonalStepDto model)
+        public async Task<IActionResult> CustomerRegisterPersonal(RegisterCustomerPersonalStepDto model)
         {
             if (GetFromSession<RegisterCustomerAccountStepDto>(CustomerRegisterAccountSessionKey) == null)
                 return RedirectToAction(nameof(CustomerRegister));
 
             if (!ModelState.IsValid)
+            {
+                var provinces = await _provinceApiClient.GetAllAsync();
+                ViewBag.Provinces = provinces.OrderBy(p => p.Province_name).ToList();
                 return View(model);
+            }
 
             SaveToSession(CustomerRegisterPersonalSessionKey, model);
             return RedirectToAction(nameof(CustomerRegisterOrganization));
@@ -212,6 +226,20 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             }
 
             return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetWardsByProvince(int provinceId)
+        {
+            try
+            {
+                var wards = await _wardApiClient.GetByProvinceIdAsync(provinceId);
+                return Json(wards.Select(w => new { w.Id, w.Ward_name, w.Ward_code }));
+            }
+            catch
+            {
+                return Json(Array.Empty<object>());
+            }
         }
 
         #endregion

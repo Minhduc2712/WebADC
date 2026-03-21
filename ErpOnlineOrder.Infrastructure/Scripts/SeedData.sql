@@ -97,6 +97,20 @@ IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'PROVINCE_DELET
     INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('PROVINCE_DELETE', NULL, 0, 0, GETDATE(), 0, GETDATE(), 0);
 
+-- Ward
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'WARD_VIEW')
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('WARD_VIEW', NULL, 0, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'WARD_CREATE')
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('WARD_CREATE', NULL, 0, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'WARD_UPDATE')
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('WARD_UPDATE', NULL, 0, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'WARD_DELETE')
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('WARD_DELETE', NULL, 0, 0, GETDATE(), 0, GETDATE(), 0);
+
 -- Organization
 IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'ORGANIZATION_VIEW')
     INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
@@ -413,6 +427,168 @@ IF NOT EXISTS (SELECT 1 FROM Provinces WHERE Province_code = 'BN')
     INSERT INTO Provinces (Province_code, Province_name, Region_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('BN', N'Bắc Ninh', @RegionMB, 0, GETDATE(), 0, GETDATE(), 0);
 
+-- More provinces - Miền Bắc
+IF NOT EXISTS (SELECT 1 FROM Provinces WHERE Province_code = 'QN2')
+    INSERT INTO Provinces (Province_code, Province_name, Region_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('QN2', N'Quảng Ninh', @RegionMB, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Provinces WHERE Province_code = 'HD')
+    INSERT INTO Provinces (Province_code, Province_name, Region_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HD', N'Hải Dương', @RegionMB, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Provinces WHERE Province_code = 'VP')
+    INSERT INTO Provinces (Province_code, Province_name, Region_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('VP', N'Vĩnh Phúc', @RegionMB, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Provinces WHERE Province_code = 'TNG')
+    INSERT INTO Provinces (Province_code, Province_name, Region_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('TNG', N'Thái Nguyên', @RegionMB, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Provinces WHERE Province_code = 'ND')
+    INSERT INTO Provinces (Province_code, Province_name, Region_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('ND', N'Nam Định', @RegionMB, 0, GETDATE(), 0, GETDATE(), 0);
+
+-- More provinces - Miền Trung
+IF NOT EXISTS (SELECT 1 FROM Provinces WHERE Province_code = 'NA')
+    INSERT INTO Provinces (Province_code, Province_name, Region_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('NA', N'Nghệ An', @RegionMT, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Provinces WHERE Province_code = 'TTH')
+    INSERT INTO Provinces (Province_code, Province_name, Region_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('TTH', N'Thừa Thiên Huế', @RegionMT, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Provinces WHERE Province_code = 'KH')
+    INSERT INTO Provinces (Province_code, Province_name, Region_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('KH', N'Khánh Hòa', @RegionMT, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Provinces WHERE Province_code = 'BDINH')
+    INSERT INTO Provinces (Province_code, Province_name, Region_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('BDINH', N'Bình Định', @RegionMT, 0, GETDATE(), 0, GETDATE(), 0);
+
+-- More provinces - Tây Nguyên
+IF NOT EXISTS (SELECT 1 FROM Provinces WHERE Province_code = 'LD')
+    INSERT INTO Provinces (Province_code, Province_name, Region_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('LD', N'Lâm Đồng', @RegionTN, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Provinces WHERE Province_code = 'DKL')
+    INSERT INTO Provinces (Province_code, Province_name, Region_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('DKL', N'Đắk Lắk', @RegionTN, 0, GETDATE(), 0, GETDATE(), 0);
+
+-- More provinces - Miền Nam
+IF NOT EXISTS (SELECT 1 FROM Provinces WHERE Province_code = 'CT')
+    INSERT INTO Provinces (Province_code, Province_name, Region_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('CT', N'Cần Thơ', @RegionMN, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Provinces WHERE Province_code = 'DNAI')
+    INSERT INTO Provinces (Province_code, Province_name, Region_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('DNAI', N'Đồng Nai', @RegionMN, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Provinces WHERE Province_code = 'BD')
+    INSERT INTO Provinces (Province_code, Province_name, Region_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('BD', N'Bình Dương', @RegionMN, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Provinces WHERE Province_code = 'LA')
+    INSERT INTO Provinces (Province_code, Province_name, Region_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('LA', N'Long An', @RegionMN, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Provinces WHERE Province_code = 'AG')
+    INSERT INTO Provinces (Province_code, Province_name, Region_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('AG', N'An Giang', @RegionMN, 0, GETDATE(), 0, GETDATE(), 0);
+
+-- Wards
+DECLARE @WProv_HN INT, @WProv_HCM INT, @WProv_DN INT;
+SELECT @WProv_HN  = Id FROM Provinces WHERE Province_code = 'HN';
+SELECT @WProv_HCM = Id FROM Provinces WHERE Province_code = 'HCM';
+SELECT @WProv_DN  = Id FROM Provinces WHERE Province_code = 'DN';
+
+-- Hà Nội - Quận Hoàn Kiếm
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HN-HK-001')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HN-HK-001', N'Phường Hàng Bạc', @WProv_HN, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HN-HK-002')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HN-HK-002', N'Phường Hàng Gai', @WProv_HN, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HN-HK-003')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HN-HK-003', N'Phường Hàng Đào', @WProv_HN, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HN-HK-004')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HN-HK-004', N'Phường Tràng Tiền', @WProv_HN, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HN-HK-005')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HN-HK-005', N'Phường Lý Thái Tổ', @WProv_HN, 0, GETDATE(), 0, GETDATE(), 0);
+
+-- Hà Nội - Quận Cầu Giấy
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HN-CG-001')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HN-CG-001', N'Phường Cầu Giấy', @WProv_HN, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HN-CG-002')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HN-CG-002', N'Phường Dịch Vọng', @WProv_HN, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HN-CG-003')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HN-CG-003', N'Phường Nghĩa Đô', @WProv_HN, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HN-CG-004')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HN-CG-004', N'Phường Quan Hoa', @WProv_HN, 0, GETDATE(), 0, GETDATE(), 0);
+
+-- Hà Nội - Quận Đống Đa
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HN-DD-001')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HN-DD-001', N'Phường Cát Linh', @WProv_HN, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HN-DD-002')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HN-DD-002', N'Phường Hàng Bột', @WProv_HN, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HN-DD-003')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HN-DD-003', N'Phường Quốc Tử Giám', @WProv_HN, 0, GETDATE(), 0, GETDATE(), 0);
+
+-- TP.HCM - Quận 1
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HCM-Q1-001')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HCM-Q1-001', N'Phường Bến Nghé', @WProv_HCM, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HCM-Q1-002')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HCM-Q1-002', N'Phường Bến Thành', @WProv_HCM, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HCM-Q1-003')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HCM-Q1-003', N'Phường Tân Định', @WProv_HCM, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HCM-Q1-004')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HCM-Q1-004', N'Phường Phạm Ngũ Lão', @WProv_HCM, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HCM-Q1-005')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HCM-Q1-005', N'Phường Cầu Ông Lãnh', @WProv_HCM, 0, GETDATE(), 0, GETDATE(), 0);
+
+-- TP.HCM - Quận 3
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HCM-Q3-001')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HCM-Q3-001', N'Phường 1', @WProv_HCM, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HCM-Q3-002')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HCM-Q3-002', N'Phường 2', @WProv_HCM, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HCM-Q3-003')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HCM-Q3-003', N'Phường Võ Thị Sáu', @WProv_HCM, 0, GETDATE(), 0, GETDATE(), 0);
+
+-- TP.HCM - Quận 7
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HCM-Q7-001')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HCM-Q7-001', N'Phường Tân Phú', @WProv_HCM, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HCM-Q7-002')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HCM-Q7-002', N'Phường Tân Quy', @WProv_HCM, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HCM-Q7-003')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HCM-Q7-003', N'Phường Phú Mỹ', @WProv_HCM, 0, GETDATE(), 0, GETDATE(), 0);
+
+-- Đà Nẵng - Quận Hải Châu
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'DN-HC-001')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('DN-HC-001', N'Phường Hải Châu I', @WProv_DN, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'DN-HC-002')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('DN-HC-002', N'Phường Nam Dương', @WProv_DN, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'DN-HC-003')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('DN-HC-003', N'Phường Thạch Thang', @WProv_DN, 0, GETDATE(), 0, GETDATE(), 0);
+
+-- Đà Nẵng - Quận Sơn Trà
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'DN-ST-001')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('DN-ST-001', N'Phường Mân Thái', @WProv_DN, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'DN-ST-002')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('DN-ST-002', N'Phường An Hải Bắc', @WProv_DN, 0, GETDATE(), 0, GETDATE(), 0);
+
 -- Categories
 IF NOT EXISTS (SELECT 1 FROM Categories WHERE Category_code = 'SACH')
     INSERT INTO Categories (Category_code, Category_name, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
@@ -425,6 +601,21 @@ IF NOT EXISTS (SELECT 1 FROM Authors WHERE Author_code = 'TG001')
 IF NOT EXISTS (SELECT 1 FROM Authors WHERE Author_code = 'TG002')
     INSERT INTO Authors (Author_code, Author_name, Pen_name, Nationality, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('TG002', N'Tô Hoài', N'Tô Hoài', N'Việt Nam', 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Authors WHERE Author_code = 'TG003')
+    INSERT INTO Authors (Author_code, Author_name, Pen_name, Nationality, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('TG003', N'Paulo Coelho', N'Paulo Coelho', N'Brazil', 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Authors WHERE Author_code = 'TG004')
+    INSERT INTO Authors (Author_code, Author_name, Pen_name, Nationality, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('TG004', N'Dale Carnegie', N'Dale Carnegie', N'Mỹ', 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Authors WHERE Author_code = 'TG005')
+    INSERT INTO Authors (Author_code, Author_name, Pen_name, Nationality, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('TG005', N'Vũ Trọng Phụng', N'Vũ Trọng Phụng', N'Việt Nam', 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Authors WHERE Author_code = 'TG006')
+    INSERT INTO Authors (Author_code, Author_name, Pen_name, Nationality, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('TG006', N'J.K. Rowling', N'J.K. Rowling', N'Anh', 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Authors WHERE Author_code = 'TG007')
+    INSERT INTO Authors (Author_code, Author_name, Pen_name, Nationality, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('TG007', N'Antoine de Saint-Exupéry', N'Antoine de Saint-Exupéry', N'Pháp', 0, GETDATE(), 0, GETDATE(), 0);
 
 -- Publishers
 IF NOT EXISTS (SELECT 1 FROM Publishers WHERE Publisher_code = 'NXB001')
@@ -433,6 +624,12 @@ IF NOT EXISTS (SELECT 1 FROM Publishers WHERE Publisher_code = 'NXB001')
 IF NOT EXISTS (SELECT 1 FROM Publishers WHERE Publisher_code = 'NXB002')
     INSERT INTO Publishers (Publisher_code, Publisher_name, Publisher_address, Publisher_phone, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('NXB002', N'NXB Trẻ', N'TP. Hồ Chí Minh', '0281234567', 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Publishers WHERE Publisher_code = 'NXB003')
+    INSERT INTO Publishers (Publisher_code, Publisher_name, Publisher_address, Publisher_phone, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('NXB003', N'NXB Văn học', N'Hà Nội', '0243456789', 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Publishers WHERE Publisher_code = 'NXB004')
+    INSERT INTO Publishers (Publisher_code, Publisher_name, Publisher_address, Publisher_phone, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('NXB004', N'NXB Hội Nhà Văn', N'Hà Nội', '0244567890', 0, GETDATE(), 0, GETDATE(), 0);
 
 -- CoverTypes
 IF NOT EXISTS (SELECT 1 FROM CoverTypes WHERE Cover_type_code = 'BC')
@@ -449,6 +646,9 @@ IF NOT EXISTS (SELECT 1 FROM Distributors WHERE Distributor_code = 'NPP001')
 IF NOT EXISTS (SELECT 1 FROM Distributors WHERE Distributor_code = 'NPP002')
     INSERT INTO Distributors (Distributor_code, Distributor_name, Distributor_address, Distributor_phone, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('NPP002', N'Nhà phân phối Tiki', N'TP. Hồ Chí Minh', '0282222222', 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Distributors WHERE Distributor_code = 'NPP003')
+    INSERT INTO Distributors (Distributor_code, Distributor_name, Distributor_address, Distributor_phone, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('NPP003', N'Nhà phân phối Đinh Tị', N'Hà Nội', '0243333333', 0, GETDATE(), 0, GETDATE(), 0);
 
 -- Warehouses
 DECLARE @ProvinceHN INT, @ProvinceHCM INT;
@@ -497,17 +697,26 @@ GO
 -- =============================================
 PRINT N'[7/8] Seeding Sample Products...';
 
-DECLARE @PubId1 INT, @PubId2 INT, @CoverId1 INT, @CoverId2 INT;
-DECLARE @DistId1 INT, @CatId1 INT, @AuthId1 INT, @AuthId2 INT;
+DECLARE @PubId1 INT, @PubId2 INT, @PubId3 INT, @PubId4 INT, @CoverId1 INT, @CoverId2 INT;
+DECLARE @DistId1 INT, @DistId2 INT, @CatId1 INT, @AuthId1 INT, @AuthId2 INT;
+DECLARE @AuthId3 INT, @AuthId4 INT, @AuthId5 INT, @AuthId6 INT, @AuthId7 INT;
 
 SELECT @PubId1 = Id FROM Publishers WHERE Publisher_code = 'NXB001';
 SELECT @PubId2 = Id FROM Publishers WHERE Publisher_code = 'NXB002';
+SELECT @PubId3 = Id FROM Publishers WHERE Publisher_code = 'NXB003';
+SELECT @PubId4 = Id FROM Publishers WHERE Publisher_code = 'NXB004';
 SELECT @CoverId1 = Id FROM CoverTypes WHERE Cover_type_code = 'BC';
 SELECT @CoverId2 = Id FROM CoverTypes WHERE Cover_type_code = 'BM';
 SELECT @DistId1 = Id FROM Distributors WHERE Distributor_code = 'NPP001';
+SELECT @DistId2 = Id FROM Distributors WHERE Distributor_code = 'NPP003';
 SELECT @CatId1 = Id FROM Categories WHERE Category_code = 'SACH';
 SELECT @AuthId1 = Id FROM Authors WHERE Author_code = 'TG001';
 SELECT @AuthId2 = Id FROM Authors WHERE Author_code = 'TG002';
+SELECT @AuthId3 = Id FROM Authors WHERE Author_code = 'TG003';
+SELECT @AuthId4 = Id FROM Authors WHERE Author_code = 'TG004';
+SELECT @AuthId5 = Id FROM Authors WHERE Author_code = 'TG005';
+SELECT @AuthId6 = Id FROM Authors WHERE Author_code = 'TG006';
+SELECT @AuthId7 = Id FROM Authors WHERE Author_code = 'TG007';
 
 -- Product 1
 IF NOT EXISTS (SELECT 1 FROM Products WHERE Product_code = 'SP001')
@@ -557,6 +766,90 @@ BEGIN
     VALUES (@Pid3, '/shop/images/homepage-one/category-img/dresses.webp', 1, 0, 0, GETDATE(), 0, GETDATE(), 0);
 END
 
+-- Product 4
+IF NOT EXISTS (SELECT 1 FROM Products WHERE Product_code = 'SP004')
+BEGIN
+    INSERT INTO Products (Product_code, Product_name, Product_price, Product_description, Tax_rate, Cover_type_id, Publisher_id, Distributor_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SP004', N'Nhà giả kim', 120000, N'Tiểu thuyết triết học nổi tiếng của Paulo Coelho', 10, @CoverId2, @PubId3, @DistId1, 0, GETDATE(), 0, GETDATE(), 0);
+    DECLARE @Pid4 INT = SCOPE_IDENTITY();
+    INSERT INTO ProductCategories (Product_id, Category_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (@Pid4, @CatId1, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductAuthors (Product_id, Author_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (@Pid4, @AuthId3, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductImages (Product_id, Image_url, Is_main, Sort_order, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (@Pid4, '/shop/images/homepage-one/category-img/dresses.webp', 1, 0, 0, GETDATE(), 0, GETDATE(), 0);
+END
+
+-- Product 5
+IF NOT EXISTS (SELECT 1 FROM Products WHERE Product_code = 'SP005')
+BEGIN
+    INSERT INTO Products (Product_code, Product_name, Product_price, Product_description, Tax_rate, Cover_type_id, Publisher_id, Distributor_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SP005', N'Đắc nhân tâm', 95000, N'Sách kỹ năng sống kinh điển của Dale Carnegie', 10, @CoverId2, @PubId3, @DistId1, 0, GETDATE(), 0, GETDATE(), 0);
+    DECLARE @Pid5 INT = SCOPE_IDENTITY();
+    INSERT INTO ProductCategories (Product_id, Category_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (@Pid5, @CatId1, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductAuthors (Product_id, Author_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (@Pid5, @AuthId4, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductImages (Product_id, Image_url, Is_main, Sort_order, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (@Pid5, '/shop/images/homepage-one/category-img/dresses.webp', 1, 0, 0, GETDATE(), 0, GETDATE(), 0);
+END
+
+-- Product 6
+IF NOT EXISTS (SELECT 1 FROM Products WHERE Product_code = 'SP006')
+BEGIN
+    INSERT INTO Products (Product_code, Product_name, Product_price, Product_description, Tax_rate, Cover_type_id, Publisher_id, Distributor_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SP006', N'Số đỏ', 65000, N'Tiểu thuyết trào phúng nổi tiếng của Vũ Trọng Phụng', 10, @CoverId1, @PubId4, @DistId2, 0, GETDATE(), 0, GETDATE(), 0);
+    DECLARE @Pid6 INT = SCOPE_IDENTITY();
+    INSERT INTO ProductCategories (Product_id, Category_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (@Pid6, @CatId1, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductAuthors (Product_id, Author_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (@Pid6, @AuthId5, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductImages (Product_id, Image_url, Is_main, Sort_order, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (@Pid6, '/shop/images/homepage-one/category-img/dresses.webp', 1, 0, 0, GETDATE(), 0, GETDATE(), 0);
+END
+
+-- Product 7
+IF NOT EXISTS (SELECT 1 FROM Products WHERE Product_code = 'SP007')
+BEGIN
+    INSERT INTO Products (Product_code, Product_name, Product_price, Product_description, Tax_rate, Cover_type_id, Publisher_id, Distributor_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SP007', N'Harry Potter và Hòn đá Phù thủy', 150000, N'Tập 1 bộ truyện Harry Potter của J.K. Rowling', 10, @CoverId1, @PubId2, @DistId1, 0, GETDATE(), 0, GETDATE(), 0);
+    DECLARE @Pid7 INT = SCOPE_IDENTITY();
+    INSERT INTO ProductCategories (Product_id, Category_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (@Pid7, @CatId1, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductAuthors (Product_id, Author_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (@Pid7, @AuthId6, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductImages (Product_id, Image_url, Is_main, Sort_order, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (@Pid7, '/shop/images/homepage-one/category-img/dresses.webp', 1, 0, 0, GETDATE(), 0, GETDATE(), 0);
+END
+
+-- Product 8
+IF NOT EXISTS (SELECT 1 FROM Products WHERE Product_code = 'SP008')
+BEGIN
+    INSERT INTO Products (Product_code, Product_name, Product_price, Product_description, Tax_rate, Cover_type_id, Publisher_id, Distributor_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SP008', N'Hoàng Tử Bé', 70000, N'Tác phẩm kinh điển của Antoine de Saint-Exupéry', 10, @CoverId2, @PubId1, @DistId1, 0, GETDATE(), 0, GETDATE(), 0);
+    DECLARE @Pid8 INT = SCOPE_IDENTITY();
+    INSERT INTO ProductCategories (Product_id, Category_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (@Pid8, @CatId1, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductAuthors (Product_id, Author_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (@Pid8, @AuthId7, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductImages (Product_id, Image_url, Is_main, Sort_order, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (@Pid8, '/shop/images/homepage-one/category-img/dresses.webp', 1, 0, 0, GETDATE(), 0, GETDATE(), 0);
+END
+
+-- Product 9
+IF NOT EXISTS (SELECT 1 FROM Products WHERE Product_code = 'SP009')
+BEGIN
+    INSERT INTO Products (Product_code, Product_name, Product_price, Product_description, Tax_rate, Cover_type_id, Publisher_id, Distributor_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SP009', N'Cho tôi xin một vé đi tuổi thơ', 85000, N'Truyện dài của Nguyễn Nhật Ánh', 10, @CoverId2, @PubId2, @DistId1, 0, GETDATE(), 0, GETDATE(), 0);
+    DECLARE @Pid9 INT = SCOPE_IDENTITY();
+    INSERT INTO ProductCategories (Product_id, Category_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (@Pid9, @CatId1, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductAuthors (Product_id, Author_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (@Pid9, @AuthId1, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductImages (Product_id, Image_url, Is_main, Sort_order, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (@Pid9, '/shop/images/homepage-one/category-img/dresses.webp', 1, 0, 0, GETDATE(), 0, GETDATE(), 0);
+END
+
 PRINT N'  -> Sample Products OK';
 GO
 
@@ -573,6 +866,7 @@ UNION ALL SELECT 'Staffs', COUNT(*) FROM Staffs WHERE Is_deleted = 0
 UNION ALL SELECT 'Customers', COUNT(*) FROM Customers WHERE Is_deleted = 0
 UNION ALL SELECT 'Regions', COUNT(*) FROM Regions WHERE Is_deleted = 0
 UNION ALL SELECT 'Provinces', COUNT(*) FROM Provinces WHERE Is_deleted = 0
+UNION ALL SELECT 'Wards', COUNT(*) FROM Wards WHERE Is_deleted = 0
 UNION ALL SELECT 'Categories', COUNT(*) FROM Categories WHERE Is_deleted = 0
 UNION ALL SELECT 'Authors', COUNT(*) FROM Authors WHERE Is_deleted = 0
 UNION ALL SELECT 'Publishers', COUNT(*) FROM Publishers WHERE Is_deleted = 0

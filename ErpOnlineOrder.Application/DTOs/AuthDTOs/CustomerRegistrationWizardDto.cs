@@ -40,6 +40,12 @@ namespace ErpOnlineOrder.Application.DTOs.AuthDTOs
         [Required(ErrorMessage = "Vui lòng nhập địa chỉ cá nhân")]
         [StringLength(200, ErrorMessage = "Địa chỉ không được quá 200 ký tự")]
         public string Address { get; set; } = string.Empty;
+
+        /// <summary>Tỉnh/thành phố — dùng để tự động gán cán bộ phụ trách</summary>
+        public int? Province_id { get; set; }
+
+        /// <summary>Phường/xã — kết hợp với Province_id để tự động gán cán bộ phụ trách chính xác hơn</summary>
+        public int? Ward_id { get; set; }
     }
 
     public class RegisterCustomerOrganizationStepDto

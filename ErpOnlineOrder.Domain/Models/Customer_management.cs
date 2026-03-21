@@ -15,10 +15,15 @@ namespace ErpOnlineOrder.Domain.Models
 
         [ForeignKey("Customer_id")]
         public virtual Customer? Customer { get; set; }
+
         public int Province_id { get; set; }
 
         [ForeignKey("Province_id")]
         public virtual Province? Province { get; set; }
+        public int? Ward_id { get; set; }
+
+        [ForeignKey("Ward_id")]
+        public virtual Ward? Ward { get; set; }
 
         public int Created_by { get; set; }
 

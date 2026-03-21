@@ -4,6 +4,7 @@
     var customer = ViewBag.Customer as ErpOnlineOrder.Application.DTOs.CustomerDTO;
     var staffList = ViewBag.StaffList as List<ErpOnlineOrder.Application.DTOs.AdminDTOs.StaffAccountDto> ?? new List<ErpOnlineOrder.Application.DTOs.AdminDTOs.StaffAccountDto>();
     var provinces = ViewBag.Provinces as List<ErpOnlineOrder.Application.DTOs.ProvinceDTOs.ProvinceDTO> ?? new List<ErpOnlineOrder.Application.DTOs.ProvinceDTOs.ProvinceDTO>();
+    var wards = ViewBag.Wards as List<ErpOnlineOrder.Application.DTOs.WardDTOs.WardDTO> ?? new List<ErpOnlineOrder.Application.DTOs.WardDTOs.WardDTO>();
     var existingAssignments = ViewBag.ExistingAssignments as List<ErpOnlineOrder.Domain.Models.Customer_management> ?? new List<ErpOnlineOrder.Domain.Models.Customer_management>();
     var assignedStaffIds = existingAssignments.Select(a => a.Staff_id).ToHashSet();
 }
@@ -80,6 +81,7 @@
                                 <tr>
                                     <th>Cán bộ</th>
                                     <th>Tỉnh/Thành phố</th>
+                                    <th>Phường/Xã</th>
                                     <th>Ngày gán</th>
                                     <th style="width: 80px;">Thao tác</th>
                                 </tr>
@@ -110,6 +112,20 @@
                                             else
                                             {
                                                 <span class="text-muted">-</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (assign.Ward != null)
+                                            {
+                                                <span class="badge bg-info bg-opacity-10 text-info border border-info">
+                                                    <i class="fas fa-map-pin me-1"></i>@assign.Ward.Ward_name
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary bg-opacity-10 text-secondary border" title="Quản lý toàn tỉnh">
+                                                    <i class="fas fa-globe-asia me-1"></i>Toàn tỉnh
+                                                </span>
                                             }
                                         </td>
                                         <td>
@@ -183,6 +199,22 @@
                         </select>
                         <div class="form-text">
                             <i class="fas fa-info-circle me-1"></i>Tỉnh/thành phố quản lý
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-map-pin me-1 text-info"></i>Phường/Xã <span class="text-muted small">(tùy chọn)</span>
+                        </label>
+                        <select name="Ward_id" class="form-select" id="wardSelect">
+                            <option value="">-- Toàn tỉnh/thành --</option>
+                            @foreach (var ward in wards)
+                            {
+                                <option value="@ward.Id">@ward.Ward_name</option>
+                            }
+                        </select>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>Chọn phường/xã cụ thể hoặc để trống nếu quản lý toàn tỉnh
                         </div>
                     </div>
 
@@ -262,6 +294,28 @@
             e.preventDefault();
             alert('Vui lòng chọn đầy đủ cán bộ và tỉnh/thành phố.');
         }
+    });
+
+    // Load wards dynamically when province changes
+    document.getElementById('provinceSelect').addEventListener('change', function() {
+        var provinceId = this.value;
+        var wardSelect = document.getElementById('wardSelect');
+        wardSelect.innerHTML = '<option value="">-- Đang tải... --</option>';
+        if (!provinceId) {
+            wardSelect.innerHTML = '<option value="">-- Toàn tỉnh/thành --</option>';
+            return;
+        }
+        fetch('/CustomerManagement/GetWardsByProvince?provinceId=' + provinceId)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                wardSelect.innerHTML = '<option value="">-- Toàn tỉnh/thành --</option>';
+                data.forEach(function(w) {
+                    wardSelect.innerHTML += '<option value="' + w.id + '">' + w.ward_name + '</option>';
+                });
+            })
+            .catch(function() {
+                wardSelect.innerHTML = '<option value="">-- Toàn tỉnh/thành --</option>';
+            });
     });
 </script>
 }

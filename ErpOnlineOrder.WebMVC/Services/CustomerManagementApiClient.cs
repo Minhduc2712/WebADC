@@ -34,9 +34,9 @@ namespace ErpOnlineOrder.WebMVC.Services
             return await PostAsync<Customer_management, Customer_management>("customermanagement", model, cancellationToken);
         }
 
-        public async Task<(Customer_management? Result, string? Error)> AssignStaffAsync(int staffId, int customerId, int provinceId, CancellationToken cancellationToken = default)
+        public async Task<(Customer_management? Result, string? Error)> AssignStaffAsync(int staffId, int customerId, int provinceId, int? wardId = null, CancellationToken cancellationToken = default)
         {
-            var body = new { Staff_id = staffId, Customer_id = customerId, Province_id = provinceId };
+            var body = new { Staff_id = staffId, Customer_id = customerId, Province_id = provinceId, Ward_id = wardId };
             return await PostAsync<object, Customer_management>("customermanagement/assign", body, cancellationToken);
         }
 

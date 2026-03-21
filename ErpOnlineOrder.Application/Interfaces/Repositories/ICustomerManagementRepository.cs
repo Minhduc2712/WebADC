@@ -16,6 +16,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
         Task<bool> ExistsAsync(int staffId, int customerId, int? excludeId = null);
         Task<Customer_management?> FindDeletedAsync(int staffId, int customerId);
         Task<IEnumerable<Customer_management>> GetByProvinceAsync(int provinceId);
+        Task<Customer_management?> FindAssignmentByProvinceAndWardAsync(int provinceId, int? wardId);
         Task AddAsync(Customer_management customerManagement);
         Task UpdateAsync(Customer_management customerManagement);
         Task DeleteAsync(int id);

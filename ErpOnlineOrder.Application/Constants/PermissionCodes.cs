@@ -4,14 +4,14 @@ namespace ErpOnlineOrder.Application.Constants
     {
         public static readonly string[] CategoryOrder =
         {
-            "PRODUCT", "CATEGORY", "REGION", "PROVINCE", "ORGANIZATION", "DISTRIBUTOR",
+            "PRODUCT", "CATEGORY", "REGION", "PROVINCE", "WARD", "ORGANIZATION", "DISTRIBUTOR",
             "CUSTOMER", "ORDER", "INVOICE", "WAREHOUSE", "WAREHOUSE_EXPORT", "STOCK", "STAFF",
             "ROLE", "PERMISSION", "SETTINGS"
         };
 
         public static readonly HashSet<string> DanhMucChungCodes = new(StringComparer.OrdinalIgnoreCase)
         {
-            "REGION", "PROVINCE", "ORGANIZATION", "DISTRIBUTOR", "WAREHOUSE"
+            "REGION", "PROVINCE", "WARD", "ORGANIZATION", "DISTRIBUTOR", "WAREHOUSE"
         };
 
         public static readonly Dictionary<string, string> CategoryDisplayNames = new(StringComparer.OrdinalIgnoreCase)
@@ -20,6 +20,7 @@ namespace ErpOnlineOrder.Application.Constants
             { "CATEGORY", "Thể loại" },
             { "REGION", "Vùng miền" },
             { "PROVINCE", "Tỉnh/Thành" },
+            { "WARD", "Phường/Xã" },
             { "ORGANIZATION", "Tổ chức" },
             { "DISTRIBUTOR", "Nhà phân phối" },
             { "CUSTOMER", "Danh mục khách hàng" },
@@ -83,6 +84,12 @@ namespace ErpOnlineOrder.Application.Constants
         public const string ProvinceCreate = "PROVINCE_CREATE";
         public const string ProvinceUpdate = "PROVINCE_UPDATE";
         public const string ProvinceDelete = "PROVINCE_DELETE";
+
+        // Ward Permissions
+        public const string WardView = "WARD_VIEW";
+        public const string WardCreate = "WARD_CREATE";
+        public const string WardUpdate = "WARD_UPDATE";
+        public const string WardDelete = "WARD_DELETE";
 
         // Organization Permissions
         public const string OrganizationView = "ORGANIZATION_VIEW";

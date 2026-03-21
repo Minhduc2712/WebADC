@@ -1,19 +1,19 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace ErpOnlineOrder.Domain.Models
 {
-    public class Province
+    public class Ward
     {
         public int Id { get; set; }
 
         [Required]
-        public string Province_code { get; set; }
+        public string Ward_code { get; set; } = null!;
 
         [Required]
-        public string Province_name { get; set; }
+        public string Ward_name { get; set; } = null!;
 
         [Required]
-        public int Region_id { get; set; }
+        public int Province_id { get; set; }
 
         public int Created_by { get; set; }
 
@@ -25,10 +25,8 @@ namespace ErpOnlineOrder.Domain.Models
 
         public bool Is_deleted { get; set; }
 
-        public virtual Region Region { get; set; } = null!;
+        public virtual Province Province { get; set; } = null!;
 
         public virtual ICollection<Customer_management> Customer_managements { get; set; } = new List<Customer_management>();
-
-        public virtual ICollection<Ward> Wards { get; set; } = new List<Ward>();
     }
 }

@@ -221,6 +221,31 @@ namespace ErpOnlineOrder.Application.Services
                 .Where(d => !d.Is_deleted)
                 .ToDictionary(d => d.Id, d => d.Quantity);
 
+            // Tiền kiểm tra số lượng của tất cả các phần để tránh lỗi vượt quá số lượng gốc
+            foreach (var part in validParts)
+            {
+                foreach (var item in part.Items)
+                {
+                    if (!remainingDetails.ContainsKey(item.Invoice_detail_id))
+                    {
+                        result.Success = false;
+                        result.Message = $"Chi tiết hóa đơn không tồn tại (ID: {item.Invoice_detail_id})";
+                        return result;
+                    }
+                    if (item.Quantity > remainingDetails[item.Invoice_detail_id])
+                    {
+                        result.Success = false;
+                        result.Message = $"Số lượng tách vượt quá số lượng có sẵn (chi tiết ID: {item.Invoice_detail_id})";
+                        return result;
+                    }
+                    remainingDetails[item.Invoice_detail_id] -= item.Quantity;
+                }
+            }
+
+            remainingDetails = sourceInvoice.Invoice_Details
+                .Where(d => !d.Is_deleted)
+                .ToDictionary(d => d.Id, d => d.Quantity);
+
             // 3. Tạo các hóa đơn mới từ các phần tách
             int partIndex = 0;
             foreach (var part in validParts)
@@ -253,12 +278,6 @@ namespace ErpOnlineOrder.Application.Services
                         .FirstOrDefault(d => !d.Is_deleted && d.Id == item.Invoice_detail_id);
                     
                     if (sourceDetail == null) continue;
-                    if (item.Quantity > sourceDetail.Quantity)
-                    {
-                        result.Success = false;
-                        result.Message = $"Số lượng tách vượt quá số lượng gốc (sản phẩm ID: {sourceDetail.Product_id})";
-                        return result;
-                    }
 
                     var newDetail = new Invoice_detail
                     {
@@ -585,6 +604,7 @@ namespace ErpOnlineOrder.Application.Services
             if (export == null || export.Is_deleted || export.Status == ExportStatuses.Cancelled) return;
 
             var changed = false;
+            var deliveryChangedToDelivered = false;
 
             if (invoiceStatus == InvoiceStatuses.Confirmed && export.Status == ExportStatuses.Draft)
             {
@@ -595,8 +615,23 @@ namespace ErpOnlineOrder.Application.Services
             {
                 export.Status = ExportStatuses.Completed;
                 if (export.Delivery_status != DeliveryStatuses.Delivered)
+                {
                     export.Delivery_status = DeliveryStatuses.Delivered;
+                    deliveryChangedToDelivered = true;
+                }
                 changed = true;
+
+                // Cập nhật Order thành Completed để đồng bộ toàn chuỗi
+                if (export.Order_id.HasValue)
+                {
+                    var order = await _orderRepository.GetByIdForStatusCheckAsync(export.Order_id.Value);
+                    if (order != null && order.Order_status != "Completed" && order.Order_status != "Cancelled")
+                    {
+                        order.Order_status = "Completed";
+                        order.Updated_by = userId;
+                        await _orderRepository.UpdateAsync(order);
+                    }
+                }
             }
             else if (invoiceStatus == InvoiceStatuses.Cancelled)
             {
@@ -614,6 +649,11 @@ namespace ErpOnlineOrder.Application.Services
                 export.Updated_by = userId;
                 export.Updated_at = DateTime.UtcNow;
                 await _warehouseExportRepository.UpdateAsync(export);
+
+                if (deliveryChangedToDelivered)
+                {
+                    try { await _emailService.SendExportDeliveryStatusToCustomerAsync(export.Id); } catch { }
+                }
             }
         }
 
@@ -708,6 +748,20 @@ namespace ErpOnlineOrder.Application.Services
             // TRƯỜNG HỢP 1: Yêu cầu tách phiếu thành nhiều hóa đơn
             if (dto.SplitParts != null && dto.SplitParts.Any())
             {
+                // Tiền kiểm tra số lượng của tất cả các phần để tránh lỗi vượt quá số lượng gốc
+                var valRemaining = export.Warehouse_Export_Details.Where(d => !d.Is_deleted).ToDictionary(d => d.Product_id, d => d.Quantity_shipped);
+                foreach (var part in dto.SplitParts)
+                {
+                    foreach (var item in part.Items)
+                    {
+                        if (!valRemaining.ContainsKey(item.ProductId))
+                            throw new Exception($"Sản phẩm ID {item.ProductId} không có trong phiếu xuất kho.");
+                        if (item.Quantity <= 0 || item.Quantity > valRemaining[item.ProductId])
+                            throw new Exception($"Số lượng yêu cầu cho sản phẩm ID {item.ProductId} không hợp lệ hoặc vượt quá số lượng còn lại.");
+                        valRemaining[item.ProductId] -= item.Quantity;
+                    }
+                }
+
                 // TẠO HÓA ĐƠN CHA TRƯỚC THEO YÊU CẦU
                 var parentInvoice = new Invoice
                 {
@@ -762,8 +816,6 @@ namespace ErpOnlineOrder.Application.Services
                     {
                         if (!exportDetailsDict.TryGetValue(item.ProductId, out var exportDetail))
                             throw new Exception($"Sản phẩm ID {item.ProductId} không có trong phiếu xuất kho.");
-                        if (item.Quantity <= 0 || item.Quantity > exportDetail.Quantity_shipped)
-                            throw new Exception($"Số lượng yêu cầu cho sản phẩm ID {item.ProductId} không hợp lệ.");
 
                         var taxRate = exportDetail.Product?.Tax_rate ?? 0;
                         var detailTotal = item.Quantity * exportDetail.Unit_price;

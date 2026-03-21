@@ -16,6 +16,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         private readonly ICustomerManagementApiClient _customerManagementApiClient;
         private readonly IAdminApiClient _adminApiClient;
         private readonly IProvinceApiClient _provinceApiClient;
+        private readonly IWardApiClient _wardApiClient;
         private readonly ILogger<CustomerManagementController> _logger;
 
         public CustomerManagementController(
@@ -23,12 +24,14 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             ICustomerManagementApiClient customerManagementApiClient,
             IAdminApiClient adminApiClient,
             IProvinceApiClient provinceApiClient,
+            IWardApiClient wardApiClient,
             ILogger<CustomerManagementController> logger)
         {
             _customerApiClient = customerApiClient;
             _customerManagementApiClient = customerManagementApiClient;
             _adminApiClient = adminApiClient;
             _provinceApiClient = provinceApiClient;
+            _wardApiClient = wardApiClient;
             _logger = logger;
         }
         private void LoadCurrentUserPermissions()
@@ -412,9 +415,16 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 var provinces = await _provinceApiClient.GetAllAsync();
                 var existingAssignments = await _customerManagementApiClient.GetByCustomerAsync(id);
 
+                // Pre-load wards for the first province in existing assignments (if any)
+                var firstProvinceId = existingAssignments.FirstOrDefault()?.Province_id;
+                var wards = firstProvinceId.HasValue
+                    ? await _wardApiClient.GetByProvinceIdAsync(firstProvinceId.Value)
+                    : Enumerable.Empty<Application.DTOs.WardDTOs.WardDTO>();
+
                 ViewBag.Customer = customer;
                 ViewBag.StaffList = staffList.Where(s => s.Is_active).ToList();
                 ViewBag.Provinces = provinces.OrderBy(p => p.Province_name).ToList();
+                ViewBag.Wards = wards.ToList();
                 ViewBag.ExistingAssignments = existingAssignments.ToList();
 
                 return View();
@@ -429,7 +439,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequirePermission(PermissionCodes.CustomerAssign)]
-        public async Task<IActionResult> AssignStaff(int id, int Staff_id, int Province_id)
+        public async Task<IActionResult> AssignStaff(int id, int Staff_id, int Province_id, int? Ward_id)
         {
             try
             {
@@ -451,7 +461,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return RedirectToAction(nameof(AssignStaff), new { id });
                 }
 
-                var (created, error) = await _customerManagementApiClient.AssignStaffAsync(Staff_id, id, Province_id);
+                var (created, error) = await _customerManagementApiClient.AssignStaffAsync(Staff_id, id, Province_id, Ward_id);
                 if (created != null)
                     SetSuccessMessage("Gán cán bộ phụ trách thành công!");
                 else
@@ -495,6 +505,21 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
             return RedirectToAction(nameof(StaffAssignment));
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetWardsByProvince(int provinceId)
+        {
+            try
+            {
+                var wards = await _wardApiClient.GetByProvinceIdAsync(provinceId);
+                return Json(wards.Select(w => new { w.Id, w.Ward_name, w.Ward_code }));
+            }
+            catch
+            {
+                return Json(Array.Empty<object>());
+            }
+        }
+
         private async Task LoadAssignmentFormData()
         {
             var customers = await _customerApiClient.GetAllAsync();

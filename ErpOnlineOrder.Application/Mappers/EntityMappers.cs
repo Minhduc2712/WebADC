@@ -13,6 +13,7 @@ using ErpOnlineOrder.Application.DTOs.ProvinceDTOs;
 using ErpOnlineOrder.Application.DTOs.PublisherDTOs;
 using ErpOnlineOrder.Application.DTOs.RegionDTOs;
 using ErpOnlineOrder.Application.DTOs.StockDTOs;
+using ErpOnlineOrder.Application.DTOs.WardDTOs;
 using ErpOnlineOrder.Application.DTOs.WarehouseDTOs;
 using ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs;
 using ErpOnlineOrder.Domain.Models;
@@ -428,6 +429,24 @@ namespace ErpOnlineOrder.Application.Mappers
                 Province_count = region.Provinces?.Count(p => !p.Is_deleted) ?? 0,
                 Created_at = region.Created_at,
                 Updated_at = region.Updated_at
+            };
+        }
+
+        #endregion
+
+        #region Ward
+
+        public static WardDTO ToWardDto(Ward ward)
+        {
+            return new WardDTO
+            {
+                Id = ward.Id,
+                Ward_code = ward.Ward_code ?? "",
+                Ward_name = ward.Ward_name ?? "",
+                Province_id = ward.Province_id,
+                Province_name = ward.Province?.Province_name ?? string.Empty,
+                Created_at = ward.Created_at,
+                Updated_at = ward.Updated_at
             };
         }
 
