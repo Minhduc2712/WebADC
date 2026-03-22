@@ -49,7 +49,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var created = await _wardService.CreateWardAsync(dto, GetCurrentUserId());
-                return CreatedAtAction(nameof(GetWard), new { id = created?.Id }, ApiResponse<object>.Ok(created));
+                return CreatedAtAction(nameof(GetWard), new { id = created?.Id }, ApiResponse<object?>.Ok(created));
             }
             catch (Exception ex)
             {
@@ -67,7 +67,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             {
                 var result = await _wardService.UpdateWardAsync(id, dto, GetCurrentUserId());
                 if (!result) return NotFound(ApiResponse<object>.Fail("Không tìm thấy phường/xã cần cập nhật."));
-                return Ok(ApiResponse<object>.Ok(null, "Cập nhật phường/xã thành công"));
+                return Ok(ApiResponse<object>.Ok(new { }, "Cập nhật phường/xã thành công"));
             }
             catch (Exception ex)
             {
@@ -83,7 +83,7 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             {
                 var result = await _wardService.DeleteWardAsync(id);
                 if (!result) return NotFound(ApiResponse<object>.Fail("Không tìm thấy phường/xã cần xóa."));
-                return Ok(ApiResponse<object>.Ok(null, "Xóa phường/xã thành công"));
+                return Ok(ApiResponse<object>.Ok(new { }, "Xóa phường/xã thành công"));
             }
             catch (Exception ex)
             {

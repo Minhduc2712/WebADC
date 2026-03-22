@@ -58,13 +58,13 @@ namespace ErpOnlineOrder.Application.DTOs.AuthDTOs
         public string Address { get; set; } = string.Empty;
 
         [Range(0, int.MaxValue, ErrorMessage = "Mã số thuế không hợp lệ")]
-        public int Tax_number { get; set; }
+        public string Tax_number { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Tên người nhận là bắt buộc")]
         public string Recipient_name { get; set; } = string.Empty;
 
         [Range(1, int.MaxValue, ErrorMessage = "Số điện thoại người nhận không hợp lệ")]
-        public int Recipient_phone { get; set; }
+        public string Recipient_phone { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Địa chỉ nhận hàng là bắt buộc")]
         public string Recipient_address { get; set; } = string.Empty;

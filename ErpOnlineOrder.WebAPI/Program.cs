@@ -136,6 +136,8 @@ else
     app.UseCors("AllowWebMVC");
 }
 
+app.UseMiddleware<GlobalExceptionMiddleware>();
+
 app.UseHttpsRedirection();
 
 app.UseMiddleware<UserIdFromHeaderMiddleware>();

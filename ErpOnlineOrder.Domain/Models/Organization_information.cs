@@ -17,11 +17,11 @@ namespace ErpOnlineOrder.Domain.Models
         public string Address { get; set; } = string.Empty;
 
         [Required]
-        public int Tax_number { get; set; }
+        public string Tax_number { get; set; } = string.Empty;
 
         public string? Recipient_name { get; set; }
 
-        public int Recipient_phone { get; set; }
+        public string Recipient_phone { get; set; } = string.Empty;
          
         public string? Recipient_address { get; set; }
 

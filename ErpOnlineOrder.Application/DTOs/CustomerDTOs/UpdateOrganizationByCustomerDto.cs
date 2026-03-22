@@ -19,12 +19,12 @@ namespace ErpOnlineOrder.Application.DTOs.CustomerDTOs
         [Required(ErrorMessage = "Địa chỉ là bắt buộc")]
         public string Address { get; set; } = null!;
 
-        public int Tax_number { get; set; }
+        public string Tax_number { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Tên người nhận là bắt buộc")]
         public string Recipient_name { get; set; } = null!;
 
-        public int Recipient_phone { get; set; }
+        public string Recipient_phone { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Địa chỉ nhận hàng là bắt buộc")]
         public string Recipient_address { get; set; } = null!;

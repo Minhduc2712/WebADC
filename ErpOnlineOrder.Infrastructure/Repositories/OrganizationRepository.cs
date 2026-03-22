@@ -68,7 +68,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 query = query.Where(o => 
                     o.Organization_name.Contains(keyword) ||
                     o.Organization_code.Contains(keyword) ||
-                    o.Tax_number.ToString().Contains(keyword));
+                    o.Tax_number.Contains(keyword));
             }
 
             return await query.OrderBy(o => o.Organization_name).ToListAsync();

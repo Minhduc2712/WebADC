@@ -27,8 +27,19 @@ namespace ErpOnlineOrder.WebMVC.Services
                 
                 if (!response.IsSuccessStatusCode)
                 {
-                    var errorResponse = JsonSerializer.Deserialize<ApiResponse<object>>(content, _jsonOptions);
-                    throw new HttpRequestException(errorResponse?.Message ?? $"API returned {response.StatusCode}");
+                    string errorMessage;
+                    try
+                    {
+                        var errorResponse = JsonSerializer.Deserialize<ApiResponse<object>>(content, _jsonOptions);
+                        errorMessage = errorResponse?.Message ?? $"API returned {response.StatusCode}";
+                    }
+                    catch
+                    {
+                        errorMessage = !string.IsNullOrWhiteSpace(content)
+                            ? $"API returned {(int)response.StatusCode}: {content.Substring(0, Math.Min(200, content.Length))}"
+                            : $"API returned {response.StatusCode}";
+                    }
+                    throw new HttpRequestException(errorMessage);
                 }
 
                 var apiResponse = JsonSerializer.Deserialize<ApiResponse<T>>(content, _jsonOptions);

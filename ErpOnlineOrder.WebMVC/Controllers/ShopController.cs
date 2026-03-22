@@ -605,9 +605,9 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 Customer_id = customerId.Value,
                 Organization_name = org?.Organization_name ?? "",
                 Address = org?.Address ?? "",
-                Tax_number = org?.Tax_number ?? 0,
+                Tax_number = org?.Tax_number ?? "",
                 Recipient_name = org?.Recipient_name ?? "",
-                Recipient_phone = org?.Recipient_phone ?? 0,
+                Recipient_phone = org?.Recipient_phone ?? "",
                 Recipient_address = org?.Recipient_address ?? ""
             };
             return View(model);
@@ -636,7 +636,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (result)
                 {
                     SetSuccessMessage("Cập nhật thông tin đơn vị thành công.");
-                    return RedirectToAction(nameof(Account));
+                    return RedirectToAction(nameof(UpdateOrganization));
                 }
             }
             catch (Exception ex)

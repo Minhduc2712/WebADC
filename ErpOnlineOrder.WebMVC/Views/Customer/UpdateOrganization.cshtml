@@ -1,7 +1,7 @@
 @model UpdateOrganizationByCustomerDto
 
 @{
-    ViewData["Title"] = "C?p Nh?t Thông Tin T? Ch?c";
+    ViewData["Title"] = "C?p Nh?t Thï¿½ng Tin T? Ch?c";
 }
 
 <h2>@ViewData["Title"]</h2>
@@ -13,12 +13,12 @@
 
 <form asp-action="UpdateOrganization" method="post">
     <div class="form-group">
-        <label asp-for="Customer_id">ID Khách Hàng</label>
+        <label asp-for="Customer_id">ID Khï¿½ch Hï¿½ng</label>
         <input asp-for="Customer_id" class="form-control" />
         <span asp-validation-for="Customer_id" class="text-danger"></span>
     </div>
     <div class="form-group">
-        <label asp-for="Organization_name">Tên ??n V?</label>
+        <label asp-for="Organization_name">Tï¿½n ??n V?</label>
         <input asp-for="Organization_name" class="form-control" />
         <span asp-validation-for="Organization_name" class="text-danger"></span>
     </div>
@@ -28,22 +28,22 @@
         <span asp-validation-for="Address" class="text-danger"></span>
     </div>
     <div class="form-group">
-        <label asp-for="Tax_number">Mã S? Thu?</label>
+        <label asp-for="Tax_number">Mï¿½ S? Thu?</label>
         <input asp-for="Tax_number" class="form-control" type="number" />
         <span asp-validation-for="Tax_number" class="text-danger"></span>
     </div>
     <div class="form-group">
-        <label asp-for="Recipient_name">Ng??i Nh?n Hàng</label>
+        <label asp-for="Recipient_name">Ng??i Nh?n Hï¿½ng</label>
         <input asp-for="Recipient_name" class="form-control" />
         <span asp-validation-for="Recipient_name" class="text-danger"></span>
     </div>
     <div class="form-group">
-        <label asp-for="Recipient_phone">S? ?i?n Tho?i Nh?n Hàng</label>
-        <input asp-for="Recipient_phone" class="form-control" type="number" />
+        <label asp-for="Recipient_phone">S? ?i?n Tho?i Nh?n Hï¿½ng</label>
+        <input asp-for="Recipient_phone" class="form-control" type="text" />
         <span asp-validation-for="Recipient_phone" class="text-danger"></span>
     </div>
     <div class="form-group">
-        <label asp-for="Recipient_address">??a Ch? Nh?n Hàng</label>
+        <label asp-for="Recipient_address">??a Ch? Nh?n Hï¿½ng</label>
         <input asp-for="Recipient_address" class="form-control" />
         <span asp-validation-for="Recipient_address" class="text-danger"></span>
     </div>

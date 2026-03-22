@@ -513,7 +513,9 @@ namespace ErpOnlineOrder.Infrastructure.Persistence
                 entity.Property(x => x.Organization_code).HasMaxLength(50).IsRequired();
                 entity.Property(x => x.Organization_name).HasMaxLength(200).IsRequired();
                 entity.Property(x => x.Address).HasMaxLength(500);
+                entity.Property(x => x.Tax_number).HasColumnType("nvarchar(50)");
                 entity.Property(x => x.Recipient_name).HasMaxLength(100);
+                entity.Property(x => x.Recipient_phone).HasColumnType("nvarchar(50)");
                 entity.Property(x => x.Recipient_address).HasMaxLength(500);
                 entity.Property(x => x.Customer_id).HasColumnName("Customer_id");
                 entity.HasOne(x => x.Customer).WithMany(x => x.Organization_informations).HasForeignKey(x => x.Customer_id).OnDelete(DeleteBehavior.Cascade);
