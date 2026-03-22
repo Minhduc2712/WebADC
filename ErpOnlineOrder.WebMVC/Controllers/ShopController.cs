@@ -22,6 +22,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         private readonly IInvoiceApiClient _invoiceApiClient;
         private readonly ICustomerApiClient _customerApiClient;
         private readonly IAuthApiClient _authApiClient;
+        private readonly ICustomerManagementApiClient _customerManagementApiClient;
         private readonly ILogger<ShopController> _logger;
 
         public ShopController(
@@ -31,6 +32,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             IInvoiceApiClient invoiceApiClient,
             ICustomerApiClient customerApiClient,
             IAuthApiClient authApiClient,
+            ICustomerManagementApiClient customerManagementApiClient,
             ILogger<ShopController> logger)
         {
             _productApiClient = productApiClient;
@@ -39,6 +41,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             _invoiceApiClient = invoiceApiClient;
             _customerApiClient = customerApiClient;
             _authApiClient = authApiClient;
+            _customerManagementApiClient = customerManagementApiClient;
             _logger = logger;
         }
 
@@ -651,6 +654,24 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             ViewBag.Slug = slug ?? "gioi-thieu";
             return View();
+        }
+
+        public async Task<IActionResult> MyStaff()
+        {
+            var customerId = await GetCurrentCustomerIdAsync();
+            if (customerId == null)
+                return RedirectToAction("Products");
+
+            try
+            {
+                var assignments = await _customerManagementApiClient.GetByCustomerAsync(customerId.Value);
+                return View(assignments);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading staff assignments for customer {CustomerId}", customerId);
+                return View(Enumerable.Empty<ErpOnlineOrder.Domain.Models.Customer_management>());
+            }
         }
     }
 

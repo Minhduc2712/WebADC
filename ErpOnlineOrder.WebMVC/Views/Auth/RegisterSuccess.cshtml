@@ -1,0 +1,64 @@
+@{
+    ViewData["Title"] = "Đăng ký thành công";
+    Layout = "~/Views/Shared/_EmptyLayout.cshtml";
+}
+
+<div class="auth-card auth-card-wide">
+    <div class="auth-header" style="background: #1a7f37;">
+        <div style="font-size: 64px; margin-bottom: 12px;">
+            <i class="fas fa-check-circle" style="color: #fff;"></i>
+        </div>
+        <h3 class="mb-0">Đăng ký thành công!</h3>
+        <p class="mb-0 mt-2 opacity-75">Tài khoản của bạn đã được tạo</p>
+    </div>
+    <div class="auth-body">
+        <div class="text-center mb-4">
+            <div class="alert alert-success d-flex align-items-start gap-3 text-start" role="alert" style="border-radius: 10px;">
+                <i class="fas fa-envelope-open-text fa-lg mt-1" style="flex-shrink:0;"></i>
+                <div>
+                    <strong>Email xác nhận đã được gửi!</strong>
+                    <p class="mb-0 mt-1" style="font-size: 14px;">
+                        Chúng tôi đã gửi email chào mừng đến địa chỉ email bạn đăng ký.
+                        Cán bộ phụ trách khu vực của bạn cũng đã được thông báo và sẽ liên hệ sớm.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6">
+                <div class="p-3 rounded-3 d-flex align-items-center gap-3"
+                     style="background: #f0fdf4; border: 1px solid #bbf7d0;">
+                    <div style="width:40px;height:40px;background:#dcfce7;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <i class="fas fa-user-check" style="color:#1a7f37;"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:600;font-size:14px;color:#14532d;">Tài khoản đã kích hoạt</div>
+                        <div style="font-size:12px;color:#16a34a;">Có thể đăng nhập ngay</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <div class="p-3 rounded-3 d-flex align-items-center gap-3"
+                     style="background: #eff6ff; border: 1px solid #bfdbfe;">
+                    <div style="width:40px;height:40px;background:#dbeafe;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <i class="fas fa-headset" style="color:#1d4ed8;"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:600;font-size:14px;color:#1e3a8a;">Cán bộ phụ trách</div>
+                        <div style="font-size:12px;color:#2563eb;">Đã được gán tự động theo khu vực</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-grid gap-2">
+            <a asp-controller="Auth" asp-action="Login" class="auth-btn">
+                <i class="fas fa-sign-in-alt me-2"></i>Đăng nhập ngay
+            </a>
+            <a asp-controller="Shop" asp-action="Products" class="btn btn-outline-secondary">
+                Về trang sản phẩm
+            </a>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,125 @@
+@using ErpOnlineOrder.Domain.Models
+@model IEnumerable<Customer_management>
+@{
+    ViewData["Title"] = "Cán bộ phụ trách";
+    Layout = "~/Views/Shared/_ShopLayout.cshtml";
+    var assignments = Model?.Where(a => !a.Is_deleted).ToList() ?? new List<Customer_management>();
+}
+
+<!-- Breadcrumb -->
+<section class="blog about-blog">
+    <div class="container">
+        <div class="blog-bradcrum">
+            <span><a asp-action="Products">Sản phẩm</a></span>
+            <span class="devider">/</span>
+            <span><a asp-action="Account">Tài khoản</a></span>
+            <span class="devider">/</span>
+            <span>Cán bộ phụ trách</span>
+        </div>
+        <div class="blog-heading about-heading">
+            <h1 class="heading">Cán bộ phụ trách</h1>
+        </div>
+    </div>
+</section>
+
+<section class="product footer-padding">
+    <div class="container">
+        @await Html.PartialAsync("_AccountNavbar")
+
+        <div class="checkout-section">
+            @if (!assignments.Any())
+            {
+                <div class="row justify-content-center">
+                    <div class="col-lg-6">
+                        <div class="account-section billing-section text-center" style="padding: 50px 30px;">
+                            <div style="width:80px;height:80px;background:#f3f4f6;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+                                <i class="fas fa-user-tie fa-2x" style="color:#9ca3af;"></i>
+                            </div>
+                            <h5 style="color:#374151;font-weight:600;">Chưa có cán bộ phụ trách</h5>
+                            <p style="color:#9ca3af;font-size:14px;">
+                                Cán bộ phụ trách sẽ được gán tự động theo khu vực của bạn.<br/>
+                                Vui lòng liên hệ hotline để được hỗ trợ.
+                            </p>
+                            <a asp-action="Products" class="shop-btn mt-3">Về trang sản phẩm</a>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="row g-4">
+                    @foreach (var a in assignments)
+                    {
+                        var staff = a.Staff;
+                        var staffName = staff?.Full_name ?? $"Cán bộ #{a.Staff_id}";
+                        var staffPhone = staff?.Phone_number;
+                        var staffEmail = staff?.User?.Email;
+                        var provinceName = a.Province?.Province_name ?? $"Tỉnh #{a.Province_id}";
+                        var wardName = a.Ward?.Ward_name;
+                        var territory = wardName != null ? $"{wardName}, {provinceName}" : provinceName;
+
+                        <div class="col-lg-6 col-md-12">
+                            <div class="account-section billing-section" style="padding: 28px 24px; border-radius:12px; border: 1px solid #e5e7eb;">
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <div style="width:60px;height:60px;background:#dcfce7;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                        <i class="fas fa-user-tie fa-lg" style="color:#1a7f37;"></i>
+                                    </div>
+                                    <div>
+                                        <h5 style="font-weight:700;margin:0;color:#111827;">@staffName</h5>
+                                        <span class="badge" style="background:#dcfce7;color:#14532d;font-size:12px;font-weight:500;">
+                                            <i class="fas fa-map-marker-alt me-1"></i>@territory
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <hr style="border-color:#f3f4f6; margin: 12px 0;">
+
+                                <div class="d-flex flex-column gap-2" style="font-size:14px;">
+                                    @if (!string.IsNullOrWhiteSpace(staffPhone))
+                                    {
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div style="width:32px;height:32px;background:#f0fdf4;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                                                <i class="fas fa-phone" style="color:#16a34a;font-size:13px;"></i>
+                                            </div>
+                                            <a href="tel:@staffPhone" style="color:#1a7f37;font-weight:500;text-decoration:none;">
+                                                @staffPhone
+                                            </a>
+                                        </div>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(staffEmail))
+                                    {
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div style="width:32px;height:32px;background:#eff6ff;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                                                <i class="fas fa-envelope" style="color:#2563eb;font-size:13px;"></i>
+                                            </div>
+                                            <a href="mailto:@staffEmail" style="color:#2563eb;font-weight:500;text-decoration:none;">
+                                                @staffEmail
+                                            </a>
+                                        </div>
+                                    }
+                                    @if (string.IsNullOrWhiteSpace(staffPhone) && string.IsNullOrWhiteSpace(staffEmail))
+                                    {
+                                        <p class="text-muted mb-0" style="font-size:13px;">
+                                            <i class="fas fa-info-circle me-1"></i>Cán bộ sẽ liên hệ với bạn sớm.
+                                        </p>
+                                    }
+                                </div>
+
+                                <div style="margin-top:14px;font-size:12px;color:#9ca3af;">
+                                    <i class="fas fa-calendar-check me-1"></i>
+                                    Phụ trách từ: @a.Created_at.ToString("dd/MM/yyyy")
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="mt-4">
+                    <a asp-action="Account" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Về tài khoản
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</section>

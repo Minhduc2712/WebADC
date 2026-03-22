@@ -19,19 +19,22 @@ namespace ErpOnlineOrder.Application.Services
         private readonly IPermissionService _permissionService;
         private readonly IPasswordHasher _passwordHasher;
         private readonly ICustomerManagementRepository _customerManagementRepository;
+        private readonly IEmailService _emailService;
 
         public AuthService(
             IUserRepository userRepository,
             IRoleRepository roleRepository,
             IPermissionService permissionService,
             IPasswordHasher passwordHasher,
-            ICustomerManagementRepository customerManagementRepository)
+            ICustomerManagementRepository customerManagementRepository,
+            IEmailService emailService)
         {
             _userRepository = userRepository;
             _roleRepository = roleRepository;
             _permissionService = permissionService;
             _passwordHasher = passwordHasher;
             _customerManagementRepository = customerManagementRepository;
+            _emailService = emailService;
         }
 
         public async Task<bool> RegisterByAdminAsync(RegisterStaffDto dto)
@@ -220,6 +223,12 @@ namespace ErpOnlineOrder.Application.Services
                         Is_deleted = false
                     });
                 }
+            }
+
+            // Gửi email thông báo đăng ký (bất đồng bộ, không chặn luồng đăng ký)
+            if (user.Customer?.Id > 0)
+            {
+                _ = Task.Run(() => _emailService.SendCustomerRegistrationNotificationAsync(user.Customer.Id));
             }
 
             return true;

@@ -213,8 +213,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 {
                     _logger.LogInformation("New customer registered via wizard: {Username}", account.Username);
                     ClearCustomerRegisterSession();
-                    SetSuccessMessage("Đăng ký thành công! Vui lòng đăng nhập.");
-                    return RedirectToAction(nameof(Login));
+                    return RedirectToAction(nameof(RegisterSuccess));
                 }
 
                 ModelState.AddModelError("", errorMessage ?? "Không thể hoàn tất đăng ký khách hàng.");
@@ -240,6 +239,12 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             {
                 return Json(Array.Empty<object>());
             }
+        }
+
+        [HttpGet]
+        public IActionResult RegisterSuccess()
+        {
+            return View();
         }
 
         #endregion

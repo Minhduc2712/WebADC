@@ -658,6 +658,81 @@ namespace ErpOnlineOrder.Application.Services
             return sb.ToString();
         }
 
+        public async Task SendCustomerRegistrationNotificationAsync(int customerId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var customer = await _customerRepository.GetByIdAsync(customerId);
+                if (customer == null) return;
+
+                var smtp = await _settingService.GetSmtpSettingsAsync();
+                if (!IsSmtpValid(smtp)) return;
+
+                // Gửi email chào mừng đến khách hàng
+                var customerEmail = await GetCustomerEmailAsync(customerId, customer);
+                if (!string.IsNullOrWhiteSpace(customerEmail))
+                {
+                    var welcomeSubject = "Chào mừng bạn đến với hệ thống - Đăng ký thành công!";
+                    var welcomeBody = BuildRegistrationWelcomeBody(customer);
+                    await SendEmailAsync(smtp!, customerEmail, welcomeSubject, welcomeBody, cancellationToken);
+                }
+
+                // Gửi thông báo đến cán bộ phụ trách và admin
+                var staffAdminEmails = await GetStaffAndAdminEmailsAsync(customerId);
+                if (staffAdminEmails.Count > 0)
+                {
+                    var notifySubject = $"[Khách hàng mới] {customer.Full_name ?? customer.Customer_code} vừa đăng ký";
+                    var notifyBody = BuildNewCustomerNotificationBody(customer);
+                    foreach (var email in staffAdminEmails)
+                    {
+                        if (!string.IsNullOrWhiteSpace(email))
+                            await SendEmailAsync(smtp!, email.Trim(), notifySubject, notifyBody, cancellationToken);
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi gửi email thông báo đăng ký cho khách hàng {CustomerId}", customerId);
+            }
+        }
+
+        private static string BuildRegistrationWelcomeBody(Customer customer)
+        {
+            var sb = new StringBuilder();
+            sb.Append("<html><body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>");
+            sb.Append("<div style='background: #1a7f37; padding: 30px; text-align: center;'>");
+            sb.Append("<h1 style='color: white; margin: 0;'>Đăng ký thành công!</h1>");
+            sb.Append("</div>");
+            sb.Append("<div style='padding: 30px; background: #f9f9f9;'>");
+            sb.Append($"<p>Xin chào <strong>{WebUtility.HtmlEncode(customer.Full_name ?? customer.Customer_code)}</strong>,</p>");
+            sb.Append("<p>Tài khoản của bạn đã được tạo thành công trên hệ thống. Bạn có thể đăng nhập và bắt đầu đặt hàng ngay bây giờ.</p>");
+            sb.Append("<p>Nếu cần hỗ trợ, hãy liên hệ với chúng tôi qua hotline hoặc email.</p>");
+            sb.Append($"<p>Mã khách hàng của bạn: <strong>{WebUtility.HtmlEncode(customer.Customer_code)}</strong></p>");
+            if (!string.IsNullOrWhiteSpace(customer.Phone_number))
+                sb.Append($"<p>Số điện thoại: <strong>{WebUtility.HtmlEncode(customer.Phone_number)}</strong></p>");
+            sb.Append("<br/><p style='color: #888; font-size: 13px;'>Email này được gửi tự động, vui lòng không trả lời.</p>");
+            sb.Append("</div>");
+            sb.Append("</body></html>");
+            return sb.ToString();
+        }
+
+        private static string BuildNewCustomerNotificationBody(Customer customer)
+        {
+            var sb = new StringBuilder();
+            sb.Append("<html><body style='font-family: Arial, sans-serif;'>");
+            sb.Append("<h2>Khách hàng mới vừa đăng ký</h2>");
+            sb.Append($"<p><strong>Họ tên:</strong> {WebUtility.HtmlEncode(customer.Full_name ?? "-")}</p>");
+            sb.Append($"<p><strong>Mã khách hàng:</strong> {WebUtility.HtmlEncode(customer.Customer_code)}</p>");
+            if (!string.IsNullOrWhiteSpace(customer.Phone_number))
+                sb.Append($"<p><strong>Số điện thoại:</strong> {WebUtility.HtmlEncode(customer.Phone_number)}</p>");
+            if (!string.IsNullOrWhiteSpace(customer.Address))
+                sb.Append($"<p><strong>Địa chỉ:</strong> {WebUtility.HtmlEncode(customer.Address)}</p>");
+            sb.Append($"<p><strong>Thời gian đăng ký:</strong> {customer.Created_at:dd/MM/yyyy HH:mm}</p>");
+            sb.Append("<p>Vui lòng đăng nhập hệ thống để xem thông tin chi tiết và liên hệ với khách hàng.</p>");
+            sb.Append("</body></html>");
+            return sb.ToString();
+        }
+
         private async Task SendEmailAsync(SmtpSettingsDto settings, string toEmail, string subject, string htmlBody, CancellationToken cancellationToken)
         {
             var message = new MimeMessage();
