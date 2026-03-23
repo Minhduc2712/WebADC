@@ -14,6 +14,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
         Task<IEnumerable<Customer>> GetAllAsync();
         Task<int> CountAsync(Expression<Func<Customer, bool>>? predicate = null);        Task<PagedResult<Customer>> GetPagedCustomersAsync(CustomerFilterRequest request);
         Task<IEnumerable<CustomerSelectDto>> GetForSelectAsync();
+        Task<bool> ExistsByPhoneAsync(string phone, int? excludeId = null);
         Task AddAsync(Customer customer);
         Task UpdateAsync(Customer customer);
         Task DeleteAsync(int id);

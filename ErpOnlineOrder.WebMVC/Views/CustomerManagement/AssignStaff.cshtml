@@ -137,6 +137,11 @@
                                                     onclick="confirmRemove(@assign.Id, '@(assign.Staff?.Full_name ?? "N/A")')">
                                                 <i class="fas fa-unlink"></i>
                                             </button>
+                                            <button type="button" class="btn btn-sm btn-outline-primary ms-1" title="Thay thế cán bộ"
+                                                    data-bs-toggle="tooltip"
+                                                    onclick="confirmReplace(@assign.Id, '@(assign.Staff?.Full_name ?? "N/A")')">
+                                                <i class="fas fa-exchange-alt"></i>
+                                            </button>
                                         </td>
                                     </tr>
                                 }
@@ -265,6 +270,47 @@
     </div>
 </div>
 
+<!-- Modal thay thế cán bộ -->
+<div class="modal fade" id="replaceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary bg-opacity-10">
+                <h5 class="modal-title"><i class="fas fa-exchange-alt text-primary me-2"></i>Thay thế cán bộ phụ trách</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="replaceForm" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="customerId" value="@customer?.Id" />
+                <div class="modal-body">
+                    <p>Thay thế cán bộ <strong id="replaceOldStaffName" class="text-danger"></strong> bằng cán bộ mới:</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="fas fa-user-tie me-1 text-primary"></i>Cán bộ thay thế <span class="text-danger">*</span>
+                        </label>
+                        <select name="New_staff_id" class="form-select" id="replaceStaffSelect" required>
+                            <option value="">-- Chọn cán bộ thay thế --</option>
+                            @foreach (var staff in staffList)
+                            {
+                                <option value="@staff.Staff_id">@staff.Full_name (@staff.Staff_code)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="alert alert-info py-2 small">
+                        <i class="fas fa-envelope me-1"></i>
+                        Hệ thống sẽ tự động gửi <strong>1 email</strong> thông báo thay đổi cán bộ đến khách hàng và admin.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-exchange-alt me-1"></i>Xác nhận thay thế
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @section Styles {
 <style>
     .form-select option:disabled {
@@ -284,6 +330,13 @@
         document.getElementById('removeStaffName').textContent = staffName;
         document.getElementById('removeForm').action = '@Url.Action("RemoveAssignment")/' + id;
         new bootstrap.Modal(document.getElementById('removeModal')).show();
+    }
+
+    function confirmReplace(id, oldStaffName) {
+        document.getElementById('replaceOldStaffName').textContent = oldStaffName;
+        document.getElementById('replaceForm').action = '@Url.Action("ReplaceAssignment")/' + id;
+        document.getElementById('replaceStaffSelect').value = '';
+        new bootstrap.Modal(document.getElementById('replaceModal')).show();
     }
 
     // Disable submit nếu chưa chọn đủ

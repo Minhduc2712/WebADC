@@ -115,8 +115,25 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CustomerRegister(RegisterCustomerAccountStepDto model)
+        public async Task<IActionResult> CustomerRegister(RegisterCustomerAccountStepDto model)
         {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            try
+            {
+                if (await _authApiClient.CheckUsernameExistsAsync(model.Username))
+                    ModelState.AddModelError(nameof(model.Username), "Tên đăng nhập đã được sử dụng.");
+
+                if (await _authApiClient.CheckEmailExistsAsync(model.Email))
+                    ModelState.AddModelError(nameof(model.Email), "Email đã được sử dụng.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not verify username/email availability");
+                ModelState.AddModelError("", "Không thể kiểm tra thông tin với máy chủ. Vui lòng thử lại.");
+            }
+
             if (!ModelState.IsValid)
                 return View(model);
 
@@ -155,6 +172,24 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 return View(model);
             }
 
+            try
+            {
+                if (await _authApiClient.CheckPhoneExistsAsync(model.Phone_number))
+                    ModelState.AddModelError(nameof(model.Phone_number), "Số điện thoại đã được sử dụng.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not verify phone availability");
+                ModelState.AddModelError("", "Không thể kiểm tra số điện thoại với máy chủ. Vui lòng thử lại.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                var provinces = await _provinceApiClient.GetAllAsync();
+                ViewBag.Provinces = provinces.OrderBy(p => p.Province_name).ToList();
+                return View(model);
+            }
+
             SaveToSession(CustomerRegisterPersonalSessionKey, model);
             return RedirectToAction(nameof(CustomerRegisterOrganization));
         }
@@ -182,6 +217,20 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 return RedirectToAction(nameof(CustomerRegister));
             if (GetFromSession<RegisterCustomerPersonalStepDto>(CustomerRegisterPersonalSessionKey) == null)
                 return RedirectToAction(nameof(CustomerRegisterPersonal));
+
+            if (!ModelState.IsValid)
+                return View(model);
+
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(model.Tax_number) && await _authApiClient.CheckTaxExistsAsync(model.Tax_number))
+                    ModelState.AddModelError(nameof(model.Tax_number), "Mã số thuế đã được đăng ký.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not verify tax number availability");
+                ModelState.AddModelError("", "Không thể kiểm tra mã số thuế với máy chủ. Vui lòng thử lại.");
+            }
 
             if (!ModelState.IsValid)
                 return View(model);

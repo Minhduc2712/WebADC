@@ -223,6 +223,20 @@ IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'WAREHOUSE_EXPO
     VALUES ('WAREHOUSE_EXPORT_DELETE', @WeParentId, 0, 0, GETDATE(), 0, GETDATE(), 0);
 GO
 
+-- Stock (Ton kho)
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'STOCK_VIEW')
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('STOCK_VIEW', NULL, 0, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'STOCK_CREATE')
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('STOCK_CREATE', NULL, 0, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'STOCK_UPDATE')
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('STOCK_UPDATE', NULL, 0, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'STOCK_DELETE')
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('STOCK_DELETE', NULL, 0, 0, GETDATE(), 0, GETDATE(), 0);
+
 -- Staff
 IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'STAFF_VIEW')
     INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
@@ -239,6 +253,20 @@ IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'STAFF_DELETE')
 IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'STAFF_ASSIGN')
     INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('STAFF_ASSIGN', NULL, 0, 0, GETDATE(), 0, GETDATE(), 0);
+
+-- Staff Region Rule (Phan cong theo vung)
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'STAFF_REGION_RULE_VIEW')
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('STAFF_REGION_RULE_VIEW', NULL, 0, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'STAFF_REGION_RULE_CREATE')
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('STAFF_REGION_RULE_CREATE', NULL, 0, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'STAFF_REGION_RULE_UPDATE')
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('STAFF_REGION_RULE_UPDATE', NULL, 0, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'STAFF_REGION_RULE_DELETE')
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('STAFF_REGION_RULE_DELETE', NULL, 0, 0, GETDATE(), 0, GETDATE(), 0);
 
 -- Distributor
 IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'DISTRIBUTOR_VIEW')

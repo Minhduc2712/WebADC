@@ -20,7 +20,8 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
         Task<bool> ExistsAsync(int customerId, int productId, bool onlyActive = true);
         Task<IEnumerable<int>> GetExistingProductIdsAsync(int customerId, IEnumerable<int> productIds);
         Task<Customer_product?> GetWithFiltersAsync(int customerId, int productId);
-
+        Task<IEnumerable<Customer_product>> GetAllByProductIdsAsync(int customerId, IEnumerable<int> productIds);
+        Task UpdateRangeAsync(IEnumerable<Customer_product> customerProducts);
     }
 
 

@@ -506,6 +506,37 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             return RedirectToAction(nameof(StaffAssignment));
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequirePermission(PermissionCodes.CustomerAssign)]
+        public async Task<IActionResult> ReplaceAssignment(int id, int New_staff_id, int customerId)
+        {
+            try
+            {
+                if (New_staff_id <= 0)
+                {
+                    SetErrorMessage("Vui lòng chọn cán bộ thay thế.");
+                    return RedirectToAction(nameof(AssignStaff), new { id = customerId });
+                }
+
+                var (result, error) = await _customerManagementApiClient.ReplaceStaffAsync(id, New_staff_id);
+                if (result != null)
+                    SetSuccessMessage("Thay thế cán bộ phụ trách thành công! Email thông báo đã được gửi.");
+                else
+                    SetErrorMessage(error ?? "Không thể thay thế cán bộ phụ trách.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi thay thế cán bộ cho phân công {Id}", id);
+                SetErrorMessage(GetDetailedErrorMessage(ex));
+            }
+
+            if (customerId > 0)
+                return RedirectToAction(nameof(AssignStaff), new { id = customerId });
+
+            return RedirectToAction(nameof(StaffAssignment));
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetWardsByProvince(int provinceId)
         {

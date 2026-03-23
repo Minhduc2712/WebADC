@@ -1,4 +1,5 @@
 
+using ErpOnlineOrder.Application.DTOs.EmailDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.Mappers;
@@ -25,7 +26,7 @@ namespace ErpOnlineOrder.Application.Services
         private readonly IWarehouseRepository _warehouseRepository;
         private readonly IWarehouseExportRepository _warehouseExportRepository;
         private readonly IStockRepository _stockRepository;
-        private readonly IEmailService _emailService;
+        private readonly IEmailQueue _emailQueue;
         private readonly IPermissionService _permissionService;
         private readonly IDbTransactionManager _transactionManager;
 
@@ -40,7 +41,7 @@ namespace ErpOnlineOrder.Application.Services
             IWarehouseRepository warehouseRepository,
             IWarehouseExportRepository warehouseExportRepository,
             IStockRepository stockRepository,
-            IEmailService emailService,
+            IEmailQueue emailQueue,
             IPermissionService permissionService,
             IDbTransactionManager transactionManager)
         {
@@ -54,7 +55,7 @@ namespace ErpOnlineOrder.Application.Services
             _warehouseRepository = warehouseRepository;
             _warehouseExportRepository = warehouseExportRepository;
             _stockRepository = stockRepository;
-            _emailService = emailService;
+            _emailQueue = emailQueue;
             _permissionService = permissionService;
             _transactionManager = transactionManager;
         }
@@ -248,8 +249,8 @@ namespace ErpOnlineOrder.Application.Services
                 return new CreateOrderResultDto { Success = false, Message = "Lỗi hệ thống khi lưu đơn hàng." };
             }
 
-            try { await _emailService.SendOrderNotificationForStaffAndAdminAsync(order.Id); } catch { }
-            try { await _emailService.SendOrderNotificationForCustomerAsync(order.Id); } catch { }
+            await _emailQueue.EnqueueAsync(new EmailMessage { ActionType = EmailActionType.OrderNotificationStaffAndAdmin, PrimaryId = order.Id });
+            await _emailQueue.EnqueueAsync(new EmailMessage { ActionType = EmailActionType.OrderNotificationCustomer, PrimaryId = order.Id });
 
             return new CreateOrderResultDto {
                 Success = true,
@@ -312,9 +313,8 @@ namespace ErpOnlineOrder.Application.Services
             result.Success = true;
             result.Message = "Tạo đơn hàng thành công";
             result.Order_id = order.Id;
-            result.Order_code = order.Order_code;
-            try { await _emailService.SendOrderNotificationForStaffAndAdminAsync(order.Id); } catch { }
-            try { await _emailService.SendOrderNotificationForCustomerAsync(order.Id); } catch { }
+            await _emailQueue.EnqueueAsync(new EmailMessage { ActionType = EmailActionType.OrderNotificationStaffAndAdmin, PrimaryId = order.Id });
+            await _emailQueue.EnqueueAsync(new EmailMessage { ActionType = EmailActionType.OrderNotificationCustomer, PrimaryId = order.Id });
             return result;
         }
 
@@ -361,7 +361,7 @@ namespace ErpOnlineOrder.Application.Services
             result.Order_id = order.Id;
             result.Order_code = order.Order_code;
             
-            try { await _emailService.SendOrderUpdatedNotificationForCustomerAsync(order.Id); } catch { }
+            await _emailQueue.EnqueueAsync(new EmailMessage { ActionType = EmailActionType.OrderUpdatedNotificationCustomer, PrimaryId = order.Id });
             
             return result;
         }
@@ -829,23 +829,19 @@ namespace ErpOnlineOrder.Application.Services
 
             if (shouldCreateExport && result.Warehouse_export_id > 0)
             {
-                try { await _emailService.SendWarehouseExportNotificationForStaffAndAdminAsync(result.Warehouse_export_id.Value); } catch { }
+                await _emailQueue.EnqueueAsync(new EmailMessage { ActionType = EmailActionType.WarehouseExportNotificationStaffAndAdmin, PrimaryId = result.Warehouse_export_id.Value });
             }
 
             if (!string.Equals(dto.Notify_method, "download", StringComparison.OrdinalIgnoreCase))
             {
-                try 
-                { 
-                    if (targetExportOrder.Order_status == "WaitingCustomer")
-                    {
-                        await _emailService.SendOrderWaitingCustomerNotificationAsync(targetExportOrder.Id);
-                    }
-                    else
-                    {
-                        await _emailService.SendOrderConfirmedNotificationForCustomerAsync(targetExportOrder.Id); 
-                    }
-                } 
-                catch { }
+                if (targetExportOrder.Order_status == "WaitingCustomer")
+                {
+                    await _emailQueue.EnqueueAsync(new EmailMessage { ActionType = EmailActionType.OrderWaitingCustomerNotification, PrimaryId = targetExportOrder.Id });
+                }
+                else
+                {
+                    await _emailQueue.EnqueueAsync(new EmailMessage { ActionType = EmailActionType.OrderConfirmedNotificationCustomer, PrimaryId = targetExportOrder.Id });
+                }
             }
 
             return result;
@@ -887,10 +883,10 @@ namespace ErpOnlineOrder.Application.Services
             
             if (export != null)
             {
-                try { await _emailService.SendWarehouseExportNotificationForStaffAndAdminAsync(export.Id); } catch { }
+                await _emailQueue.EnqueueAsync(new EmailMessage { ActionType = EmailActionType.WarehouseExportNotificationStaffAndAdmin, PrimaryId = export.Id });
             }
 
-            try { await _emailService.SendOrderConfirmedNotificationForCustomerAsync(order.Id); } catch { }
+            await _emailQueue.EnqueueAsync(new EmailMessage { ActionType = EmailActionType.OrderConfirmedNotificationCustomer, PrimaryId = order.Id });
 
             return true;
         }
@@ -924,7 +920,7 @@ namespace ErpOnlineOrder.Application.Services
                     parentOrder.Updated_at = DateTime.UtcNow;
                     await _orderRepository.UpdateAsync(parentOrder);
 
-                    try { await _emailService.SendOrderRejectedByCustomerNotificationAsync(parentOrder.Id); } catch { }
+                    await _emailQueue.EnqueueAsync(new EmailMessage { ActionType = EmailActionType.OrderRejectedByCustomerNotification, PrimaryId = parentOrder.Id });
 
                     return true;
                 }
@@ -936,7 +932,7 @@ namespace ErpOnlineOrder.Application.Services
             order.Updated_at = DateTime.UtcNow;
             await _orderRepository.UpdateAsync(order);
 
-            try { await _emailService.SendOrderRejectedByCustomerNotificationAsync(order.Id); } catch { }
+            await _emailQueue.EnqueueAsync(new EmailMessage { ActionType = EmailActionType.OrderRejectedByCustomerNotification, PrimaryId = order.Id });
 
             return true;
         }
@@ -970,7 +966,7 @@ namespace ErpOnlineOrder.Application.Services
 
             await _orderRepository.UpdateAsync(order);
             
-            try { await _emailService.SendOrderUpdatedNotificationForCustomerAsync(order.Id); } catch { }
+            await _emailQueue.EnqueueAsync(new EmailMessage { ActionType = EmailActionType.OrderUpdatedNotificationCustomer, PrimaryId = order.Id });
             
             return true;
         }

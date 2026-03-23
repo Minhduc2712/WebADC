@@ -131,5 +131,38 @@ namespace ErpOnlineOrder.WebAPI.Controllers
                 return BadRequest(ApiResponse<object>.Fail(ex.Message));
             }
         }
+
+        [HttpPost("replace/{id}")]
+        public async Task<IActionResult> ReplaceStaff(int id, [FromBody] ReplaceStaffDto dto)
+        {
+            try
+            {
+                var result = await _customerManagementService.ReplaceStaffAsync(id, dto.New_staff_id, GetCurrentUserId());
+                return Ok(ApiResponse<object>.Ok(result));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+        }
+
+        [HttpPost("bulk-replace")]
+        public async Task<IActionResult> BulkReplaceStaff([FromBody] BulkReplaceStaffDto dto)
+        {
+            try
+            {
+                var count = await _customerManagementService.BulkReplaceStaffAsync(
+                    dto.Departing_staff_id, dto.New_staff_id, GetCurrentUserId());
+                return Ok(ApiResponse<object>.Ok(new { count }));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+        }
     }
 }

@@ -106,6 +106,15 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             return await ProjectToCustomerSelectDto(query).ToListAsync();
         }
 
+        public async Task<bool> ExistsByPhoneAsync(string phone, int? excludeId = null)
+        {
+            var query = _context.Customers.AsNoTracking()
+                .Where(c => !c.Is_deleted && c.Phone_number != null && c.Phone_number == phone);
+            if (excludeId.HasValue)
+                query = query.Where(c => c.Id != excludeId.Value);
+            return await query.AnyAsync();
+        }
+
         public async Task AddAsync(Customer customer)
         {
             customer.Created_at = DateTime.Now;

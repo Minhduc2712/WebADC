@@ -2,6 +2,7 @@ using BCrypt.Net;
 using ErpOnlineOrder.Application.DTOs.AuthDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Security;
+using ErpOnlineOrder.Application.DTOs.EmailDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Enums;
 using ErpOnlineOrder.Domain.Models;
@@ -19,7 +20,8 @@ namespace ErpOnlineOrder.Application.Services
         private readonly IPermissionService _permissionService;
         private readonly IPasswordHasher _passwordHasher;
         private readonly ICustomerManagementRepository _customerManagementRepository;
-        private readonly IEmailService _emailService;
+        private readonly IStaffRegionRuleRepository _staffRegionRuleRepository;
+        private readonly IEmailQueue _emailQueue;
 
         public AuthService(
             IUserRepository userRepository,
@@ -27,14 +29,16 @@ namespace ErpOnlineOrder.Application.Services
             IPermissionService permissionService,
             IPasswordHasher passwordHasher,
             ICustomerManagementRepository customerManagementRepository,
-            IEmailService emailService)
+            IStaffRegionRuleRepository staffRegionRuleRepository,
+            IEmailQueue emailQueue)
         {
             _userRepository = userRepository;
             _roleRepository = roleRepository;
             _permissionService = permissionService;
             _passwordHasher = passwordHasher;
             _customerManagementRepository = customerManagementRepository;
-            _emailService = emailService;
+            _staffRegionRuleRepository = staffRegionRuleRepository;
+            _emailQueue = emailQueue;
         }
 
         public async Task<bool> RegisterByAdminAsync(RegisterStaffDto dto)
@@ -202,17 +206,17 @@ namespace ErpOnlineOrder.Application.Services
 
             await _userRepository.AddAsync(user);
 
-            // Auto-assign managing staff based on province/ward selection
+            // Auto-assign managing staff based on pre-configured Staff_region_rules
             if (dto.Personal.Province_id.HasValue && user.Customer != null)
             {
-                var assignment = await _customerManagementRepository.FindAssignmentByProvinceAndWardAsync(
+                var rule = await _staffRegionRuleRepository.FindByProvinceAndWardAsync(
                     dto.Personal.Province_id.Value, dto.Personal.Ward_id);
 
-                if (assignment != null)
+                if (rule != null)
                 {
                     await _customerManagementRepository.AddAsync(new Customer_management
                     {
-                        Staff_id = assignment.Staff_id,
+                        Staff_id = rule.Staff_id,
                         Customer_id = user.Customer.Id,
                         Province_id = dto.Personal.Province_id.Value,
                         Ward_id = dto.Personal.Ward_id,
@@ -228,7 +232,11 @@ namespace ErpOnlineOrder.Application.Services
             // Gửi email thông báo đăng ký (bất đồng bộ, không chặn luồng đăng ký)
             if (user.Customer?.Id > 0)
             {
-                _ = Task.Run(() => _emailService.SendCustomerRegistrationNotificationAsync(user.Customer.Id));
+                await _emailQueue.EnqueueAsync(new EmailMessage
+                {
+                    ActionType = EmailActionType.CustomerRegistrationNotification,
+                    PrimaryId = user.Customer.Id
+                });
             }
 
             return true;

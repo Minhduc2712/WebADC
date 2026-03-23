@@ -1,0 +1,203 @@
+@model List<ErpOnlineOrder.Application.DTOs.StaffRegionRuleDTOs.StaffRegionRuleDto>
+@using ErpOnlineOrder.Application.DTOs.AdminDTOs
+@using ErpOnlineOrder.Application.DTOs.ProvinceDTOs
+@{
+    ViewData["Title"] = "Quy tắc phân công vùng địa lý";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var provinces = ViewBag.Provinces as List<ProvinceDTO> ?? new List<ProvinceDTO>();
+    var staffList = ViewBag.StaffList as List<StaffAccountDto> ?? new List<StaffAccountDto>();
+    var canCreate = (bool)(ViewBag.CanCreate ?? false);
+    var canUpdate = (bool)(ViewBag.CanUpdate ?? false);
+    var canDelete = (bool)(ViewBag.CanDelete ?? false);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1"><i class="fas fa-map-marked-alt me-2 text-primary"></i>Quy tắc phân công vùng địa lý</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "Order")">Trang chủ</a></li>
+                <li class="breadcrumb-item active">Phân công vùng</li>
+            </ol>
+        </nav>
+    </div>
+    @if (canCreate)
+    {
+        <a href="@Url.Action("Create")" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>Thêm quy tắc
+        </a>
+    }
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white py-3">
+        <i class="fas fa-info-circle me-2 text-info"></i>
+        <strong>Lưu ý:</strong> Quy tắc này xác định cán bộ nào sẽ <em>tự động được gán</em> khi khách hàng đăng ký tại tỉnh/phường này.
+        Mỗi tỉnh+phường chỉ có thể có <strong>một</strong> quy tắc. Nếu Ward_id = null, quy tắc áp dụng cho toàn tỉnh.
+    </div>
+</div>
+
+<!-- Bộ lọc -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white py-3">
+        <i class="fas fa-filter me-2"></i>Lọc
+    </div>
+    <div class="card-body">
+        <form asp-action="Index" method="get">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Tỉnh/Thành</label>
+                    <select name="provinceId" class="form-select" onchange="this.form.submit()">
+                        <option value="">-- Tất cả tỉnh/thành --</option>
+                        @foreach (var p in provinces)
+                        {
+                            <option value="@p.Id" selected="@(ViewBag.FilterProvinceId?.ToString() == p.Id.ToString())">@p.Province_name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Cán bộ phụ trách</label>
+                    <select name="staffId" class="form-select" onchange="this.form.submit()">
+                        <option value="">-- Tất cả cán bộ --</option>
+                        @foreach (var s in staffList)
+                        {
+                            <option value="@s.Staff_id" selected="@(ViewBag.FilterStaffId?.ToString() == s.Staff_id.ToString())">@s.Full_name (@s.Staff_code)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <a href="@Url.Action("Index")" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-redo me-1"></i>Reset
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Danh sách quy tắc -->
+<div class="card shadow-sm">
+    <div class="card-header bg-white py-3">
+        <strong><i class="fas fa-list me-2"></i>Danh sách quy tắc (@Model.Count quy tắc)</strong>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width:50px;">#</th>
+                        <th>Cán bộ phụ trách</th>
+                        <th>Tỉnh/Thành</th>
+                        <th>Phường/Xã</th>
+                        <th>Cập nhật lúc</th>
+                        @if (canUpdate || canDelete)
+                        {
+                            <th style="width:160px;">Thao tác</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <i class="fas fa-inbox fa-3x text-muted mb-3 d-block"></i>
+                                <p class="text-muted mb-0">Chưa có quy tắc phân công nào</p>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        var idx = 1;
+                        @foreach (var rule in Model)
+                        {
+                            <tr>
+                                <td>@idx</td>
+                                <td>
+                                    <strong>@rule.Staff_name</strong>
+                                    @if (!string.IsNullOrEmpty(rule.Staff_code))
+                                    {
+                                        <br /><small class="text-muted">@rule.Staff_code</small>
+                                    }
+                                </td>
+                                <td>@rule.Province_name</td>
+                                <td>
+                                    @if (!rule.Ward_ids.Any())
+                                    {
+                                        <span class="badge bg-success">Toàn tỉnh/thành</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-info">@rule.Ward_ids.Count phường/xã</span>
+                                        @if (rule.Ward_names.Any())
+                                        {
+                                            <small class="d-block text-muted mt-1">
+                                                @string.Join(", ", rule.Ward_names.Take(3))@(rule.Ward_names.Count > 3 ? "..." : "")
+                                            </small>
+                                        }
+                                    }
+                                </td>
+                                <td>@rule.Updated_at.ToString("dd/MM/yyyy HH:mm")</td>
+                                @if (canUpdate || canDelete)
+                                {
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            @if (canUpdate)
+                                            {
+                                                <a href="@Url.Action("Edit", new { id = rule.Id })" class="btn btn-outline-primary" title="Sửa">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            }
+                                            @if (canDelete)
+                                            {
+                                                <button type="button" class="btn btn-outline-danger"
+                                                        onclick="confirmDelete(@rule.Id, '@(rule.Province_name) - @(rule.Ward_ids.Any() ? rule.Ward_ids.Count + " phường/xã" : "Toàn tỉnh")')"
+                                                        title="Xóa">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                }
+                            </tr>
+                            idx++;
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc muốn xóa quy tắc phân công cho <strong id="deleteRuleName"></strong>?</p>
+                <p class="text-warning small"><i class="fas fa-exclamation-triangle me-1"></i>Việc xóa quy tắc này sẽ khiến khách hàng mới đăng ký ở vùng này không được tự động gán cán bộ.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <form id="deleteForm" method="post" style="display:inline;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger">Xóa</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function confirmDelete(id, name) {
+            document.getElementById('deleteRuleName').textContent = name;
+            document.getElementById('deleteForm').action = '@Url.Action("Delete")/' + id;
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+    </script>
+}

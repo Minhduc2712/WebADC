@@ -56,9 +56,27 @@ namespace ErpOnlineOrder.WebMVC.Services
             return obj?.already_assigned ?? false;
         }
 
+        public async Task<(Customer_management? Result, string? Error)> ReplaceStaffAsync(int assignmentId, int newStaffId, CancellationToken cancellationToken = default)
+        {
+            var body = new { New_staff_id = newStaffId };
+            return await PostAsync<object, Customer_management>($"customermanagement/replace/{assignmentId}", body, cancellationToken);
+        }
+
+        public async Task<(int Count, string? Error)> BulkReplaceStaffAsync(int departingStaffId, int newStaffId, CancellationToken cancellationToken = default)
+        {
+            var body = new { Departing_staff_id = departingStaffId, New_staff_id = newStaffId };
+            var (result, error) = await PostAsync<object, BulkReplaceResult>("customermanagement/bulk-replace", body, cancellationToken);
+            return (result?.count ?? 0, error);
+        }
+
         private class CheckAssignedResponse
         {
             public bool already_assigned { get; set; }
+        }
+
+        private class BulkReplaceResult
+        {
+            public int count { get; set; }
         }
     }
 }

@@ -9,6 +9,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
         Task<bool> ExistsByCodeAsync(string code, int? excludeId = null);
         Task<IEnumerable<Ward>> GetAllAsync();
         Task<IEnumerable<Ward>> GetByProvinceIdAsync(int provinceId);
+        Task<IEnumerable<Ward>> GetManyByIdsAsync(IEnumerable<int> ids);
         Task AddAsync(Ward ward);
         Task UpdateAsync(Ward ward);
         Task DeleteAsync(int id);

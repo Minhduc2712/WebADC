@@ -47,6 +47,16 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             return await query.AnyAsync();
         }
 
+        public async Task<bool> ExistsByTaxNumberAsync(string taxNumber, int? excludeId = null)
+        {
+            if (string.IsNullOrWhiteSpace(taxNumber)) return false;
+            var query = _context.OrganizationInformations.AsNoTracking()
+                .Where(o => !o.Is_deleted && o.Tax_number == taxNumber);
+            if (excludeId.HasValue)
+                query = query.Where(o => o.Id != excludeId.Value);
+            return await query.AnyAsync();
+        }
+
         public async Task<IEnumerable<Organization_information>> GetAllAsync()
         {
             return await GetBaseQuery(true)

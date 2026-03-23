@@ -60,6 +60,7 @@ builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.ICustomerAp
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IOrderApiClient, ErpOnlineOrder.WebMVC.Services.OrderApiClient>();
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IPermissionApiClient, ErpOnlineOrder.WebMVC.Services.PermissionApiClient>();
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.ICustomerManagementApiClient, ErpOnlineOrder.WebMVC.Services.CustomerManagementApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IStaffRegionRuleApiClient, ErpOnlineOrder.WebMVC.Services.StaffRegionRuleApiClient>();
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.ICustomerProductApiClient, ErpOnlineOrder.WebMVC.Services.CustomerProductApiClient>();
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IAdminApiClient, ErpOnlineOrder.WebMVC.Services.AdminApiClient>();
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IInvoiceApiClient, ErpOnlineOrder.WebMVC.Services.InvoiceApiClient>();

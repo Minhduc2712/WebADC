@@ -30,6 +30,7 @@ namespace ErpOnlineOrder.Application.Constants
             { "WAREHOUSE_EXPORT", "Xuất kho" },
             { "STOCK", "Tồn kho" },
             { "STAFF", "Danh sách cán bộ" },
+            { "STAFF_REGION_RULE", "Phân công theo vùng" },
             { "ROLE", "Vai trò" },
             { "PERMISSION", "Quyền hạn" },
             { "SETTINGS", "Cài đặt hệ thống" },
@@ -135,6 +136,7 @@ namespace ErpOnlineOrder.Application.Constants
 
         // Stock Permissions (Tồn kho)
         public const string StockView = "STOCK_VIEW";
+        public const string StockCreate = "STOCK_CREATE";
         public const string StockUpdate = "STOCK_UPDATE";
         public const string StockDelete = "STOCK_DELETE";
 
@@ -164,6 +166,12 @@ namespace ErpOnlineOrder.Application.Constants
         public const string PermissionUpdate = "PERMISSION_UPDATE";
         public const string PermissionDelete = "PERMISSION_DELETE";
         public const string PermissionAssignUser = "PERMISSION_ASSIGN";
+        // Staff Region Rule Permissions (Quy tắc gán cán bộ theo vùng)
+        public const string StaffRegionRuleView = "STAFF_REGION_RULE_VIEW";
+        public const string StaffRegionRuleCreate = "STAFF_REGION_RULE_CREATE";
+        public const string StaffRegionRuleUpdate = "STAFF_REGION_RULE_UPDATE";
+        public const string StaffRegionRuleDelete = "STAFF_REGION_RULE_DELETE";
+
         // Settings
         public const string SettingsView = "SETTINGS_VIEW";
         public const string SettingsUpdate = "SETTINGS_UPDATE";

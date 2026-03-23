@@ -12,6 +12,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
         Task<Organization_information?> GetByIdAsync(int id);
         Task<Organization_information?> GetByCodeAsync(string organizationCode);
         Task<bool> ExistsByCodeAsync(string code, int? excludeId = null);
+        Task<bool> ExistsByTaxNumberAsync(string taxNumber, int? excludeId = null);
         Task<IEnumerable<Organization_information>> GetAllAsync();
         Task<Organization_information?> GetByCustomerIdAsync(int customerId);
         Task<IEnumerable<Organization_information>> SearchAsync(string? keyword);

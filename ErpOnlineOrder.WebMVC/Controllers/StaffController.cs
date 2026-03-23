@@ -13,12 +13,18 @@ namespace ErpOnlineOrder.WebMVC.Controllers
     {
         private readonly IAdminApiClient _adminApiClient;
         private readonly IPermissionApiClient _permissionApiClient;
+        private readonly ICustomerManagementApiClient _customerManagementApiClient;
         private readonly ILogger<StaffController> _logger;
 
-        public StaffController(IAdminApiClient adminApiClient, IPermissionApiClient permissionApiClient, ILogger<StaffController> logger)
+        public StaffController(
+            IAdminApiClient adminApiClient,
+            IPermissionApiClient permissionApiClient,
+            ICustomerManagementApiClient customerManagementApiClient,
+            ILogger<StaffController> logger)
         {
             _adminApiClient = adminApiClient;
             _permissionApiClient = permissionApiClient;
+            _customerManagementApiClient = customerManagementApiClient;
             _logger = logger;
         }
         private int GetCurrentUserId()
@@ -227,16 +233,22 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var (success, _) = await _adminApiClient.DeleteStaffAsync(id);
+                var staff = await _adminApiClient.GetStaffByIdAsync(id);
+                if (staff != null)
+                {
+                    var assignments = await _customerManagementApiClient.GetAllAsync(staff.Staff_id, null);
+                    if (assignments.Any())
+                    {
+                        SetErrorMessage($"Cán bộ '{staff.Full_name}' đang phụ trách {assignments.Count()} khách hàng. Vui lòng hoàn tất quy trình nghỉ việc trước khi xóa.");
+                        return RedirectToAction(nameof(Offboard), new { id });
+                    }
+                }
 
+                var (success, _) = await _adminApiClient.DeleteStaffAsync(id);
                 if (success)
-                {
                     SetSuccessMessage("Xóa tài khoản nhân viên thành công!");
-                }
                 else
-                {
                     SetErrorMessage("Xóa tài khoản thất bại! Nhân viên không tồn tại.");
-                }
             }
             catch (Exception ex)
             {
@@ -257,8 +269,22 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var (success, _) = await _adminApiClient.ToggleStaffStatusAsync(id, isActive);
+                // Nếu vô hiệu hóa, kiểm tra xem có khách hàng đang được phụ trách không
+                if (!isActive)
+                {
+                    var staff = await _adminApiClient.GetStaffByIdAsync(id);
+                    if (staff != null)
+                    {
+                        var assignments = await _customerManagementApiClient.GetAllAsync(staff.Staff_id, null);
+                        if (assignments.Any())
+                        {
+                            SetErrorMessage($"Cán bộ '{staff.Full_name}' đang phụ trách {assignments.Count()} khách hàng. Vui lòng hoàn tất quy trình nghỉ việc trước khi vô hiệu hóa.");
+                            return RedirectToAction(nameof(Offboard), new { id });
+                        }
+                    }
+                }
 
+                var (success, _) = await _adminApiClient.ToggleStaffStatusAsync(id, isActive);
                 if (success)
                 {
                     var status = isActive ? "kích hoạt" : "vô hiệu hóa";
@@ -272,6 +298,95 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Lỗi khi thay đổi trạng thái nhân viên");
+                SetErrorMessage(GetDetailedErrorMessage(ex));
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        #endregion
+
+        #region Nghỉ việc (Offboarding)
+        [HttpGet]
+        [RequirePermission(PermissionCodes.StaffDelete)]
+        public async Task<IActionResult> Offboard(int id)
+        {
+            try
+            {
+                var staff = await _adminApiClient.GetStaffByIdAsync(id);
+                if (staff == null)
+                {
+                    SetErrorMessage("Không tìm thấy nhân viên.");
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var assignments = await _customerManagementApiClient.GetAllAsync(staff.Staff_id, null);
+                var allStaff = await _adminApiClient.GetAllStaffAsync();
+
+                ViewBag.StaffInfo = staff;
+                ViewBag.Assignments = assignments.ToList();
+                ViewBag.ReplacementStaffList = allStaff
+                    .Where(s => s.Is_active && s.Staff_id != staff.Staff_id)
+                    .OrderBy(s => s.Full_name)
+                    .ToList();
+
+                await LoadCurrentUserPermissions();
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi tải trang nghỉ việc cán bộ {Id}", id);
+                SetErrorMessage(GetDetailedErrorMessage(ex));
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequirePermission(PermissionCodes.StaffDelete)]
+        public async Task<IActionResult> Offboard(int id, int? New_staff_id, string offboardAction)
+        {
+            try
+            {
+                var staff = await _adminApiClient.GetStaffByIdAsync(id);
+                if (staff == null)
+                {
+                    SetErrorMessage("Không tìm thấy nhân viên.");
+                    return RedirectToAction(nameof(Index));
+                }
+
+                int transferredCount = 0;
+                if (New_staff_id.HasValue && New_staff_id.Value > 0)
+                {
+                    var (count, error) = await _customerManagementApiClient.BulkReplaceStaffAsync(staff.Staff_id, New_staff_id.Value);
+                    if (error != null)
+                    {
+                        SetErrorMessage($"Lỗi khi chuyển giao khách hàng: {error}");
+                        return RedirectToAction(nameof(Offboard), new { id });
+                    }
+                    transferredCount = count;
+                }
+
+                if (offboardAction == "delete")
+                {
+                    var (success, _) = await _adminApiClient.DeleteStaffAsync(id);
+                    if (success)
+                        SetSuccessMessage($"Đã xóa tài khoản '{staff.Full_name}'. Số khách hàng được chuyển giao: {transferredCount}.");
+                    else
+                        SetErrorMessage("Không thể xóa tài khoản.");
+                }
+                else
+                {
+                    var (success, _) = await _adminApiClient.ToggleStaffStatusAsync(id, false);
+                    if (success)
+                        SetSuccessMessage($"Đã vô hiệu hóa '{staff.Full_name}'. Số khách hàng được chuyển giao: {transferredCount}.");
+                    else
+                        SetErrorMessage("Không thể vô hiệu hóa tài khoản.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi xử lý nghỉ việc cán bộ {Id}", id);
                 SetErrorMessage(GetDetailedErrorMessage(ex));
             }
 

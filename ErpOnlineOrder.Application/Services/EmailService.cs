@@ -26,6 +26,7 @@ namespace ErpOnlineOrder.Application.Services
         private readonly IInvoiceRepository _invoiceRepository;
         private readonly ICustomerRepository _customerRepository;
         private readonly IStaffRepository _staffRepository;
+        private readonly IProductRepository _productRepository;
         private readonly ILogger<EmailService> _logger;
 
         public EmailService(
@@ -38,6 +39,7 @@ namespace ErpOnlineOrder.Application.Services
             IInvoiceRepository invoiceRepository,
             ICustomerRepository customerRepository,
             IStaffRepository staffRepository,
+            IProductRepository productRepository,
             ILogger<EmailService> logger)
         {
             _settingService = settingService;
@@ -49,6 +51,7 @@ namespace ErpOnlineOrder.Application.Services
             _invoiceRepository = invoiceRepository;
             _customerRepository = customerRepository;
             _staffRepository = staffRepository;
+            _productRepository = productRepository;
             _logger = logger;
         }
 
@@ -312,6 +315,79 @@ namespace ErpOnlineOrder.Application.Services
             {
                 _logger.LogError(ex, "Lỗi khi gửi email yêu cầu xuất hóa đơn cho phiếu {ExportId}", exportId);
             }
+        }
+
+        public async Task SendProductAssignedToCustomerAsync(int customerId, List<int> productIds, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (productIds == null || productIds.Count == 0) return;
+
+                var customer = await _customerRepository.GetByIdAsync(customerId);
+                if (customer == null) return;
+
+                var smtp = await _settingService.GetSmtpSettingsAsync();
+                if (!IsSmtpValid(smtp)) return;
+
+                var customerEmail = await GetCustomerEmailAsync(customerId, customer);
+                if (string.IsNullOrWhiteSpace(customerEmail)) return;
+
+                var products = new List<Product>();
+                foreach (var pid in productIds)
+                {
+                    var product = await _productRepository.GetByIdBasicAsync(pid);
+                    if (product != null) products.Add(product);
+                }
+                if (products.Count == 0) return;
+
+                var subject = products.Count == 1
+                    ? $"[Thông báo] Bạn vừa được cấp quyền đặt sản phẩm: {products[0].Product_name}"
+                    : $"[Thông báo] Bạn vừa được cấp quyền đặt {products.Count} sản phẩm mới";
+
+                var body = BuildProductAssignedBody(customer, products);
+                await SendEmailAsync(smtp!, customerEmail, subject, body, cancellationToken);
+            }
+            catch (System.Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi gửi email thông báo gán sản phẩm cho khách hàng {CustomerId}", customerId);
+            }
+        }
+
+        private static string BuildProductAssignedBody(Customer customer, List<Product> products)
+        {
+            var sb = new StringBuilder();
+            sb.Append("<html><body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>");
+            sb.Append("<div style='background: #1a7f37; padding: 30px; text-align: center;'>");
+            sb.Append("<h1 style='color: white; margin: 0;'>Sản phẩm mới được cấp phép</h1>");
+            sb.Append("</div>");
+            sb.Append("<div style='padding: 30px; background: #f9f9f9;'>");
+            sb.Append($"<p>Xin chào <strong>{WebUtility.HtmlEncode(customer.Full_name ?? customer.Customer_code)}</strong>,</p>");
+            if (products.Count == 1)
+                sb.Append("<p>Bạn vừa được cấp quyền đặt hàng sản phẩm mới sau đây:</p>");
+            else
+                sb.Append($"<p>Bạn vừa được cấp quyền đặt hàng <strong>{products.Count}</strong> sản phẩm mới:</p>");
+            sb.Append("<table style='border-collapse: collapse; width: 100%; margin-top: 15px;'>");
+            sb.Append("<tr style='background: #1a7f37; color: white;'>");
+            sb.Append("<th style='padding: 10px; text-align: left; border: 1px solid #dee2e6;'>Mã sản phẩm</th>");
+            sb.Append("<th style='padding: 10px; text-align: left; border: 1px solid #dee2e6;'>Tên sản phẩm</th>");
+            sb.Append("<th style='padding: 10px; text-align: right; border: 1px solid #dee2e6;'>Đơn giá</th>");
+            sb.Append("</tr>");
+            for (int i = 0; i < products.Count; i++)
+            {
+                var p = products[i];
+                var rowBg = i % 2 == 0 ? "#ffffff" : "#f8f9fa";
+                sb.Append($"<tr style='background: {rowBg};'>");
+                sb.Append($"<td style='padding: 10px; border: 1px solid #dee2e6;'>{WebUtility.HtmlEncode(p.Product_code)}</td>");
+                sb.Append($"<td style='padding: 10px; border: 1px solid #dee2e6;'>{WebUtility.HtmlEncode(p.Product_name)}</td>");
+                sb.Append($"<td style='padding: 10px; border: 1px solid #dee2e6; text-align: right;'>{p.Product_price:N0} ₫</td>");
+                sb.Append("</tr>");
+            }
+            sb.Append("</table>");
+            sb.Append("<br/><p>Bạn có thể đăng nhập hệ thống để xem và đặt hàng các sản phẩm này ngay bây giờ.</p>");
+            sb.Append("<br/><p style='color: #888; font-size: 13px;'>Email này được gửi tự động, vui lòng không trả lời.</p>");
+            sb.Append("</div>");
+            sb.Append("</body></html>");
+            return sb.ToString();
         }
 
         private static bool IsSmtpValid(SmtpSettingsDto? smtp)
@@ -668,25 +744,45 @@ namespace ErpOnlineOrder.Application.Services
                 var smtp = await _settingService.GetSmtpSettingsAsync();
                 if (!IsSmtpValid(smtp)) return;
 
-                // Gửi email chào mừng đến khách hàng
+                // Load cán bộ được phân công (nếu có)
+                Staff? assignedStaff = null;
+                var mgmtList = await _customerManagementRepository.GetByCustomerBasicAsync(customerId);
+                var mgmt = mgmtList?.FirstOrDefault();
+                if (mgmt != null)
+                    assignedStaff = mgmt.Staff ?? await _staffRepository.GetByIdAsync(mgmt.Staff_id);
+
+                // 1. Email chào mừng đến khách hàng (có thông tin CB phụ trách)
                 var customerEmail = await GetCustomerEmailAsync(customerId, customer);
                 if (!string.IsNullOrWhiteSpace(customerEmail))
                 {
                     var welcomeSubject = "Chào mừng bạn đến với hệ thống - Đăng ký thành công!";
-                    var welcomeBody = BuildRegistrationWelcomeBody(customer);
+                    var welcomeBody = BuildRegistrationWelcomeBody(customer, assignedStaff);
                     await SendEmailAsync(smtp!, customerEmail, welcomeSubject, welcomeBody, cancellationToken);
                 }
 
-                // Gửi thông báo đến cán bộ phụ trách và admin
-                var staffAdminEmails = await GetStaffAndAdminEmailsAsync(customerId);
-                if (staffAdminEmails.Count > 0)
+                // 2. Email riêng cho cán bộ được phân công
+                if (assignedStaff != null)
                 {
-                    var notifySubject = $"[Khách hàng mới] {customer.Full_name ?? customer.Customer_code} vừa đăng ký";
-                    var notifyBody = BuildNewCustomerNotificationBody(customer);
-                    foreach (var email in staffAdminEmails)
+                    var staffUser = await _userRepository.GetByIdBasicAsync(assignedStaff.User_id);
+                    if (staffUser != null && staffUser.Is_active && !staffUser.Is_deleted && !string.IsNullOrWhiteSpace(staffUser.Email))
                     {
-                        if (!string.IsNullOrWhiteSpace(email))
-                            await SendEmailAsync(smtp!, email.Trim(), notifySubject, notifyBody, cancellationToken);
+                        var staffSubject = $"[Phân công] Khách hàng mới: {customer.Full_name ?? customer.Customer_code}";
+                        var staffBody = BuildStaffAssignedNotificationBody(customer, assignedStaff);
+                        await SendEmailAsync(smtp!, staffUser.Email.Trim(), staffSubject, staffBody, cancellationToken);
+                    }
+                }
+
+                // 3. Thông báo cho admin
+                var adminRole = await _roleRepository.GetByNameAsync("ROLE_ADMIN");
+                if (adminRole != null)
+                {
+                    var adminUsers = await _userRepository.GetUsersByRoleAsync(adminRole.Id);
+                    var adminSubject = $"[Khách hàng mới] {customer.Full_name ?? customer.Customer_code} vừa đăng ký";
+                    var adminBody = BuildNewCustomerNotificationBody(customer, assignedStaff);
+                    foreach (var user in adminUsers)
+                    {
+                        if (user.Is_active && !user.Is_deleted && !string.IsNullOrWhiteSpace(user.Email))
+                            await SendEmailAsync(smtp!, user.Email.Trim(), adminSubject, adminBody, cancellationToken);
                     }
                 }
             }
@@ -696,7 +792,7 @@ namespace ErpOnlineOrder.Application.Services
             }
         }
 
-        private static string BuildRegistrationWelcomeBody(Customer customer)
+        private static string BuildRegistrationWelcomeBody(Customer customer, Staff? assignedStaff)
         {
             var sb = new StringBuilder();
             sb.Append("<html><body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>");
@@ -706,17 +802,58 @@ namespace ErpOnlineOrder.Application.Services
             sb.Append("<div style='padding: 30px; background: #f9f9f9;'>");
             sb.Append($"<p>Xin chào <strong>{WebUtility.HtmlEncode(customer.Full_name ?? customer.Customer_code)}</strong>,</p>");
             sb.Append("<p>Tài khoản của bạn đã được tạo thành công trên hệ thống. Bạn có thể đăng nhập và bắt đầu đặt hàng ngay bây giờ.</p>");
-            sb.Append("<p>Nếu cần hỗ trợ, hãy liên hệ với chúng tôi qua hotline hoặc email.</p>");
-            sb.Append($"<p>Mã khách hàng của bạn: <strong>{WebUtility.HtmlEncode(customer.Customer_code)}</strong></p>");
+            sb.Append($"<p><strong>Mã khách hàng:</strong> {WebUtility.HtmlEncode(customer.Customer_code)}</p>");
             if (!string.IsNullOrWhiteSpace(customer.Phone_number))
-                sb.Append($"<p>Số điện thoại: <strong>{WebUtility.HtmlEncode(customer.Phone_number)}</strong></p>");
+                sb.Append($"<p><strong>Số điện thoại:</strong> {WebUtility.HtmlEncode(customer.Phone_number)}</p>");
+            if (assignedStaff != null)
+            {
+                sb.Append("<hr style='border: 1px solid #ddd; margin: 20px 0;'/>");
+                sb.Append("<h3 style='color: #1a7f37; margin-top: 0;'>✅ Cán bộ phụ trách của bạn</h3>");
+                sb.Append("<table style='border-collapse: collapse; width: 100%;'>");
+                sb.Append($"<tr><td style='padding: 8px; width: 40%;'><strong>Họ tên:</strong></td><td style='padding: 8px;'>{WebUtility.HtmlEncode(assignedStaff.Full_name ?? "-")}</td></tr>");
+                sb.Append($"<tr><td style='padding: 8px;'><strong>Mã cán bộ:</strong></td><td style='padding: 8px;'>{WebUtility.HtmlEncode(assignedStaff.Staff_code ?? "-")}</td></tr>");
+                if (!string.IsNullOrWhiteSpace(assignedStaff.Phone_number))
+                    sb.Append($"<tr><td style='padding: 8px;'><strong>Số điện thoại:</strong></td><td style='padding: 8px;'>{WebUtility.HtmlEncode(assignedStaff.Phone_number)}</td></tr>");
+                sb.Append("</table>");
+                sb.Append("<p>Cán bộ phụ trách sẽ liên hệ với bạn trong thời gian sớm nhất để hỗ trợ.</p>");
+            }
+            else
+            {
+                sb.Append("<p>Nếu cần hỗ trợ, hãy liên hệ với chúng tôi qua hotline hoặc email.</p>");
+            }
             sb.Append("<br/><p style='color: #888; font-size: 13px;'>Email này được gửi tự động, vui lòng không trả lời.</p>");
             sb.Append("</div>");
             sb.Append("</body></html>");
             return sb.ToString();
         }
 
-        private static string BuildNewCustomerNotificationBody(Customer customer)
+        private static string BuildStaffAssignedNotificationBody(Customer customer, Staff staff)
+        {
+            var sb = new StringBuilder();
+            sb.Append("<html><body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>");
+            sb.Append("<div style='background: #0d6efd; padding: 30px; text-align: center;'>");
+            sb.Append("<h1 style='color: white; margin: 0;'>Bạn được phân công khách hàng mới</h1>");
+            sb.Append("</div>");
+            sb.Append("<div style='padding: 30px; background: #f9f9f9;'>");
+            sb.Append($"<p>Xin chào <strong>{WebUtility.HtmlEncode(staff.Full_name ?? "-")}</strong>,</p>");
+            sb.Append("<p>Bạn vừa được hệ thống tự động phân công phụ trách khách hàng mới đã đăng ký:</p>");
+            sb.Append("<table style='border-collapse: collapse; width: 100%; margin-top: 15px;'>");
+            sb.Append($"<tr style='background:#e9ecef;'><td style='padding:10px; border:1px solid #dee2e6; width:40%;'><strong>Họ tên</strong></td><td style='padding:10px; border:1px solid #dee2e6;'>{WebUtility.HtmlEncode(customer.Full_name ?? "-")}</td></tr>");
+            sb.Append($"<tr><td style='padding:10px; border:1px solid #dee2e6;'><strong>Mã khách hàng</strong></td><td style='padding:10px; border:1px solid #dee2e6;'>{WebUtility.HtmlEncode(customer.Customer_code)}</td></tr>");
+            if (!string.IsNullOrWhiteSpace(customer.Phone_number))
+                sb.Append($"<tr style='background:#f8f9fa;'><td style='padding:10px; border:1px solid #dee2e6;'><strong>Điện thoại</strong></td><td style='padding:10px; border:1px solid #dee2e6;'>{WebUtility.HtmlEncode(customer.Phone_number)}</td></tr>");
+            if (!string.IsNullOrWhiteSpace(customer.Address))
+                sb.Append($"<tr><td style='padding:10px; border:1px solid #dee2e6;'><strong>Địa chỉ</strong></td><td style='padding:10px; border:1px solid #dee2e6;'>{WebUtility.HtmlEncode(customer.Address)}</td></tr>");
+            sb.Append($"<tr style='background:#f8f9fa;'><td style='padding:10px; border:1px solid #dee2e6;'><strong>Thời gian đăng ký</strong></td><td style='padding:10px; border:1px solid #dee2e6;'>{customer.Created_at:dd/MM/yyyy HH:mm}</td></tr>");
+            sb.Append("</table>");
+            sb.Append("<br/><p>Vui lòng đăng nhập hệ thống để xem thông tin chi tiết và liên hệ với khách hàng.</p>");
+            sb.Append("<br/><p style='color: #888; font-size: 13px;'>Email này được gửi tự động, vui lòng không trả lời.</p>");
+            sb.Append("</div>");
+            sb.Append("</body></html>");
+            return sb.ToString();
+        }
+
+        private static string BuildNewCustomerNotificationBody(Customer customer, Staff? assignedStaff)
         {
             var sb = new StringBuilder();
             sb.Append("<html><body style='font-family: Arial, sans-serif;'>");
@@ -728,7 +865,107 @@ namespace ErpOnlineOrder.Application.Services
             if (!string.IsNullOrWhiteSpace(customer.Address))
                 sb.Append($"<p><strong>Địa chỉ:</strong> {WebUtility.HtmlEncode(customer.Address)}</p>");
             sb.Append($"<p><strong>Thời gian đăng ký:</strong> {customer.Created_at:dd/MM/yyyy HH:mm}</p>");
+            if (assignedStaff != null)
+                sb.Append($"<p><strong>Cán bộ phụ trách:</strong> {WebUtility.HtmlEncode(assignedStaff.Full_name ?? "-")} ({WebUtility.HtmlEncode(assignedStaff.Staff_code ?? "-")})</p>");
+            else
+                sb.Append("<p><strong>Cán bộ phụ trách:</strong> <em style='color:#dc3545;'>Chưa được phân công (không có quy tắc vùng phù hợp)</em></p>");
             sb.Append("<p>Vui lòng đăng nhập hệ thống để xem thông tin chi tiết và liên hệ với khách hàng.</p>");
+            sb.Append("</body></html>");
+            return sb.ToString();
+        }
+
+        public async Task SendStaffReplacementNotificationAsync(int customerId, int oldStaffId, int newStaffId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var customer = await _customerRepository.GetByIdAsync(customerId);
+                if (customer == null) return;
+
+                var smtp = await _settingService.GetSmtpSettingsAsync();
+                if (!IsSmtpValid(smtp)) return;
+
+                var oldStaff = await _staffRepository.GetByIdAsync(oldStaffId);
+                var newStaff = await _staffRepository.GetByIdAsync(newStaffId);
+
+                // Gửi thông báo đến khách hàng
+                var customerEmail = await GetCustomerEmailAsync(customerId, customer);
+                if (!string.IsNullOrWhiteSpace(customerEmail))
+                {
+                    var subject = $"[Thông báo] Cán bộ phụ trách của bạn đã thay đổi";
+                    var body = BuildStaffReplacementBodyForCustomer(customer, oldStaff, newStaff);
+                    await SendEmailAsync(smtp!, customerEmail, subject, body, cancellationToken);
+                }
+
+                // Gửi thông báo đến admin và cán bộ mới
+                var adminEmails = new HashSet<string>();
+                var adminRole = await _roleRepository.GetByNameAsync("ROLE_ADMIN");
+                if (adminRole != null)
+                {
+                    var adminUsers = await _userRepository.GetUsersByRoleAsync(adminRole.Id);
+                    foreach (var user in adminUsers)
+                    {
+                        if (user.Is_active && !user.Is_deleted && !string.IsNullOrWhiteSpace(user.Email))
+                            adminEmails.Add(user.Email.Trim());
+                    }
+                }
+
+                if (newStaff?.User_id != null)
+                {
+                    var newStaffUser = await _userRepository.GetByIdBasicAsync(newStaff.User_id);
+                    if (newStaffUser != null && newStaffUser.Is_active && !newStaffUser.Is_deleted && !string.IsNullOrWhiteSpace(newStaffUser.Email))
+                        adminEmails.Add(newStaffUser.Email.Trim());
+                }
+
+                if (adminEmails.Count > 0)
+                {
+                    var notifySubject = $"[Thay thế] Cán bộ phụ trách khách hàng {customer.Full_name ?? customer.Customer_code} đã được thay đổi";
+                    var notifyBody = BuildStaffReplacementBodyForAdmin(customer, oldStaff, newStaff);
+                    foreach (var email in adminEmails)
+                    {
+                        if (!string.IsNullOrWhiteSpace(email))
+                            await SendEmailAsync(smtp!, email, notifySubject, notifyBody, cancellationToken);
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi gửi email thông báo thay thế cán bộ cho khách hàng {CustomerId}", customerId);
+            }
+        }
+
+        private static string BuildStaffReplacementBodyForCustomer(Customer customer, Staff? oldStaff, Staff? newStaff)
+        {
+            var sb = new StringBuilder();
+            sb.Append("<html><body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>");
+            sb.Append("<div style='background: #0d6efd; padding: 30px; text-align: center;'>");
+            sb.Append("<h1 style='color: white; margin: 0;'>Thông báo thay đổi cán bộ phụ trách</h1>");
+            sb.Append("</div>");
+            sb.Append("<div style='padding: 30px; background: #f9f9f9;'>");
+            sb.Append($"<p>Xin chào <strong>{WebUtility.HtmlEncode(customer.Full_name ?? customer.Customer_code)}</strong>,</p>");
+            sb.Append("<p>Chúng tôi thông báo cán bộ phụ trách tài khoản của bạn đã được thay đổi:</p>");
+            sb.Append("<table style='border-collapse: collapse; width: 100%; margin: 16px 0;'>");
+            sb.Append("<tr style='background: #e9ecef;'><th style='padding: 10px; text-align: left; border: 1px solid #dee2e6;'>Trạng thái</th><th style='padding: 10px; text-align: left; border: 1px solid #dee2e6;'>Cán bộ</th></tr>");
+            sb.Append($"<tr><td style='padding: 10px; border: 1px solid #dee2e6; color: #dc3545;'>Cán bộ cũ</td><td style='padding: 10px; border: 1px solid #dee2e6;'>{WebUtility.HtmlEncode(oldStaff?.Full_name ?? "N/A")}</td></tr>");
+            sb.Append($"<tr><td style='padding: 10px; border: 1px solid #dee2e6; color: #198754;'>Cán bộ mới</td><td style='padding: 10px; border: 1px solid #dee2e6;'><strong>{WebUtility.HtmlEncode(newStaff?.Full_name ?? "N/A")}</strong></td></tr>");
+            sb.Append("</table>");
+            sb.Append("<p>Nếu có bất kỳ thắc mắc, vui lòng liên hệ với chúng tôi.</p>");
+            sb.Append("<br/><p style='color: #888; font-size: 13px;'>Email này được gửi tự động, vui lòng không trả lời.</p>");
+            sb.Append("</div>");
+            sb.Append("</body></html>");
+            return sb.ToString();
+        }
+
+        private static string BuildStaffReplacementBodyForAdmin(Customer customer, Staff? oldStaff, Staff? newStaff)
+        {
+            var sb = new StringBuilder();
+            sb.Append("<html><body style='font-family: Arial, sans-serif;'>");
+            sb.Append("<h2>Thay đổi cán bộ phụ trách khách hàng</h2>");
+            sb.Append($"<p><strong>Khách hàng:</strong> {WebUtility.HtmlEncode(customer.Full_name ?? "-")}</p>");
+            sb.Append($"<p><strong>Mã khách hàng:</strong> {WebUtility.HtmlEncode(customer.Customer_code)}</p>");
+            sb.Append($"<p><strong>Cán bộ cũ:</strong> {WebUtility.HtmlEncode(oldStaff?.Full_name ?? "N/A")} ({WebUtility.HtmlEncode(oldStaff?.Staff_code ?? "-")})</p>");
+            sb.Append($"<p><strong>Cán bộ mới:</strong> {WebUtility.HtmlEncode(newStaff?.Full_name ?? "N/A")} ({WebUtility.HtmlEncode(newStaff?.Staff_code ?? "-")})</p>");
+            sb.Append($"<p><strong>Thời gian thay đổi:</strong> {DateTime.Now:dd/MM/yyyy HH:mm}</p>");
+            sb.Append("<p>Vui lòng đăng nhập hệ thống để xem chi tiết phân công.</p>");
             sb.Append("</body></html>");
             return sb.ToString();
         }
@@ -744,7 +981,7 @@ namespace ErpOnlineOrder.Application.Services
             using var smtp = new SmtpClient();
             try
             {
-                var secureSocketOptions = settings.UseSsl ? SecureSocketOptions.SslOnConnect : SecureSocketOptions.StartTls;
+                var secureSocketOptions = settings.UseSsl ? SecureSocketOptions.Auto : SecureSocketOptions.None;
                 await smtp.ConnectAsync(settings.Host, settings.Port, secureSocketOptions, cancellationToken);
                 if (!string.IsNullOrEmpty(settings.Password))
                     await smtp.AuthenticateAsync(settings.FromEmail, settings.Password, cancellationToken);

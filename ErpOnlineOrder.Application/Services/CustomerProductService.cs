@@ -1,5 +1,6 @@
 using DocumentFormat.OpenXml.VariantTypes;
 using ErpOnlineOrder.Application.DTOs.CustomerProductDTOs;
+using ErpOnlineOrder.Application.DTOs.EmailDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.Mappers;
@@ -10,10 +11,14 @@ namespace ErpOnlineOrder.Application.Services
     public class CustomerProductService : ICustomerProductService
     {
         private readonly ICustomerProductRepository _customerProductRepository;
+        private readonly IEmailQueue _emailQueue;
 
-        public CustomerProductService(ICustomerProductRepository customerProductRepository)
+        public CustomerProductService(
+            ICustomerProductRepository customerProductRepository,
+            IEmailQueue emailQueue)
         {
             _customerProductRepository = customerProductRepository;
+            _emailQueue = emailQueue;
         }
 
         public async Task<IEnumerable<CustomerProductDto>> GetProductsByCustomerIdAsync(int customerId)
@@ -38,6 +43,7 @@ namespace ErpOnlineOrder.Application.Services
 
             if (existing != null)
             {
+                bool wasDeleted = existing.Is_deleted;
                 existing.Is_active = dto.Is_active;
                 existing.Is_deleted = false; 
                 existing.Max_quantity = dto.Max_quantity;
@@ -46,6 +52,13 @@ namespace ErpOnlineOrder.Application.Services
                 await _customerProductRepository.UpdateAsync(existing);
                 
                 var updatedResult = await _customerProductRepository.GetByIdAsync(existing.Id);
+                if (updatedResult != null && wasDeleted)
+                    await _emailQueue.EnqueueAsync(new EmailMessage
+                    {
+                        ActionType = EmailActionType.ProductAssignedToCustomer,
+                        PrimaryId = dto.Customer_id,
+                        IdList = new List<int> { dto.Product_id }
+                    });
                 return updatedResult != null ? EntityMappers.ToCustomerProductDto(updatedResult) : null;
             }
 
@@ -63,6 +76,13 @@ namespace ErpOnlineOrder.Application.Services
             var created = await _customerProductRepository.AddAsync(customerProduct);
             
             var result = await _customerProductRepository.GetByIdAsync(created.Id);
+            if (result != null)
+                await _emailQueue.EnqueueAsync(new EmailMessage
+                {
+                    ActionType = EmailActionType.ProductAssignedToCustomer,
+                    PrimaryId = dto.Customer_id,
+                    IdList = new List<int> { dto.Product_id }
+                });
             return result != null ? EntityMappers.ToCustomerProductDto(result) : null;
         }
 
@@ -74,26 +94,65 @@ namespace ErpOnlineOrder.Application.Services
                 return false;
             }
 
-            var existingProductIds = await _customerProductRepository.GetExistingProductIdsAsync(dto.Customer_id, requestedProductIds);
+            // Lấy tất cả bản ghi hiện có (cả đã xóa mềm) để tránh vi phạm ràng buộc unique
+            var existingRecords = await _customerProductRepository.GetAllByProductIdsAsync(dto.Customer_id, requestedProductIds);
+            var existingMap = existingRecords.ToDictionary(cp => cp.Product_id);
 
-            var newProductIds = requestedProductIds.Except(existingProductIds).ToList();
-            
-            if (newProductIds.Any())
+            var toRestore = new List<Customer_product>();
+            var toInsertIds = new List<int>();
+
+            foreach (var productId in requestedProductIds)
+            {
+                if (existingMap.TryGetValue(productId, out var existing))
+                {
+                    if (existing.Is_deleted)
+                    {
+                        existing.Is_deleted = false;
+                        existing.Is_active = true;
+                        existing.Updated_by = createdBy;
+                        toRestore.Add(existing);
+                    }
+                    // Đã tồn tại và đang active → bỏ qua
+                }
+                else
+                {
+                    toInsertIds.Add(productId);
+                }
+            }
+
+            var notifyProductIds = new List<int>();
+
+            if (toRestore.Any())
+            {
+                await _customerProductRepository.UpdateRangeAsync(toRestore);
+                notifyProductIds.AddRange(toRestore.Select(cp => cp.Product_id));
+            }
+
+            if (toInsertIds.Any())
             {
                 var now = DateTime.Now;
-                var customerProducts = newProductIds.Select(productId => new Customer_product
+                var newRecords = toInsertIds.Select(pid => new Customer_product
                 {
                     Customer_id = dto.Customer_id,
-                    Product_id = productId,
+                    Product_id = pid,
                     Is_active = true,
                     Created_by = createdBy,
                     Updated_by = createdBy,
-                    Created_at = now, // Gán trực tiếp ở đây hoặc để AddRangeAsync xử lý
+                    Created_at = now,
                     Updated_at = now
                 }).ToList();
 
-                await _customerProductRepository.AddRangeAsync(customerProducts);
+                await _customerProductRepository.AddRangeAsync(newRecords);
+                notifyProductIds.AddRange(toInsertIds);
             }
+
+            if (notifyProductIds.Any())
+                await _emailQueue.EnqueueAsync(new EmailMessage
+                {
+                    ActionType = EmailActionType.ProductAssignedToCustomer,
+                    PrimaryId = dto.Customer_id,
+                    IdList = notifyProductIds
+                });
 
             return true;
         }

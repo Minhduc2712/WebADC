@@ -50,6 +50,7 @@ namespace ErpOnlineOrder.Infrastructure.Persistence
         public DbSet<Organization_information> OrganizationInformations => Set<Organization_information>();
         public DbSet<Customer_product> CustomerProducts => Set<Customer_product>();
         public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
+        public DbSet<Staff_region_rule> StaffRegionRules => Set<Staff_region_rule>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -549,6 +550,32 @@ namespace ErpOnlineOrder.Infrastructure.Persistence
                     .IsRequired(false)
                     .OnDelete(DeleteBehavior.Restrict);
                 entity.HasIndex(x => new { x.Staff_id, x.Customer_id }).IsUnique();
+            });
+
+            // Staff_region_rule configuration
+            modelBuilder.Entity<Staff_region_rule>(entity =>
+            {
+                entity.ToTable("StaffRegionRules");
+                entity.HasKey(x => x.Id);
+                entity.HasQueryFilter(r => !r.Is_deleted);
+                entity.HasOne(x => x.Staff)
+                    .WithMany()
+                    .HasForeignKey(x => x.Staff_id)
+                    .OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(x => x.Province)
+                    .WithMany()
+                    .HasForeignKey(x => x.Province_id)
+                    .OnDelete(DeleteBehavior.Restrict);
+                entity.Property(x => x.Ward_ids)
+                    .HasColumnName("Ward_ids")
+                    .HasColumnType("nvarchar(max)")
+                    .HasConversion(
+                        v => v == null ? null : System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
+                        v => string.IsNullOrEmpty(v) ? null : System.Text.Json.JsonSerializer.Deserialize<List<int>>(v, (System.Text.Json.JsonSerializerOptions?)null));
+                // 1 cán bộ chỉ có 1 quy tắc/tỉnh
+                entity.HasIndex(x => new { x.Staff_id, x.Province_id })
+                    .IsUnique()
+                    .HasFilter("[Is_deleted] = 0");
             });
 
             // SystemSetting configuration

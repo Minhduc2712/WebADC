@@ -12,5 +12,8 @@ namespace ErpOnlineOrder.WebMVC.Services.Interfaces
         Task<string?> GenerateTokenAsync(string username, CancellationToken cancellationToken = default);
         Task<LoginResponseDto?> AutoLoginAsync(string username, string token, CancellationToken cancellationToken = default);
         Task<bool> CheckEmailExistsAsync(string email, CancellationToken cancellationToken = default);
+        Task<bool> CheckUsernameExistsAsync(string username, CancellationToken cancellationToken = default);
+        Task<bool> CheckPhoneExistsAsync(string phone, CancellationToken cancellationToken = default);
+        Task<bool> CheckTaxExistsAsync(string taxNumber, CancellationToken cancellationToken = default);
     }
 }

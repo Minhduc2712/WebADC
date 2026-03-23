@@ -494,9 +494,9 @@
                 {
                     <li><a href="@Url.Action("Index", "Product")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Product" ? "active" : "")"><i class="fas fa-box"></i> Sản phẩm</a></li>
                 }
-                @if (Context.Session.HasPermission("CUSTOMER_ASSIGN"))
+                @if (Context.Session.HasPermission("STAFF_REGION_RULE_VIEW"))
                 {
-                    <li><a href="@Url.Action("StaffAssignment", "CustomerManagement")" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "StaffAssignment" ? "active" : "")"><i class="fas fa-user-tag"></i> Gán cán bộ phụ trách</a></li>
+                    <li><a href="@Url.Action("Index", "StaffRegionRule")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "StaffRegionRule" ? "active" : "")"><i class="fas fa-map-marked-alt"></i> Phân công theo vùng</a></li>
                 }
                 
                 @if (Context.Session.HasPermission("INVOICE_VIEW"))

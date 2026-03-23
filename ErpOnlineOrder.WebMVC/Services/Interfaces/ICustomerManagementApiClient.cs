@@ -12,5 +12,7 @@ namespace ErpOnlineOrder.WebMVC.Services.Interfaces
         Task<(bool Success, string? Error)> UpdateAsync(int id, Customer_management model, CancellationToken cancellationToken = default);
         Task<(bool Success, string? Error)> DeleteAsync(int id, CancellationToken cancellationToken = default);
         Task<bool> IsAlreadyAssignedAsync(int staffId, int customerId, CancellationToken cancellationToken = default);
+        Task<(Customer_management? Result, string? Error)> ReplaceStaffAsync(int assignmentId, int newStaffId, CancellationToken cancellationToken = default);
+        Task<(int Count, string? Error)> BulkReplaceStaffAsync(int departingStaffId, int newStaffId, CancellationToken cancellationToken = default);
     }
 }

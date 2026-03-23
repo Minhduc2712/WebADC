@@ -22,5 +22,14 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
         /// Tìm cán bộ quản lý thích hợp theo tỉnh + phường (dùng khi tự động gán cán bộ lúc đăng kí).
         /// </summary>
         Task<Customer_management?> FindAssignmentByProvinceAndWardAsync(int provinceId, int? wardId);
+        /// <summary>
+        /// Thay thế cán bộ phụ trách: xóa gán cũ, tạo gán mới, gửi 1 email thông báo.
+        /// </summary>
+        Task<Customer_management> ReplaceStaffAsync(int existingAssignmentId, int newStaffId, int updatedBy);
+        /// <summary>
+        /// Chuyển giao toàn bộ khách hàng của một cán bộ sang cán bộ khác (dùng khi cán bộ nghỉ việc).
+        /// Trả về số lượng phân công đã chuyển giao thành công.
+        /// </summary>
+        Task<int> BulkReplaceStaffAsync(int departingStaffId, int newStaffId, int updatedBy);
     }
 }

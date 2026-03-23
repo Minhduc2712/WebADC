@@ -63,5 +63,51 @@ namespace ErpOnlineOrder.WebMVC.Services
             }
             return false;
         }
+
+        public async Task<bool> CheckUsernameExistsAsync(string username, CancellationToken cancellationToken = default)
+        {
+            var response = await _httpClient.GetAsync($"auth/check-username?username={Uri.EscapeDataString(username)}", cancellationToken);
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync(cancellationToken);
+                var json = JsonDocument.Parse(content);
+                if (json.RootElement.TryGetProperty("data", out var dataEl) && dataEl.TryGetProperty("exists", out var existsEl1))
+                    return existsEl1.GetBoolean();
+                if (json.RootElement.TryGetProperty("exists", out var exists))
+                    return exists.GetBoolean();
+            }
+            return false;
+        }
+
+        public async Task<bool> CheckPhoneExistsAsync(string phone, CancellationToken cancellationToken = default)
+        {
+            var response = await _httpClient.GetAsync($"auth/check-phone?phone={Uri.EscapeDataString(phone)}", cancellationToken);
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync(cancellationToken);
+                var json = JsonDocument.Parse(content);
+                if (json.RootElement.TryGetProperty("data", out var dataEl) && dataEl.TryGetProperty("exists", out var existsEl1))
+                    return existsEl1.GetBoolean();
+                if (json.RootElement.TryGetProperty("exists", out var exists))
+                    return exists.GetBoolean();
+            }
+            return false;
+        }
+
+        public async Task<bool> CheckTaxExistsAsync(string taxNumber, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(taxNumber)) return false;
+            var response = await _httpClient.GetAsync($"auth/check-tax?taxNumber={Uri.EscapeDataString(taxNumber)}", cancellationToken);
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync(cancellationToken);
+                var json = JsonDocument.Parse(content);
+                if (json.RootElement.TryGetProperty("data", out var dataEl) && dataEl.TryGetProperty("exists", out var existsEl1))
+                    return existsEl1.GetBoolean();
+                if (json.RootElement.TryGetProperty("exists", out var exists))
+                    return exists.GetBoolean();
+            }
+            return false;
+        }
     }
 }

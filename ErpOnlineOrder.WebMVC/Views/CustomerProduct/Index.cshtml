@@ -73,8 +73,6 @@
                             <th>Mã SP</th>
                             <th>Tên sản phẩm</th>
                             <th>Giá gốc</th>
-                            <th>Giá riêng</th>
-                            <th>Chiết khấu %</th>
                             <th>SL tối đa</th>
                             <th>Trạng thái</th>
                             @if (canAssign)
@@ -91,8 +89,8 @@
                                 <td>@(i + 1)</td>
                                 <td><span class="badge bg-secondary">@item.Product_code</span></td>
                                 <td>@item.Product_name</td>
-                                <td>@item.Original_price</td>
-                                <td>@(item.Max_quantity ?? (object)"-")</td>
+                                <td>@item.Original_price.ToString("N0")</td>
+                                <td>@(item.Max_quantity.HasValue ? item.Max_quantity.Value.ToString() : "-")</td>
                                 <td>
                                     @if (item.Is_active)
                                     {

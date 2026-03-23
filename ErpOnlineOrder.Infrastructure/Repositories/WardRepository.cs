@@ -60,6 +60,15 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<Ward>> GetManyByIdsAsync(IEnumerable<int> ids)
+        {
+            var idList = ids.ToList();
+            if (!idList.Any()) return Array.Empty<Ward>();
+            return await GetBaseQuery(false)
+                .Where(w => idList.Contains(w.Id))
+                .ToListAsync();
+        }
+
         public async Task AddAsync(Ward ward)
         {
             ward.Created_at = DateTime.Now;

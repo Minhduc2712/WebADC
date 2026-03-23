@@ -1,4 +1,5 @@
 using ErpOnlineOrder.Application.DTOs.InvoiceDTOs;
+using ErpOnlineOrder.Application.DTOs.EmailDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Mappers;
 using ErpOnlineOrder.Application.Interfaces.Services;
@@ -17,14 +18,14 @@ namespace ErpOnlineOrder.Application.Services
         private readonly ICustomerManagementRepository _customerManagementRepository;
         private readonly IPermissionService _permissionService;
         private readonly IWarehouseExportRepository _warehouseExportRepository;
-        private readonly IEmailService _emailService;
+        private readonly IEmailQueue _emailQueue;
         private readonly ICustomerRepository _customerRepository;
 
         public InvoiceService(IInvoiceRepository invoiceRepository, IOrderRepository orderRepository,
             IStaffRepository staffRepository,
             ICustomerManagementRepository customerManagementRepository, IPermissionService permissionService,
             IWarehouseExportRepository warehouseExportRepository,
-            IEmailService emailService,
+            IEmailQueue emailQueue,
             ICustomerRepository customerRepository)
         {
             _invoiceRepository = invoiceRepository;
@@ -33,7 +34,7 @@ namespace ErpOnlineOrder.Application.Services
             _customerManagementRepository = customerManagementRepository;
             _permissionService = permissionService;
             _warehouseExportRepository = warehouseExportRepository;
-            _emailService = emailService;
+            _emailQueue = emailQueue;
             _customerRepository = customerRepository;
         }
 
@@ -652,7 +653,7 @@ namespace ErpOnlineOrder.Application.Services
 
                 if (deliveryChangedToDelivered)
                 {
-                    try { await _emailService.SendExportDeliveryStatusToCustomerAsync(export.Id); } catch { }
+                    await _emailQueue.EnqueueAsync(new EmailMessage { ActionType = EmailActionType.ExportDeliveryStatusToCustomer, PrimaryId = export.Id });
                 }
             }
         }
@@ -894,7 +895,12 @@ namespace ErpOnlineOrder.Application.Services
             }
 
             // Gửi thông báo cho Kế toán / Admin
-            try { await _emailService.SendCustomerInvoiceRequestNotificationAsync(export.Id, createdInvoices.Count); } catch { }
+            await _emailQueue.EnqueueAsync(new EmailMessage
+            {
+                ActionType = EmailActionType.CustomerInvoiceRequestNotification,
+                PrimaryId = export.Id,
+                SecondaryId = createdInvoices.Count
+            });
 
             return createdInvoices.Select(EntityMappers.ToInvoiceDto).ToList();
         }

@@ -161,6 +161,23 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<Customer_product>> GetAllByProductIdsAsync(int customerId, IEnumerable<int> productIds)
+        {
+            return await _context.CustomerProducts
+                .IgnoreQueryFilters()
+                .Where(cp => cp.Customer_id == customerId && productIds.Contains(cp.Product_id))
+                .ToListAsync();
+        }
+
+        public async Task UpdateRangeAsync(IEnumerable<Customer_product> customerProducts)
+        {
+            var now = DateTime.Now;
+            foreach (var cp in customerProducts)
+                cp.Updated_at = now;
+            _context.CustomerProducts.UpdateRange(customerProducts);
+            await _context.SaveChangesAsync();
+        }
+
         public async Task<Customer_product?> GetWithFiltersAsync(int customerId, int productId)
         {
             return await _context.CustomerProducts

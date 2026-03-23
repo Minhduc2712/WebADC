@@ -1,0 +1,231 @@
+@{
+    ViewData["Title"] = "Quy trình nghỉ việc - Cán bộ";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var staff = ViewBag.StaffInfo as ErpOnlineOrder.Application.DTOs.AdminDTOs.StaffAccountDto;
+    var assignments = ViewBag.Assignments as List<ErpOnlineOrder.Domain.Models.Customer_management> ?? new List<ErpOnlineOrder.Domain.Models.Customer_management>();
+    var replacementList = ViewBag.ReplacementStaffList as List<ErpOnlineOrder.Application.DTOs.AdminDTOs.StaffAccountDto> ?? new List<ErpOnlineOrder.Application.DTOs.AdminDTOs.StaffAccountDto>();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1"><i class="fas fa-user-minus me-2 text-warning"></i>Quy trình nghỉ việc</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "Order")">Trang chủ</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index")">Quản lý nhân sự</a></li>
+                <li class="breadcrumb-item active">Nghỉ việc</li>
+            </ol>
+        </nav>
+    </div>
+    <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Quay lại
+    </a>
+</div>
+
+@if (staff != null)
+{
+    <!-- Thông tin cán bộ -->
+    <div class="table-card mb-4">
+        <div class="card-header bg-warning bg-opacity-10">
+            <i class="fas fa-user me-2 text-warning"></i>Thông tin cán bộ nghỉ việc
+        </div>
+        <div class="card-body p-4">
+            <div class="row align-items-center">
+                <div class="col-md-auto">
+                    <div class="rounded-circle bg-warning text-white d-flex align-items-center justify-content-center"
+                         style="width: 60px; height: 60px; font-size: 22px;">
+                        @(staff.Full_name?.Length > 0 ? staff.Full_name.Substring(0, 1).ToUpper() : "?")
+                    </div>
+                </div>
+                <div class="col-md">
+                    <h5 class="mb-1">@staff.Full_name</h5>
+                    <span class="badge bg-secondary">@staff.Staff_code</span>
+                    <span class="badge @(staff.Is_active ? "bg-success" : "bg-danger") ms-1">
+                        @(staff.Is_active ? "Đang hoạt động" : "Đã vô hiệu hóa")
+                    </span>
+                </div>
+                <div class="col-md-auto">
+                    @if (assignments.Any())
+                    {
+                        <div class="text-center">
+                            <span class="display-6 fw-bold text-danger">@assignments.Count</span>
+                            <div class="small text-muted">khách hàng đang phụ trách</div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center text-success">
+                            <i class="fas fa-check-circle fa-2x mb-1 d-block"></i>
+                            <small>Không có phân công</small>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Danh sách khách hàng đang phụ trách -->
+        <div class="col-lg-7">
+            <div class="table-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-users me-2"></i>Khách hàng đang phụ trách (@assignments.Count)</span>
+                </div>
+                <div class="card-body p-0">
+                    @if (!assignments.Any())
+                    {
+                        <div class="text-center py-5 text-success">
+                            <i class="fas fa-check-circle fa-3x mb-3 d-block"></i>
+                            <p class="mb-0">Cán bộ này không có khách hàng nào đang phụ trách.</p>
+                            <small class="text-muted">Bạn có thể vô hiệu hóa hoặc xóa tài khoản ngay.</small>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Khách hàng</th>
+                                        <th>Tỉnh/Thành</th>
+                                        <th>Phường/Xã</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var a in assignments)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong>@(a.Customer?.Full_name ?? "N/A")</strong>
+                                                <div class="small text-muted">@(a.Customer?.Customer_code ?? "")</div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-light text-dark border small">
+                                                    @(a.Province?.Province_name ?? "-")
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @if (a.Ward != null)
+                                                {
+                                                    <span class="small text-info">@a.Ward.Ward_name</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="small text-muted">Toàn tỉnh</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Form xử lý -->
+        <div class="col-lg-5">
+            <div class="table-card">
+                <div class="card-header bg-danger bg-opacity-10">
+                    <i class="fas fa-door-open me-2 text-danger"></i>Xử lý nghỉ việc
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Offboard" asp-route-id="@staff.User_id" method="post">
+                        @Html.AntiForgeryToken()
+
+                        @if (assignments.Any())
+                        {
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-exchange-alt me-1 text-primary"></i>Chuyển giao khách hàng cho cán bộ
+                                </label>
+                                <select name="New_staff_id" class="form-select" id="replacementSelect">
+                                    <option value="">-- Không chuyển giao (để trống) --</option>
+                                    @foreach (var s in replacementList)
+                                    {
+                                        <option value="@s.Staff_id">@s.Full_name (@s.Staff_code)</option>
+                                    }
+                                </select>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Chọn cán bộ sẽ tiếp nhận <strong>@assignments.Count</strong> khách hàng.
+                                    Hệ thống sẽ tự động gửi email thông báo đến từng khách hàng.
+                                </div>
+                            </div>
+
+                            <div id="warningNoTransfer" class="alert alert-warning py-2 small d-none">
+                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                Nếu không chọn cán bộ mới, <strong>@assignments.Count khách hàng</strong> sẽ không có cán bộ phụ trách cho đến khi được gán lại.
+                            </div>
+                        }
+
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-cog me-1 text-secondary"></i>Hành động với tài khoản
+                            </label>
+                            <div class="d-flex flex-column gap-2">
+                                <div class="form-check border rounded p-3">
+                                    <input class="form-check-input" type="radio" name="offboardAction" id="actionDeactivate" value="deactivate" checked />
+                                    <label class="form-check-label" for="actionDeactivate">
+                                        <i class="fas fa-ban text-warning me-1"></i>
+                                        <strong>Vô hiệu hóa tài khoản</strong>
+                                        <div class="small text-muted">Tài khoản bị khóa, có thể kích hoạt lại sau</div>
+                                    </label>
+                                </div>
+                                <div class="form-check border rounded p-3">
+                                    <input class="form-check-input" type="radio" name="offboardAction" id="actionDelete" value="delete" />
+                                    <label class="form-check-label" for="actionDelete">
+                                        <i class="fas fa-trash-alt text-danger me-1"></i>
+                                        <strong>Xóa tài khoản</strong>
+                                        <div class="small text-muted">Xóa vĩnh viễn, không thể khôi phục</div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="deleteWarning" class="alert alert-danger py-2 small d-none">
+                            <i class="fas fa-exclamation-circle me-1"></i>
+                            <strong>Cảnh báo:</strong> Xóa tài khoản là thao tác không thể hoàn tác!
+                        </div>
+
+                        <div class="d-grid mt-3">
+                            <button type="submit" class="btn btn-danger" id="btnSubmit">
+                                <i class="fas fa-user-minus me-1"></i>Xác nhận nghỉ việc
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+<script>
+    const replacementSelect = document.getElementById('replacementSelect');
+    const warningNoTransfer = document.getElementById('warningNoTransfer');
+    const deleteWarning = document.getElementById('deleteWarning');
+    const actionDelete = document.getElementById('actionDelete');
+
+    if (replacementSelect) {
+        replacementSelect.addEventListener('change', function () {
+            if (this.value === '') {
+                warningNoTransfer?.classList.remove('d-none');
+            } else {
+                warningNoTransfer?.classList.add('d-none');
+            }
+        });
+    }
+
+    document.querySelectorAll('input[name="offboardAction"]').forEach(function (radio) {
+        radio.addEventListener('change', function () {
+            if (this.value === 'delete') {
+                deleteWarning?.classList.remove('d-none');
+            } else {
+                deleteWarning?.classList.add('d-none');
+            }
+        });
+    });
+</script>
+}

@@ -1,10 +1,11 @@
 using System.Text.Json.Serialization;
 using ErpOnlineOrder.WebAPI.Controllers;
 using ErpOnlineOrder.WebAPI.Middleware;
-using ErpOnlineOrder.Application.Interfaces.Services;
+using ErpOnlineOrder.Infrastructure.Email;
 using ErpOnlineOrder.Application.Services;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Security;
+using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Infrastructure.Repositories;
 using ErpOnlineOrder.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -78,6 +79,7 @@ builder.Services.AddScoped<IProvinceRepository, ProvinceRepository>();
 builder.Services.AddScoped<IWardRepository, WardRepository>();
 builder.Services.AddScoped<IDistributorRepository, DistributorRepository>();
 builder.Services.AddScoped<ICustomerManagementRepository, CustomerManagementRepository>();
+builder.Services.AddScoped<IStaffRegionRuleRepository, StaffRegionRuleRepository>();
 builder.Services.AddScoped<ICustomerProductRepository, CustomerProductRepository>();
 builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
 builder.Services.AddScoped<IWarehouseExportRepository, WarehouseExportRepository>();
@@ -108,6 +110,7 @@ builder.Services.AddScoped<IWardService, WardService>();
 builder.Services.AddScoped<IDistributorService, DistributorService>();
 builder.Services.AddScoped<IOrganizationService, OrganizationService>();
 builder.Services.AddScoped<ICustomerManagementService, CustomerManagementService>();
+builder.Services.AddScoped<IStaffRegionRuleService, StaffRegionRuleService>();
 builder.Services.AddScoped<ICustomerProductService, CustomerProductService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 builder.Services.AddScoped<IWarehouseExportService, WarehouseExportService>();
@@ -118,6 +121,10 @@ builder.Services.AddScoped<IWarehouseService, WarehouseService>();
 builder.Services.AddScoped<IStockService, StockService>();
 builder.Services.AddScoped<ISettingService, SettingService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+
+// Email Queue: Singleton Channel-based queue + BackgroundService worker
+builder.Services.AddSingleton<IEmailQueue, EmailQueue>();
+builder.Services.AddHostedService<EmailWorker>();
 
 var app = builder.Build();
 

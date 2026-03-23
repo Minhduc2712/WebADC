@@ -24,13 +24,17 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         private readonly IAuthService _authService;
         private readonly IRememberMeService _rememberMeService;
         private readonly IUserRepository _userRepository;
+        private readonly ICustomerRepository _customerRepository;
+        private readonly IOrganizationRepository _organizationRepository;
         private readonly IPermissionService _permissionService;
 
-        public AuthController(IAuthService authService, IRememberMeService rememberMeService, IUserRepository userRepository, IPermissionService permissionService)
+        public AuthController(IAuthService authService, IRememberMeService rememberMeService, IUserRepository userRepository, ICustomerRepository customerRepository, IOrganizationRepository organizationRepository, IPermissionService permissionService)
         {
             _authService = authService;
             _rememberMeService = rememberMeService;
             _userRepository = userRepository;
+            _customerRepository = customerRepository;
+            _organizationRepository = organizationRepository;
             _permissionService = permissionService;
         }
 
@@ -256,6 +260,51 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var exists = await _userRepository.ExistsByEmailAsync(email);
+                return Ok(ApiResponse<object>.Ok(new { exists }));
+            }
+            catch (Exception)
+            {
+                return Ok(ApiResponse<object>.Ok(new { exists = false }));
+            }
+        }
+
+        [HttpGet("check-username")]
+        public async Task<IActionResult> CheckUsername([FromQuery] string username)
+        {
+            try
+            {
+                var exists = await _userRepository.ExistsByUsernameAsync(username);
+                return Ok(ApiResponse<object>.Ok(new { exists }));
+            }
+            catch (Exception)
+            {
+                return Ok(ApiResponse<object>.Ok(new { exists = false }));
+            }
+        }
+
+        [HttpGet("check-phone")]
+        public async Task<IActionResult> CheckPhone([FromQuery] string phone)
+        {
+            try
+            {
+                var exists = await _customerRepository.ExistsByPhoneAsync(phone);
+                return Ok(ApiResponse<object>.Ok(new { exists }));
+            }
+            catch (Exception)
+            {
+                return Ok(ApiResponse<object>.Ok(new { exists = false }));
+            }
+        }
+
+        [HttpGet("check-tax")]
+        public async Task<IActionResult> CheckTax([FromQuery] string taxNumber)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(taxNumber))
+                    return Ok(ApiResponse<object>.Ok(new { exists = false }));
+
+                var exists = await _organizationRepository.ExistsByTaxNumberAsync(taxNumber);
                 return Ok(ApiResponse<object>.Ok(new { exists }));
             }
             catch (Exception)

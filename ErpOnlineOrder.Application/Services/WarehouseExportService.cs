@@ -1,5 +1,6 @@
 using ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs;
 using ErpOnlineOrder.Application.DTOs.InvoiceDTOs;
+using ErpOnlineOrder.Application.DTOs.EmailDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.Mappers;
@@ -21,7 +22,7 @@ namespace ErpOnlineOrder.Application.Services
         private readonly IOrderRepository _orderRepository;
         private readonly IStockRepository _stockRepository;
         private readonly IDbTransactionManager _transactionManager;
-        private readonly IEmailService _emailService;
+        private readonly IEmailQueue _emailQueue;
         private readonly ICustomerRepository _customerRepository;
 
         public WarehouseExportService(
@@ -34,7 +35,7 @@ namespace ErpOnlineOrder.Application.Services
             IOrderRepository orderRepository,
             IStockRepository stockRepository,
             IDbTransactionManager transactionManager,
-            IEmailService emailService,
+            IEmailQueue emailQueue,
             ICustomerRepository customerRepository)
         {
             _exportRepository = exportRepository;
@@ -46,7 +47,7 @@ namespace ErpOnlineOrder.Application.Services
             _orderRepository = orderRepository;
             _stockRepository = stockRepository;
             _transactionManager = transactionManager;
-            _emailService = emailService;
+            _emailQueue = emailQueue;
             _customerRepository = customerRepository;
         }
 
@@ -259,7 +260,11 @@ namespace ErpOnlineOrder.Application.Services
             {
                 if (status == DeliveryStatuses.Shipped || status == DeliveryStatuses.Delivered)
                 {
-                    await _emailService.SendExportDeliveryStatusToCustomerAsync(export.Id);
+                    await _emailQueue.EnqueueAsync(new EmailMessage
+                    {
+                        ActionType = EmailActionType.ExportDeliveryStatusToCustomer,
+                        PrimaryId = export.Id
+                    });
                 }
             }
             catch 
@@ -353,7 +358,11 @@ namespace ErpOnlineOrder.Application.Services
 
             if (deliveryChangedToDelivered)
             {
-                try { await _emailService.SendExportDeliveryStatusToCustomerAsync(export.Id); } catch { }
+                await _emailQueue.EnqueueAsync(new EmailMessage
+                {
+                    ActionType = EmailActionType.ExportDeliveryStatusToCustomer,
+                    PrimaryId = export.Id
+                });
             }
 
             return true;
@@ -612,9 +621,11 @@ namespace ErpOnlineOrder.Application.Services
             // Gửi email thông báo cho kho về các phiếu xuất mới vừa được tách
             foreach (var newExport in newExports)
             {
-                try {
-                    await _emailService.SendWarehouseExportNotificationForStaffAndAdminAsync(newExport.Id);
-                } catch { }
+                await _emailQueue.EnqueueAsync(new EmailMessage
+                {
+                    ActionType = EmailActionType.WarehouseExportNotificationStaffAndAdmin,
+                    PrimaryId = newExport.Id
+                });
             }
 
             result.Success = true;
@@ -815,9 +826,11 @@ namespace ErpOnlineOrder.Application.Services
             }
 
             // Gửi email thông báo cho kho về phiếu xuất gộp mới
-            try {
-                await _emailService.SendWarehouseExportNotificationForStaffAndAdminAsync(mergedExport.Id);
-            } catch { }
+            await _emailQueue.EnqueueAsync(new EmailMessage
+            {
+                ActionType = EmailActionType.WarehouseExportNotificationStaffAndAdmin,
+                PrimaryId = mergedExport.Id
+            });
 
             result.Success = true;
             result.Message = $"Đã gộp thành công {exports.Count} phiếu xuất kho";
