@@ -27,6 +27,9 @@ namespace ErpOnlineOrder.Domain.Models
 
         public bool Is_deleted { get; set; }
 
+        public string? Password_reset_token { get; set; }
+        public DateTime? Password_reset_token_expiry { get; set; }
+
         public virtual ICollection<User_role> User_roles { get; set; } = new List<User_role>();
         public virtual ICollection<User_permission> User_permissions { get; set; } = new List<User_permission>();
 

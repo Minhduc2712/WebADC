@@ -15,6 +15,9 @@ namespace ErpOnlineOrder.Application.DTOs.EmailDTOs
 
         // Dùng khi cần truyền danh sách (vd: gán nhiều sản phẩm)
         public List<int>? IdList { get; init; }
+
+        // Dùng để truyền dữ liệu chuỗi tự do (vd: reset link)
+        public string? Payload { get; init; }
     }
 
     public enum EmailActionType
@@ -31,5 +34,6 @@ namespace ErpOnlineOrder.Application.DTOs.EmailDTOs
         CustomerRegistrationNotification,
         StaffReplacementNotification,
         ProductAssignedToCustomer,
+        PasswordReset,
     }
 }

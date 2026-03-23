@@ -9,6 +9,8 @@ using ErpOnlineOrder.Domain.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace ErpOnlineOrder.Application.Services
@@ -290,6 +292,63 @@ namespace ErpOnlineOrder.Application.Services
             existingUser.Updated_by = existingUser.Id;
             await _userRepository.UpdateAsync(existingUser);
             return true;
+        }
+
+        public async Task ForgotPasswordAsync(ForgotPasswordDto dto)
+        {
+            var user = await _userRepository.GetByEmailBasicAsync(dto.Email);
+            if (user == null || !user.Is_active || user.Is_deleted) return; // Silent: không tiết lộ email tồn tại hay không
+
+            // Tạo token ngẫu nhiên 32 bytes
+            var rawToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+            var hashedToken = ComputeSha256(rawToken);
+
+            user.Password_reset_token = hashedToken;
+            user.Password_reset_token_expiry = DateTime.UtcNow.AddHours(1);
+            user.Updated_at = DateTime.UtcNow;
+            user.Updated_by = user.Id;
+            await _userRepository.UpdateAsync(user);
+
+            // Tạo link đặt lại mật khẩu
+            var resetLink = $"{dto.ResetBaseUrl.TrimEnd('/')}/Auth/ResetPassword?token={Uri.EscapeDataString(rawToken)}&email={Uri.EscapeDataString(dto.Email)}";
+
+            await _emailQueue.EnqueueAsync(new EmailMessage
+            {
+                ActionType = EmailActionType.PasswordReset,
+                PrimaryId = user.Id,
+                Payload = resetLink
+            });
+        }
+
+        public async Task<bool> ResetPasswordAsync(PasswordResetDto dto)
+        {
+            var user = await _userRepository.GetByEmailBasicAsync(dto.Email);
+            if (user == null || !user.Is_active || user.Is_deleted)
+                throw new Exception("Yêu cầu đặt lại mật khẩu không hợp lệ.");
+
+            if (string.IsNullOrEmpty(user.Password_reset_token) || user.Password_reset_token_expiry == null)
+                throw new Exception("Token đặt lại mật khẩu không tồn tại hoặc đã được sử dụng.");
+
+            if (user.Password_reset_token_expiry < DateTime.UtcNow)
+                throw new Exception("Token đặt lại mật khẩu đã hết hạn. Vui lòng yêu cầu lại.");
+
+            var hashedSubmitted = ComputeSha256(dto.Token);
+            if (!string.Equals(hashedSubmitted, user.Password_reset_token, StringComparison.Ordinal))
+                throw new Exception("Token đặt lại mật khẩu không hợp lệ.");
+
+            user.Password = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+            user.Password_reset_token = null;
+            user.Password_reset_token_expiry = null;
+            user.Updated_at = DateTime.UtcNow;
+            user.Updated_by = user.Id;
+            await _userRepository.UpdateAsync(user);
+            return true;
+        }
+
+        private static string ComputeSha256(string input)
+        {
+            var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(input));
+            return Convert.ToHexString(bytes);
         }
 
         public async Task<LoginResponseDto?> GetLoginResponseAsync(LoginUserDto dto)

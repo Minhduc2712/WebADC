@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ErpOnlineOrder.Application.DTOs.AuthDTOs;
 using ErpOnlineOrder.WebMVC.Extensions;
+using ErpOnlineOrder.WebMVC.Models;
 using ErpOnlineOrder.WebMVC.Services;
 using ErpOnlineOrder.WebMVC.Services.Interfaces;
 using System.Text.Json;
@@ -411,16 +412,15 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
             try
             {
-                var userExists = await _authApiClient.CheckEmailExistsAsync(email);
+                var baseUrl = $"{Request.Scheme}://{Request.Host}";
+                var dto = new ErpOnlineOrder.Application.DTOs.AuthDTOs.ForgotPasswordDto
+                {
+                    Email = email,
+                    ResetBaseUrl = baseUrl
+                };
+                await _authApiClient.ForgotPasswordAsync(dto);
 
                 SetSuccessMessage("Nếu email tồn tại trong hệ thống, bạn sẽ nhận được hướng dẫn đặt lại mật khẩu.");
-
-                if (userExists)
-                {
-                    // TODO: G?i email reset password
-                    _logger.LogInformation("Password reset requested for email: {Email}", email);
-                }
-
                 return RedirectToAction(nameof(Login));
             }
             catch (Exception ex)
@@ -429,6 +429,56 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 ModelState.AddModelError("", "Không thể xử lý yêu cầu quên mật khẩu lúc này. Vui lòng thử lại sau ít phút.");
                 ViewBag.Email = email;
                 return View();
+            }
+        }
+
+        [HttpGet]
+        public IActionResult ResetPassword(string? token, string? email)
+        {
+            if (string.IsNullOrEmpty(token) || string.IsNullOrEmpty(email))
+            {
+                TempData["ErrorMessage"] = "Link đặt lại mật khẩu không hợp lệ.";
+                return RedirectToAction(nameof(Login));
+            }
+            ViewBag.Token = token;
+            ViewBag.Email = email;
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            try
+            {
+                var dto = new ErpOnlineOrder.Application.DTOs.AuthDTOs.PasswordResetDto
+                {
+                    Email = model.Email,
+                    Token = model.Token,
+                    NewPassword = model.NewPassword
+                };
+                var (success, error) = await _authApiClient.ResetPasswordAsync(dto);
+                if (!success)
+                {
+                    ModelState.AddModelError("", error ?? "Đặt lại mật khẩu thất bại.");
+                    ViewBag.Token = model.Token;
+                    ViewBag.Email = model.Email;
+                    return View(model);
+                }
+
+                SetSuccessMessage("Đặt lại mật khẩu thành công. Vui lòng đăng nhập với mật khẩu mới.");
+                return RedirectToAction(nameof(Login));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error resetting password for {Email}", model.Email);
+                ModelState.AddModelError("", "Không thể đặt lại mật khẩu lúc này. Vui lòng thử lại.");
+                ViewBag.Token = model.Token;
+                ViewBag.Email = model.Email;
+                return View(model);
             }
         }
 

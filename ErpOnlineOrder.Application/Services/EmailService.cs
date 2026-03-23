@@ -983,14 +983,60 @@ namespace ErpOnlineOrder.Application.Services
             {
                 var secureSocketOptions = settings.UseSsl ? SecureSocketOptions.Auto : SecureSocketOptions.None;
                 await smtp.ConnectAsync(settings.Host, settings.Port, secureSocketOptions, cancellationToken);
-                if (!string.IsNullOrEmpty(settings.Password))
+                if (!string.IsNullOrEmpty(settings.Password)
+                    && smtp.Capabilities.HasFlag(MailKit.Net.Smtp.SmtpCapabilities.Authentication))
+                {
                     await smtp.AuthenticateAsync(settings.FromEmail, settings.Password, cancellationToken);
+                }
                 await smtp.SendAsync(message, cancellationToken);
             }
             finally
             {
                 await smtp.DisconnectAsync(true, cancellationToken);
             }
+        }
+
+        public async Task SendPasswordResetEmailAsync(int userId, string resetLink, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var user = await _userRepository.GetByIdBasicAsync(userId);
+                if (user == null || user.Is_deleted || string.IsNullOrWhiteSpace(user.Email)) return;
+
+                var smtp = await _settingService.GetSmtpSettingsAsync();
+                if (!IsSmtpValid(smtp)) return;
+
+                var subject = "[ERP] Yêu cầu đặt lại mật khẩu";
+                var body = BuildPasswordResetEmailBody(user.Username, resetLink);
+                await SendEmailAsync(smtp!, user.Email.Trim(), subject, body, cancellationToken);
+            }
+            catch (System.Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi gửi email đặt lại mật khẩu cho user {UserId}", userId);
+            }
+        }
+
+        private static string BuildPasswordResetEmailBody(string username, string resetLink)
+        {
+            var sb = new StringBuilder();
+            sb.Append("<html><body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>");
+            sb.Append("<div style='background: #dc3545; padding: 30px; text-align: center;'>");
+            sb.Append("<h1 style='color: white; margin: 0;'>Đặt lại mật khẩu</h1>");
+            sb.Append("</div>");
+            sb.Append("<div style='padding: 30px; background: #f9f9f9;'>");
+            sb.Append($"<p>Xin chào <strong>{WebUtility.HtmlEncode(username)}</strong>,</p>");
+            sb.Append("<p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.</p>");
+            sb.Append("<p>Nhấn vào nút bên dưới để đặt mật khẩu mới. <strong>Link có hiệu lực trong 1 giờ.</strong></p>");
+            sb.Append("<div style='text-align: center; margin: 30px 0;'>");
+            sb.Append($"<a href='{WebUtility.HtmlEncode(resetLink)}' style='background: #dc3545; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: bold;'>Đặt lại mật khẩu</a>");
+            sb.Append("</div>");
+            sb.Append($"<p style='color: #666; font-size: 13px;'>Hoặc copy link sau vào trình duyệt:<br/><a href='{WebUtility.HtmlEncode(resetLink)}'>{WebUtility.HtmlEncode(resetLink)}</a></p>");
+            sb.Append("<hr style='border: 1px solid #ddd; margin: 20px 0;'/>");
+            sb.Append("<p style='color: #888; font-size: 12px;'>Nếu bạn không yêu cầu đặt lại mật khẩu, hãy bỏ qua email này. Tài khoản của bạn vẫn an toàn.</p>");
+            sb.Append("<p style='color: #888; font-size: 12px;'>Email này được gửi tự động, vui lòng không trả lời.</p>");
+            sb.Append("</div>");
+            sb.Append("</body></html>");
+            return sb.ToString();
         }
 
     }

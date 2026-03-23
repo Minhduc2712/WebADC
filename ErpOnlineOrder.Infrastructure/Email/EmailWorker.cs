@@ -106,6 +106,11 @@ namespace ErpOnlineOrder.Infrastructure.Email
                         msg.PrimaryId!.Value, msg.IdList!, ct);
                     break;
 
+                case EmailActionType.PasswordReset:
+                    await emailService.SendPasswordResetEmailAsync(
+                        msg.PrimaryId!.Value, msg.Payload!, ct);
+                    break;
+
                 default:
                     _logger.LogWarning("EmailWorker: không nhận ra ActionType {ActionType}", msg.ActionType);
                     break;

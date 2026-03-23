@@ -11,6 +11,8 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
         Task<string?> LoginAsync(LoginUserDto dto);
         Task<LoginResponseDto?> GetLoginResponseAsync(LoginUserDto dto);
         Task<bool> ChangePasswordAsync(ChangePasswordDto dto);
+        Task ForgotPasswordAsync(ForgotPasswordDto dto);
+        Task<bool> ResetPasswordAsync(PasswordResetDto dto);
         Task<CheckUserPermissionsResultDto?> CheckUserPermissionsAsync(int userId);
         Task<GrantAllPermissionsResultDto?> GrantAllPermissionsAsync(int userId);
         Task<SeedAdminResultDto> SeedAdminAsync(int createdBy);

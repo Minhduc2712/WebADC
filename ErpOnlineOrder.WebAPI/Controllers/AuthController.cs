@@ -240,6 +240,34 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             }
         }
 
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto model)
+        {
+            try
+            {
+                await _authService.ForgotPasswordAsync(model);
+                return Ok(ApiResponse<object>.Ok(null, "Nếu email tồn tại trong hệ thống, bạn sẽ nhận được hướng dẫn đặt lại mật khẩu."));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] PasswordResetDto model)
+        {
+            try
+            {
+                await _authService.ResetPasswordAsync(model);
+                return Ok(ApiResponse<object>.Ok(null, "Đặt lại mật khẩu thành công. Vui lòng đăng nhập với mật khẩu mới."));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+        }
+
         [HttpDelete("user/{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {

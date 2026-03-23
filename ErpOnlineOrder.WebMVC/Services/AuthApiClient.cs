@@ -37,6 +37,16 @@ namespace ErpOnlineOrder.WebMVC.Services
             return await PostWithoutReturnAsync("auth/change-password", dto, cancellationToken);
         }
 
+        public async Task<(bool Success, string? ErrorMessage)> ForgotPasswordAsync(ForgotPasswordDto dto, CancellationToken cancellationToken = default)
+        {
+            return await PostWithoutReturnAsync("auth/forgot-password", dto, cancellationToken);
+        }
+
+        public async Task<(bool Success, string? ErrorMessage)> ResetPasswordAsync(PasswordResetDto dto, CancellationToken cancellationToken = default)
+        {
+            return await PostWithoutReturnAsync("auth/reset-password", dto, cancellationToken);
+        }
+
         public async Task<string?> GenerateTokenAsync(string username, CancellationToken cancellationToken = default)
         {
             var (data, _) = await PostAsync<object, string>("auth/generate-token", new { Username = username }, cancellationToken);
