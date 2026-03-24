@@ -101,6 +101,11 @@ namespace ErpOnlineOrder.Infrastructure.Email
                         msg.PrimaryId!.Value, msg.SecondaryId!.Value, msg.TertiaryId!.Value, ct);
                     break;
 
+                case EmailActionType.StaffAssignmentNotification:
+                    await emailService.SendStaffAssignmentNotificationAsync(
+                        msg.PrimaryId!.Value, msg.SecondaryId!.Value, ct);
+                    break;
+
                 case EmailActionType.ProductAssignedToCustomer:
                     await emailService.SendProductAssignedToCustomerAsync(
                         msg.PrimaryId!.Value, msg.IdList!, ct);

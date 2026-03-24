@@ -6,6 +6,7 @@ using ErpOnlineOrder.Domain.Models;
 using ErpOnlineOrder.WebMVC.Attributes;
 using ErpOnlineOrder.WebMVC.Services;
 using ErpOnlineOrder.WebMVC.Services.Interfaces;
+using ErpOnlineOrder.Application.DTOs.StaffRegionRuleDTOs;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
@@ -17,6 +18,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         private readonly IAdminApiClient _adminApiClient;
         private readonly IProvinceApiClient _provinceApiClient;
         private readonly IWardApiClient _wardApiClient;
+        private readonly IStaffRegionRuleApiClient _staffRegionRuleApiClient;
         private readonly ILogger<CustomerManagementController> _logger;
 
         public CustomerManagementController(
@@ -25,6 +27,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             IAdminApiClient adminApiClient,
             IProvinceApiClient provinceApiClient,
             IWardApiClient wardApiClient,
+            IStaffRegionRuleApiClient staffRegionRuleApiClient,
             ILogger<CustomerManagementController> logger)
         {
             _customerApiClient = customerApiClient;
@@ -32,7 +35,14 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             _adminApiClient = adminApiClient;
             _provinceApiClient = provinceApiClient;
             _wardApiClient = wardApiClient;
+            _staffRegionRuleApiClient = staffRegionRuleApiClient;
             _logger = logger;
+        }
+
+        private async Task<int?> GetProvinceIdFromStaffRulesAsync(int staffId)
+        {
+            var rules = await _staffRegionRuleApiClient.GetAllAsync(staffId: staffId);
+            return rules.FirstOrDefault()?.Province_id;
         }
         private void LoadCurrentUserPermissions()
         {
@@ -268,7 +278,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequirePermission(PermissionCodes.CustomerAssign)]
-        public async Task<IActionResult> CreateAssignment(int Customer_id, int Staff_id, int Province_id)
+        public async Task<IActionResult> CreateAssignment(int Customer_id, int Staff_id)
         {
             try
             {
@@ -284,14 +294,16 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     await LoadAssignmentFormData();
                     return View();
                 }
-                if (Province_id <= 0)
+
+                var Province_id = await GetProvinceIdFromStaffRulesAsync(Staff_id);
+                if (!Province_id.HasValue)
                 {
-                    SetErrorMessage("Vui lòng chọn tỉnh/thành phố.");
+                    SetErrorMessage("Cán bộ này chưa có quy tắc khu vực. Vui lòng cài đặt quy tắc khu vực trước.");
                     await LoadAssignmentFormData();
                     return View();
                 }
 
-                var (created, error) = await _customerManagementApiClient.AssignStaffAsync(Staff_id, Customer_id, Province_id);
+                var (created, error) = await _customerManagementApiClient.AssignStaffAsync(Staff_id, Customer_id, Province_id.Value);
                 if (created != null)
                     SetSuccessMessage("Gán cán bộ phụ trách thành công!");
                 else
@@ -339,7 +351,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequirePermission(PermissionCodes.CustomerAssign)]
-        public async Task<IActionResult> EditAssignment(int id, int Staff_id, int Province_id)
+        public async Task<IActionResult> EditAssignment(int id, int Staff_id)
         {
             try
             {
@@ -356,12 +368,6 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     await LoadAssignmentFormData();
                     return View(assignment);
                 }
-                if (Province_id <= 0)
-                {
-                    SetErrorMessage("Vui lòng chọn tỉnh/thành phố.");
-                    await LoadAssignmentFormData();
-                    return View(assignment);
-                }
 
                 if (assignment.Staff_id != Staff_id)
                 {
@@ -372,10 +378,19 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                         await LoadAssignmentFormData();
                         return View(assignment);
                     }
+
+                    var newProvinceId = await GetProvinceIdFromStaffRulesAsync(Staff_id);
+                    if (!newProvinceId.HasValue)
+                    {
+                        SetErrorMessage("Cán bộ này chưa có quy tắc khu vực. Vui lòng cài đặt quy tắc khu vực trước.");
+                        await LoadAssignmentFormData();
+                        return View(assignment);
+                    }
+                    assignment.Province_id = newProvinceId.Value;
+                    assignment.Ward_id = null;
                 }
 
                 assignment.Staff_id = Staff_id;
-                assignment.Province_id = Province_id;
                 assignment.Updated_by = GetCurrentUserId();
 
                 var (success, _) = await _customerManagementApiClient.UpdateAsync(id, assignment);
@@ -412,19 +427,10 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 }
 
                 var staffList = await _adminApiClient.GetAllStaffAsync();
-                var provinces = await _provinceApiClient.GetAllAsync();
                 var existingAssignments = await _customerManagementApiClient.GetByCustomerAsync(id);
-
-                // Pre-load wards for the first province in existing assignments (if any)
-                var firstProvinceId = existingAssignments.FirstOrDefault()?.Province_id;
-                var wards = firstProvinceId.HasValue
-                    ? await _wardApiClient.GetByProvinceIdAsync(firstProvinceId.Value)
-                    : Enumerable.Empty<Application.DTOs.WardDTOs.WardDTO>();
 
                 ViewBag.Customer = customer;
                 ViewBag.StaffList = staffList.Where(s => s.Is_active).ToList();
-                ViewBag.Provinces = provinces.OrderBy(p => p.Province_name).ToList();
-                ViewBag.Wards = wards.ToList();
                 ViewBag.ExistingAssignments = existingAssignments.ToList();
 
                 return View();
@@ -439,7 +445,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequirePermission(PermissionCodes.CustomerAssign)]
-        public async Task<IActionResult> AssignStaff(int id, int Staff_id, int Province_id, int? Ward_id)
+        public async Task<IActionResult> AssignStaff(int id, int Staff_id)
         {
             try
             {
@@ -455,13 +461,14 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return RedirectToAction(nameof(AssignStaff), new { id });
                 }
 
-                if (Province_id <= 0)
+                var Province_id = await GetProvinceIdFromStaffRulesAsync(Staff_id);
+                if (!Province_id.HasValue)
                 {
-                    SetErrorMessage("Vui lòng chọn tỉnh/thành phố.");
+                    SetErrorMessage("Cán bộ này chưa có quy tắc khu vực. Vui lòng cài đặt quy tắc khu vực trước.");
                     return RedirectToAction(nameof(AssignStaff), new { id });
                 }
 
-                var (created, error) = await _customerManagementApiClient.AssignStaffAsync(Staff_id, id, Province_id, Ward_id);
+                var (created, error) = await _customerManagementApiClient.AssignStaffAsync(Staff_id, id, Province_id.Value);
                 if (created != null)
                     SetSuccessMessage("Gán cán bộ phụ trách thành công!");
                 else
@@ -555,11 +562,9 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             var customers = await _customerApiClient.GetAllAsync();
             var staffList = await _adminApiClient.GetAllStaffAsync();
-            var provinces = await _provinceApiClient.GetAllAsync();
 
             ViewBag.Customers = customers.Where(c => !c.Is_deleted).OrderBy(c => c.Full_name).ToList();
             ViewBag.StaffList = staffList.Where(s => s.Is_active).OrderBy(s => s.Full_name).ToList();
-            ViewBag.Provinces = provinces.OrderBy(p => p.Province_name).ToList();
         }
 
         #endregion

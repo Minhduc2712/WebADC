@@ -33,6 +33,7 @@ namespace ErpOnlineOrder.Application.DTOs.EmailDTOs
         CustomerInvoiceRequestNotification,
         CustomerRegistrationNotification,
         StaffReplacementNotification,
+        StaffAssignmentNotification,
         ProductAssignedToCustomer,
         PasswordReset,
     }

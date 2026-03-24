@@ -874,6 +874,88 @@ namespace ErpOnlineOrder.Application.Services
             return sb.ToString();
         }
 
+        public async Task SendStaffAssignmentNotificationAsync(int customerId, int staffId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var customer = await _customerRepository.GetByIdAsync(customerId);
+                if (customer == null) return;
+
+                var smtp = await _settingService.GetSmtpSettingsAsync();
+                if (!IsSmtpValid(smtp)) return;
+
+                var staff = await _staffRepository.GetByIdAsync(staffId);
+
+                // Gửi thông báo đến khách hàng
+                var customerEmail = await GetCustomerEmailAsync(customerId, customer);
+                if (!string.IsNullOrWhiteSpace(customerEmail))
+                {
+                    var subject = $"[Thông báo] Bạn đã được phân công cán bộ phụ trách";
+                    var body = BuildStaffAssignmentBodyForCustomer(customer, staff);
+                    await SendEmailAsync(smtp!, customerEmail, subject, body, cancellationToken);
+                }
+
+                // Gửi thông báo đến cán bộ được gán
+                if (staff?.User_id != null)
+                {
+                    var staffUser = await _userRepository.GetByIdBasicAsync(staff.User_id);
+                    if (staffUser != null && staffUser.Is_active && !staffUser.Is_deleted && !string.IsNullOrWhiteSpace(staffUser.Email))
+                    {
+                        var subject = $"[Phân công] Bạn được gán phụ trách khách hàng {WebUtility.HtmlEncode(customer.Full_name ?? customer.Customer_code)}";
+                        var body = BuildStaffAssignmentBodyForStaff(customer, staff);
+                        await SendEmailAsync(smtp!, staffUser.Email.Trim(), subject, body, cancellationToken);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi gửi email thông báo gán cán bộ cho khách hàng {CustomerId}", customerId);
+            }
+        }
+
+        private static string BuildStaffAssignmentBodyForCustomer(Customer customer, Staff? staff)
+        {
+            var sb = new StringBuilder();
+            sb.Append("<html><body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>");
+            sb.Append("<div style='background: #198754; padding: 30px; text-align: center;'>");
+            sb.Append("<h1 style='color: white; margin: 0;'>Thông báo phân công cán bộ phụ trách</h1>");
+            sb.Append("</div>");
+            sb.Append("<div style='padding: 30px; background: #f9f9f9;'>");
+            sb.Append($"<p>Xin chào <strong>{WebUtility.HtmlEncode(customer.Full_name ?? customer.Customer_code)}</strong>,</p>");
+            sb.Append("<p>Bạn đã được phân công cán bộ phụ trách mới cho tài khoản của mình:</p>");
+            sb.Append("<table style='border-collapse: collapse; width: 100%; margin: 16px 0;'>");
+            sb.Append("<tr style='background: #e9ecef;'><th style='padding: 10px; text-align: left; border: 1px solid #dee2e6;'>Thông tin</th><th style='padding: 10px; text-align: left; border: 1px solid #dee2e6;'>Chi tiết</th></tr>");
+            sb.Append($"<tr><td style='padding: 10px; border: 1px solid #dee2e6;'>Cán bộ phụ trách</td><td style='padding: 10px; border: 1px solid #dee2e6;'><strong style='color:#198754;'>{WebUtility.HtmlEncode(staff?.Full_name ?? "N/A")}</strong></td></tr>");
+            if (!string.IsNullOrWhiteSpace(staff?.Staff_code))
+                sb.Append($"<tr><td style='padding: 10px; border: 1px solid #dee2e6;'>Mã cán bộ</td><td style='padding: 10px; border: 1px solid #dee2e6;'>{WebUtility.HtmlEncode(staff.Staff_code)}</td></tr>");
+            sb.Append("</table>");
+            sb.Append("<p>Cán bộ phụ trách sẽ hỗ trợ bạn trong quá trình sử dụng dịch vụ. Vui lòng liên hệ nếu cần hỗ trợ.</p>");
+            sb.Append("</div></body></html>");
+            return sb.ToString();
+        }
+
+        private static string BuildStaffAssignmentBodyForStaff(Customer customer, Staff staff)
+        {
+            var sb = new StringBuilder();
+            sb.Append("<html><body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>");
+            sb.Append("<div style='background: #0d6efd; padding: 30px; text-align: center;'>");
+            sb.Append("<h1 style='color: white; margin: 0;'>Thông báo phân công khách hàng mới</h1>");
+            sb.Append("</div>");
+            sb.Append("<div style='padding: 30px; background: #f9f9f9;'>");
+            sb.Append($"<p>Xin chào <strong>{WebUtility.HtmlEncode(staff.Full_name ?? staff.Staff_code)}</strong>,</p>");
+            sb.Append("<p>Bạn vừa được gán phụ trách khách hàng sau:</p>");
+            sb.Append("<table style='border-collapse: collapse; width: 100%; margin: 16px 0;'>");
+            sb.Append("<tr style='background: #e9ecef;'><th style='padding: 10px; text-align: left; border: 1px solid #dee2e6;'>Thông tin</th><th style='padding: 10px; text-align: left; border: 1px solid #dee2e6;'>Chi tiết</th></tr>");
+            sb.Append($"<tr><td style='padding: 10px; border: 1px solid #dee2e6;'>Tên khách hàng</td><td style='padding: 10px; border: 1px solid #dee2e6;'><strong>{WebUtility.HtmlEncode(customer.Full_name ?? customer.Customer_code)}</strong></td></tr>");
+            sb.Append($"<tr><td style='padding: 10px; border: 1px solid #dee2e6;'>Mã khách hàng</td><td style='padding: 10px; border: 1px solid #dee2e6;'>{WebUtility.HtmlEncode(customer.Customer_code ?? "")}</td></tr>");
+            if (!string.IsNullOrWhiteSpace(customer.Phone_number))
+                sb.Append($"<tr><td style='padding: 10px; border: 1px solid #dee2e6;'>Số điện thoại</td><td style='padding: 10px; border: 1px solid #dee2e6;'>{WebUtility.HtmlEncode(customer.Phone_number)}</td></tr>");
+            sb.Append("</table>");
+            sb.Append("<p>Vui lòng đăng nhập hệ thống để xem thông tin chi tiết và liên hệ với khách hàng.</p>");
+            sb.Append("</div></body></html>");
+            return sb.ToString();
+        }
+
         public async Task SendStaffReplacementNotificationAsync(int customerId, int oldStaffId, int newStaffId, CancellationToken cancellationToken = default)
         {
             try

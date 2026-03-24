@@ -23,6 +23,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         private readonly ICustomerApiClient _customerApiClient;
         private readonly IAuthApiClient _authApiClient;
         private readonly ICustomerManagementApiClient _customerManagementApiClient;
+        private readonly IProvinceApiClient _provinceApiClient;
         private readonly ILogger<ShopController> _logger;
 
         public ShopController(
@@ -33,6 +34,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             ICustomerApiClient customerApiClient,
             IAuthApiClient authApiClient,
             ICustomerManagementApiClient customerManagementApiClient,
+            IProvinceApiClient provinceApiClient,
             ILogger<ShopController> logger)
         {
             _productApiClient = productApiClient;
@@ -42,6 +44,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             _customerApiClient = customerApiClient;
             _authApiClient = authApiClient;
             _customerManagementApiClient = customerManagementApiClient;
+            _provinceApiClient = provinceApiClient;
             _logger = logger;
         }
 
@@ -132,16 +135,43 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             var organizationAddress = string.Empty;
             var customerId = await GetCurrentCustomerIdAsync();
+            var userId = GetCurrentUserId();
+
             if (customerId.HasValue)
             {
                 var org = await _customerApiClient.GetOrganizationByCustomerIdAsync(customerId.Value);
                 organizationAddress = org?.Recipient_address;
                 if (string.IsNullOrWhiteSpace(organizationAddress))
                     organizationAddress = org?.Address;
+
+                ViewBag.RecipientName = !string.IsNullOrWhiteSpace(org?.Recipient_name)
+                    ? org.Recipient_name
+                    : null;
+                ViewBag.RecipientPhone = !string.IsNullOrWhiteSpace(org?.Recipient_phone)
+                    ? org.Recipient_phone
+                    : null;
+                ViewBag.OrganizationName = org?.Organization_name;
+                ViewBag.OrganizationTaxNumber = org?.Tax_number;
+            }
+
+            if (userId != 0)
+            {
+                var customer = await _customerApiClient.GetByUserIdAsync(userId);
+                if (customer != null)
+                {
+                    ViewBag.CustomerFullName = customer.Full_name;
+                    ViewBag.CustomerEmail = customer.Email;
+                    ViewBag.CustomerPhone ??= customer.Phone_number;
+                    ViewBag.RecipientName ??= customer.Full_name;
+                }
             }
 
             ViewBag.OrganizationShippingAddress = organizationAddress ?? string.Empty;
             ViewBag.HasOrganizationShippingAddress = !string.IsNullOrWhiteSpace(organizationAddress);
+
+            var provinces = await _provinceApiClient.GetAllAsync();
+            ViewBag.Provinces = provinces.OrderBy(p => p.Province_name).ToList();
+
             return View();
         }
 

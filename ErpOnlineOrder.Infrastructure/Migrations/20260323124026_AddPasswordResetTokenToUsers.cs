@@ -11,17 +11,11 @@ namespace ErpOnlineOrder.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<string>(
-                name: "Warehouse_email",
-                table: "Warehouses",
-                type: "nvarchar(max)",
-                nullable: true);
+            migrationBuilder.Sql(@"IF COL_LENGTH('Warehouses', 'Warehouse_email') IS NULL
+                ALTER TABLE [Warehouses] ADD [Warehouse_email] nvarchar(max) NULL;");
 
-            migrationBuilder.AddColumn<string>(
-                name: "Warehouse_phone",
-                table: "Warehouses",
-                type: "nvarchar(max)",
-                nullable: true);
+            migrationBuilder.Sql(@"IF COL_LENGTH('Warehouses', 'Warehouse_phone') IS NULL
+                ALTER TABLE [Warehouses] ADD [Warehouse_phone] nvarchar(max) NULL;");
 
             migrationBuilder.AddColumn<string>(
                 name: "Password_reset_token",

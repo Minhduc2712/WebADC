@@ -13,3 +13,7 @@ obj/
 # OS
 Thumbs.db
 .DS_Store
+
+# App settings (chứa connection string, secret key - không đẩy lên git)
+**/appsettings.json
+**/appsettings.*.json

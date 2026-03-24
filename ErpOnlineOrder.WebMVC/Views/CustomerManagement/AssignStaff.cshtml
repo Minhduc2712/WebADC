@@ -3,8 +3,6 @@
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
     var customer = ViewBag.Customer as ErpOnlineOrder.Application.DTOs.CustomerDTO;
     var staffList = ViewBag.StaffList as List<ErpOnlineOrder.Application.DTOs.AdminDTOs.StaffAccountDto> ?? new List<ErpOnlineOrder.Application.DTOs.AdminDTOs.StaffAccountDto>();
-    var provinces = ViewBag.Provinces as List<ErpOnlineOrder.Application.DTOs.ProvinceDTOs.ProvinceDTO> ?? new List<ErpOnlineOrder.Application.DTOs.ProvinceDTOs.ProvinceDTO>();
-    var wards = ViewBag.Wards as List<ErpOnlineOrder.Application.DTOs.WardDTOs.WardDTO> ?? new List<ErpOnlineOrder.Application.DTOs.WardDTOs.WardDTO>();
     var existingAssignments = ViewBag.ExistingAssignments as List<ErpOnlineOrder.Domain.Models.Customer_management> ?? new List<ErpOnlineOrder.Domain.Models.Customer_management>();
     var assignedStaffIds = existingAssignments.Select(a => a.Staff_id).ToHashSet();
 }
@@ -191,38 +189,6 @@
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">
-                            <i class="fas fa-map-marker-alt me-1 text-danger"></i>Tỉnh/Thành phố <span class="text-danger">*</span>
-                        </label>
-                        <select name="Province_id" class="form-select" required id="provinceSelect">
-                            <option value="">-- Chọn tỉnh/thành phố --</option>
-                            @foreach (var province in provinces)
-                            {
-                                <option value="@province.Id">@province.Province_name</option>
-                            }
-                        </select>
-                        <div class="form-text">
-                            <i class="fas fa-info-circle me-1"></i>Tỉnh/thành phố quản lý
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">
-                            <i class="fas fa-map-pin me-1 text-info"></i>Phường/Xã <span class="text-muted small">(tùy chọn)</span>
-                        </label>
-                        <select name="Ward_id" class="form-select" id="wardSelect">
-                            <option value="">-- Toàn tỉnh/thành --</option>
-                            @foreach (var ward in wards)
-                            {
-                                <option value="@ward.Id">@ward.Ward_name</option>
-                            }
-                        </select>
-                        <div class="form-text">
-                            <i class="fas fa-info-circle me-1"></i>Chọn phường/xã cụ thể hoặc để trống nếu quản lý toàn tỉnh
-                        </div>
-                    </div>
-
                     <div class="d-grid">
                         <button type="submit" class="btn btn-success" id="btnSubmit">
                             <i class="fas fa-user-tag me-1"></i>Gán cán bộ phụ trách
@@ -342,33 +308,11 @@
     // Disable submit nếu chưa chọn đủ
     document.getElementById('btnSubmit').addEventListener('click', function(e) {
         var staff = document.getElementById('staffSelect').value;
-        var province = document.getElementById('provinceSelect').value;
-        if (!staff || !province) {
+        if (!staff) {
             e.preventDefault();
-            alert('Vui lòng chọn đầy đủ cán bộ và tỉnh/thành phố.');
+            alert('Vui lòng chọn cán bộ phụ trách.');
         }
     });
 
-    // Load wards dynamically when province changes
-    document.getElementById('provinceSelect').addEventListener('change', function() {
-        var provinceId = this.value;
-        var wardSelect = document.getElementById('wardSelect');
-        wardSelect.innerHTML = '<option value="">-- Đang tải... --</option>';
-        if (!provinceId) {
-            wardSelect.innerHTML = '<option value="">-- Toàn tỉnh/thành --</option>';
-            return;
-        }
-        fetch('/CustomerManagement/GetWardsByProvince?provinceId=' + provinceId)
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                wardSelect.innerHTML = '<option value="">-- Toàn tỉnh/thành --</option>';
-                data.forEach(function(w) {
-                    wardSelect.innerHTML += '<option value="' + w.id + '">' + w.ward_name + '</option>';
-                });
-            })
-            .catch(function() {
-                wardSelect.innerHTML = '<option value="">-- Toàn tỉnh/thành --</option>';
-            });
-    });
 </script>
 }

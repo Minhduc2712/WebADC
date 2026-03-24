@@ -48,7 +48,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<Customer?> GetByUserIdAsync(int userId)
         {
-            return await GetBaseQuery().FirstOrDefaultAsync(c => c.User_id == userId);
+            return await GetBaseQuery(true).FirstOrDefaultAsync(c => c.User_id == userId);
         }
 
         public async Task<IEnumerable<Customer>> GetAllAsync()

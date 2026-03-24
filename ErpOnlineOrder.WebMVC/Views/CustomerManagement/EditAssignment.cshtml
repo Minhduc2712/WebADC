@@ -3,7 +3,6 @@
     ViewData["Title"] = "Sửa gán cán bộ phụ trách";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
     var staffList = ViewBag.StaffList as List<ErpOnlineOrder.Application.DTOs.AdminDTOs.StaffAccountDto> ?? new List<ErpOnlineOrder.Application.DTOs.AdminDTOs.StaffAccountDto>();
-    var provinces = ViewBag.Provinces as List<ErpOnlineOrder.Application.DTOs.ProvinceDTOs.ProvinceDTO> ?? new List<ErpOnlineOrder.Application.DTOs.ProvinceDTOs.ProvinceDTO>();
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -74,29 +73,6 @@
                         </select>
                         <div class="form-text">
                             <i class="fas fa-info-circle me-1"></i>Thay đổi cán bộ phụ trách khách hàng này
-                        </div>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="form-label fw-semibold">
-                            <i class="fas fa-map-marker-alt me-1 text-danger"></i>Tỉnh/Thành phố <span class="text-danger">*</span>
-                        </label>
-                        <select name="Province_id" class="form-select" required>
-                            <option value="">-- Chọn tỉnh/thành phố --</option>
-                            @foreach (var province in provinces)
-                            {
-                                if (province.Id == Model.Province_id)
-                                {
-                                    <option value="@province.Id" selected>@province.Province_name</option>
-                                }
-                                else
-                                {
-                                    <option value="@province.Id">@province.Province_name</option>
-                                }
-                            }
-                        </select>
-                        <div class="form-text">
-                            <i class="fas fa-info-circle me-1"></i>Tỉnh/thành phố quản lý
                         </div>
                     </div>
 

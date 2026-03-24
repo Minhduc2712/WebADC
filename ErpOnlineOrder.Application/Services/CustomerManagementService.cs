@@ -139,6 +139,12 @@ namespace ErpOnlineOrder.Application.Services
             };
 
             await _customerManagementRepository.AddAsync(assignment);
+            await _emailQueue.EnqueueAsync(new EmailMessage
+            {
+                ActionType = EmailActionType.StaffAssignmentNotification,
+                PrimaryId = assignment.Customer_id,
+                SecondaryId = assignment.Staff_id
+            });
             return assignment;
         }
 
