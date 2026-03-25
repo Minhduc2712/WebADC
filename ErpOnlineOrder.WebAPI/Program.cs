@@ -81,6 +81,7 @@ builder.Services.AddScoped<IDistributorRepository, DistributorRepository>();
 builder.Services.AddScoped<ICustomerManagementRepository, CustomerManagementRepository>();
 builder.Services.AddScoped<IStaffRegionRuleRepository, StaffRegionRuleRepository>();
 builder.Services.AddScoped<ICustomerProductRepository, CustomerProductRepository>();
+builder.Services.AddScoped<IPackageRepository, PackageRepository>();
 builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
 builder.Services.AddScoped<IWarehouseExportRepository, WarehouseExportRepository>();
 builder.Services.AddScoped<IAuthorRepository, AuthorRepository>();
@@ -112,6 +113,7 @@ builder.Services.AddScoped<IOrganizationService, OrganizationService>();
 builder.Services.AddScoped<ICustomerManagementService, CustomerManagementService>();
 builder.Services.AddScoped<IStaffRegionRuleService, StaffRegionRuleService>();
 builder.Services.AddScoped<ICustomerProductService, CustomerProductService>();
+builder.Services.AddScoped<IPackageService, PackageService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 builder.Services.AddScoped<IWarehouseExportService, WarehouseExportService>();
 builder.Services.AddScoped<IAuthorService, AuthorService>();
@@ -122,24 +124,20 @@ builder.Services.AddScoped<IStockService, StockService>();
 builder.Services.AddScoped<ISettingService, SettingService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 
-// Email Queue: Singleton Channel-based queue + BackgroundService worker
 builder.Services.AddSingleton<IEmailQueue, EmailQueue>();
 builder.Services.AddHostedService<EmailWorker>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
     
-    // S? d?ng CORS policy cho phép t?t c? trong development
     app.UseCors("AllowAll");
 }
 else
 {
-    // S? d?ng CORS policy c? th? trong production
     app.UseCors("AllowWebMVC");
 }
 

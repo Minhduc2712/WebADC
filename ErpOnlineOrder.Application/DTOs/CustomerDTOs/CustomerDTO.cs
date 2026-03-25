@@ -13,6 +13,11 @@ namespace ErpOnlineOrder.Application.DTOs
         public string Full_name { get; set; } = null!;
         public string Phone_number { get; set; } = null!;
         public string Address { get; set; } = null!;
+        public string? Recipient_name { get; set; }
+        public string? Recipient_phone { get; set; }
+        public string? Recipient_address { get; set; }
+        public int Organization_information_id { get; set; }
+        public string Organization_name { get; set; } = string.Empty;
         public DateTime Created_at { get; set; }
         public DateTime Updated_at { get; set; }
         public bool Is_deleted { get; set; }

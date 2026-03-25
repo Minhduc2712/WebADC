@@ -31,7 +31,8 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             var query = _context.Customers.AsNoTracking();
             if (includeDetails)
             {
-                query = query.Include(c => c.User);
+                query = query.Include(c => c.User)
+                             .Include(c => c.Organization_information);
             }
             return query;
         }

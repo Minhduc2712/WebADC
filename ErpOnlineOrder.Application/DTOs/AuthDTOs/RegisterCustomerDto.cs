@@ -19,5 +19,9 @@ namespace ErpOnlineOrder.Application.DTOs.AuthDTOs
         [StringLength(100, MinimumLength = 6, ErrorMessage = "Mật khẩu từ 6 đến 100 ký tự")]
         [Display(Name = "Mật khẩu")]
         public string Password { get; set; } = null!;
+
+        [Required(ErrorMessage = "Vui lòng chọn đơn vị")]
+        [Range(1, int.MaxValue, ErrorMessage = "Vui lòng chọn đơn vị hợp lệ")]
+        public int Organization_information_id { get; set; }
     }
 }

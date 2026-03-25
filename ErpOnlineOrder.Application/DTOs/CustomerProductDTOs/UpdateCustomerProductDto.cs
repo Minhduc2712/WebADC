@@ -6,5 +6,6 @@ namespace ErpOnlineOrder.Application.DTOs.CustomerProductDTOs
         public int Id { get; set; }
         public int? Max_quantity { get; set; }
         public bool Is_active { get; set; }
+        public bool Is_Excluded { get; set; }
     }
 }

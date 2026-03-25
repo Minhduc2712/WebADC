@@ -16,6 +16,7 @@ using ErpOnlineOrder.Application.DTOs.StockDTOs;
 using ErpOnlineOrder.Application.DTOs.WardDTOs;
 using ErpOnlineOrder.Application.DTOs.WarehouseDTOs;
 using ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs;
+using ErpOnlineOrder.Application.DTOs.PackageDTOs;
 using ErpOnlineOrder.Domain.Models;
 
 namespace ErpOnlineOrder.Application.Mappers
@@ -213,6 +214,11 @@ namespace ErpOnlineOrder.Application.Mappers
                 Full_name = c.Full_name ?? "",
                 Phone_number = c.Phone_number ?? "",
                 Address = c.Address ?? "",
+                Recipient_name = c.Recipient_name,
+                Recipient_phone = c.Recipient_phone ?? "",
+                Recipient_address = c.Recipient_address,
+                Organization_information_id = c.Organization_information_id,
+                Organization_name = c.Organization_information?.Organization_name ?? string.Empty,
                 Created_at = c.Created_at,
                 Updated_at = c.Updated_at,
                 Is_deleted = c.Is_deleted,
@@ -370,6 +376,7 @@ namespace ErpOnlineOrder.Application.Mappers
                 Original_price = cp.Product?.Product_price ?? 0,
                 Max_quantity = cp.Max_quantity,
                 Is_active = cp.Is_active,
+                Is_Excluded = cp.Is_Excluded,
                 Created_at = cp.Created_at
             };
         }
@@ -387,11 +394,6 @@ namespace ErpOnlineOrder.Application.Mappers
                 Organization_name = org.Organization_name ?? "",
                 Address = org.Address ?? "",
                 Tax_number = org.Tax_number,
-                Recipient_name = org.Recipient_name ?? "",
-                Recipient_phone = org.Recipient_phone,
-                Recipient_address = org.Recipient_address ?? "",
-                Customer_id = org.Customer_id,
-                Customer_name = org.Customer?.Full_name ?? string.Empty,
                 Created_at = org.Created_at,
                 Updated_at = org.Updated_at
             };
@@ -471,6 +473,44 @@ namespace ErpOnlineOrder.Application.Mappers
                     .Select(ur => ur.Role!.Role_name ?? "")
                     .ToList(),
                 Created_at = user.Created_at
+            };
+        }
+
+        #endregion
+
+        #region Package
+
+        public static PackageDto ToPackageDto(Package p)
+        {
+            return new PackageDto
+            {
+                Id = p.Id,
+                Package_code = p.Package_code,
+                Package_name = p.Package_name,
+                Description = p.Description,
+                Organization_information_id = p.Organization_information_id,
+                Organization_name = p.Organization_information?.Organization_name,
+                Region_id = p.Region_id,
+                Region_name = p.Region?.Region_name,
+                Province_id = p.Province_id,
+                Province_name = p.Province?.Province_name,
+                Ward_id = p.Ward_id,
+                Ward_name = p.Ward?.Ward_name,
+                Is_active = p.Is_active,
+                Created_at = p.Created_at,
+                Updated_at = p.Updated_at,
+                Products = p.Package_products
+                    .Where(pp => !pp.Is_deleted)
+                    .Select(pp => new PackageProductDto
+                    {
+                        Id = pp.Id,
+                        Package_id = pp.Package_id,
+                        Product_id = pp.Product_id,
+                        Product_code = pp.Product?.Product_code ?? string.Empty,
+                        Product_name = pp.Product?.Product_name ?? string.Empty,
+                        Original_price = pp.Product?.Product_price ?? 0,
+                        Is_active = pp.Is_active
+                    }).ToList()
             };
         }
 

@@ -17,13 +17,11 @@ namespace ErpOnlineOrder.Application.Services
     {
         private readonly ICustomerRepository _customerRepository;
         private readonly IUserRepository _userRepository;
-        private readonly IOrganizationRepository _organizationRepository;
 
-        public CustomerService(ICustomerRepository customerRepository, IUserRepository userRepository, IOrganizationRepository organizationRepository)
+        public CustomerService(ICustomerRepository customerRepository, IUserRepository userRepository)
         {
             _customerRepository = customerRepository;
             _userRepository = userRepository;
-            _organizationRepository = organizationRepository;
         }
 
         public async Task<Customer?> GetByIdAsync(int id)
@@ -119,40 +117,16 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<bool> UpdateOrganizationAsync(UpdateOrganizationByCustomerDto dto)
         {
-            var existingOrganization = await _organizationRepository.GetByCustomerIdAsync(dto.Customer_id);
-            if (existingOrganization == null)
-            {
-                // Nếu chưa có, tạo mới
-                var organization = new Organization_information
-                {
-                    Organization_name = dto.Organization_name,
-                    Address = dto.Address,
-                    Tax_number = dto.Tax_number,
-                    Recipient_name = dto.Recipient_name,
-                    Recipient_phone = dto.Recipient_phone,
-                    Recipient_address = dto.Recipient_address,
-                    Customer_id = dto.Customer_id,
-                    Created_by = dto.Customer_id,
-                    Created_at = DateTime.UtcNow,
-                    Updated_by = dto.Customer_id,
-                    Updated_at = DateTime.UtcNow,
-                    Is_deleted = false,
-                    Organization_code = $"ORG-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}"
-                };
-                await _organizationRepository.AddAsync(organization);
-            }
-            else
-            {
-                existingOrganization.Organization_name = dto.Organization_name;
-                existingOrganization.Address = dto.Address;
-                existingOrganization.Tax_number = dto.Tax_number;
-                existingOrganization.Recipient_name = dto.Recipient_name;
-                existingOrganization.Recipient_phone = dto.Recipient_phone;
-                existingOrganization.Recipient_address = dto.Recipient_address;
-                existingOrganization.Updated_by = dto.Customer_id;
-                existingOrganization.Updated_at = DateTime.UtcNow;
-                await _organizationRepository.UpdateAsync(existingOrganization);
-            }
+            var customer = await _customerRepository.GetByIdBasicAsync(dto.Customer_id);
+            if (customer == null) return false;
+
+            customer.Organization_information_id = dto.Organization_information_id;
+            customer.Recipient_name = dto.Recipient_name;
+            customer.Recipient_phone = dto.Recipient_phone;
+            customer.Recipient_address = dto.Recipient_address;
+            customer.Updated_at = DateTime.UtcNow;
+            customer.Updated_by = dto.Customer_id;
+            await _customerRepository.UpdateAsync(customer);
             return true;
         }
 

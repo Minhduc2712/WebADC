@@ -49,6 +49,8 @@ namespace ErpOnlineOrder.Infrastructure.Persistence
         public DbSet<Customer_management> CustomerManagements => Set<Customer_management>();
         public DbSet<Organization_information> OrganizationInformations => Set<Organization_information>();
         public DbSet<Customer_product> CustomerProducts => Set<Customer_product>();
+        public DbSet<Package> Packages => Set<Package>();
+        public DbSet<Package_product> PackageProducts => Set<Package_product>();
         public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
         public DbSet<Staff_region_rule> StaffRegionRules => Set<Staff_region_rule>();
 
@@ -108,7 +110,11 @@ namespace ErpOnlineOrder.Infrastructure.Persistence
                 entity.Property(x => x.Full_name).HasMaxLength(100);
                 entity.Property(x => x.Phone_number).HasMaxLength(20);
                 entity.Property(x => x.Address).HasMaxLength(200);
+                entity.Property(x => x.Recipient_name).HasMaxLength(100);
+                entity.Property(x => x.Recipient_phone).HasMaxLength(50);
+                entity.Property(x => x.Recipient_address).HasMaxLength(500);
                 entity.Property(x => x.User_id).HasColumnName("User_id");
+                entity.Property(x => x.Organization_information_id).HasColumnName("Organization_information_id").IsRequired();
                 entity.HasOne(x => x.User).WithOne(x => x.Customer).HasForeignKey<Customer>(x => x.User_id);
             });
 
@@ -515,11 +521,7 @@ namespace ErpOnlineOrder.Infrastructure.Persistence
                 entity.Property(x => x.Organization_name).HasMaxLength(200).IsRequired();
                 entity.Property(x => x.Address).HasMaxLength(500);
                 entity.Property(x => x.Tax_number).HasColumnType("nvarchar(50)");
-                entity.Property(x => x.Recipient_name).HasMaxLength(100);
-                entity.Property(x => x.Recipient_phone).HasColumnType("nvarchar(50)");
-                entity.Property(x => x.Recipient_address).HasMaxLength(500);
-                entity.Property(x => x.Customer_id).HasColumnName("Customer_id");
-                entity.HasOne(x => x.Customer).WithMany(x => x.Organization_informations).HasForeignKey(x => x.Customer_id).OnDelete(DeleteBehavior.Cascade);
+                entity.HasMany(x => x.Customers).WithOne(x => x.Organization_information).HasForeignKey(x => x.Organization_information_id).OnDelete(DeleteBehavior.Restrict);
             });
 
             // Customer_management configuration
@@ -576,6 +578,54 @@ namespace ErpOnlineOrder.Infrastructure.Persistence
                 entity.HasIndex(x => new { x.Staff_id, x.Province_id })
                     .IsUnique()
                     .HasFilter("[Is_deleted] = 0");
+            });
+
+            // Package configuration
+            modelBuilder.Entity<Package>(entity =>
+            {
+                entity.ToTable("Packages");
+                entity.HasKey(x => x.Id);
+                entity.HasQueryFilter(p => !p.Is_deleted);
+                entity.Property(x => x.Package_code).HasMaxLength(50).IsRequired();
+                entity.Property(x => x.Package_name).HasMaxLength(200).IsRequired();
+                entity.Property(x => x.Description).HasMaxLength(500);
+                entity.HasOne(x => x.Organization_information)
+                    .WithMany()
+                    .HasForeignKey(x => x.Organization_information_id)
+                    .IsRequired(false)
+                    .OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(x => x.Region)
+                    .WithMany()
+                    .HasForeignKey(x => x.Region_id)
+                    .IsRequired(false)
+                    .OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(x => x.Province)
+                    .WithMany()
+                    .HasForeignKey(x => x.Province_id)
+                    .IsRequired(false)
+                    .OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(x => x.Ward)
+                    .WithMany()
+                    .HasForeignKey(x => x.Ward_id)
+                    .IsRequired(false)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // Package_product configuration
+            modelBuilder.Entity<Package_product>(entity =>
+            {
+                entity.ToTable("PackageProducts");
+                entity.HasKey(x => x.Id);
+                entity.HasQueryFilter(pp => !pp.Is_deleted);
+                entity.HasOne(x => x.Package)
+                    .WithMany(x => x.Package_products)
+                    .HasForeignKey(x => x.Package_id)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(x => x.Product)
+                    .WithMany()
+                    .HasForeignKey(x => x.Product_id)
+                    .OnDelete(DeleteBehavior.Restrict);
+                entity.HasIndex(x => new { x.Package_id, x.Product_id }).IsUnique();
             });
 
             // SystemSetting configuration

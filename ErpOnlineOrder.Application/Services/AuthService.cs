@@ -58,6 +58,9 @@ namespace ErpOnlineOrder.Application.Services
 
             var roleFromDb = await _roleRepository.GetByNameAsync(roleName);
 
+            if (roleFromDb == null)
+                throw new Exception($"Cấu hình lỗi: role không tồn tại.");
+
             var user = new User
             {
                 Username = dto.Username,
@@ -130,6 +133,7 @@ namespace ErpOnlineOrder.Application.Services
                     Full_name = null,
                     Phone_number = null,
                     Address = null,
+                    Organization_information_id = dto.Organization_information_id,
                     Created_at = DateTime.UtcNow,
                     Created_by = 0,
                     Updated_at = DateTime.UtcNow,
@@ -180,29 +184,15 @@ namespace ErpOnlineOrder.Application.Services
                     Full_name = dto.Personal.Full_name.Trim(),
                     Phone_number = dto.Personal.Phone_number.Trim(),
                     Address = dto.Personal.Address.Trim(),
+                    Recipient_name = dto.Personal.Recipient_name,
+                    Recipient_phone = dto.Personal.Recipient_phone ?? string.Empty,
+                    Recipient_address = dto.Personal.Recipient_address,
+                    Organization_information_id = dto.Organization.Organization_information_id,
                     Created_at = now,
                     Created_by = 0,
                     Updated_at = now,
                     Updated_by = 0,
-                    Is_deleted = false,
-                    Organization_informations = new List<Organization_information>
-                    {
-                        new Organization_information
-                        {
-                            Organization_code = $"ORG-{Guid.NewGuid().ToString()[..8].ToUpper()}",
-                            Organization_name = dto.Organization.Organization_name.Trim(),
-                            Address = dto.Organization.Address.Trim(),
-                            Tax_number = dto.Organization.Tax_number,
-                            Recipient_name = dto.Organization.Recipient_name.Trim(),
-                            Recipient_phone = dto.Organization.Recipient_phone,
-                            Recipient_address = dto.Organization.Recipient_address.Trim(),
-                            Created_at = now,
-                            Created_by = 0,
-                            Updated_at = now,
-                            Updated_by = 0,
-                            Is_deleted = false
-                        }
-                    }
+                    Is_deleted = false
                 }
             };
 
@@ -270,7 +260,7 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<bool> ChangePasswordAsync(ChangePasswordDto dto)
         {
-            string identifier = dto.Identifier;
+            string identifier = dto.Identifier ?? string.Empty;
             string OldPassword = dto.OldPassword;
             string NewPassword = dto.NewPassword;
 

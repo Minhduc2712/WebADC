@@ -41,6 +41,12 @@ namespace ErpOnlineOrder.Application.DTOs.AuthDTOs
         [StringLength(200, ErrorMessage = "Địa chỉ không được quá 200 ký tự")]
         public string Address { get; set; } = string.Empty;
 
+        public string? Recipient_name { get; set; }
+
+        public string? Recipient_phone { get; set; }
+
+        public string? Recipient_address { get; set; }
+
         /// <summary>Tỉnh/thành phố — dùng để tự động gán cán bộ phụ trách</summary>
         public int? Province_id { get; set; }
 
@@ -50,24 +56,9 @@ namespace ErpOnlineOrder.Application.DTOs.AuthDTOs
 
     public class RegisterCustomerOrganizationStepDto
     {
-        [Required(ErrorMessage = "Tên đơn vị là bắt buộc")]
-        [StringLength(200, MinimumLength = 2, ErrorMessage = "Tên đơn vị từ 2 đến 200 ký tự")]
-        public string Organization_name { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Địa chỉ đơn vị là bắt buộc")]
-        public string Address { get; set; } = string.Empty;
-
-        [Range(0, int.MaxValue, ErrorMessage = "Mã số thuế không hợp lệ")]
-        public string Tax_number { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Tên người nhận là bắt buộc")]
-        public string Recipient_name { get; set; } = string.Empty;
-
-        [Range(1, int.MaxValue, ErrorMessage = "Số điện thoại người nhận không hợp lệ")]
-        public string Recipient_phone { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Địa chỉ nhận hàng là bắt buộc")]
-        public string Recipient_address { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Vui lòng chọn đơn vị")]
+        [Range(1, int.MaxValue, ErrorMessage = "Vui lòng chọn đơn vị hợp lệ")]
+        public int Organization_information_id { get; set; }
     }
 
     public class FinalizeCustomerRegistrationDto

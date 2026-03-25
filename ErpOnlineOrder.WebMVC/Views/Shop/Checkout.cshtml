@@ -44,58 +44,59 @@
                         }
                         <div class="account-section billing-section">
                             <h5 class="wrapper-heading">Thông tin giao hàng</h5>
-                            <h4 class=" wrapper-heading"> Thông tin người nhận </h4>
+
+                            <!-- Thông tin người nhận -->
+                            <div class="checkout-info-card mb-3">
+                                <div class="checkout-info-card-header">
+                                    <span>Người nhận</span>
+                                    <a asp-controller="Shop" asp-action="UpdateOrganization" class="checkout-info-edit-link">Cập nhật</a>
+                                </div>
+                                <div class="checkout-info-card-body">
+                                    <div class="checkout-info-row">
+                                        <span class="checkout-info-label">Họ và tên</span>
+                                        <span class="checkout-info-value">@(string.IsNullOrWhiteSpace(recipientName) ? "—" : recipientName)</span>
+                                    </div>
+                                    <div class="checkout-info-row">
+                                        <span class="checkout-info-label">Số điện thoại</span>
+                                        <span class="checkout-info-value">@(string.IsNullOrWhiteSpace(customerPhone) ? "—" : customerPhone)</span>
+                                    </div>
+                                    <div class="checkout-info-row">
+                                        <span class="checkout-info-label">Email</span>
+                                        <span class="checkout-info-value">@(string.IsNullOrWhiteSpace(customerEmail) ? "—" : customerEmail)</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Thông tin đơn vị -->
+                            <div class="checkout-info-card mb-3">
+                                <div class="checkout-info-card-header">
+                                    <span>Đơn vị</span>
+                                    <a asp-action="UpdateOrganization" class="checkout-info-edit-link">Cập nhật</a>
+                                </div>
+                                <div class="checkout-info-card-body">
+                                    <div class="checkout-info-row">
+                                        <span class="checkout-info-label">Tên đơn vị</span>
+                                        <span class="checkout-info-value">@(string.IsNullOrWhiteSpace(organizationName) ? "—" : organizationName)</span>
+                                    </div>
+                                    <div class="checkout-info-row">
+                                        <span class="checkout-info-label">Mã số thuế</span>
+                                        <span class="checkout-info-value">@(string.IsNullOrWhiteSpace(organizationTaxNumber) ? "—" : organizationTaxNumber)</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Địa chỉ nhận hàng (editable) -->
                             <div class="review-form">
-                                <div class="account-inner-form">
-                                    <div class="review-form-name">
-                                        <label for="fname" class="form-label">Họ *</label>
-                                        <input type="text" id="fname" class="form-control" placeholder="Nhập họ" value="@lastName">
-                                    </div>
-                                    <div class="review-form-name">
-                                        <label for="lname" class="form-label">Tên *</label>
-                                        <input type="text" id="lname" class="form-control" placeholder="Nhập tên" value="@firstName">
-                                    </div>
-                                </div>
-                                <div class="account-inner-form">
-                                    <div class="review-form-name">
-                                        <label for="email" class="form-label">Email</label>
-                                        <input type="email" id="email" class="form-control" placeholder="email@gmail.com" value="@customerEmail">
-                                    </div>
-                                    <div class="review-form-name">
-                                        <label for="phone" class="form-label">Số điện thoại *</label>
-                                        <input type="tel" id="phone" class="form-control" placeholder="0123 456 789" value="@customerPhone">
-                                    </div>
-                                </div>
-                                <h4 class=" wrapper-heading"> Thông tin đơn vị </h4>
-                                <div class="account-inner-form">
-                                    <div class="review-form-name">
-                                        <label for="orgname" class="form-label">Tên đơn vị</label>
-                                        <input type="text" id="orgname" class="form-control" placeholder="Tên công ty / đơn vị" value="@organizationName" readonly>
-                                    </div>
-                                    <div class="review-form-name">
-                                        <label for="taxnumber" class="form-label">Mã số thuế</label>
-                                        <input type="text" id="taxnumber" class="form-control" placeholder="Mã số thuế" value="@organizationTaxNumber" readonly>
-                                    </div>
-                                </div>
-                                <div class="review-form-name">
-                                    <label for="country" class="form-label">Tỉnh / Thành phố *</label>
-                                    <select id="country" class="form-select">
-                                        <option value="">Chọn tỉnh / thành phố</option>
-                                        @foreach (var province in provinces)
-                                        {
-                                            <option value="@province.Id">@province.Province_name</option>
-                                        }
-                                    </select>
-                                </div>
+                                <h6 class="wrapper-heading" style="font-size:1rem;">Địa chỉ nhận hàng</h6>
                                 <div class="review-form-name address-form">
-                                    <label for="address" class="form-label">Địa chỉ *</label>
-                                    <input type="text" id="address" class="form-control" value="@orgShippingAddress" placeholder="Nhập địa chỉ giao hàng">
+                                    <label for="address" class="form-label">Địa chỉ <span class="text-danger">*</span></label>
+                                    <input type="text" id="address" class="form-control" value="@orgShippingAddress" placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố">
                                 </div>
                                 @if (!hasOrgShippingAddress)
                                 {
                                     <div id="addressWarning" class="alert alert-warning mt-2 mb-2" role="alert">
-                                        Bạn chưa có địa chỉ mặc định từ thông tin đơn vị. Vui lòng nhập địa chỉ giao hàng trước khi đặt đơn,
-                                        hoặc cập nhật tại <a asp-action="UpdateOrganization">Thông tin đơn vị</a>.
+                                        Bạn chưa có địa chỉ mặc định. Vui lòng nhập địa chỉ giao hàng hoặc cập nhật tại
+                                        <a asp-action="UpdateOrganization">Thông tin đơn vị</a>.
                                     </div>
                                 }
                                 else
@@ -104,19 +105,9 @@
                                         Địa chỉ đã được lấy từ thông tin đơn vị. Bạn có thể chỉnh sửa nếu muốn giao đến nơi khác.
                                     </div>
                                 }
-                                <div class="account-inner-form city-inner-form">
-                                    <div class="review-form-name">  
-                                        <label for="city" class="form-label">Quận / Huyện *</label>
-                                        <input type="text" id="city" class="form-control" placeholder="Nhập quận/huyện">
-                                    </div>
-                                    <div class="review-form-name">
-                                        <label for="ward" class="form-label">Phường / Xã</label>
-                                        <input type="text" id="ward" class="form-control" placeholder="Nhập phường/xã">
-                                    </div>
-                                </div>
-                                <div class="review-form-name address-form">
-                                    <label for="note" class="form-label">Ghi chú</label>
-                                    <textarea id="note" class="form-control" rows="3" placeholder="Ghi chú cho đơn hàng..."></textarea>
+                                <div class="review-form-name address-form mt-2">
+                                    <label for="note" class="form-label">Ghi chú đơn hàng</label>
+                                    <textarea id="note" class="form-control" rows="3" placeholder="Ghi chú thêm cho đơn hàng (nếu có)..."></textarea>
                                 </div>
                             </div>
                         </div>
@@ -172,6 +163,58 @@
 </section>
 
 @section Scripts {
+<style>
+    .checkout-info-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .checkout-info-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f8f9fa;
+        padding: 10px 16px;
+        border-bottom: 1px solid #e5e7eb;
+        font-weight: 600;
+        font-size: 0.92rem;
+        color: #374151;
+    }
+    .checkout-info-edit-link {
+        font-size: 0.8rem;
+        font-weight: 400;
+        color: #6b7280;
+        text-decoration: none;
+    }
+    .checkout-info-edit-link:hover {
+        color: #111;
+        text-decoration: underline;
+    }
+    .checkout-info-card-body {
+        padding: 4px 0;
+    }
+    .checkout-info-row {
+        display: flex;
+        align-items: baseline;
+        padding: 8px 16px;
+        border-bottom: 1px solid #f3f4f6;
+        gap: 12px;
+    }
+    .checkout-info-row:last-child {
+        border-bottom: none;
+    }
+    .checkout-info-label {
+        min-width: 120px;
+        font-size: 0.82rem;
+        color: #9ca3af;
+        flex-shrink: 0;
+    }
+    .checkout-info-value {
+        font-size: 0.9rem;
+        color: #111827;
+        word-break: break-word;
+    }
+</style>
 <script>
     function renderCheckout() {
         var cart = getCart();

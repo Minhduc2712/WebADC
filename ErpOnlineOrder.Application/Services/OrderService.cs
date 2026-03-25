@@ -66,10 +66,10 @@ namespace ErpOnlineOrder.Application.Services
             if (!string.IsNullOrWhiteSpace(inputAddress))
                 return inputAddress;
 
-            var org = await _organizationRepository.GetByCustomerIdAsync(customerId);
-            var orgAddress = org?.Recipient_address;
+            var customer = await _customerRepository.GetByIdAsync(customerId);
+            var orgAddress = customer?.Recipient_address;
             if (string.IsNullOrWhiteSpace(orgAddress))
-                orgAddress = org?.Address;
+                orgAddress = customer?.Organization_information?.Address;
 
             return string.IsNullOrWhiteSpace(orgAddress) ? null : orgAddress.Trim();
         }

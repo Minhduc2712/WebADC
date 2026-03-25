@@ -68,6 +68,27 @@
                 </select>
             </div>
 
+            <hr class="my-3" />
+            <p class="text-muted small mb-3"><i class="fas fa-info-circle me-1"></i>Thông tin người nhận hàng (có thể cập nhật sau)</p>
+
+            <div class="mb-3">
+                <label asp-for="Recipient_name" class="form-label fw-semibold">Tên người nhận hàng</label>
+                <input asp-for="Recipient_name" class="form-control" placeholder="Nhập tên người nhận hàng" />
+                <span asp-validation-for="Recipient_name" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Recipient_phone" class="form-label fw-semibold">Số điện thoại nhận hàng</label>
+                <input asp-for="Recipient_phone" class="form-control" placeholder="Nhập số điện thoại nhận hàng" />
+                <span asp-validation-for="Recipient_phone" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Recipient_address" class="form-label fw-semibold">Địa chỉ nhận hàng</label>
+                <input asp-for="Recipient_address" class="form-control" placeholder="Nhập địa chỉ nhận hàng" />
+                <span asp-validation-for="Recipient_address" class="text-danger small"></span>
+            </div>
+
             <div class="d-flex gap-2">
                 <a asp-action="CustomerRegister" class="btn btn-outline-secondary w-50">
                     <i class="fas fa-arrow-left me-2"></i>Quay lại

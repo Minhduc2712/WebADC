@@ -11,6 +11,7 @@ namespace ErpOnlineOrder.Application.DTOs.CustomerProductDTOs
         public decimal Original_price { get; set; }
         public int? Max_quantity { get; set; }
         public bool Is_active { get; set; }
+        public bool Is_Excluded { get; set; }
         public DateTime Created_at { get; set; }
         public bool AllowUpdate { get; set; }
         public bool AllowDelete { get; set; }

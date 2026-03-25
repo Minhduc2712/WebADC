@@ -19,19 +19,14 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             _context = context;
         }
 
-        private IQueryable<Organization_information> GetBaseQuery(bool includeDetails = false)
+        private IQueryable<Organization_information> GetBaseQuery()
         {
-            var query = _context.OrganizationInformations.AsNoTracking();
-            if (includeDetails)
-            {
-                query = query.Include(o => o.Customer);
-            }
-            return query;
+            return _context.OrganizationInformations.AsNoTracking();
         }
 
         public async Task<Organization_information?> GetByIdAsync(int id)
         {
-            return await GetBaseQuery(true).FirstOrDefaultAsync(o => o.Id == id);
+            return await GetBaseQuery().FirstOrDefaultAsync(o => o.Id == id);
         }
 
         public async Task<Organization_information?> GetByCodeAsync(string organizationCode)
@@ -51,7 +46,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         {
             if (string.IsNullOrWhiteSpace(taxNumber)) return false;
             var query = _context.OrganizationInformations.AsNoTracking()
-                .Where(o => !o.Is_deleted && o.Tax_number == taxNumber);
+                .Where(o => o.Tax_number == taxNumber);
             if (excludeId.HasValue)
                 query = query.Where(o => o.Id != excludeId.Value);
             return await query.AnyAsync();
@@ -59,19 +54,23 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<IEnumerable<Organization_information>> GetAllAsync()
         {
-            return await GetBaseQuery(true)
+            return await GetBaseQuery()
                 .OrderBy(o => o.Organization_name)
                 .ToListAsync();
         }
 
         public async Task<Organization_information?> GetByCustomerIdAsync(int customerId)
         {
-            return await GetBaseQuery(true).FirstOrDefaultAsync(o => o.Customer_id == customerId);
+            return await _context.Customers.AsNoTracking()
+                .Where(c => c.Id == customerId)
+                .Include(c => c.Organization_information)
+                .Select(c => c.Organization_information)
+                .FirstOrDefaultAsync();
         }
 
         public async Task<IEnumerable<Organization_information>> SearchAsync(string? keyword)
         {
-            var query = GetBaseQuery(true);
+            var query = GetBaseQuery();
 
             if (!string.IsNullOrEmpty(keyword))
             {

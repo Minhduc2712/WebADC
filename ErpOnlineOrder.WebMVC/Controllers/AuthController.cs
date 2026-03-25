@@ -13,6 +13,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         private readonly IAuthApiClient _authApiClient;
         private readonly IProvinceApiClient _provinceApiClient;
         private readonly IWardApiClient _wardApiClient;
+        private readonly IOrganizationApiClient _organizationApiClient;
         private readonly ILogger<AuthController> _logger;
 
         private const int RememberMeDays = 30;
@@ -24,11 +25,13 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             IAuthApiClient authApiClient,
             IProvinceApiClient provinceApiClient,
             IWardApiClient wardApiClient,
+            IOrganizationApiClient organizationApiClient,
             ILogger<AuthController> logger)
         {
             _authApiClient = authApiClient;
             _provinceApiClient = provinceApiClient;
             _wardApiClient = wardApiClient;
+            _organizationApiClient = organizationApiClient;
             _logger = logger;
         }
 
@@ -196,7 +199,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         }
 
         [HttpGet]
-        public IActionResult CustomerRegisterOrganization()
+        public async Task<IActionResult> CustomerRegisterOrganization()
         {
             if (HttpContext.Session.IsAuthenticated())
                 return RedirectToAction("Index", "Order");
@@ -205,6 +208,9 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 return RedirectToAction(nameof(CustomerRegister));
             if (GetFromSession<RegisterCustomerPersonalStepDto>(CustomerRegisterPersonalSessionKey) == null)
                 return RedirectToAction(nameof(CustomerRegisterPersonal));
+
+            var organizations = await _organizationApiClient.GetAllAsync();
+            ViewBag.Organizations = organizations.OrderBy(o => o.Organization_name).ToList();
 
             var model = GetFromSession<RegisterCustomerOrganizationStepDto>(CustomerRegisterOrganizationSessionKey) ?? new RegisterCustomerOrganizationStepDto();
             return View(model);
@@ -220,36 +226,26 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 return RedirectToAction(nameof(CustomerRegisterPersonal));
 
             if (!ModelState.IsValid)
-                return View(model);
-
-            try
             {
-                if (!string.IsNullOrWhiteSpace(model.Tax_number) && await _authApiClient.CheckTaxExistsAsync(model.Tax_number))
-                    ModelState.AddModelError(nameof(model.Tax_number), "Mã số thuế đã được đăng ký.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Could not verify tax number availability");
-                ModelState.AddModelError("", "Không thể kiểm tra mã số thuế với máy chủ. Vui lòng thử lại.");
-            }
-
-            if (!ModelState.IsValid)
-                return View(model);
-
-            SaveToSession(CustomerRegisterOrganizationSessionKey, model);
-
-            var account = GetFromSession<RegisterCustomerAccountStepDto>(CustomerRegisterAccountSessionKey);
-            var personal = GetFromSession<RegisterCustomerPersonalStepDto>(CustomerRegisterPersonalSessionKey);
-            var organization = GetFromSession<RegisterCustomerOrganizationStepDto>(CustomerRegisterOrganizationSessionKey);
-
-            if (account == null || personal == null || organization == null)
-            {
-                ModelState.AddModelError("", "Phiên đăng ký đã hết hạn. Vui lòng thử lại từ đầu.");
+                var organizations = await _organizationApiClient.GetAllAsync();
+                ViewBag.Organizations = organizations.OrderBy(o => o.Organization_name).ToList();
                 return View(model);
             }
 
             try
             {
+                SaveToSession(CustomerRegisterOrganizationSessionKey, model);
+
+                var account = GetFromSession<RegisterCustomerAccountStepDto>(CustomerRegisterAccountSessionKey);
+                var personal = GetFromSession<RegisterCustomerPersonalStepDto>(CustomerRegisterPersonalSessionKey);
+                var organization = GetFromSession<RegisterCustomerOrganizationStepDto>(CustomerRegisterOrganizationSessionKey);
+
+                if (account == null || personal == null || organization == null)
+                {
+                    ModelState.AddModelError("", "Phiên đăng ký đã hết hạn. Vui lòng thử lại từ đầu.");
+                    return View(model);
+                }
+
                 var request = new FinalizeCustomerRegistrationDto
                 {
                     Account = account,

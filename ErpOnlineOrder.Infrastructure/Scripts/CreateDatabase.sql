@@ -626,5 +626,54 @@ CREATE TABLE SystemSettings (
 );
 GO
 
-PRINT N'=== Da tao xong tat ca 27 bang ===';
+-- =============================================
+-- 11. QUAN LY GOI SAN PHAM
+-- =============================================
+
+-- Add Is_Excluded to CustomerProducts if not exists
+IF COL_LENGTH('CustomerProducts', 'Is_Excluded') IS NULL
+    ALTER TABLE CustomerProducts ADD Is_Excluded BIT NOT NULL DEFAULT 0;
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Packages')
+CREATE TABLE Packages (
+    Id                          INT IDENTITY(1,1) PRIMARY KEY,
+    Package_code                NVARCHAR(50)  NOT NULL,
+    Package_name                NVARCHAR(200) NOT NULL,
+    Description                 NVARCHAR(500) NULL,
+    Organization_information_id INT           NULL,
+    Region_id                   INT           NULL,
+    Province_id                 INT           NULL,
+    Ward_id                     INT           NULL,
+    Is_active                   BIT           NOT NULL DEFAULT 1,
+    Created_by                  INT           NOT NULL DEFAULT 0,
+    Created_at                  DATETIME2     NOT NULL DEFAULT GETDATE(),
+    Updated_by                  INT           NOT NULL DEFAULT 0,
+    Updated_at                  DATETIME2     NOT NULL DEFAULT GETDATE(),
+    Is_deleted                  BIT           NOT NULL DEFAULT 0,
+    CONSTRAINT FK_Packages_OrganizationInformations FOREIGN KEY (Organization_information_id) REFERENCES OrganizationInformations(Id) ON DELETE NO ACTION,
+    CONSTRAINT FK_Packages_Regions                  FOREIGN KEY (Region_id)                  REFERENCES Regions(Id)                  ON DELETE NO ACTION,
+    CONSTRAINT FK_Packages_Provinces                FOREIGN KEY (Province_id)                REFERENCES Provinces(Id)                ON DELETE NO ACTION,
+    CONSTRAINT FK_Packages_Wards                    FOREIGN KEY (Ward_id)                    REFERENCES Wards(Id)                    ON DELETE NO ACTION
+);
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'PackageProducts')
+CREATE TABLE PackageProducts (
+    Id               INT           IDENTITY(1,1) PRIMARY KEY,
+    Package_id       INT           NOT NULL,
+    Product_id       INT           NOT NULL,
+    Is_active        BIT           NOT NULL DEFAULT 1,
+    Created_by       INT           NOT NULL DEFAULT 0,
+    Created_at       DATETIME2     NOT NULL DEFAULT GETDATE(),
+    Updated_by       INT           NOT NULL DEFAULT 0,
+    Updated_at       DATETIME2     NOT NULL DEFAULT GETDATE(),
+    Is_deleted       BIT           NOT NULL DEFAULT 0,
+    CONSTRAINT FK_PackageProducts_Packages  FOREIGN KEY (Package_id)  REFERENCES Packages(Id)  ON DELETE CASCADE,
+    CONSTRAINT FK_PackageProducts_Products  FOREIGN KEY (Product_id)  REFERENCES Products(Id)  ON DELETE NO ACTION,
+    CONSTRAINT UQ_PackageProducts           UNIQUE (Package_id, Product_id)
+);
+GO
+
+PRINT N'=== Da tao xong tat ca 29 bang ===';
 GO

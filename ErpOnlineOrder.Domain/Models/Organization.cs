@@ -1,9 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ErpOnlineOrder.Domain.Models
 {
-    public class Organization_information
+    public class Organization
     {
         public int Id { get; set; }
 
@@ -18,7 +18,6 @@ namespace ErpOnlineOrder.Domain.Models
 
         [Required]
         public string Tax_number { get; set; } = string.Empty;
-
         public int Created_by { get; set; }
 
         public DateTime Created_at { get; set; }
@@ -29,6 +28,6 @@ namespace ErpOnlineOrder.Domain.Models
 
         public bool Is_deleted { get; set; }
 
-        public virtual ICollection<Customer> Customers { get; set; } = new List<Customer>();
+        public ICollection<Customer> Customers { get; set; } = new List<Customer>();
     }
 }

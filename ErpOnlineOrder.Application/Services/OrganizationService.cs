@@ -11,14 +11,11 @@ namespace ErpOnlineOrder.Application.Services
     public class OrganizationService : IOrganizationService
     {
         private readonly IOrganizationRepository _organizationRepository;
-        private readonly ICustomerRepository _customerRepository;
 
         public OrganizationService(
-            IOrganizationRepository organizationRepository,
-            ICustomerRepository customerRepository)
+            IOrganizationRepository organizationRepository)
         {
             _organizationRepository = organizationRepository;
-            _customerRepository = customerRepository;
         }
 
         public async Task<OrganizationDTO?> GetByIdAsync(int id)
@@ -54,23 +51,12 @@ namespace ErpOnlineOrder.Application.Services
                 throw new Exception("Mã tổ chức đã tồn tại");
             }
 
-            // Kiểm tra khách hàng tồn tại
-            var customer = await _customerRepository.GetByIdBasicAsync(dto.Customer_id);
-            if (customer == null)
-            {
-                throw new Exception("Khách hàng không tồn tại");
-            }
-
             var org = new Organization_information
             {
                 Organization_code = dto.Organization_code,
                 Organization_name = dto.Organization_name,
                 Address = dto.Address,
                 Tax_number = dto.Tax_number,
-                Recipient_name = dto.Recipient_name,
-                Recipient_phone = dto.Recipient_phone,
-                Recipient_address = dto.Recipient_address,
-                Customer_id = dto.Customer_id,
                 Created_by = createdBy,
                 Updated_by = createdBy,
                 Created_at = DateTime.UtcNow,
@@ -107,9 +93,6 @@ namespace ErpOnlineOrder.Application.Services
             org.Organization_name = dto.Organization_name;
             org.Address = dto.Address;
             org.Tax_number = dto.Tax_number;
-            org.Recipient_name = dto.Recipient_name;
-            org.Recipient_phone = dto.Recipient_phone;
-            org.Recipient_address = dto.Recipient_address;
             org.Updated_by = updatedBy;
             org.Updated_at = DateTime.UtcNow;
 

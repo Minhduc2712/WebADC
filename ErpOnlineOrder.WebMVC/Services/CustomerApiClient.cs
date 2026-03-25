@@ -56,9 +56,9 @@ namespace ErpOnlineOrder.WebMVC.Services
             return await GetAsync<CustomerDTO>($"customer/user/{userId}", cancellationToken);
         }
 
-        public async Task<UpdateOrganizationByCustomerDto?> GetOrganizationByCustomerIdAsync(int customerId, CancellationToken cancellationToken = default)
+        public async Task<CustomerOrganizationViewDto?> GetOrganizationByCustomerIdAsync(int customerId, CancellationToken cancellationToken = default)
         {
-            return await GetAsync<UpdateOrganizationByCustomerDto>($"customer/{customerId}/organization", cancellationToken);
+            return await GetAsync<CustomerOrganizationViewDto>($"customer/{customerId}/organization", cancellationToken);
         }
 
         public async Task<bool> UpdateOrganizationAsync(UpdateOrganizationByCustomerDto model, CancellationToken cancellationToken = default)

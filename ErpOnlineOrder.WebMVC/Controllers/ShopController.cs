@@ -24,6 +24,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         private readonly IAuthApiClient _authApiClient;
         private readonly ICustomerManagementApiClient _customerManagementApiClient;
         private readonly IProvinceApiClient _provinceApiClient;
+        private readonly IOrganizationApiClient _organizationApiClient;
         private readonly ILogger<ShopController> _logger;
 
         public ShopController(
@@ -35,6 +36,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             IAuthApiClient authApiClient,
             ICustomerManagementApiClient customerManagementApiClient,
             IProvinceApiClient provinceApiClient,
+            IOrganizationApiClient organizationApiClient,
             ILogger<ShopController> logger)
         {
             _productApiClient = productApiClient;
@@ -45,6 +47,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             _authApiClient = authApiClient;
             _customerManagementApiClient = customerManagementApiClient;
             _provinceApiClient = provinceApiClient;
+            _organizationApiClient = organizationApiClient;
             _logger = logger;
         }
 
@@ -142,7 +145,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 var org = await _customerApiClient.GetOrganizationByCustomerIdAsync(customerId.Value);
                 organizationAddress = org?.Recipient_address;
                 if (string.IsNullOrWhiteSpace(organizationAddress))
-                    organizationAddress = org?.Address;
+                    organizationAddress = org?.Organization_address;
 
                 ViewBag.RecipientName = !string.IsNullOrWhiteSpace(org?.Recipient_name)
                     ? org.Recipient_name
@@ -292,11 +295,18 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return Json(new { success = false, message = "Giỏ hàng trống." });
                 }
 
+                var org = await _customerApiClient.GetOrganizationByCustomerIdAsync(customer.Id);
+                var shippingAddress = !string.IsNullOrWhiteSpace(org?.Recipient_address)
+                    ? org.Recipient_address
+                    : !string.IsNullOrWhiteSpace(org?.Organization_address)
+                        ? org.Organization_address
+                        : request.ShippingAddress;
+
                 var createOrderDto = new CreateOrderDto
                 {
                     Order_date = DateTime.Now,
                     Customer_id = customer.Id,
-                    Shipping_address = request.ShippingAddress,
+                    Shipping_address = shippingAddress,
                     note = request.Note,
                     Created_by = userId,
                     Order_details = request.Items.Select(item => new OrderDetailDto
@@ -632,16 +642,17 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             if (!customerId.HasValue)
                 return RedirectToAction("Login", "Auth");
 
+            var organizations = await _organizationApiClient.GetAllAsync();
+            ViewBag.Organizations = organizations.OrderBy(o => o.Organization_name).ToList();
+
             var org = await _customerApiClient.GetOrganizationByCustomerIdAsync(customerId.Value);
             var model = new UpdateOrganizationByCustomerDto
             {
                 Customer_id = customerId.Value,
-                Organization_name = org?.Organization_name ?? "",
-                Address = org?.Address ?? "",
-                Tax_number = org?.Tax_number ?? "",
-                Recipient_name = org?.Recipient_name ?? "",
+                Organization_information_id = org?.Organization_information_id ?? 0,
+                Recipient_name = org?.Recipient_name,
                 Recipient_phone = org?.Recipient_phone ?? "",
-                Recipient_address = org?.Recipient_address ?? ""
+                Recipient_address = org?.Recipient_address
             };
             return View(model);
         }
@@ -655,13 +666,13 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 return RedirectToAction("Login", "Auth");
 
             model.Customer_id = customerId.Value;
-            if (string.IsNullOrWhiteSpace(model.Organization_name))
-                ModelState.AddModelError("Organization_name", "Tên đơn vị không được để trống.");
-            if (string.IsNullOrWhiteSpace(model.Address))
-                ModelState.AddModelError("Address", "Địa chỉ không được để trống.");
 
             if (!ModelState.IsValid)
+            {
+                var organizations = await _organizationApiClient.GetAllAsync();
+                ViewBag.Organizations = organizations.OrderBy(o => o.Organization_name).ToList();
                 return View(model);
+            }
 
             try
             {
@@ -677,6 +688,9 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 _logger.LogError(ex, "Error updating organization for customer {CustomerId}", customerId);
                 ModelState.AddModelError("", "Không thể cập nhật thông tin đơn vị. Vui lòng kiểm tra dữ liệu và thử lại.");
             }
+
+            var orgs = await _organizationApiClient.GetAllAsync();
+            ViewBag.Organizations = orgs.OrderBy(o => o.Organization_name).ToList();
             return View(model);
         }
 

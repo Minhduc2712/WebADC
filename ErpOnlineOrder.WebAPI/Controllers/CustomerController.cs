@@ -7,6 +7,7 @@ using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.Mappers;
 using ErpOnlineOrder.Application.DTOs.CustomerDTOs;
 using ErpOnlineOrder.Application.DTOs.OrganizationDTOs;
+using ErpOnlineOrder.Application.DTOs.CustomerDTOs;
 using ErpOnlineOrder.Domain.Models;
 
 namespace ErpOnlineOrder.WebAPI.Controllers
@@ -150,22 +151,25 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [HttpGet("{customerId}/organization")]
         public async Task<IActionResult> GetOrganizationByCustomerId(int customerId)
         {
-            var org = await _organizationService.GetByCustomerIdAsync(customerId);
-            if (org == null)
-                return Ok(ApiResponse<UpdateOrganizationByCustomerDto>.Ok(null));
+            var customer = await _customerRepository.GetByIdBasicAsync(customerId);
+            if (customer == null)
+                return NotFound(ApiResponse<object>.Fail("Không tìm thấy khách hàng."));
 
-            // Map entity to DTO
-            var dto = new UpdateOrganizationByCustomerDto
+            var org = await _organizationService.GetByIdAsync(customer.Organization_information_id);
+
+            var viewDto = new CustomerOrganizationViewDto
             {
                 Customer_id = customerId,
-                Organization_name = org.Organization_name,
-                Address = org.Address,
-                Tax_number = org.Tax_number,
-                Recipient_name = org.Recipient_name,
-                Recipient_phone = org.Recipient_phone,
-                Recipient_address = org.Recipient_address
+                Organization_information_id = customer.Organization_information_id,
+                Organization_code = org?.Organization_code ?? string.Empty,
+                Organization_name = org?.Organization_name ?? string.Empty,
+                Organization_address = org?.Address ?? string.Empty,
+                Tax_number = org?.Tax_number ?? string.Empty,
+                Recipient_name = customer.Recipient_name,
+                Recipient_phone = customer.Recipient_phone,
+                Recipient_address = customer.Recipient_address
             };
-            return Ok(ApiResponse<UpdateOrganizationByCustomerDto>.Ok(dto));
+            return Ok(ApiResponse<CustomerOrganizationViewDto>.Ok(viewDto));
         }
 
         [HttpPut("organization")]

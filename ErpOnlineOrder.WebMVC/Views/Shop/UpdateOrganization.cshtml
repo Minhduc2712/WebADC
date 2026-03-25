@@ -1,8 +1,9 @@
-@model UpdateOrganizationByCustomerDto
+@model ErpOnlineOrder.Application.DTOs.CustomerDTOs.UpdateOrganizationByCustomerDto
 
 @{
     ViewData["Title"] = "Chỉnh sửa thông tin đơn vị";
     Layout = "~/Views/Shared/_ShopLayout.cshtml";
+    var organizations = ViewBag.Organizations as List<ErpOnlineOrder.Application.DTOs.OrganizationDTOs.OrganizationDTO> ?? new List<ErpOnlineOrder.Application.DTOs.OrganizationDTOs.OrganizationDTO>();
 }
 
 <!-- Breadcrumb -->
@@ -60,20 +61,18 @@
                                 </h6>
 
                                 <div class="row g-4 mb-5">
-                                    <div class="col-md-8">
-                                        <label asp-for="Organization_name" class="form-label" style="font-weight: 600; color: #333; font-size: 1.1rem; margin-bottom: 8px;">Tên đơn vị <span class="text-danger">*</span></label>
-                                        <input asp-for="Organization_name" class="form-control form-control-lg" placeholder="Tên công ty / đơn vị" style="border-radius: 12px; padding: 16px 20px; border: 1.5px solid #e0e0e0; transition: border-color 0.2s; font-size: 1.1rem; height: auto;" />
-                                        <span asp-validation-for="Organization_name" class="text-danger" style="font-size: 0.9rem;"></span>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label asp-for="Tax_number" class="form-label" style="font-weight: 600; color: #333; font-size: 1.1rem; margin-bottom: 8px;">Mã số thuế</label>
-                                        <input asp-for="Tax_number" class="form-control form-control-lg" type="text" placeholder="VD: 0123456789" style="border-radius: 12px; padding: 16px 20px; border: 1.5px solid #e0e0e0; font-size: 1.1rem; height: auto;" />
-                                        <span asp-validation-for="Tax_number" class="text-danger" style="font-size: 0.9rem;"></span>
-                                    </div>
                                     <div class="col-12">
-                                        <label asp-for="Address" class="form-label" style="font-weight: 600; color: #333; font-size: 1.1rem; margin-bottom: 8px;">Địa chỉ đơn vị <span class="text-danger">*</span></label>
-                                        <input asp-for="Address" class="form-control form-control-lg" placeholder="Địa chỉ trụ sở" style="border-radius: 12px; padding: 16px 20px; border: 1.5px solid #e0e0e0; font-size: 1.1rem; height: auto;" />
-                                        <span asp-validation-for="Address" class="text-danger" style="font-size: 0.9rem;"></span>
+                                        <label asp-for="Organization_information_id" class="form-label" style="font-weight: 600; color: #333; font-size: 1.1rem; margin-bottom: 8px;">Đơn vị <span class="text-danger">*</span></label>
+                                        <select asp-for="Organization_information_id" class="form-select form-select-lg" style="border-radius: 12px; padding: 16px 20px; border: 1.5px solid #e0e0e0; font-size: 1.1rem; height: auto;">
+                                            <option value="0">-- Chọn đơn vị --</option>
+                                            @foreach (var org in organizations)
+                                            {
+                                                <option value="@org.Id" selected="@(Model.Organization_information_id == org.Id)">
+                                                    @org.Organization_name (@org.Organization_code)
+                                                </option>
+                                            }
+                                        </select>
+                                        <span asp-validation-for="Organization_information_id" class="text-danger" style="font-size: 0.9rem;"></span>
                                     </div>
                                 </div>
 
