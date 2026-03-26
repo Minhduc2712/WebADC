@@ -34,5 +34,6 @@ namespace ErpOnlineOrder.Domain.Models
         public DateTime Updated_at { get; set; }
         public bool Is_deleted { get; set; }
         public virtual ICollection<Package_product> Package_products { get; set; } = new List<Package_product>();
+        public virtual ICollection<Customer_package> Customer_packages { get; set; } = new List<Customer_package>();
     }
 }

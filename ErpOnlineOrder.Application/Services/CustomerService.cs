@@ -17,11 +17,18 @@ namespace ErpOnlineOrder.Application.Services
     {
         private readonly ICustomerRepository _customerRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IStaffRepository _staffRepository;
+        private readonly ICustomerManagementRepository _customerManagementRepository;
+        private readonly IPermissionService _permissionService;
 
-        public CustomerService(ICustomerRepository customerRepository, IUserRepository userRepository)
+
+        public CustomerService(ICustomerRepository customerRepository, IUserRepository userRepository, IStaffRepository staffRepository, ICustomerManagementRepository customerManagementRepository, IPermissionService permissionService)
         {
             _customerRepository = customerRepository;
             _userRepository = userRepository;
+            _staffRepository = staffRepository;
+            _customerManagementRepository = customerManagementRepository;
+            _permissionService = permissionService;
         }
 
         public async Task<Customer?> GetByIdAsync(int id)
@@ -41,8 +48,18 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<PagedResult<CustomerDTO>> GetAllPagedAsync(CustomerFilterRequest request, int? userId = null)
         {
-            var paged = await _customerRepository.GetPagedCustomersAsync(request);
-            var dtos = paged.Items.Select(EntityMappers.ToCustomerDto).ToList();
+            IEnumerable<int>? customerIds = null;
+            if (userId.HasValue && userId.Value > 0 && !await _permissionService.IsAdminAsync(userId.Value))
+            {
+                var staff = await _staffRepository.GetByUserIdAsync(userId.Value);
+                if (staff != null)
+                {
+                    customerIds = await _customerManagementRepository.GetCustomerIdsByStaffAsync(staff.Id);
+                }
+            }
+
+            var paged = await _customerRepository.GetPagedCustomersDTOAsync(request, customerIds);
+            var dtos = paged.Items.ToList();
             return new PagedResult<CustomerDTO>
             {
                 Items = dtos,

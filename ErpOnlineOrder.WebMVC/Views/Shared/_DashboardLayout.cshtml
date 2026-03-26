@@ -476,7 +476,7 @@
             <li><a href="@Url.Action("Index", "Order")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Order" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")"><i class="fas fa-home"></i> Trang chủ</a></li>
             
             @* QUẢN LÝ - Hiển thị nếu có ít nhất 1 quyền VIEW *@
-            @if (Context.Session.HasAnyPermission("PRODUCT_VIEW", "ORDER_VIEW", "CUSTOMER_VIEW", "CUSTOMER_ASSIGN", "CUSTOMER_PRODUCT_VIEW", "INVOICE_VIEW"))
+            @if (Context.Session.HasAnyPermission("PRODUCT_VIEW", "ORDER_VIEW", "CUSTOMER_VIEW", "CUSTOMER_ASSIGN", "CUSTOMER_PRODUCT_VIEW", "INVOICE_VIEW", "CUSTOMER_PACKAGE_VIEW"))
             {
                 <li class="menu-title">QUẢN LÝ</li>
                 
@@ -503,6 +503,10 @@
                 {
                     <li><a href="@Url.Action("Index", "Invoice")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Invoice" ? "active" : "")"><i class="fas fa-file-invoice"></i> Hóa đơn</a></li>
                 }
+                @if (Context.Session.HasPermission("CUSTOMER_PACKAGE_VIEW"))
+                {
+                    <li><a href="@Url.Action("Index", "CustomerPackage")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "CustomerPackage" ? "active" : "")"><i class="fas fa-user-tag"></i> Gói khách hàng</a></li>
+                }
             }
             
             @* QUẢN LÝ XUẤT KHO - Phiếu xuất kho *@
@@ -528,7 +532,7 @@
             @{
                 var controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
             }
-            @if (Context.Session.HasAnyPermission("CATEGORY_VIEW", "DISTRIBUTOR_VIEW", "REGION_VIEW", "PROVINCE_VIEW", "WAREHOUSE_VIEW"))
+            @if (Context.Session.HasAnyPermission("CATEGORY_VIEW", "DISTRIBUTOR_VIEW", "REGION_VIEW", "PROVINCE_VIEW", "WAREHOUSE_VIEW", "PACKAGE_VIEW"))
             {
                 <li class="menu-title">DANH MỤC CHUNG</li>
                 @if (Context.Session.HasPermission("CATEGORY_VIEW"))
@@ -562,6 +566,10 @@
                 @if (Context.Session.HasPermission("WAREHOUSE_VIEW"))
                 {
                     <li><a href="@Url.Action("Index", "Warehouse")" class="@(controller == "Warehouse" ? "active" : "")"><i class="fas fa-warehouse"></i> Kho hàng</a></li>
+                }
+                @if (Context.Session.HasPermission("PACKAGE_VIEW"))
+                {
+                    <li><a href="@Url.Action("Index", "Package")" class="@(controller == "Package" ? "active" : "")"><i class="fas fa-cube"></i> Gói sản phẩm</a></li>
                 }
             }
             

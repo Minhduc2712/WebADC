@@ -12,6 +12,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Linq.Expressions;
+using ErpOnlineOrder.Application.DTOs;
+using DocumentFormat.OpenXml.Office2010.Excel;
 
 namespace ErpOnlineOrder.Infrastructure.Repositories
 {
@@ -73,6 +75,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         {
             var query = _context.Customers
                 .AsNoTracking()
+                .Where(c => !c.Is_deleted)
                 .Include(c => c.User)
                 .Include(c => c.Customer_managements).ThenInclude(cm => cm.Province)
                 .AsQueryable();
@@ -94,6 +97,45 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
             query = query.OrderByDescending(c => c.Created_at);
             return await query.ToPagedListAsync(request);
+        }
+
+        public async Task<PagedResult<CustomerDTO>> GetPagedCustomersDTOAsync(CustomerFilterRequest request, IEnumerable<int>? customerIds = null)
+        {
+            var query = _context.Customers.AsNoTracking().Where(c => !c.Is_deleted);
+
+            if (customerIds != null)
+            {
+                var idsList = customerIds.ToList();
+                query = query.Where(c => idsList.Contains(c.Id));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+            {
+                var search = request.SearchTerm.Trim().ToLowerInvariant();
+                query = query.Where(c =>
+                    (c.Full_name != null && c.Full_name.ToLower().Contains(search)) ||
+                    (c.Customer_code != null && c.Customer_code.ToLower().Contains(search)) ||
+                    (c.Phone_number != null && c.Phone_number.Contains(search))
+                );
+            }
+
+            if (request.RegionId.HasValue)
+            {
+                query = query.Where(c => c.Customer_managements.Any(cm => cm.Province != null && cm.Province.Region_id == request.RegionId.Value));
+            }
+
+            query = query.OrderByDescending(c => c.Created_at);
+            var dtoQuery = query.Select(c => new CustomerDTO
+                {
+                    Id = c.Id,
+                    Customer_code = c.Customer_code,
+                    Full_name = c.Full_name,
+                    Phone_number = c.Phone_number,
+                    
+                    Username = c.User != null ? c.User.Username : null
+                });
+
+            return await dtoQuery.ToPagedListAsync(request);
         }
 
         private IQueryable<CustomerSelectDto> ProjectToCustomerSelectDto(IQueryable<Customer> query)

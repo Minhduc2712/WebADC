@@ -60,7 +60,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         private IQueryable<Product> GetBaseQuery()
         {
-            return _context.Products.AsNoTracking();
+            return _context.Products.Where(p => !p.Is_deleted).AsNoTracking();
         }
 
         public async Task<Dictionary<int, ProductValidationInfoDto>> GetProductValidationMapAsync(int customerId, List<int> productIds)

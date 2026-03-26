@@ -1,3 +1,4 @@
+using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.DTOs.CustomerDTOs;
 using ErpOnlineOrder.Domain.Models;
 using System.Collections.Generic;
@@ -12,7 +13,9 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
         Task<Customer?> GetByIdBasicAsync(int id);
         Task<Customer?> GetByUserIdAsync(int userId);
         Task<IEnumerable<Customer>> GetAllAsync();
-        Task<int> CountAsync(Expression<Func<Customer, bool>>? predicate = null);        Task<PagedResult<Customer>> GetPagedCustomersAsync(CustomerFilterRequest request);
+        Task<int> CountAsync(Expression<Func<Customer, bool>>? predicate = null);
+        Task<PagedResult<Customer>> GetPagedCustomersAsync(CustomerFilterRequest request);
+        Task<PagedResult<CustomerDTO>> GetPagedCustomersDTOAsync(CustomerFilterRequest request, IEnumerable<int>? customerIds = null);
         Task<IEnumerable<CustomerSelectDto>> GetForSelectAsync();
         Task<bool> ExistsByPhoneAsync(string phone, int? excludeId = null);
         Task AddAsync(Customer customer);

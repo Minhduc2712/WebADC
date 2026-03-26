@@ -27,6 +27,8 @@ public class OrderFilterRequest : BasePaginationRequest
 public class CustomerFilterRequest : BasePaginationRequest
 {
     public int? RegionId { get; set; }
+
+    public int? StaffCustomerIds { get; set; }
 }
 
 // Invoice – thêm filter riêng

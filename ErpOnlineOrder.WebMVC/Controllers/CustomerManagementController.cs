@@ -70,8 +70,12 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
+                var roles = HttpContext.Session.GetString("Roles") ?? "";
+                bool isAdmin = roles.Contains("ROLE_ADMIN");
+                int? filterStaffId = isAdmin ? null : GetCurrentUserId();
+                
                 var result = await _customerApiClient.GetPagedAsync(page, pageSize, search, regionId);
-                var allAssignments = await _customerManagementApiClient.GetAllAsync(null, null);
+                var allAssignments = await _customerManagementApiClient.GetAllAsync(filterStaffId, null);
                 ViewBag.Assignments = allAssignments.ToList();
                 ViewBag.Search = search;
                 ViewBag.PageSize = pageSize;

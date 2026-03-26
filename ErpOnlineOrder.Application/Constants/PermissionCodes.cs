@@ -4,7 +4,7 @@ namespace ErpOnlineOrder.Application.Constants
     {
         public static readonly string[] CategoryOrder =
         {
-            "PRODUCT", "CATEGORY", "REGION", "PROVINCE", "WARD", "ORGANIZATION", "DISTRIBUTOR",
+            "PRODUCT", "CATEGORY", "PACKAGE", "REGION", "PROVINCE", "WARD", "ORGANIZATION", "DISTRIBUTOR",
             "CUSTOMER", "ORDER", "INVOICE", "WAREHOUSE", "WAREHOUSE_EXPORT", "STOCK", "STAFF",
             "ROLE", "PERMISSION", "SETTINGS"
         };
@@ -23,6 +23,7 @@ namespace ErpOnlineOrder.Application.Constants
             { "WARD", "Phường/Xã" },
             { "ORGANIZATION", "Tổ chức" },
             { "DISTRIBUTOR", "Nhà phân phối" },
+            { "PACKAGE", "Gói sản phẩm" },
             { "CUSTOMER", "Danh mục khách hàng" },
             { "ORDER", "Đơn hàng" },
             { "INVOICE", "Hóa đơn" },
@@ -98,6 +99,12 @@ namespace ErpOnlineOrder.Application.Constants
         public const string OrganizationUpdate = "ORGANIZATION_UPDATE";
         public const string OrganizationDelete = "ORGANIZATION_DELETE";
 
+        // Package Permissions
+        public const string PackageView = "PACKAGE_VIEW";
+        public const string PackageCreate = "PACKAGE_CREATE";
+        public const string PackageUpdate = "PACKAGE_UPDATE";
+        public const string PackageDelete = "PACKAGE_DELETE";
+
         // Customer Permissions
         public const string CustomerView = "CUSTOMER_VIEW";
         public const string CustomerCreate = "CUSTOMER_CREATE";
@@ -106,6 +113,8 @@ namespace ErpOnlineOrder.Application.Constants
         public const string CustomerAssign = "CUSTOMER_ASSIGN";
         public const string CustomerProductView = "CUSTOMER_PRODUCT_VIEW";
         public const string CustomerProductAssign = "CUSTOMER_PRODUCT_ASSIGN";
+        public const string CustomerPackageView = "CUSTOMER_PACKAGE_VIEW";
+        public const string CustomerPackageAssign = "CUSTOMER_PACKAGE_ASSIGN";
 
         // Order Permissions
         public const string OrderView = "ORDER_VIEW";

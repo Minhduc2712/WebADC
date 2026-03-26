@@ -607,6 +607,39 @@ CREATE TABLE OrganizationInformations (
 );
 GO
 
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'CustomerPackages')
+
+CREATE TABLE CustomerPackages (
+
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+
+    Customer_id INT NOT NULL,
+
+    Package_id INT NOT NULL,
+
+    Created_by INT NOT NULL DEFAULT 0,
+
+    Created_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+
+    Updated_by INT NOT NULL DEFAULT 0,
+
+    Updated_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+
+    Is_deleted BIT NOT NULL DEFAULT 0,
+
+
+    CONSTRAINT FK_CustomerPackages_Customers FOREIGN KEY (Customer_id) REFERENCES Customers(Id) ON DELETE NO ACTION,
+
+    CONSTRAINT FK_CustomerPackages_Packages FOREIGN KEY (Package_id) REFERENCES Packages(Id) ON DELETE NO ACTION,
+
+    CONSTRAINT UQ_CustomerPackages UNIQUE (Customer_id, Package_id)
+
+);
+
+GO
+
+
+
 -- =============================================
 -- 10. CAI DAT HE THONG
 -- =============================================

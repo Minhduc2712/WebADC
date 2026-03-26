@@ -51,6 +51,7 @@ namespace ErpOnlineOrder.Infrastructure.Persistence
         public DbSet<Customer_product> CustomerProducts => Set<Customer_product>();
         public DbSet<Package> Packages => Set<Package>();
         public DbSet<Package_product> PackageProducts => Set<Package_product>();
+        public DbSet<Customer_package> CustomerPackages => Set<Customer_package>();
         public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
         public DbSet<Staff_region_rule> StaffRegionRules => Set<Staff_region_rule>();
 
@@ -175,6 +176,7 @@ namespace ErpOnlineOrder.Infrastructure.Persistence
             {
                 entity.ToTable("UserPermissions");
                 entity.HasKey(x => x.Id);
+                entity.HasQueryFilter(up => !up.IsDeleted);
                 entity.Property(x => x.UserId).HasColumnName("UserId");
                 entity.Property(x => x.PermissionId).HasColumnName("PermissionId");
                 entity.Property(x => x.Note).HasMaxLength(500);
@@ -626,6 +628,27 @@ namespace ErpOnlineOrder.Infrastructure.Persistence
                     .HasForeignKey(x => x.Product_id)
                     .OnDelete(DeleteBehavior.Restrict);
                 entity.HasIndex(x => new { x.Package_id, x.Product_id }).IsUnique();
+            });
+
+            // Customer_package configuration
+            modelBuilder.Entity<Customer_package>(entity =>
+            {
+                entity.ToTable("CustomerPackages");
+                entity.HasKey(x => x.Id);
+                entity.HasQueryFilter(cp => !cp.Is_deleted);
+                entity.HasIndex(x => new
+                {
+                    x.Customer_id,
+                    x.Package_id
+                }).IsUnique();
+                entity.HasOne(x => x.Customer)
+                    .WithMany(x => x.Customer_packages)
+                    .HasForeignKey(x => x.Customer_id)
+                    .OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(x => x.Package)
+                    .WithMany(x => x.Customer_packages)
+                    .HasForeignKey(x => x.Package_id)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             // SystemSetting configuration

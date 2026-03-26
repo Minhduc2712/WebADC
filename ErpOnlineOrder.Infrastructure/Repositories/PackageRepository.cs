@@ -17,6 +17,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
         private IQueryable<Package> GetBaseQuery()
         {
             return _context.Packages
+                .Where(p => !p.Is_deleted)
                 .Include(p => p.Organization_information)
                 .Include(p => p.Region)
                 .Include(p => p.Province)

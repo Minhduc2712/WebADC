@@ -90,10 +90,7 @@
                                     <tr>
                                         <td>
                                             <div class="d-flex align-items-center">
-                                                <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center me-2"
-                                                     style="width: 35px; height: 35px; font-size: 14px;">
-                                                    @(assign.Staff?.Full_name?.Length > 0 ? assign.Staff.Full_name.Substring(0, 1).ToUpper() : "?")
-                                                </div>
+                                                
                                                 <div>
                                                     <strong>@(assign.Staff?.Full_name ?? "N/A")</strong>
                                                     <div class="small text-muted">@(assign.Staff?.Staff_code ?? "")</div>

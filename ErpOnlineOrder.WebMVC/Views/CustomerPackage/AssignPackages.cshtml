@@ -1,0 +1,161 @@
+@model List<ErpOnlineOrder.Application.DTOs.PackageDTOs.PackageDto>
+@{
+    ViewData["Title"] = "Gán gói sản phẩm cho khách hàng";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var customer = ViewBag.Customer as ErpOnlineOrder.Application.DTOs.CustomerDTO;
+    var assignedPackageIds = ViewBag.AssignedPackageIds as HashSet<int> ?? new HashSet<int>();
+    var customerId = (int)(ViewBag.CustomerId ?? 0);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1"><i class="fas fa-cube me-2 text-primary"></i>Gán gói sản phẩm cho khách hàng</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "Order")">Trang chủ</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "CustomerManagement")">Khách hàng</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Details", "CustomerManagement", new { id = customer?.Id })">@(customer?.Full_name ?? "")</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", new { customerId = customer?.Id })">Gói sản phẩm</a></li>
+                <li class="breadcrumb-item active">Gán gói</li>
+            </ol>
+        </nav>
+    </div>
+    <a href="@Url.Action("Index", new { customerId = customer?.Id })" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Quay lại
+    </a>
+</div>
+
+@if (customer != null)
+{
+    <div class="table-card mb-4">
+        <div class="card-body p-3">
+            <div>
+                <strong>@customer.Full_name</strong>
+                <span class="badge bg-secondary ms-2">@customer.Customer_code</span>
+                <div class="small text-muted">@(customer.Phone_number ?? "")</div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Bộ lọc -->
+<div class="table-card mb-4">
+    <div class="card-header">
+        <i class="fas fa-filter me-2"></i>Bộ lọc tìm kiếm
+    </div>
+    <div class="card-body p-4">
+        <form asp-action="AssignPackages" method="get" id="filterForm">
+            <input type="hidden" name="customerId" value="@customerId" />
+            <div class="row g-3 align-items-end">
+                <div class="col-md-6">
+                    <label class="form-label">Tìm kiếm</label>
+                    <input type="text" name="search" value="@ViewBag.Search" class="form-control"
+                           placeholder="Tìm theo tên, mã gói..." />
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-1"></i>Tìm kiếm
+                    </button>
+                </div>
+                <div class="col-md-3">
+                    <a href="@Url.Action("AssignPackages", new { customerId })" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-redo me-1"></i>Reset
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Danh sách gói -->
+<div class="table-card">
+    <div class="card-header">
+        <i class="fas fa-cubes me-2"></i>Danh sách gói sản phẩm (@Model.Count)
+    </div>
+    <div class="card-body p-0">
+        @if (!Model.Any())
+        {
+            <div class="text-center py-5 text-muted">
+                <i class="fas fa-inbox fa-3x mb-3 d-block opacity-50"></i>
+                <p class="mb-0">Không tìm thấy gói nào</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Mã gói</th>
+                            <th>Tên gói</th>
+                            <th>Khu vực</th>
+                            <th>Mô tả</th>
+                            <th style="width: 120px;">Trạng thái</th>
+                            <th style="width: 120px;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var package in Model)
+                        {
+                            var isAssigned = assignedPackageIds.Contains(package.Id);
+                            <tr class="@(isAssigned ? "table-success" : "")">
+                                <td><span class="badge bg-secondary">@package.Package_code</span></td>
+                                <td><strong>@package.Package_name</strong></td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(package.Region_name))
+                                    {
+                                        <span class="badge bg-info me-1">@package.Region_name</span>
+                                    }
+                                    @if (!string.IsNullOrEmpty(package.Province_name))
+                                    {
+                                        <span class="badge bg-light text-dark me-1">@package.Province_name</span>
+                                    }
+                                    @if (!string.IsNullOrEmpty(package.Ward_name))
+                                    {
+                                        <span class="badge bg-light text-dark">@package.Ward_name</span>
+                                    }
+                                </td>
+                                <td class="text-muted small">@(package.Description ?? "-")</td>
+                                <td>
+                                    @if (isAssigned)
+                                    {
+                                        <span class="badge bg-success"><i class="fas fa-check me-1"></i>Đã gán</span>
+                                    }
+                                    else if (!package.Is_active)
+                                    {
+                                        <span class="badge bg-secondary">Ngừng hoạt động</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-outline-secondary text-muted">Chưa gán</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!isAssigned && package.Is_active)
+                                    {
+                                        <form method="post" asp-action="Assign" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="customerId" value="@customerId" />
+                                            <input type="hidden" name="packageId" value="@package.Id" />
+                                            <button type="submit" class="btn btn-sm btn-primary">
+                                                <i class="fas fa-plus me-1"></i>Gán
+                                            </button>
+                                        </form>
+                                    }
+                                    else if (isAssigned)
+                                    {
+                                        <span class="text-success small"><i class="fas fa-check-circle me-1"></i>Đã gán</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">-</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

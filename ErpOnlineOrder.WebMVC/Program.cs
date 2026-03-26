@@ -68,6 +68,8 @@ builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IWarehouseE
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IStockApiClient, ErpOnlineOrder.WebMVC.Services.StockApiClient>();
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.ISettingApiClient, ErpOnlineOrder.WebMVC.Services.SettingApiClient>();
 builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IOrganizationApiClient, ErpOnlineOrder.WebMVC.Services.OrganizationApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.IPackageApiClient, ErpOnlineOrder.WebMVC.Services.PackageApiClient>();
+builder.Services.AddScoped<ErpOnlineOrder.WebMVC.Services.Interfaces.ICustomerPackageApiClient, ErpOnlineOrder.WebMVC.Services.CustomerPackageApiClient>();
 
 // Logging
 builder.Services.AddLogging(logging =>

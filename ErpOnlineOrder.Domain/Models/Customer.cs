@@ -31,5 +31,6 @@ namespace ErpOnlineOrder.Domain.Models
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
         public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
         public virtual ICollection<Customer_product> Customer_Products { get; set; } = new List<Customer_product>();
+        public virtual ICollection<Customer_package> Customer_packages { get; set; } = new List<Customer_package>();
     }
 }

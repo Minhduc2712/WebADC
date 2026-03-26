@@ -54,8 +54,8 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         [HttpGet("paged")]
         public async Task<IActionResult> GetCustomersPaged([FromQuery] CustomerFilterRequest request)
         {
-            var result = await _customerService.GetAllPagedAsync(request, TryGetCurrentUserId());
             var userId = TryGetCurrentUserId();
+            var result = await _customerService.GetAllPagedAsync(request, userId);
             if (userId.HasValue && userId.Value > 0)
             {
                 var permissions = (await _permissionService.GetUserPermissionsAsync(userId.Value)).ToHashSet();

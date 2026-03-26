@@ -72,9 +72,6 @@ namespace ErpOnlineOrder.Application.Services
                 Package_products = dto.Products.Select(p => new Package_product
                 {
                     Product_id = p.Product_id,
-                    Custom_price = p.Custom_price,
-                    Discount_percent = p.Discount_percent,
-                    Max_quantity = p.Max_quantity,
                     Is_active = p.Is_active,
                     Created_by = createdBy,
                     Updated_by = createdBy,
@@ -121,9 +118,6 @@ namespace ErpOnlineOrder.Application.Services
             {
                 Package_id = packageId,
                 Product_id = dto.Product_id,
-                Custom_price = dto.Custom_price,
-                Discount_percent = dto.Discount_percent,
-                Max_quantity = dto.Max_quantity,
                 Is_active = dto.Is_active,
                 Created_by = createdBy,
                 Updated_by = createdBy,

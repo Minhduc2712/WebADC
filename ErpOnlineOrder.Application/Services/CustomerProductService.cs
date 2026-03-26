@@ -11,13 +11,16 @@ namespace ErpOnlineOrder.Application.Services
     public class CustomerProductService : ICustomerProductService
     {
         private readonly ICustomerProductRepository _customerProductRepository;
+        private readonly ICustomerPackageRepository _customerPackageRepository;
         private readonly IEmailQueue _emailQueue;
 
         public CustomerProductService(
             ICustomerProductRepository customerProductRepository,
+            ICustomerPackageRepository customerPackageRepository,
             IEmailQueue emailQueue)
         {
             _customerProductRepository = customerProductRepository;
+            _customerPackageRepository = customerPackageRepository;
             _emailQueue = emailQueue;
         }
 
@@ -188,7 +191,21 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<bool> CanCustomerOrderProductAsync(int customerId, int productId)
         {
-            return await _customerProductRepository.ExistsAsync(customerId, productId, onlyActive: true);
+            // 1. Nếu có bản ghi trực tiếp với Is_Excluded = true → từ chối
+            var direct = await _customerProductRepository.GetWithFiltersAsync(customerId, productId);
+            if (direct != null && !direct.Is_deleted && direct.Is_active && direct.Is_Excluded)
+                return false;
+
+            // 2. Sản phẩm có trong một gói đang gán cho khách hàng → cho phép
+            var packageProductIds = await _customerPackageRepository.GetProductIdsByCustomerIdAsync(customerId);
+            if (packageProductIds.Contains(productId))
+                return true;
+
+            // 3. Có bản ghi trực tiếp active không Excluded → cho phép (gán ngoài gói)
+            if (direct != null && !direct.Is_deleted && direct.Is_active && !direct.Is_Excluded)
+                return true;
+
+            return false;
         }
 
 

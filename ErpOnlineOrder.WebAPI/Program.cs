@@ -82,6 +82,7 @@ builder.Services.AddScoped<ICustomerManagementRepository, CustomerManagementRepo
 builder.Services.AddScoped<IStaffRegionRuleRepository, StaffRegionRuleRepository>();
 builder.Services.AddScoped<ICustomerProductRepository, CustomerProductRepository>();
 builder.Services.AddScoped<IPackageRepository, PackageRepository>();
+builder.Services.AddScoped<ICustomerPackageRepository, CustomerPackageRepository>();
 builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
 builder.Services.AddScoped<IWarehouseExportRepository, WarehouseExportRepository>();
 builder.Services.AddScoped<IAuthorRepository, AuthorRepository>();
@@ -114,6 +115,7 @@ builder.Services.AddScoped<ICustomerManagementService, CustomerManagementService
 builder.Services.AddScoped<IStaffRegionRuleService, StaffRegionRuleService>();
 builder.Services.AddScoped<ICustomerProductService, CustomerProductService>();
 builder.Services.AddScoped<IPackageService, PackageService>();
+builder.Services.AddScoped<ICustomerPackageService, CustomerPackageService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 builder.Services.AddScoped<IWarehouseExportService, WarehouseExportService>();
 builder.Services.AddScoped<IAuthorService, AuthorService>();

@@ -69,6 +69,20 @@ IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'CATEGORY_DELET
     INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('CATEGORY_DELETE', NULL, 0, 0, GETDATE(), 0, GETDATE(), 0);
 
+-- Package
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'PACKAGE_VIEW')
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('PACKAGE_VIEW', NULL, 0, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'PACKAGE_CREATE')
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('PACKAGE_CREATE', NULL, 0, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'PACKAGE_UPDATE')
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('PACKAGE_UPDATE', NULL, 0, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'PACKAGE_DELETE')
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('PACKAGE_DELETE', NULL, 0, 0, GETDATE(), 0, GETDATE(), 0);
+
 -- Region
 IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'REGION_VIEW')
     INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
@@ -147,6 +161,12 @@ IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'CUSTOMER_PRODU
 IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'CUSTOMER_PRODUCT_ASSIGN')
     INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('CUSTOMER_PRODUCT_ASSIGN', NULL, 0, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'CUSTOMER_PACKAGE_VIEW')
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('CUSTOMER_PACKAGE_VIEW', NULL, 0, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'CUSTOMER_PACKAGE_ASSIGN')
+    INSERT INTO Permissions (Permission_code, Parent_id, Is_special, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('CUSTOMER_PACKAGE_ASSIGN', NULL, 0, 0, GETDATE(), 0, GETDATE(), 0);
 
 -- Order
 IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Permission_code = 'ORDER_VIEW')
