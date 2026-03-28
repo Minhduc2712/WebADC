@@ -8,6 +8,8 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
         Task<Permission?> GetByCodeAsync(string permissionCode);
         Task<bool> ExistsByCodeAsync(string code, int? excludeId = null);
         Task<IEnumerable<Permission>> GetAllAsync();
+        Task<IEnumerable<Permission>> GetAllNonSpecialAsync();
+        Task<IEnumerable<Permission>> GetByModuleCodeAsync(string moduleCode);
         Task<IEnumerable<Permission>> GetByParentIdAsync(int? parentId);
         Task<IEnumerable<Permission>> GetSpecialPermissionsAsync();
         Task<Permission> AddAsync(Permission permission);

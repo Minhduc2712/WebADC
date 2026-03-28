@@ -16,6 +16,11 @@ namespace ErpOnlineOrder.WebMVC.Services
             return await GetAsync<IEnumerable<WarehouseExportDto>>("warehouseexport", cancellationToken) ?? Array.Empty<WarehouseExportDto>();
         }
 
+        public async Task<IEnumerable<WarehouseExportDto>> GetMergeableAsync(CancellationToken cancellationToken = default)
+        {
+            return await GetAsync<IEnumerable<WarehouseExportDto>>("warehouseexport/mergeable", cancellationToken) ?? Array.Empty<WarehouseExportDto>();
+        }
+
         public async Task<PagedResult<WarehouseExportDto>> GetPagedAsync(int page = 1, int pageSize = 20, string? status = null, string? searchTerm = null, CancellationToken cancellationToken = default)
         {
             var query = new List<string> { $"page={page}", $"pageSize={pageSize}" };

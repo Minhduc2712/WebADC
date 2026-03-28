@@ -35,6 +35,14 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             var result = await _exportService.GetAllPagedAsync(request, TryGetCurrentUserId());
             return Ok(ApiResponse<object>.Ok(result));
         }
+
+        [HttpGet("mergeable")]
+        public async Task<IActionResult> GetMergeable()
+        {
+            var result = await _exportService.GetMergeableAsync(TryGetCurrentUserId());
+            return Ok(ApiResponse<object>.Ok(result));
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {

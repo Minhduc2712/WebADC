@@ -447,8 +447,9 @@ namespace ErpOnlineOrder.Application.Services
 
         private async Task<int?> ResolveWarehouseForOrderAsync(Order order)
         {
+            if (!await _warehouseRepository.AnyAsync()) return null;
+
             var warehouses = (await _warehouseRepository.GetAllAsync()).ToList();
-            if (warehouses.Count == 0) return null;
 
             var productIds = order.Order_Details.Where(x => !x.Is_deleted).Select(x => x.Product_id).ToList();
 
@@ -495,8 +496,8 @@ namespace ErpOnlineOrder.Application.Services
                 else
                 {
                     // Nếu chưa có ai phụ trách, lấy mặc định cán bộ đầu tiên
-                    var anyStaff = await _staffRepository.GetAllAsync();
-                    staffId = anyStaff.FirstOrDefault()?.Id ?? throw new Exception("Không có cán bộ nào trong hệ thống để gán cho phiếu xuất.");
+                    var anyStaff = await _staffRepository.GetFirstAsync();
+                    staffId = anyStaff?.Id ?? throw new Exception("Không có cán bộ nào trong hệ thống để gán cho phiếu xuất.");
                 }
             }
 

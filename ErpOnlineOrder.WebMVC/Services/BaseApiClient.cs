@@ -27,6 +27,10 @@ namespace ErpOnlineOrder.WebMVC.Services
                 
                 if (!response.IsSuccessStatusCode)
                 {
+                    // 404 = không tìm thấy tài nguyên, trả về null thay vì throw
+                    if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                        return default;
+
                     string errorMessage;
                     try
                     {

@@ -34,8 +34,7 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<IEnumerable<StaffAccountDto>> GetAllStaffAsync(int? currentUserId = null)
         {
-            var users = await _userRepository.GetAllAsync();
-            var staffUsers = users.Where(u => u.Staff != null && !u.Is_deleted);
+            var staffUsers = await _userRepository.GetAllStaffAsync();
             var list = staffUsers.Select(u => EntityMappers.ToStaffAccountDto(u)).ToList();
             if (currentUserId.HasValue && currentUserId.Value > 0)
             {

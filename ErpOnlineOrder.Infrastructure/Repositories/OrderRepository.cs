@@ -152,9 +152,21 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 }
             }
 
+            // Status filter is handled separately via EXISTS in the CTE anchor so that:
+            // - a parent with the status pulls in all its children
+            // - a child with the status pulls in its parent (and siblings)
+            string statusCondition = "";
             if (!string.IsNullOrWhiteSpace(request.Status))
             {
-                filterSql += " AND o.Order_status = @status";
+                statusCondition = @"AND (
+                        o.Order_status = @status
+                        OR EXISTS (
+                            SELECT 1 FROM Orders ch
+                            WHERE ch.Parent_order_id = o.Id
+                              AND ch.Order_status = @status
+                              AND ch.Is_deleted = 0
+                        )
+                    )";
                 parameters.Add(new SqlParameter("@status", request.Status));
             }
 
@@ -182,6 +194,9 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             parameters.Add(new SqlParameter("@skip", skip));
             parameters.Add(new SqlParameter("@take", request.PageSize));
 
+            // Single CTE query: anchor finds parent orders matching base filters + status condition
+            // (either parent itself has status, or any direct child has status).
+            // Recursive step expands all children without status restriction.
             string sql = $@"
                 WITH OrderTree AS (
                     SELECT 
@@ -192,6 +207,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                     FROM Orders o
                     LEFT JOIN Customers c ON o.Customer_id = c.Id
                     {filterSql}
+                    {statusCondition}
 
                     UNION ALL
 

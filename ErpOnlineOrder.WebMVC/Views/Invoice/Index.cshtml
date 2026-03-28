@@ -193,16 +193,27 @@
                                     }
                                 </td>
                                 <td>
-                                    <div class="btn-group btn-group-sm">
-                                        <a asp-action="Details" asp-route-id="@invoice.Id" class="btn btn-outline-primary" title="Xem chi tiết">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        @if (invoice.Status != "Completed" && invoice.Status != "Cancelled" && invoice.Status != "Merged" && (invoice.Details?.Count > 1 || invoice.Details?.Any(d => d.Quantity > 1) == true))
-                                        {
-                                            <a asp-action="Split" asp-route-id="@invoice.Id" class="btn btn-outline-info" title="Tách hóa đơn">
-                                                <i class="fas fa-expand-arrows-alt"></i>
-                                            </a>
-                                        }
+                                    <div class="dropdown">
+                                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
+                                                data-bs-toggle="dropdown" data-bs-strategy="fixed" data-bs-offset="0,4" aria-expanded="false">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li>
+                                                <a class="dropdown-item" asp-action="Details" asp-route-id="@invoice.Id">
+                                                    <i class="fas fa-eye me-2 text-primary"></i>Xem chi tiết
+                                                </a>
+                                            </li>
+                                            @if (invoice.Status != "Completed" && invoice.Status != "Cancelled" && invoice.Status != "Merged" && (invoice.Details?.Count > 1 || invoice.Details?.Any(d => d.Quantity > 1) == true))
+                                            {
+                                                <li><hr class="dropdown-divider" /></li>
+                                                <li>
+                                                    <a class="dropdown-item" asp-action="Split" asp-route-id="@invoice.Id">
+                                                        <i class="fas fa-expand-arrows-alt me-2 text-info"></i>Tách hóa đơn
+                                                    </a>
+                                                </li>
+                                            }
+                                        </ul>
                                     </div>
                                 </td>
                             </tr>

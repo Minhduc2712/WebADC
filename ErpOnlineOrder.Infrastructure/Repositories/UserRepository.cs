@@ -92,6 +92,13 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             return await GetBaseQuery(true).ToListAsync();
         }
 
+        public async Task<IEnumerable<User>> GetAllStaffAsync()
+        {
+            return await GetBaseQuery(true)
+                .Where(u => u.Staff != null)
+                .ToListAsync();
+        }
+
         public async Task<User?> GetByIdAsync(int id)
         {
             return await GetBaseQuery()

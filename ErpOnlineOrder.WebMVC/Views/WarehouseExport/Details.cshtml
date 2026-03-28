@@ -81,47 +81,49 @@
                 <i class="fas fa-info-circle me-2"></i>Thông tin phiếu
             </div>
             <div class="card-body">
-                <div class="mb-3">
-                    <label class="text-muted small">Mã phiếu xuất</label>
-                    <p class="mb-0 fw-semibold">@Model.Warehouse_export_code</p>
+                <div class="info-row">
+                    <span class="info-label">Mã phiếu xuất</span>
+                    <span class="info-value fw-semibold">@Model.Warehouse_export_code</span>
                 </div>
-                <div class="mb-3">
-                    <label class="text-muted small">Trạng thái</label>
-                    <p class="mb-0"><span class="badge @statusClass">@statusText</span></p>
-                    @if (canUpdate && allowedTransitions.Length > 0)
-                    {
-                        <form asp-action="UpdateStatus" method="post" class="mt-2" onsubmit="return confirm('Bạn có chắc muốn chuyển trạng thái?');">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@Model.Id" />
-                            <div class="input-group input-group-sm">
-                                <select name="status" class="form-select form-select-sm">
-                                    @foreach (var nextStatus in allowedTransitions)
-                                    {
-                                        <option value="@nextStatus">@ExportStatuses.ToDisplayText(nextStatus)</option>
-                                    }
-                                </select>
-                                <button type="submit" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-sync-alt"></i>
-                                </button>
-                            </div>
-                        </form>
-                    }
+                <div class="info-row">
+                    <span class="info-label">Trạng thái</span>
+                    <span class="info-value">
+                        <span class="badge @statusClass">@statusText</span>
+                        @if (canUpdate && allowedTransitions.Length > 0)
+                        {
+                            <form asp-action="UpdateStatus" method="post" class="mt-2" onsubmit="return confirm('Bạn có chắc muốn chuyển trạng thái?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <div class="input-group input-group-sm">
+                                    <select name="status" class="form-select form-select-sm">
+                                        @foreach (var nextStatus in allowedTransitions)
+                                        {
+                                            <option value="@nextStatus">@ExportStatuses.ToDisplayText(nextStatus)</option>
+                                        }
+                                    </select>
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                </div>
+                            </form>
+                        }
+                    </span>
                 </div>
-                <div class="mb-3">
-                    <label class="text-muted small">Ngày xuất</label>
-                    <p class="mb-0">@Model.Export_date.ToString("dd/MM/yyyy")</p>
+                <div class="info-row">
+                    <span class="info-label">Ngày xuất</span>
+                    <span class="info-value">@Model.Export_date.ToString("dd/MM/yyyy")</span>
                 </div>
-                <div class="mb-3">
-                    <label class="text-muted small">Ngày vận chuyển đến</label>
-                    <p class="mb-0">@(Model.Arrival_date?.ToString("dd/MM/yyyy") ?? "Chưa cập nhật")</p>
+                <div class="info-row">
+                    <span class="info-label">Ngày vận chuyển</span>
+                    <span class="info-value">@(Model.Arrival_date?.ToString("dd/MM/yyyy") ?? "Chưa cập nhật")</span>
                 </div>
-                <div class="mb-3">
-                    <label class="text-muted small">Kho xuất</label>
-                    <p class="mb-0">@Model.Warehouse_name</p>
+                <div class="info-row">
+                    <span class="info-label">Kho xuất</span>
+                    <span class="info-value">@Model.Warehouse_name</span>
                 </div>
-                <div class="mb-3">
-                    <label class="text-muted small">Hóa đơn liên quan</label>
-                    <p class="mb-0">
+                <div class="info-row">
+                    <span class="info-label">Hóa đơn LQ</span>
+                    <span class="info-value">
                         @if (!string.IsNullOrEmpty(Model.Invoice_code))
                         {
                             <span class="badge bg-info text-dark">@Model.Invoice_code</span>
@@ -130,17 +132,17 @@
                         {
                             <span class="text-muted">-</span>
                         }
-                    </p>
+                    </span>
                 </div>
                 @if (Model.Parent_export_id.HasValue)
                 {
-                    <div class="mb-3">
-                        <label class="text-muted small">Phiếu gốc</label>
-                        <p class="mb-0">
+                    <div class="info-row">
+                        <span class="info-label">Phiếu gốc</span>
+                        <span class="info-value">
                             <a href="@Url.Action("Details", new { id = Model.Parent_export_id })">
                                 @Model.Parent_export_code
                             </a>
-                        </p>
+                        </span>
                     </div>
                 }
             </div>
@@ -151,13 +153,13 @@
                 <i class="fas fa-user me-2"></i>Thông tin khách hàng
             </div>
             <div class="card-body">
-                <div class="mb-3">
-                    <label class="text-muted small">Tên khách hàng</label>
-                    <p class="mb-0 fw-semibold">@Model.Customer_name</p>
+                <div class="info-row">
+                    <span class="info-label">Khách hàng</span>
+                    <span class="info-value fw-semibold">@Model.Customer_name</span>
                 </div>
-                <div class="mb-0">
-                    <label class="text-muted small">Nhân viên xuất</label>
-                    <p class="mb-0">@Model.Staff_name</p>
+                <div class="info-row">
+                    <span class="info-label">Nhân viên xuất</span>
+                    <span class="info-value">@Model.Staff_name</span>
                 </div>
             </div>
         </div>
@@ -173,26 +175,28 @@
                     var allowedDeliveryTransitions = DeliveryStatuses.AllowedTransitions.TryGetValue(Model.Delivery_status, out var dTransitions)
                         ? dTransitions : Array.Empty<string>();
                 }
-                <div class="mb-3">
-                    <label class="text-muted small">Trạng thái giao hàng</label>
-                    <p class="mb-0"><span class="badge @deliveryClass">@deliveryText</span></p>
-                    @if (canUpdate && allowedDeliveryTransitions.Length > 0 && Model.Status != ExportStatuses.Cancelled)
-                    {
-                        <form asp-action="UpdateDeliveryStatus" asp-route-id="@Model.Id" method="post" class="mt-2" onsubmit="return confirm('Bạn có chắc muốn chuyển trạng thái giao hàng?');">
-                            @Html.AntiForgeryToken()
-                            <div class="input-group input-group-sm">
-                                <select name="status" class="form-select form-select-sm">
-                                    @foreach (var nextDelivery in allowedDeliveryTransitions)
-                                    {
-                                        <option value="@nextDelivery">@DeliveryStatuses.ToDisplayText(nextDelivery)</option>
-                                    }
-                                </select>
-                                <button type="submit" class="btn btn-info btn-sm">
-                                    <i class="fas fa-sync-alt"></i>
-                                </button>
-                            </div>
-                        </form>
-                    }
+                <div class="info-row">
+                    <span class="info-label">Trạng thái</span>
+                    <span class="info-value">
+                        <span class="badge @deliveryClass">@deliveryText</span>
+                        @if (canUpdate && allowedDeliveryTransitions.Length > 0 && Model.Status != ExportStatuses.Cancelled)
+                        {
+                            <form asp-action="UpdateDeliveryStatus" asp-route-id="@Model.Id" method="post" class="mt-2" onsubmit="return confirm('Bạn có chắc muốn chuyển trạng thái giao hàng?');">
+                                @Html.AntiForgeryToken()
+                                <div class="input-group input-group-sm">
+                                    <select name="status" class="form-select form-select-sm">
+                                        @foreach (var nextDelivery in allowedDeliveryTransitions)
+                                        {
+                                            <option value="@nextDelivery">@DeliveryStatuses.ToDisplayText(nextDelivery)</option>
+                                        }
+                                    </select>
+                                    <button type="submit" class="btn btn-info btn-sm">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                </div>
+                            </form>
+                        }
+                    </span>
                 </div>
             </div>
         </div>

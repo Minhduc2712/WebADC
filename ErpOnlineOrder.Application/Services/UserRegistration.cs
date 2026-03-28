@@ -19,8 +19,7 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<bool> RegisterAsync(RegisterCustomerDto dto)
         {
-            var users = await _userRepository.GetAllAsync();
-            if (users.Any(u => u.Username == dto.Username))
+            if (await _userRepository.ExistsByUsernameAsync(dto.Username))
                 return false;
 
             var user = new User

@@ -18,6 +18,24 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             _service = service;
         }
 
+        [HttpGet]
+        [RequirePermission(PermissionCodes.CustomerPackageView)]
+        public async Task<IActionResult> GetAll()
+        {
+            var result = await _service.GetAllAsync();
+            return Ok(ApiResponse<object>.Ok(result));
+        }
+
+        [HttpGet("paged")]
+        [RequirePermission(PermissionCodes.CustomerPackageView)]
+        public async Task<IActionResult> GetPaged(int page = 1, int pageSize = 20, string? search = null)
+        {
+            // Truyền userId xuống service, service tự xác định admin hay nhân viên
+            var userId = TryGetCurrentUserId();
+            var result = await _service.GetPagedAsync(page, pageSize, search, userId);
+            return Ok(ApiResponse<PagedResult<CustomerPackageDto>>.Ok(result));
+        }
+
         [HttpGet("customer/{customerId}")]
         [RequirePermission(PermissionCodes.CustomerPackageView)]
         public async Task<IActionResult> GetByCustomerId(int customerId)

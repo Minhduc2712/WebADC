@@ -141,21 +141,31 @@
                                 @if (canUpdate || canDelete)
                                 {
                                     <td>
-                                        <div class="btn-group btn-group-sm">
-                                            @if (canUpdate)
-                                            {
-                                                <a href="@Url.Action("Edit", new { id = rule.Id })" class="btn btn-outline-primary" title="Sửa">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                            }
-                                            @if (canDelete)
-                                            {
-                                                <button type="button" class="btn btn-outline-danger"
-                                                        onclick="confirmDelete(@rule.Id, '@(rule.Province_name) - @(rule.Ward_ids.Any() ? rule.Ward_ids.Count + " phường/xã" : "Toàn tỉnh")')"
-                                                        title="Xóa">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            }
+                                        <div class="dropdown">
+                                            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
+                                                    data-bs-toggle="dropdown" data-bs-strategy="fixed" data-bs-offset="0,4" aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                @if (canUpdate)
+                                                {
+                                                    <li>
+                                                        <a class="dropdown-item" href="@Url.Action("Edit", new { id = rule.Id })">
+                                                            <i class="fas fa-edit me-2 text-primary"></i>Sửa
+                                                        </a>
+                                                    </li>
+                                                }
+                                                @if (canDelete)
+                                                {
+                                                    <li><hr class="dropdown-divider" /></li>
+                                                    <li>
+                                                        <button type="button" class="dropdown-item text-danger"
+                                                                onclick="confirmDelete(@rule.Id, '@(rule.Province_name) - @(rule.Ward_ids.Any() ? rule.Ward_ids.Count + " phường/xã" : "Toàn tỉnh")')">
+                                                            <i class="fas fa-trash me-2"></i>Xóa
+                                                        </button>
+                                                    </li>
+                                                }
+                                            </ul>
                                         </div>
                                     </td>
                                 }

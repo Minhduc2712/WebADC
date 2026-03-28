@@ -41,6 +41,13 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        public async Task<Staff?> GetFirstAsync()
+        {
+            return await GetBaseQuery()
+                .OrderBy(s => s.Id)
+                .FirstOrDefaultAsync();
+        }
+
         public async Task AddAsync(Staff staff)
         {
             staff.Created_at = DateTime.Now;

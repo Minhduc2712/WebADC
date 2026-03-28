@@ -48,41 +48,34 @@
                 <i class="fas fa-info-circle me-2"></i>Thông tin sản phẩm
             </div>
             <div class="card-body">
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label class="text-muted small">Mã sản phẩm</label>
-                        <p class="mb-0 fw-semibold">@Model.Product_code</p>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="text-muted small">Giá bán</label>
-                        <p class="mb-0 fw-semibold text-success">@Model.Product_price_formatted</p>
-                    </div>
+                <div class="info-row">
+                    <span class="info-label">Mã sản phẩm</span>
+                    <span class="info-value fw-semibold">@Model.Product_code</span>
                 </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label class="text-muted small">Nhà xuất bản</label>
-                        <p class="mb-0 fw-semibold">@Model.Publisher_name</p>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="text-muted small">Tác giả</label>
-                        <p class="mb-0 fw-semibold">@string.Join(", ", Model.Authors)</p>
-                    </div>
+                <div class="info-row">
+                    <span class="info-label">Giá bán</span>
+                    <span class="info-value fw-semibold text-success">@Model.Product_price_formatted</span>
                 </div>
-                
-                <div class="mb-3">
-                    <label class="text-muted small">Danh mục</label>
-                    <div>
+                <div class="info-row">
+                    <span class="info-label">Nhà xuất bản</span>
+                    <span class="info-value">@Model.Publisher_name</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Tác giả</span>
+                    <span class="info-value">@string.Join(", ", Model.Authors)</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Danh mục</span>
+                    <span class="info-value">
                         @foreach (var cat in Model.Categories)
                         {
                             <span class="badge bg-info me-1">@cat</span>
                         }
-                    </div>
+                    </span>
                 </div>
-                
-                <div class="mb-3">
-                    <label class="text-muted small">Mô tả sản phẩm</label>
-                    <p class="mb-0">@(string.IsNullOrEmpty(Model.Product_description) ? "Chưa có mô tả" : Model.Product_description)</p>
+                <div class="info-row">
+                    <span class="info-label">Mô tả</span>
+                    <span class="info-value">@(string.IsNullOrEmpty(Model.Product_description) ? "Chưa có mô tả" : Model.Product_description)</span>
                 </div>
             </div>
         </div>

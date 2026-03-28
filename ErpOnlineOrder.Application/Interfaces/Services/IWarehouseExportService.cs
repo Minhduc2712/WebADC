@@ -8,6 +8,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
         
         Task<WarehouseExportDto?> GetByIdAsync(int id, int? userId = null);
         Task<IEnumerable<WarehouseExportDto>> GetAllAsync(int? userId = null);
+        Task<IEnumerable<WarehouseExportDto>> GetMergeableAsync(int? userId = null);
         Task<PagedResult<WarehouseExportDto>> GetAllPagedAsync(WarehouseExportFilterRequest request, int? userId = null);
         Task<IEnumerable<WarehouseExportDto>> GetByInvoiceIdAsync(int invoiceId);
         Task<IEnumerable<WarehouseExportDto>> GetByCustomerIdAsync(int customerId);

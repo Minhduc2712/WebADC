@@ -172,100 +172,91 @@
                                     </td>
                                     <td class="text-center">
                                         <div class="action-buttons">
-                                            <!-- Nút chính: Chi tiết, Sửa -->
-                                            <a asp-action="Details" asp-route-id="@staff.User_id" 
-                                               class="btn btn-sm btn-outline-info action-btn" title="Xem chi tiết"
-                                               data-bs-toggle="tooltip">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-
-                                            @if (canUpdate)
-                                            {
-                                                <a asp-action="Edit" asp-route-id="@staff.User_id" 
-                                                   class="btn btn-sm btn-outline-warning action-btn" title="Chỉnh sửa"
-                                                   data-bs-toggle="tooltip">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                            }
-
-                                            @if (canAssign)
-                                            {
-                                                <a asp-action="AssignRoles" asp-route-id="@staff.User_id" 
-                                                   class="btn btn-sm btn-outline-primary action-btn" title="Gán vai trò"
-                                                   data-bs-toggle="tooltip">
-                                                    <i class="fas fa-user-tag"></i>
-                                                </a>
-                                                <a asp-action="AssignPermissions" asp-route-id="@staff.User_id" 
-                                                   class="btn btn-sm btn-outline-success action-btn" title="Gán quyền trực tiếp"
-                                                   data-bs-toggle="tooltip">
-                                                    <i class="fas fa-key"></i>
-                                                </a>
-                                            }
-
-                                            <!-- Dropdown cho thao tác phụ -->
-                                            @if (canUpdate || canDelete)
-                                            {
-                                                <div class="btn-group">
-                                                    <button type="button" class="btn btn-sm btn-outline-secondary action-btn dropdown-toggle dropdown-toggle-split" 
-                                                            data-bs-toggle="dropdown" aria-expanded="false"
-                                                            title="Thêm thao tác">
-                                                        <i class="fas fa-ellipsis-v"></i>
-                                                    </button>
-                                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                                                        @if (canUpdate)
-                                                        {
-                                                            <li>
-                                                                <a class="dropdown-item" asp-action="ResetPassword" asp-route-id="@staff.User_id">
-                                                                    <i class="fas fa-unlock-alt text-secondary me-2"></i>Đặt lại mật khẩu
-                                                                </a>
-                                                            </li>
-                                                            <li><hr class="dropdown-divider"></li>
+                                            <!-- 1 dropdown duy nhất cho tất cả thao tác -->
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                                                        data-bs-toggle="dropdown" data-bs-strategy="fixed" data-bs-offset="0,4" aria-expanded="false">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                                    <li>
+                                                        <a class="dropdown-item" asp-action="Details" asp-route-id="@staff.User_id">
+                                                            <i class="fas fa-eye me-2 text-primary"></i>Xem chi tiết
+                                                        </a>
+                                                    </li>
+                                                    @if (canUpdate)
+                                                    {
+                                                        <li>
+                                                            <a class="dropdown-item" asp-action="Edit" asp-route-id="@staff.User_id">
+                                                                <i class="fas fa-edit me-2 text-warning"></i>Chỉnh sửa
+                                                            </a>
+                                                        </li>
+                                                    }
+                                                    @if (canAssign)
+                                                    {
+                                                        <li><hr class="dropdown-divider"></li>
+                                                        <li>
+                                                            <a class="dropdown-item" asp-action="AssignRoles" asp-route-id="@staff.User_id">
+                                                                <i class="fas fa-user-tag me-2 text-primary"></i>Gán vai trò
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a class="dropdown-item" asp-action="AssignPermissions" asp-route-id="@staff.User_id">
+                                                                <i class="fas fa-key me-2 text-success"></i>Gán quyền trực tiếp
+                                                            </a>
+                                                        </li>
+                                                    }
+                                                    @if (canUpdate)
+                                                    {
+                                                        <li><hr class="dropdown-divider"></li>
+                                                        <li>
+                                                            <a class="dropdown-item" asp-action="ResetPassword" asp-route-id="@staff.User_id">
+                                                                <i class="fas fa-unlock-alt me-2 text-secondary"></i>Đặt lại mật khẩu
+                                                            </a>
+                                                        </li>
+                                                        <li>
                                                             @if (staff.Is_active)
                                                             {
-                                                                <li>
-                                                                    <button type="button" class="dropdown-item"
-                                                                            onclick="showConfirmModal('Vô hiệu hóa tài khoản', 'Bạn có chắc muốn vô hiệu hóa tài khoản <strong>@staff.Full_name</strong>? Nhân viên sẽ không thể đăng nhập sau khi bị vô hiệu hóa.', 'toggleForm_@staff.User_id', 'warning')">
-                                                                        <i class="fas fa-user-slash text-warning me-2"></i>Vô hiệu hóa
-                                                                    </button>
-                                                                    <form id="toggleForm_@staff.User_id" asp-action="ToggleStatus" method="post" class="d-none">
-                                                                        @Html.AntiForgeryToken()
-                                                                        <input type="hidden" name="id" value="@staff.User_id" />
-                                                                        <input type="hidden" name="isActive" value="false" />
-                                                                    </form>
-                                                                </li>
+                                                                <button type="button" class="dropdown-item"
+                                                                        onclick="showConfirmModal('Vô hiệu hóa tài khoản', 'Bạn có chắc muốn vô hiệu hóa tài khoản <strong>@staff.Full_name</strong>? Nhân viên sẽ không thể đăng nhập sau khi bị vô hiệu hóa.', 'toggleForm_@staff.User_id', 'warning')">
+                                                                    <i class="fas fa-user-slash me-2 text-warning"></i>Vô hiệu hóa
+                                                                </button>
+                                                                <form id="toggleForm_@staff.User_id" asp-action="ToggleStatus" method="post" class="d-none">
+                                                                    @Html.AntiForgeryToken()
+                                                                    <input type="hidden" name="id" value="@staff.User_id" />
+                                                                    <input type="hidden" name="isActive" value="false" />
+                                                                </form>
                                                             }
                                                             else
                                                             {
-                                                                <li>
-                                                                    <button type="button" class="dropdown-item"
-                                                                            onclick="showConfirmModal('Kích hoạt tài khoản', 'Bạn có chắc muốn kích hoạt lại tài khoản <strong>@staff.Full_name</strong>?', 'toggleForm_@staff.User_id', 'success')">
-                                                                        <i class="fas fa-user-check text-success me-2"></i>Kích hoạt
-                                                                    </button>
-                                                                    <form id="toggleForm_@staff.User_id" asp-action="ToggleStatus" method="post" class="d-none">
-                                                                        @Html.AntiForgeryToken()
-                                                                        <input type="hidden" name="id" value="@staff.User_id" />
-                                                                        <input type="hidden" name="isActive" value="true" />
-                                                                    </form>
-                                                                </li>
-                                                            }
-                                                        }
-                                                        @if (canDelete)
-                                                        {
-                                                            <li><hr class="dropdown-divider"></li>
-                                                            <li>
-                                                                <button type="button" class="dropdown-item text-danger"
-                                                                        onclick="showConfirmModal('Xóa tài khoản', 'Bạn có chắc muốn <strong class=\'text-danger\'>xóa vĩnh viễn</strong> tài khoản <strong>@staff.Full_name</strong> (@staff.Username)?<br><small class=\'text-muted\'>Thao tác này không thể hoàn tác!</small>', 'deleteForm_@staff.User_id', 'danger')">
-                                                                    <i class="fas fa-trash me-2"></i>Xóa tài khoản
+                                                                <button type="button" class="dropdown-item"
+                                                                        onclick="showConfirmModal('Kích hoạt tài khoản', 'Bạn có chắc muốn kích hoạt lại tài khoản <strong>@staff.Full_name</strong>?', 'toggleForm_@staff.User_id', 'success')">
+                                                                    <i class="fas fa-user-check me-2 text-success"></i>Kích hoạt
                                                                 </button>
-                                                                <form id="deleteForm_@staff.User_id" asp-action="Delete" method="post" class="d-none">
+                                                                <form id="toggleForm_@staff.User_id" asp-action="ToggleStatus" method="post" class="d-none">
                                                                     @Html.AntiForgeryToken()
                                                                     <input type="hidden" name="id" value="@staff.User_id" />
+                                                                    <input type="hidden" name="isActive" value="true" />
                                                                 </form>
-                                                            </li>
-                                                        }
-                                                    </ul>
-                                                </div>
-                                            }
+                                                            }
+                                                        </li>
+                                                    }
+                                                    @if (canDelete)
+                                                    {
+                                                        <li><hr class="dropdown-divider"></li>
+                                                        <li>
+                                                            <button type="button" class="dropdown-item text-danger"
+                                                                    onclick="showConfirmModal('Xóa tài khoản', 'Bạn có chắc muốn <strong class=\'text-danger\'>xóa vĩnh viễn</strong> tài khoản <strong>@staff.Full_name</strong> (@staff.Username)?<br><small class=\'text-muted\'>Thao tác này không thể hoàn tác!</small>', 'deleteForm_@staff.User_id', 'danger')">
+                                                                <i class="fas fa-trash me-2"></i>Xóa tài khoản
+                                                            </button>
+                                                            <form id="deleteForm_@staff.User_id" asp-action="Delete" method="post" class="d-none">
+                                                                @Html.AntiForgeryToken()
+                                                                <input type="hidden" name="id" value="@staff.User_id" />
+                                                            </form>
+                                                        </li>
+                                                    }
+                                                </ul>
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>

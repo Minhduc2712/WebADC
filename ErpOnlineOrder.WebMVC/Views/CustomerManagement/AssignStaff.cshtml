@@ -127,16 +127,27 @@
                                             <span class="small text-muted">@assign.Created_at.ToString("dd/MM/yyyy HH:mm")</span>
                                         </td>
                                         <td>
-                                            <button type="button" class="btn btn-sm btn-outline-danger" title="Xóa gán"
-                                                    data-bs-toggle="tooltip"
-                                                    onclick="confirmRemove(@assign.Id, '@(assign.Staff?.Full_name ?? "N/A")')">
-                                                <i class="fas fa-unlink"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-outline-primary ms-1" title="Thay thế cán bộ"
-                                                    data-bs-toggle="tooltip"
-                                                    onclick="confirmReplace(@assign.Id, '@(assign.Staff?.Full_name ?? "N/A")')">
-                                                <i class="fas fa-exchange-alt"></i>
-                                            </button>
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                                                        data-bs-toggle="dropdown" data-bs-strategy="fixed" data-bs-offset="0,4" aria-expanded="false">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end">
+                                                    <li>
+                                                        <button type="button" class="dropdown-item"
+                                                                onclick="confirmReplace(@assign.Id, '@(assign.Staff?.Full_name ?? "N/A")')">
+                                                            <i class="fas fa-exchange-alt me-2 text-primary"></i>Thay thế cán bộ
+                                                        </button>
+                                                    </li>
+                                                    <li><hr class="dropdown-divider" /></li>
+                                                    <li>
+                                                        <button type="button" class="dropdown-item text-danger"
+                                                                onclick="confirmRemove(@assign.Id, '@(assign.Staff?.Full_name ?? "N/A")')">
+                                                            <i class="fas fa-unlink me-2"></i>Xóa gán
+                                                        </button>
+                                                    </li>
+                                                </ul>
+                                            </div>
                                         </td>
                                     </tr>
                                 }

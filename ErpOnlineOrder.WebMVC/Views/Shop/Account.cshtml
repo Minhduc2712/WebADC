@@ -3,130 +3,124 @@
     Layout = "~/Views/Shared/_ShopLayout.cshtml";
 }
 
-<!-- Breadcrumb -->
-<section class="blog about-blog">
-    <div class="container">
-        <div class="blog-bradcrum">
-            <span><a asp-action="Products">Sản phẩm</a></span>
-            <span class="devider">/</span>
-            <span><a href="#">Tài khoản</a></span>
-        </div>
-        <div class="blog-heading about-heading">
-            <h1 class="heading">Tài khoản</h1>
-        </div>
-    </div>
-</section>
-
-<section class="product footer-padding">
+<section class="sh-account-page">
     <div class="container">
         @if (Context.Session.GetInt32("UserId") != null)
         {
-            @await Html.PartialAsync("_AccountNavbar")
-            <div class="checkout-section">
-                <div class="row gy-5 justify-content-center">
-                    <div class="col-lg-4 col-md-6">
-                        <div class="account-section billing-section text-center" style="padding: 40px 20px;">
-                            <div style="width: 100px; height: 100px; background: #f0f0f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40" height="40" fill="#888">
-                                    <path d="M20 22H4v-2a5 5 0 0 1 5-5h6a5 5 0 0 1 5 5v2zm-8-9a6 6 0 1 1 0-12 6 6 0 0 1 0 12z"/>
-                                </svg>
-                            </div>
-                            <h4 style="font-weight: bold; margin-bottom: 5px;">@Context.Session.GetString("FullName")</h4>
-                            <p style="color: #888;">@Context.Session.GetString("Username")</p>
-                        </div>
-                    </div>
-                    <div class="col-lg-8 col-md-6">
-                        <div class="row g-4">
-                            <div class="col-md-6">
-                                <a asp-action="Orders" class="text-decoration-none d-block">
-                                    <div class="account-section billing-section text-center" style="padding: 30px 20px; transition: all 0.3s; border: 2px solid transparent;">
-                                        <div style="width: 60px; height: 60px; background: #f8f0f7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
-                                            <i class="fas fa-box fa-lg" style="color: #1a7f37;"></i>
-                                        </div>
-                                        <h6 style="font-weight: bold; color: #333;">Đơn hàng của tôi</h6>
-                                        <p style="color: #888; font-size: 13px; margin: 0;">Xem và theo dõi đơn hàng</p>
-                                    </div>
-                                </a>
-                            </div>
-                            <div class="col-md-6">
-                                <a asp-controller="Shop" asp-action="ChangePassword" class="text-decoration-none d-block">
-                                    <div class="account-section billing-section text-center" style="padding: 30px 20px; transition: all 0.3s; border: 2px solid transparent;">
-                                        <div style="width: 60px; height: 60px; background: #fff8e1; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
-                                            <i class="fas fa-key fa-lg" style="color: #f5a623;"></i>
-                                        </div>
-                                        <h6 style="font-weight: bold; color: #333;">Đổi mật khẩu</h6>
-                                        <p style="color: #888; font-size: 13px; margin: 0;">Thay đổi mật khẩu tài khoản</p>
-                                    </div>
-                                </a>
-                            </div>
-                            <div class="col-md-6">
-                                <a asp-action="UpdateOrganization" class="text-decoration-none d-block">
-                                    <div class="account-section billing-section text-center" style="padding: 30px 20px; transition: all 0.3s; border: 2px solid transparent;">
-                                        <div style="width: 60px; height: 60px; background: #e3f2fd; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
-                                            <i class="fas fa-building fa-lg" style="color: #1976d2;"></i>
-                                        </div>
-                                        <h6 style="font-weight: bold; color: #333;">Thông tin đơn vị</h6>
-                                        <p style="color: #888; font-size: 13px; margin: 0;">Chỉnh sửa thông tin tổ chức</p>
-                                    </div>
-                                </a>
-                            </div>
-                            <div class="col-md-6">
-                                <a asp-action="Cart" class="text-decoration-none d-block">
-                                    <div class="account-section billing-section text-center" style="padding: 30px 20px; transition: all 0.3s; border: 2px solid transparent;">
-                                        <div style="width: 60px; height: 60px; background: #e8f5e9; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
-                                            <i class="fas fa-shopping-cart fa-lg" style="color: #4caf50;"></i>
-                                        </div>
-                                        <h6 style="font-weight: bold; color: #333;">Giỏ hàng</h6>
-                                        <p style="color: #888; font-size: 13px; margin: 0;">Xem giỏ hàng của bạn</p>
-                                    </div>
-                                </a>
-                            </div>
-                            <div class="col-md-6">
-                                <a asp-action="MyStaff" class="text-decoration-none d-block">
-                                    <div class="account-section billing-section text-center" style="padding: 30px 20px; transition: all 0.3s; border: 2px solid transparent;">
-                                        <div style="width: 60px; height: 60px; background: #f0fdf4; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
-                                            <i class="fas fa-user-tie fa-lg" style="color: #1a7f37;"></i>
-                                        </div>
-                                        <h6 style="font-weight: bold; color: #333;">Cán bộ phụ trách</h6>
-                                        <p style="color: #888; font-size: 13px; margin: 0;">Xem cán bộ quản lý của bạn</p>
-                                    </div>
-                                </a>
-                            </div>
-                            <div class="col-md-6">
-                                <a asp-controller="Auth" asp-action="LogoutGet" class="text-decoration-none d-block">
-                                    <div class="account-section billing-section text-center" style="padding: 30px 20px; transition: all 0.3s; border: 2px solid transparent;">
-                                        <div style="width: 60px; height: 60px; background: #ffebee; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
-                                            <i class="fas fa-sign-out-alt fa-lg" style="color: #e53935;"></i>
-                                        </div>
-                                        <h6 style="font-weight: bold; color: #333;">Đăng xuất</h6>
-                                        <p style="color: #888; font-size: 13px; margin: 0;">Thoát khỏi tài khoản</p>
-                                    </div>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+            <!-- Profile banner -->
+            <div class="sh-profile-banner">
+                <div class="sh-profile-avatar">
+                    <i class="fas fa-user"></i>
                 </div>
+                <div class="sh-profile-info">
+                    <h2 class="sh-profile-name">@Context.Session.GetString("FullName")</h2>
+                    <span class="sh-profile-username">@Context.Session.GetString("Username")</span>
+                </div>
+            </div>
+
+            <!-- Quick action cards -->
+            <div class="sh-account-grid">
+                <a asp-action="Orders" class="sh-account-card">
+                    <div class="sh-account-card-icon" style="background:#f0fdf4; color:#1a7f37;">
+                        <i class="fas fa-box"></i>
+                    </div>
+                    <div class="sh-account-card-body">
+                        <h3>Đơn hàng</h3>
+                        <p>Xem và theo dõi đơn hàng</p>
+                    </div>
+                    <i class="fas fa-chevron-right sh-account-card-arrow"></i>
+                </a>
+
+                <a asp-action="UpdateOrganization" class="sh-account-card">
+                    <div class="sh-account-card-icon" style="background:#e3f2fd; color:#1976d2;">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <div class="sh-account-card-body">
+                        <h3>Đơn vị</h3>
+                        <p>Chỉnh sửa thông tin tổ chức</p>
+                    </div>
+                    <i class="fas fa-chevron-right sh-account-card-arrow"></i>
+                </a>
+
+                <a asp-action="Cart" class="sh-account-card">
+                    <div class="sh-account-card-icon" style="background:#e8f5e9; color:#388e3c;">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                    <div class="sh-account-card-body">
+                        <h3>Giỏ hàng</h3>
+                        <p>Xem giỏ hàng của bạn</p>
+                    </div>
+                    <i class="fas fa-chevron-right sh-account-card-arrow"></i>
+                </a>
+
+                <a asp-action="Invoices" class="sh-account-card">
+                    <div class="sh-account-card-icon" style="background:#fff8e1; color:#f9a825;">
+                        <i class="fas fa-file-invoice"></i>
+                    </div>
+                    <div class="sh-account-card-body">
+                        <h3>Hóa đơn</h3>
+                        <p>Xem hóa đơn đã mua</p>
+                    </div>
+                    <i class="fas fa-chevron-right sh-account-card-arrow"></i>
+                </a>
+
+                <a asp-action="Exports" class="sh-account-card">
+                    <div class="sh-account-card-icon" style="background:#ede7f6; color:#5e35b1;">
+                        <i class="fas fa-truck-loading"></i>
+                    </div>
+                    <div class="sh-account-card-body">
+                        <h3>Phiếu xuất kho</h3>
+                        <p>Xem phiếu xuất kho của bạn</p>
+                    </div>
+                    <i class="fas fa-chevron-right sh-account-card-arrow"></i>
+                </a>
+
+                <a asp-action="MyStaff" class="sh-account-card">
+                    <div class="sh-account-card-icon" style="background:#e0f2f1; color:#00796b;">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <div class="sh-account-card-body">
+                        <h3>Cán bộ phụ trách</h3>
+                        <p>Xem cán bộ quản lý của bạn</p>
+                    </div>
+                    <i class="fas fa-chevron-right sh-account-card-arrow"></i>
+                </a>
+
+                <a asp-controller="Shop" asp-action="ChangePassword" class="sh-account-card">
+                    <div class="sh-account-card-icon" style="background:#fff3e0; color:#e65100;">
+                        <i class="fas fa-key"></i>
+                    </div>
+                    <div class="sh-account-card-body">
+                        <h3>Đổi mật khẩu</h3>
+                        <p>Thay đổi mật khẩu tài khoản</p>
+                    </div>
+                    <i class="fas fa-chevron-right sh-account-card-arrow"></i>
+                </a>
+
+                <a asp-controller="Auth" asp-action="LogoutGet" class="sh-account-card sh-account-card--danger">
+                    <div class="sh-account-card-icon" style="background:#ffebee; color:#e53935;">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </div>
+                    <div class="sh-account-card-body">
+                        <h3>Đăng xuất</h3>
+                        <p>Thoát khỏi tài khoản</p>
+                    </div>
+                    <i class="fas fa-chevron-right sh-account-card-arrow"></i>
+                </a>
             </div>
         }
         else
         {
-            <div class="checkout-section">
-                <div class="row justify-content-center">
-                    <div class="col-lg-6">
-                        <div class="checkout-wrapper">
-                            <div class="account-section billing-section text-center" style="padding: 50px 30px;">
-                                <div style="width: 100px; height: 100px; background: #f0f0f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40" height="40" fill="#888">
-                                        <path d="M20 22H4v-2a5 5 0 0 1 5-5h6a5 5 0 0 1 5 5v2zm-8-9a6 6 0 1 1 0-12 6 6 0 0 1 0 12z"/>
-                                    </svg>
-                                </div>
-                                <h4 style="font-weight: bold; margin-bottom: 10px;">Đăng nhập tài khoản</h4>
-                                <p style="color: #888; margin-bottom: 25px;">Đăng nhập để theo dõi đơn hàng và quản lý tài khoản.</p>
-                                <a asp-controller="Auth" asp-action="Login" class="shop-btn">Đăng nhập</a>
-                            </div>
-                        </div>
-                    </div>
+            <!-- Not logged in -->
+            <div class="sh-account-guest">
+                <div class="sh-profile-avatar sh-profile-avatar--lg">
+                    <i class="fas fa-user"></i>
                 </div>
+                <h2>Đăng nhập tài khoản</h2>
+                <p>Đăng nhập để theo dõi đơn hàng và quản lý tài khoản.</p>
+                <a asp-controller="Auth" asp-action="Login" class="sh-btn-primary">
+                    <i class="fas fa-sign-in-alt me-2"></i>Đăng nhập
+                </a>
             </div>
         }
     </div>

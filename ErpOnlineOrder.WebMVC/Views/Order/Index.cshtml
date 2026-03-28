@@ -6,160 +6,172 @@
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 
-<div class="container-fluid">
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">
-            <i class="fas fa-shopping-cart text-primary me-2"></i> Quản lý đơn hàng
-        </h1>
-        <div>
-            @if (ViewBag.CanExport == true)
-            {
-                <a asp-action="ExportExcel" class="btn btn-sm btn-success shadow-sm">
-                    <i class="fas fa-file-excel fa-sm text-white-50"></i> Xuất Excel
-                </a>
-            }
-        </div>
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1"><i class="fas fa-shopping-cart me-2 text-primary"></i>Quản lý đơn hàng</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="@Url.Action("Index", "Order")">Trang chủ</a></li>
+                <li class="breadcrumb-item active">Đơn hàng</li>
+            </ol>
+        </nav>
     </div>
+    @if (ViewBag.CanExport == true)
+    {
+        <a asp-action="ExportExcel" class="btn btn-success">
+            <i class="fas fa-file-excel me-1"></i>Xuất Excel
+        </a>
+    }
+</div>
 
-    <!-- Form Tìm kiếm -->
-    <div class="card shadow mb-4">
-        <div class="card-body">
-            <form method="get" class="row gx-2 gy-2 align-items-center">
-                <div class="col-md-4">
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="fas fa-search"></i></span>
-                        <input type="text" name="search" class="form-control" placeholder="Tìm mã đơn, tên khách hàng..." value="@ViewBag.Search">
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <select name="status" class="form-select">
-                        <option value="">-- Tất cả trạng thái --</option>
-                        <option value="Pending" selected="@(ViewBag.Status == "Pending")">Chờ xử lý</option>
-                        <option value="Approved" selected="@(ViewBag.Status == "Approved")">Đã duyệt</option>
-                        <option value="Completed" selected="@(ViewBag.Status == "Completed")">Hoàn thành</option>
-                        <option value="Cancelled" selected="@(ViewBag.Status == "Cancelled")">Đã hủy</option>
-                        <option value="Split" selected="@(ViewBag.Status == "Split")">Đã tách</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-filter me-1"></i> Lọc</button>
-                </div>
-                <div class="col-md-2">
-                    <a asp-action="Index" class="btn btn-outline-secondary w-100"><i class="fas fa-sync me-1"></i> Xóa lọc</a>
-                </div>
-            </form>
-        </div>
+<!-- Bộ lọc -->
+<div class="table-card mb-4">
+    <div class="card-header">
+        <i class="fas fa-filter me-2"></i>Tìm kiếm & Lọc
     </div>
+    <div class="card-body p-4">
+        <form method="get" class="row g-3 align-items-end">
+            <input type="hidden" name="page" value="1" />
+            <div class="col-md-4">
+                <label class="form-label">Tìm kiếm</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" name="search" class="form-control" placeholder="Mã đơn, tên khách hàng..." value="@ViewBag.Search">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Trạng thái</label>
+                <select name="status" class="form-select">
+                    <option value="">-- Tất cả trạng thái --</option>
+                    <option value="Pending" selected="@(ViewBag.Status == "Pending")">Chờ xử lý</option>
+                    <option value="WaitingCustomer" selected="@(ViewBag.Status == "WaitingCustomer")">Chờ KH xác nhận</option>
+                    <option value="Exporting" selected="@(ViewBag.Status == "Exporting")">Đang xuất kho</option>
+                    <option value="Approved" selected="@(ViewBag.Status == "Approved")">Đã duyệt</option>
+                    <option value="Completed" selected="@(ViewBag.Status == "Completed")">Hoàn thành</option>
+                    <option value="Split" selected="@(ViewBag.Status == "Split")">Đã tách</option>
+                    <option value="Cancelled" selected="@(ViewBag.Status == "Cancelled")">Đã hủy</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-fill"><i class="fas fa-filter me-1"></i>Lọc</button>
+                <a asp-action="Index" class="btn btn-outline-secondary flex-fill"><i class="fas fa-sync me-1"></i>Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
 
-    <div class="card shadow mb-4 border-0">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover table-striped align-middle mb-0">
-                    <thead class="bg-primary text-white">
-                        <tr>
-                            <th class="ps-3 border-0">Mã đơn hàng</th>
-                            <th class="border-0">Khách hàng</th>
-                            <th class="border-0">Ngày đặt</th>
-                            <th class="text-end border-0">Tổng tiền</th>
-                            <th class="text-center border-0">Trạng thái</th>
-                            <th class="text-center pe-3 border-0">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (Model.Items != null && Model.Items.Any())
+<!-- Danh sách đơn hàng -->
+<div class="table-card">
+    <div class="card-header">
+        <i class="fas fa-list me-2"></i>Danh sách đơn hàng (@(Model?.TotalCount ?? 0) đơn)
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Mã đơn hàng</th>
+                        <th>Khách hàng</th>
+                        <th>Ngày đặt</th>
+                        <th class="text-end">Tổng tiền</th>
+                        <th class="text-center">Trạng thái</th>
+                        <th class="text-center pe-3">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model?.Items != null && Model.Items.Any())
+                    {
+                        foreach (var item in Model.Items)
                         {
-                            foreach (var item in Model.Items)
-                            {
-                                var isChild = item.IndentLevel > 0;
-                                var paddingLeft = item.IndentLevel * 30; 
-                                
-                                <tr class="@(item.Order_status == "Split" ? "table-light text-muted" : "")">
-                                    <!-- Cột Mã đơn hàng (Có phân cấp) -->
-                                    <td class="ps-3" style="padding-left: @(paddingLeft + 15)px !important;">
-                                        @if (isChild)
-                                        {
-                                            <i class="fas fa-level-up-alt fa-rotate-90 text-muted me-2" style="font-size: 0.8em;"></i>
-                                            <span class="badge bg-light text-dark border border-secondary shadow-sm @(item.Order_status == "Split" ? "text-decoration-line-through opacity-75" : "")" title="Đơn con tách từ @item.Parent_order_id">
-                                                #@item.Order_code
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="fw-bold fs-6 @(item.Order_status == "Split" ? "text-secondary text-decoration-line-through opacity-75" : "text-primary")">#@item.Order_code</span>
-                                        }
-                                    </td>
-                                    
-                                    <td>
-                                        <div class="fw-bold">@item.Customer_name</div>
-                                    </td>
-                                    <td>@item.Order_date.ToString("dd/MM/yyyy HH:mm")</td>
-                                    <td class="text-end font-weight-bold text-danger">@item.Total_price.ToString("N0") đ</td>
-                                    <td class="text-center">
-                                        @if(item.Order_status == "Pending") { <span class="badge bg-warning text-dark px-2 py-1">Chờ xử lý</span> }
-                                        else if(item.Order_status == "Exporting") { <span class="badge bg-primary px-2 py-1">Xuất kho</span> }
-                                        else if(item.Order_status == "Approved") { <span class="badge bg-info px-2 py-1">Đã duyệt</span> }
-                                        else if(item.Order_status == "Completed") { <span class="badge bg-success px-2 py-1">Hoàn thành</span> }
-                                        else if(item.Order_status == "Cancelled") { <span class="badge bg-danger px-2 py-1">Đã hủy</span> }
-                                        else if(item.Order_status == "Split") { <span class="badge bg-secondary px-2 py-1">Đã tách</span> }
-                                        else { <span class="badge bg-secondary px-2 py-1">@item.Order_status</span> }
-                                    </td>
-                                    <td class="text-center pe-3">
-                                        <div class="btn-group shadow-sm">
-                                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary" title="Xem chi tiết">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
+                            var isChild = item.IndentLevel > 0;
+                            var paddingLeft = item.IndentLevel * 30;
+
+                            <tr class="@(item.Order_status == "Split" ? "table-light text-muted" : "")">
+                                <td class="ps-3" style="padding-left: @(paddingLeft + 15)px !important;">
+                                    @if (isChild)
+                                    {
+                                        <i class="fas fa-level-up-alt fa-rotate-90 text-muted me-2" style="font-size:0.8em;"></i>
+                                        <span class="badge bg-light text-dark border border-secondary shadow-sm @(item.Order_status == "Split" ? "text-decoration-line-through opacity-75" : "")" title="Đơn con tách từ @item.Parent_order_id">
+                                            #@item.Order_code
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="fw-bold @(item.Order_status == "Split" ? "text-secondary text-decoration-line-through opacity-75" : "text-primary")">#@item.Order_code</span>
+                                    }
+                                </td>
+                                <td><div class="fw-semibold">@item.Customer_name</div></td>
+                                <td>@item.Order_date.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="text-end fw-semibold text-danger">@item.Total_price.ToString("N0") đ</td>
+                                <td class="text-center">
+                                    @{
+                                        var (badgeClass, badgeText) = (item.Order_status) switch {
+                                            "Pending"        => ("bg-warning text-dark", "Chờ xử lý"),
+                                            "WaitingCustomer"=> ("bg-orange text-dark", "Chờ KH xác nhận"),
+                                            "Exporting"      => ("bg-primary", "Đang xuất kho"),
+                                            "Approved"       => ("bg-info", "Đã duyệt"),
+                                            "Completed"      => ("bg-success", "Hoàn thành"),
+                                            "Split"          => ("bg-secondary", "Đã tách"),
+                                            "Cancelled"      => ("bg-danger", "Đã hủy"),
+                                            _                => ("bg-secondary", item.Order_status ?? "")
+                                        };
+                                    }
+                                    <span class="badge @badgeClass px-2 py-1">@badgeText</span>
+                                </td>
+                                <td class="text-center pe-3">
+                                    <div class="dropdown">
+                                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
+                                                data-bs-toggle="dropdown" data-bs-strategy="fixed" data-bs-offset="0,4" aria-expanded="false">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li>
+                                                <a class="dropdown-item" asp-action="Details" asp-route-id="@item.Id">
+                                                    <i class="fas fa-eye me-2 text-primary"></i>Xem chi tiết
+                                                </a>
+                                            </li>
                                             @if (ViewBag.CanUpdate == true && item.Order_status == "Pending")
                                             {
-                                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning" title="Sửa">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
+                                                <li>
+                                                    <a class="dropdown-item" asp-action="Edit" asp-route-id="@item.Id">
+                                                        <i class="fas fa-edit me-2 text-warning"></i>Sửa
+                                                    </a>
+                                                </li>
                                             }
                                             @if (ViewBag.CanDelete == true && item.Order_status == "Pending")
                                             {
-                                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa đơn hàng này?');">
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </form>
+                                                <li><hr class="dropdown-divider" /></li>
+                                                <li>
+                                                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn xóa đơn hàng này?');">
+                                                        <button type="submit" class="dropdown-item text-danger">
+                                                            <i class="fas fa-trash me-2"></i>Xóa
+                                                        </button>
+                                                    </form>
+                                                </li>
                                             }
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                        }
-                        else
-                        {
-                            <tr>
-                                <td colspan="6" class="text-center py-4 text-muted">
-                                    <i class="fas fa-box-open fa-2x mb-2 text-light"></i><br/>
-                                    Không tìm thấy đơn hàng nào
+                                        </ul>
+                                    </div>
                                 </td>
                             </tr>
                         }
-                    </tbody>
-                </table>
-            </div>
-            
-            <!-- Pagination -->
-            <div class="card-footer bg-white border-0 py-3">
-                @if (Model.TotalPages > 1)
-                {
-                    <ul class="pagination justify-content-end mb-0">
-                        <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
-                            <a class="page-link" asp-action="Index" asp-route-page="@(Model.Page - 1)" asp-route-status="@ViewBag.Status" asp-route-search="@ViewBag.Search">Trước</a>
-                        </li>
-                        @for (int i = 1; i <= Model.TotalPages; i++)
-                        {
-                            <li class="page-item @(Model.Page == i ? "active" : "")">
-                                <a class="page-link" asp-action="Index" asp-route-page="@i" asp-route-status="@ViewBag.Status" asp-route-search="@ViewBag.Search">@i</a>
-                            </li>
-                        }
-                        <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
-                            <a class="page-link" asp-action="Index" asp-route-page="@(Model.Page + 1)" asp-route-status="@ViewBag.Status" asp-route-search="@ViewBag.Search">Sau</a>
-                        </li>
-                    </ul>
-                }
-            </div>
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="fas fa-box-open fa-3x mb-3 d-block opacity-50"></i>
+                                Không tìm thấy đơn hàng nào
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
+        @if (Model != null && Model.TotalPages > 1)
+        {
+            ViewBag.PaginationItemLabel = "đơn hàng";
+            @await Html.PartialAsync("_Pagination", Model)
+        }
     </div>
 </div>

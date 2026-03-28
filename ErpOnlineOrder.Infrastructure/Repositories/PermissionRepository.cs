@@ -43,6 +43,23 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<Permission>> GetAllNonSpecialAsync()
+        {
+            return await _context.Permissions
+                .AsNoTracking()
+                .Where(p => !p.Is_special)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Permission>> GetByModuleCodeAsync(string moduleCode)
+        {
+            var prefix = moduleCode + "_";
+            return await _context.Permissions
+                .AsNoTracking()
+                .Where(p => p.Permission_code.StartsWith(prefix))
+                .ToListAsync();
+        }
+
         public async Task<IEnumerable<Permission>> GetByParentIdAsync(int? parentId)
         {
             return await _context.Permissions

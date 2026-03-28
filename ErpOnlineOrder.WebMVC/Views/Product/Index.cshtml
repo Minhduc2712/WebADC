@@ -139,23 +139,36 @@
                                     }
                                 </td>
                                 <td>
-                                    <div class="btn-group btn-group-sm">
-                                        <a asp-action="Details" asp-route-id="@product.Id" class="btn btn-outline-primary" title="Xem chi tiết">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        @if (Context.Session.HasPermission("PRODUCT_UPDATE"))
-                                        {
-                                            <a asp-action="Edit" asp-route-id="@product.Id" class="btn btn-outline-warning" title="Sửa">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                        }
-                                        @if (Context.Session.HasPermission("PRODUCT_DELETE"))
-                                        {
-                                            <button type="button" class="btn btn-outline-danger" title="Xóa"
-                                                    onclick="confirmDelete(@product.Id, '@product.Product_name')">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        }
+                                    <div class="dropdown">
+                                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
+                                                data-bs-toggle="dropdown" data-bs-strategy="fixed" data-bs-offset="0,4" aria-expanded="false">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li>
+                                                <a class="dropdown-item" asp-action="Details" asp-route-id="@product.Id">
+                                                    <i class="fas fa-eye me-2 text-info"></i>Xem chi tiết
+                                                </a>
+                                            </li>
+                                            @if (Context.Session.HasPermission("PRODUCT_UPDATE"))
+                                            {
+                                                <li>
+                                                    <a class="dropdown-item" asp-action="Edit" asp-route-id="@product.Id">
+                                                        <i class="fas fa-edit me-2 text-warning"></i>Sửa
+                                                    </a>
+                                                </li>
+                                            }
+                                            @if (Context.Session.HasPermission("PRODUCT_DELETE"))
+                                            {
+                                                <li><hr class="dropdown-divider" /></li>
+                                                <li>
+                                                    <button type="button" class="dropdown-item text-danger"
+                                                            onclick="confirmDelete(@product.Id, '@product.Product_name')">
+                                                        <i class="fas fa-trash me-2"></i>Xóa
+                                                    </button>
+                                                </li>
+                                            }
+                                        </ul>
                                     </div>
                                 </td>
                             </tr>

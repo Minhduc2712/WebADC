@@ -116,6 +116,24 @@ namespace ErpOnlineOrder.Application.Services
             return list;
         }
 
+        public async Task<IEnumerable<WarehouseExportDto>> GetMergeableAsync(int? userId = null)
+        {
+            var exports = await _exportRepository.GetByExcludedStatusesAsync(
+                ExportStatuses.Completed, ExportStatuses.Cancelled, ExportStatuses.Merged);
+
+            if (userId.HasValue && userId.Value > 0)
+            {
+                var customerIds = await GetAllowedCustomerIdsAsync(userId.Value);
+                if (customerIds != null)
+                {
+                    var idSet = customerIds.ToHashSet();
+                    exports = exports.Where(e => idSet.Contains(e.Customer_id));
+                }
+            }
+
+            return exports.Select(EntityMappers.ToWarehouseExportDto).ToList();
+        }
+
         public async Task<PagedResult<WarehouseExportDto>> GetAllPagedAsync(WarehouseExportFilterRequest request, int? userId = null)
         {
             IEnumerable<int>? customerIds = null;

@@ -290,8 +290,8 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         {
             try
             {
-                var exports = await _warehouseExportApiClient.GetAllAsync();
-                return View(exports.Where(e => e.Status != ExportStatuses.Completed && e.Status != ExportStatuses.Cancelled && e.Status != ExportStatuses.Merged));
+                var exports = await _warehouseExportApiClient.GetMergeableAsync();
+                return View(exports);
             }
             catch (Exception ex)
             {

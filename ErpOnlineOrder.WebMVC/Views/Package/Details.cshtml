@@ -58,21 +58,21 @@
             }
         </div>
         <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-3">
-                    <small class="text-muted d-block">Mã gói</small>
-                    <strong>@Model.Package_code</strong>
-                </div>
-                <div class="col-md-5">
-                    <small class="text-muted d-block">Tên gói</small>
-                    <strong>@Model.Package_name</strong>
-                </div>
-                <div class="col-md-4">
-                    <small class="text-muted d-block">Tổ chức</small>
-                    @(Model.Organization_name ?? "—")
-                </div>
-                <div class="col-md-4">
-                    <small class="text-muted d-block">Vùng miền</small>
+            <div class="info-row">
+                <span class="info-label">Mã gói</span>
+                <span class="info-value fw-semibold">@Model.Package_code</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Tên gói</span>
+                <span class="info-value fw-semibold">@Model.Package_name</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Tổ chức</span>
+                <span class="info-value">@(Model.Organization_name ?? "—")</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Vùng miền</span>
+                <span class="info-value">
                     @if (!string.IsNullOrEmpty(Model.Region_name))
                     {
                         <span class="badge bg-info text-dark">@Model.Region_name</span>
@@ -81,9 +81,11 @@
                     {
                         <span class="text-muted">Toàn quốc</span>
                     }
-                </div>
-                <div class="col-md-4">
-                    <small class="text-muted d-block">Tỉnh/Thành</small>
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Tỉnh/Thành</span>
+                <span class="info-value">
                     @if (!string.IsNullOrEmpty(Model.Province_name))
                     {
                         <span class="badge bg-primary">@Model.Province_name</span>
@@ -92,9 +94,11 @@
                     {
                         <span class="text-muted">—</span>
                     }
-                </div>
-                <div class="col-md-4">
-                    <small class="text-muted d-block">Phường/Xã</small>
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Phường/Xã</span>
+                <span class="info-value">
                     @if (!string.IsNullOrEmpty(Model.Ward_name))
                     {
                         <span class="badge bg-secondary">@Model.Ward_name</span>
@@ -103,26 +107,26 @@
                     {
                         <span class="text-muted">—</span>
                     }
-                </div>
-                @if (!string.IsNullOrWhiteSpace(Model.Description))
-                {
-                    <div class="col-12">
-                        <small class="text-muted d-block">Mô tả</small>
-                        @Model.Description
-                    </div>
-                }
-                <div class="col-md-6">
-                    <small class="text-muted d-block">Ngày tạo</small>
-                    @Model.Created_at.ToString("dd/MM/yyyy HH:mm")
-                </div>
-                @if (Model.Updated_at != default)
-                {
-                    <div class="col-md-6">
-                        <small class="text-muted d-block">Cập nhật lần cuối</small>
-                        @Model.Updated_at.ToString("dd/MM/yyyy HH:mm")
-                    </div>
-                }
+                </span>
             </div>
+            @if (!string.IsNullOrWhiteSpace(Model.Description))
+            {
+                <div class="info-row">
+                    <span class="info-label">Mô tả</span>
+                    <span class="info-value">@Model.Description</span>
+                </div>
+            }
+            <div class="info-row">
+                <span class="info-label">Ngày tạo</span>
+                <span class="info-value">@Model.Created_at.ToString("dd/MM/yyyy HH:mm")</span>
+            </div>
+            @if (Model.Updated_at != default)
+            {
+                <div class="info-row">
+                    <span class="info-label">Cập nhật</span>
+                    <span class="info-value">@Model.Updated_at.ToString("dd/MM/yyyy HH:mm")</span>
+                </div>
+            }
         </div>
     </div>
 

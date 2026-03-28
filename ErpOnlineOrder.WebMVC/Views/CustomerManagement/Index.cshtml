@@ -6,8 +6,14 @@
     var assignments = ViewBag.Assignments as List<ErpOnlineOrder.Domain.Models.Customer_management> ?? new List<ErpOnlineOrder.Domain.Models.Customer_management>();
     var canAssign = (bool)(ViewBag.CanAssign ?? false);
     var canAssignProduct = (bool)(ViewBag.CanAssignProduct ?? false);
+    var canAssignPackage = (bool)(ViewBag.CanAssignPackage ?? false);
+    var canCreate = (bool)(ViewBag.CanCreate ?? false);
+    var assignedIds = assignments.Select(a => a.Customer_id).ToHashSet();
+    var totalAssigned = items.Count(c => assignedIds.Contains(c.Id));
+    var totalUnassigned = items.Count(c => !assignedIds.Contains(c.Id));
 }
 
+<!-- Header -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h4 class="mb-1"><i class="fas fa-users me-2 text-primary"></i>Quản lý khách hàng</h4>
@@ -25,12 +31,49 @@
                 <i class="fas fa-user-tag me-1"></i>Gán cán bộ phụ trách
             </a>
         }
-        @if (Context.Session.HasPermission("CUSTOMER_CREATE"))
+        @if (canCreate)
         {
             <a href="@Url.Action("Create")" class="btn btn-primary">
                 <i class="fas fa-plus me-1"></i>Thêm khách hàng
             </a>
         }
+    </div>
+</div>
+
+<!-- Thống kê nhanh -->
+<div class="row mb-3 g-2">
+    <div class="col-md-4">
+        <div class="card stat-card-compact shadow-sm">
+            <div class="card-body d-flex align-items-center justify-content-between py-1 px-2">
+                <div>
+                    <div class="stat-label">Tổng khách hàng</div>
+                    <div class="stat-value">@(Model?.TotalCount ?? 0)</div>
+                </div>
+                <div class="stat-icon-sm blue"><i class="fas fa-users"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card-compact shadow-sm">
+            <div class="card-body d-flex align-items-center justify-content-between py-1 px-2">
+                <div>
+                    <div class="stat-label">Đã có CB phụ trách</div>
+                    <div class="stat-value">@totalAssigned</div>
+                </div>
+                <div class="stat-icon-sm green"><i class="fas fa-user-check"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card-compact shadow-sm">
+            <div class="card-body d-flex align-items-center justify-content-between py-1 px-2">
+                <div>
+                    <div class="stat-label">Chưa có CB phụ trách</div>
+                    <div class="stat-value">@totalUnassigned</div>
+                </div>
+                <div class="stat-icon-sm yellow"><i class="fas fa-user-slash"></i></div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -43,10 +86,13 @@
         <form asp-action="Index" method="get" id="filterForm">
             <input type="hidden" name="page" value="1" />
             <div class="row g-3">
-                <div class="col-md-4">
+                <div class="col-md-5">
                     <label class="form-label">Tìm kiếm</label>
-                    <input type="text" name="search" value="@ViewBag.Search" class="form-control" 
-                           placeholder="Nhập mã KH, tên, số điện thoại..." />
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" name="search" value="@ViewBag.Search" class="form-control"
+                               placeholder="Mã KH, họ tên, số điện thoại..." />
+                    </div>
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">Số dòng/trang</label>
@@ -56,7 +102,7 @@
                         <option value="50" selected="@(ViewBag.PageSize == 50)">50</option>
                     </select>
                 </div>
-                <div class="col-md-4 d-flex align-items-end">
+                <div class="col-md-3 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary me-2">
                         <i class="fas fa-search me-1"></i>Tìm kiếm
                     </button>
@@ -81,19 +127,18 @@
                     <tr>
                         <th>Mã KH</th>
                         <th>Họ tên</th>
-                        <th>Số điện thoại</th>
+                        <th>Liên hệ</th>
                         <th>Địa chỉ</th>
                         <th>Cán bộ phụ trách</th>
-                        <th>Ngày tạo</th>
-                        <th style="width: 200px;">Thao tác</th>
+                        <th style="width: 60px;" class="text-center">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
                     @if (!items.Any())
                     {
                         <tr>
-                            <td colspan="7" class="text-center py-4 text-muted">
-                                <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="fas fa-inbox fa-3x mb-3 d-block opacity-50"></i>
                                 Không có khách hàng nào
                             </td>
                         </tr>
@@ -104,28 +149,40 @@
                         {
                             var customerAssignments = assignments.Where(a => a.Customer_id == customer.Id).ToList();
                             <tr>
-                                <td><span class="badge bg-secondary">@customer.Customer_code</span></td>
-                                <td><strong>@customer.Full_name</strong></td>
+                                <td>
+                                    <span class="badge bg-secondary">@customer.Customer_code</span>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">@customer.Full_name</div>
+                                    @if (!string.IsNullOrEmpty(customer.Organization_name))
+                                    {
+                                        <small class="text-muted"><i class="fas fa-building me-1"></i>@customer.Organization_name</small>
+                                    }
+                                </td>
                                 <td>
                                     @if (!string.IsNullOrEmpty(customer.Phone_number))
                                     {
-                                        <i class="fas fa-phone text-muted me-1"></i>@customer.Phone_number
+                                        <div><i class="fas fa-phone text-muted me-1" style="font-size:0.75rem;"></i><span class="small">@customer.Phone_number</span></div>
                                     }
-                                    else
+                                    @if (!string.IsNullOrEmpty(customer.Email))
                                     {
-                                        <span class="text-muted">-</span>
+                                        <div><i class="fas fa-envelope text-muted me-1" style="font-size:0.75rem;"></i><small class="text-muted">@customer.Email</small></div>
+                                    }
+                                    @if (string.IsNullOrEmpty(customer.Phone_number) && string.IsNullOrEmpty(customer.Email))
+                                    {
+                                        <span class="text-muted small">—</span>
                                     }
                                 </td>
                                 <td>
                                     @if (!string.IsNullOrEmpty(customer.Address))
                                     {
-                                        <span title="@customer.Address">
-                                            @(customer.Address.Length > 30 ? customer.Address.Substring(0, 30) + "..." : customer.Address)
+                                        <span class="small" title="@customer.Address">
+                                            @(customer.Address.Length > 35 ? customer.Address.Substring(0, 35) + "…" : customer.Address)
                                         </span>
                                     }
                                     else
                                     {
-                                        <span class="text-muted">Chưa cập nhật</span>
+                                        <span class="text-muted small">Chưa cập nhật</span>
                                     }
                                 </td>
                                 <td>
@@ -140,47 +197,67 @@
                                     }
                                     else
                                     {
-                                        <span class="text-muted fst-italic">
+                                        <span class="text-muted small fst-italic">
                                             <i class="fas fa-user-slash me-1"></i>Chưa gán
                                         </span>
                                     }
                                 </td>
-                                <td>@customer.Created_at.ToString("dd/MM/yyyy")</td>
-                                <td>
-                                    <div class="btn-group btn-group-sm">
-                                        <a asp-action="Details" asp-route-id="@customer.Id" class="btn btn-outline-primary" title="Xem chi tiết"
-                                           data-bs-toggle="tooltip">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        @if (canAssign)
-                                        {
-                                            <a asp-action="AssignStaff" asp-route-id="@customer.Id" class="btn btn-outline-success" title="Gán cán bộ phụ trách"
-                                               data-bs-toggle="tooltip">
-                                                <i class="fas fa-user-tag"></i>
-                                            </a>
-                                        }
-                                        @if (canAssignProduct)
-                                        {
-                                            <a href="@Url.Action("AssignProducts", "CustomerProduct", new { customerId = customer.Id })" class="btn btn-outline-info" title="Gán sản phẩm"
-                                               data-bs-toggle="tooltip">
-                                                <i class="fas fa-box"></i>
-                                            </a>
-                                        }
-                                        @if (Context.Session.HasPermission("CUSTOMER_UPDATE"))
-                                        {
-                                            <a asp-action="Edit" asp-route-id="@customer.Id" class="btn btn-outline-warning" title="Sửa"
-                                               data-bs-toggle="tooltip">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                        }
-                                        @if (Context.Session.HasPermission("CUSTOMER_DELETE"))
-                                        {
-                                            <button type="button" class="btn btn-outline-danger" title="Xóa"
-                                                    data-bs-toggle="tooltip"
-                                                    onclick="confirmDelete(@customer.Id, '@customer.Full_name')">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        }
+                                <td class="text-center">
+                                    <div class="dropdown">
+                                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
+                                                data-bs-toggle="dropdown" data-bs-strategy="fixed" data-bs-offset="0,4" aria-expanded="false">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li>
+                                                <a class="dropdown-item" asp-action="Details" asp-route-id="@customer.Id">
+                                                    <i class="fas fa-eye me-2 text-primary"></i>Xem chi tiết
+                                                </a>
+                                            </li>
+                                            @if (canAssign)
+                                            {
+                                                <li><hr class="dropdown-divider" /></li>
+                                                <li>
+                                                    <a class="dropdown-item" asp-action="AssignStaff" asp-route-id="@customer.Id">
+                                                        <i class="fas fa-user-tag me-2 text-success"></i>Gán cán bộ phụ trách
+                                                    </a>
+                                                </li>
+                                            }
+                                            @if (canAssignProduct)
+                                            {
+                                                <li>
+                                                    <a class="dropdown-item" href="@Url.Action("AssignProducts", "CustomerProduct", new { customerId = customer.Id })">
+                                                        <i class="fas fa-box me-2 text-info"></i>Gán sản phẩm
+                                                    </a>
+                                                </li>
+                                            }
+                                            @if (canAssignPackage)
+                                            {
+                                                <li>
+                                                    <a class="dropdown-item" href="@Url.Action("AssignPackages", "CustomerPackage", new { customerId = customer.Id })">
+                                                        <i class="fas fa-cubes me-2 text-secondary"></i>Gán gói sản phẩm
+                                                    </a>
+                                                </li>
+                                            }
+                                            @if ((bool)(ViewBag.CanUpdate ?? false))
+                                            {
+                                                <li><hr class="dropdown-divider" /></li>
+                                                <li>
+                                                    <a class="dropdown-item" asp-action="Edit" asp-route-id="@customer.Id">
+                                                        <i class="fas fa-edit me-2 text-warning"></i>Chỉnh sửa
+                                                    </a>
+                                                </li>
+                                            }
+                                            @if ((bool)(ViewBag.CanDelete ?? false))
+                                            {
+                                                <li>
+                                                    <button type="button" class="dropdown-item text-danger"
+                                                            onclick="confirmDelete(@customer.Id, '@Html.Raw(customer.Full_name.Replace("'", "\\'"))')">
+                                                        <i class="fas fa-trash me-2"></i>Xóa
+                                                    </button>
+                                                </li>
+                                            }
+                                        </ul>
                                     </div>
                                 </td>
                             </tr>
@@ -197,40 +274,33 @@
     </div>
 </div>
 
-@if (Context.Session.HasPermission("CUSTOMER_DELETE"))
-{
-    <!-- Modal xác nhận xóa -->
-    <div class="modal fade" id="deleteModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle text-danger me-2"></i>Xác nhận xóa</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Bạn có chắc chắn muốn xóa khách hàng "<strong id="deleteCustomerName"></strong>"?</p>
-                    <p class="text-muted mb-0">Hành động này không thể hoàn tác.</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <form id="deleteForm" method="post" style="display: inline;">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-danger">
-                            <i class="fas fa-trash me-1"></i>Xóa
-                        </button>
-                    </form>
-                </div>
+<!-- Modal xác nhận xóa -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle text-danger me-2"></i>Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xóa khách hàng "<strong id="deleteCustomerName"></strong>"?</p>
+                <p class="text-muted mb-0">Hành động này không thể hoàn tác.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>Xóa
+                    </button>
+                </form>
             </div>
         </div>
     </div>
-}
+</div>
 
 @section Scripts {
 <script>
-    // Khởi tạo tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (el) { return new bootstrap.Tooltip(el); });
-
     function confirmDelete(id, name) {
         document.getElementById('deleteCustomerName').textContent = name;
         document.getElementById('deleteForm').action = '@Url.Action("Delete")/' + id;

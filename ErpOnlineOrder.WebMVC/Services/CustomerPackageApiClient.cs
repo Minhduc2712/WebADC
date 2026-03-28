@@ -9,6 +9,21 @@ namespace ErpOnlineOrder.WebMVC.Services
         {
         }
 
+        public async Task<PagedResult<CustomerPackageDto>> GetPagedAsync(int page = 1, int pageSize = 20, string? search = null, CancellationToken cancellationToken = default)
+        {
+            var queryParams = new List<string> { $"page={page}", $"pageSize={pageSize}" };
+            if (!string.IsNullOrWhiteSpace(search))
+                queryParams.Add($"search={Uri.EscapeDataString(search)}");
+            var path = "customerpackage/paged?" + string.Join("&", queryParams);
+            return await GetAsync<PagedResult<CustomerPackageDto>>(path, cancellationToken)
+                ?? new PagedResult<CustomerPackageDto> { Items = new List<CustomerPackageDto>(), Page = page, PageSize = pageSize, TotalCount = 0 };
+        }
+
+        public async Task<IEnumerable<CustomerPackageDto>> GetAllAsync(CancellationToken cancellationToken = default)
+        {
+            return await GetAsync<IEnumerable<CustomerPackageDto>>("customerpackage", cancellationToken) ?? new List<CustomerPackageDto>();
+        }
+
         public async Task<IEnumerable<CustomerPackageDto>> GetByCustomerIdAsync(int customerId, CancellationToken cancellationToken = default)
         {
             return await GetAsync<IEnumerable<CustomerPackageDto>>($"customerpackage/customer/{customerId}", cancellationToken) ?? new List<CustomerPackageDto>();

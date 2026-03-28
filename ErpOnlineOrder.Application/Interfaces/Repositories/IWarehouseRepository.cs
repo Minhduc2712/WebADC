@@ -10,6 +10,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
         Task<bool> ExistsByCodeAsync(string code, int? excludeId = null);
         Task<Warehouse?> GetByNameAsync(string name);
         Task<IEnumerable<Warehouse>> GetAllAsync();
+        Task<bool> AnyAsync();
         Task<IEnumerable<Warehouse>> GetByProvinceIdAsync(int provinceId);
         Task<IEnumerable<WarehouseSelectDto>> GetForSelectAsync();
         Task<Warehouse> AddAsync(Warehouse warehouse);

@@ -9,6 +9,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
         Task<Staff?> GetByIdAsync(int id);
         Task<Staff?> GetByUserIdAsync(int userId);
         Task<IEnumerable<Staff>> GetAllAsync();
+        Task<Staff?> GetFirstAsync();
         Task AddAsync(Staff staff);
         Task UpdateAsync(Staff staff);
         Task DeleteAsync(int id);

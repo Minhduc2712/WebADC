@@ -33,42 +33,24 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             _logger = logger;
         }
 
-        public async Task<IActionResult> Index(int customerId)
+        public async Task<IActionResult> Index(int page = 1, int pageSize = 20, string? search = null)
         {
             try
             {
-                // var customer = await _customerApiClient.GetByIdAsync(customerId);
-                // if (customer == null)
-                // {
-                //     SetErrorMessage("Không tìm thấy khách hàng.");
-                //     return RedirectToAction("Index", "CustomerManagement");
-                // }
+                var result = await _customerPackageApiClient.GetPagedAsync(page, pageSize, search);
 
-                var roles = HttpContext.Session.GetString("Roles") ?? "";
-                bool isAdmin = roles.Contains("ROLE_ADMIN");
-                int? filterStaffId = isAdmin ? null : GetCurrentUserId();
-                
-                // if (!roles.Contains("ROLE_ADMIN"))
-                // {
-                //     var assignments = await _customerManagementApiClient.GetByCustomerAsync(customerId);
-                //     int currentUserId = GetCurrentUserId();
-                //     if (!assignments.Any(a => a.Staff?.User_id == currentUserId))
-                //     {
-                //         SetErrorMessage("Bạn không có quyền xem gói sản phẩm của khách hàng này.");
-                //         return RedirectToAction("Index", "CustomerManagement");
-                //     }
-                // }
-
-                var customerPackages = await _customerPackageApiClient.GetByCustomerIdAsync(customerId);
-                ViewBag.Customer = customer;
+                ViewBag.Search = search;
+                ViewBag.PageSize = pageSize;
                 ViewBag.CanAssign = await HasPermissionAsync(PermissionCodes.CustomerPackageAssign);
-                return View(customerPackages.ToList());
+                if (ViewBag.CanAssign == true)
+                    ViewBag.Customers = (await _customerApiClient.GetForSelectAsync()).ToList();
+                return View(result);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Lỗi khi tải danh sách gói của khách hàng {CustomerId}", customerId);
+                _logger.LogError(ex, "Lỗi khi tải danh sách khách hàng - gói sản phẩm");
                 SetErrorMessage(GetDetailedErrorMessage(ex));
-                return RedirectToAction("Index", "CustomerManagement");
+                return RedirectToAction("Index", "Home");
             }
         }
 
@@ -149,7 +131,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Lỗi khi gán gói {PackageId} cho khách hàng {CustomerId}", packageId, customerId);
+                _logger.LogError(ex, "Lỗi khi gán gói cho khách hàng {CustomerId}", customerId);
                 SetErrorMessage(GetDetailedErrorMessage(ex));
             }
 
@@ -159,7 +141,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequirePermission(PermissionCodes.CustomerPackageAssign)]
-        public async Task<IActionResult> Unassign(int id, int customerId)
+        public async Task<IActionResult> Unassign(int id, int customerId, bool returnToAll = false)
         {
             try
             {
@@ -179,13 +161,15 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 SetErrorMessage(GetDetailedErrorMessage(ex));
             }
 
+            if (returnToAll)
+                return RedirectToAction("Index");
             return RedirectToAction("Index", new { customerId });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequirePermission(PermissionCodes.CustomerPackageAssign)]
-        public async Task<IActionResult> ToggleActive(int id, int customerId)
+        public async Task<IActionResult> ToggleActive(int id, int customerId, bool returnToAll = false)
         {
             try
             {
@@ -193,6 +177,8 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (cp == null)
                 {
                     SetErrorMessage("Không tìm thấy bản ghi.");
+                    if (returnToAll)
+                        return RedirectToAction("Index");
                     return RedirectToAction("Index", new { customerId });
                 }
 
@@ -213,6 +199,8 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 SetErrorMessage(GetDetailedErrorMessage(ex));
             }
 
+            if (returnToAll)
+                return RedirectToAction("Index");
             return RedirectToAction("Index", new { customerId });
         }
 

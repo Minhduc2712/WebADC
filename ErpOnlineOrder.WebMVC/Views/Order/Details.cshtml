@@ -181,34 +181,34 @@
                 <i class="fas fa-info-circle me-2"></i>Thông tin đơn hàng
             </div>
             <div class="card-body">
-                <div class="mb-3">
-                    <label class="text-muted small">Mã đơn hàng</label>
-                    <p class="mb-0 fw-semibold">@Model.Order_code</p>
+                <div class="info-row">
+                    <span class="info-label">Mã đơn hàng</span>
+                    <span class="info-value fw-semibold">@Model.Order_code</span>
                 </div>
-                <div class="mb-3">
-                    <label class="text-muted small">Trạng thái</label>
-                    <p class="mb-0"><span class="badge @statusClass">@statusText</span></p>
+                <div class="info-row">
+                    <span class="info-label">Trạng thái</span>
+                    <span class="info-value"><span class="badge @statusClass">@statusText</span></span>
                 </div>
-                <div class="mb-3">
-                    <label class="text-muted small">Ngày đặt hàng</label>
-                    <p class="mb-0">@Model.Order_date.ToString("dd/MM/yyyy HH:mm")</p>
+                <div class="info-row">
+                    <span class="info-label">Ngày đặt hàng</span>
+                    <span class="info-value">@Model.Order_date.ToString("dd/MM/yyyy HH:mm")</span>
                 </div>
-                <div class="mb-3">
-                    <label class="text-muted small">Tổng tiền</label>
-                    <p class="mb-0 text-success fw-bold fs-5">@Model.Total_price.ToString("N0") VNĐ</p>
+                <div class="info-row">
+                    <span class="info-label">Tổng tiền</span>
+                    <span class="info-value text-success fw-bold fs-5">@Model.Total_price.ToString("N0") VNĐ</span>
                 </div>
                 @if (!string.IsNullOrWhiteSpace(Model.Shipping_address))
                 {
-                    <div class="mb-3">
-                        <label class="text-muted small">Địa chỉ giao hàng</label>
-                        <p class="mb-0">@Model.Shipping_address</p>
+                    <div class="info-row">
+                        <span class="info-label">Địa chỉ giao</span>
+                        <span class="info-value">@Model.Shipping_address</span>
                     </div>
                 }
                 @if (!string.IsNullOrWhiteSpace(Model.note))
                 {
-                    <div class="mb-0">
-                        <label class="text-muted small">Ghi chú</label>
-                        <p class="mb-0">@Model.note</p>
+                    <div class="info-row">
+                        <span class="info-label">Ghi chú</span>
+                        <span class="info-value">@Model.note</span>
                     </div>
                 }
             </div>
@@ -219,9 +219,9 @@
                 <i class="fas fa-user me-2"></i>Thông tin khách hàng
             </div>
             <div class="card-body">
-                <div class="mb-0">
-                    <label class="text-muted small">Tên khách hàng</label>
-                    <p class="mb-0 fw-semibold">@(string.IsNullOrWhiteSpace(Model.Customer_name) ? "—" : Model.Customer_name)</p>
+                <div class="info-row">
+                    <span class="info-label">Khách hàng</span>
+                    <span class="info-value fw-semibold">@(string.IsNullOrWhiteSpace(Model.Customer_name) ? "—" : Model.Customer_name)</span>
                 </div>
             </div>
         </div>

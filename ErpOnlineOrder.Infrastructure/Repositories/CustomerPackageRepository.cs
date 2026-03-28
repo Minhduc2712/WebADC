@@ -25,6 +25,51 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             return query;
         }
 
+        public async Task<(IEnumerable<Customer_package> Items, int TotalCount)> GetPagedAsync(
+            int page, int pageSize, string? search = null, int? staffUserId = null)
+        {
+            var query = GetBaseQuery(includeDetails: true)
+                .Where(cp => !cp.Is_deleted);
+
+            // Nhân viên chỉ xem được khách hàng mình quản lý
+            if (staffUserId.HasValue)
+            {
+                var managedCustomerIds = _context.Set<Customer_management>()
+                    .AsNoTracking()
+                    .Where(cm => cm.Staff != null && cm.Staff.User_id == staffUserId.Value)
+                    .Select(cm => cm.Customer_id);
+
+                query = query.Where(cp => managedCustomerIds.Contains(cp.Customer_id));
+            }
+
+            // Tìm kiếm theo tên khách hàng, mã gói, tên gói
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim();
+                query = query.Where(cp =>
+                    (cp.Customer != null && cp.Customer.Full_name.Contains(term)) ||
+                    (cp.Package != null && (cp.Package.Package_code.Contains(term) || cp.Package.Package_name.Contains(term)))
+                );
+            }
+
+            var totalCount = await query.CountAsync();
+            var items = await query
+                .OrderByDescending(cp => cp.Created_at)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (items, totalCount);
+        }
+
+        public async Task<IEnumerable<Customer_package>> GetAllAsync(bool includeDetails = false)
+        {
+            return await GetBaseQuery(includeDetails)
+                .Where(cp => !cp.Is_deleted)
+                .OrderByDescending(cp => cp.Created_at)
+                .ToListAsync();
+        }
+
         public async Task<Customer_package?> GetByIdAsync(int id, bool includeDetails)
         {
             return await GetBaseQuery(includeDetails).FirstOrDefaultAsync(cp => cp.Id == id);

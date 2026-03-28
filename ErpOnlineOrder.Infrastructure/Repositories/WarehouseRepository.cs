@@ -59,6 +59,11 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        public async Task<bool> AnyAsync()
+        {
+            return await GetBaseQuery().AnyAsync();
+        }
+
         public async Task<IEnumerable<Warehouse>> GetByProvinceIdAsync(int provinceId)
         {
             return await GetBaseQuery(true)

@@ -183,9 +183,8 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<IEnumerable<PermissionDto>> GetPermissionsByModuleAsync(string moduleCode)
         {
-            var permissions = await _permissionRepository.GetAllAsync();
+            var permissions = await _permissionRepository.GetByModuleCodeAsync(moduleCode);
             return permissions
-                .Where(p => p.Permission_code.StartsWith(moduleCode + "_"))
                 .Select(p =>
                 {
                     var parts = p.Permission_code.Split('_');
@@ -202,9 +201,9 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<IEnumerable<PermissionDto>> GetPermissionsTreeAsync()
         {
-            var all = (await _permissionRepository.GetAllAsync()).ToList();
-            var roots = all.Where(p => p.Parent_id == null && !p.Is_special).ToList();
-            var children = all.Where(p => p.Parent_id != null && !p.Is_special).ToList();
+            var all = (await _permissionRepository.GetAllNonSpecialAsync()).ToList();
+            var roots = all.Where(p => p.Parent_id == null).ToList();
+            var children = all.Where(p => p.Parent_id != null).ToList();
 
             // Phân biệt root thực sự có children trong DB vs root lá (flat)
             var childParentIds = children.Select(c => c.Parent_id).Distinct().ToHashSet();
@@ -751,10 +750,7 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<bool> AssignPermissionsToUserAsync(AssignPermissionsToUserDto dto, int grantedBy)
         {
-            // Xoa quyen cu
             await _userPermissionRepository.DeleteByUserIdAsync(dto.User_id);
-
-            // Them quyen moi
             if (dto.Permission_ids.Any())
             {
                 var userPermissions = dto.Permission_ids.Select(pid => new User_permission

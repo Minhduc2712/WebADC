@@ -57,15 +57,25 @@
                                     <td><strong>@item.Cover_type_name</strong></td>
                                     <td>@item.Created_at.ToString("dd/MM/yyyy")</td>
                                     <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <a asp-action="Edit" asp-route-id="@item.Id" 
-                                               class="btn btn-outline-primary" title="Sửa">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <button type="button" class="btn btn-outline-danger" 
-                                                    onclick="confirmDelete(@item.Id, '@item.Cover_type_name')" title="Xóa">
-                                                <i class="fas fa-trash"></i>
+                                        <div class="dropdown">
+                                            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
+                                                    data-bs-toggle="dropdown" data-bs-strategy="fixed" data-bs-offset="0,4" aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v"></i>
                                             </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li>
+                                                    <a class="dropdown-item" asp-action="Edit" asp-route-id="@item.Id">
+                                                        <i class="fas fa-edit me-2 text-primary"></i>Sửa
+                                                    </a>
+                                                </li>
+                                                <li><hr class="dropdown-divider" /></li>
+                                                <li>
+                                                    <button type="button" class="dropdown-item text-danger"
+                                                            onclick="confirmDelete(@item.Id, '@item.Cover_type_name')">
+                                                        <i class="fas fa-trash me-2"></i>Xóa
+                                                    </button>
+                                                </li>
+                                            </ul>
                                         </div>
                                     </td>
                                 </tr>

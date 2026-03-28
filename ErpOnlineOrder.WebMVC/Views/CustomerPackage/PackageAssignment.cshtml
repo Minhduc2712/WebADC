@@ -1,6 +1,6 @@
-@model List<ErpOnlineOrder.Application.DTOs.CustomerProductDTOs.CustomerProductDto>
+@model List<ErpOnlineOrder.Application.DTOs.CustomerPackageDTOs.CustomerPackageDto>
 @{
-    ViewData["Title"] = "Sản phẩm được phép đặt";
+    ViewData["Title"] = "Gói sản phẩm của khách hàng";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
     var customer = ViewBag.Customer as ErpOnlineOrder.Application.DTOs.CustomerDTO;
     var canAssign = (bool)(ViewBag.CanAssign ?? false);
@@ -8,21 +8,21 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="mb-1"><i class="fas fa-box me-2 text-primary"></i>Sản phẩm được phép đặt</h4>
+        <h4 class="mb-1"><i class="fas fa-cubes me-2 text-primary"></i>Gói sản phẩm được phép đặt</h4>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-0">
                 <li class="breadcrumb-item"><a href="@Url.Action("Index", "Order")">Trang chủ</a></li>
                 <li class="breadcrumb-item"><a href="@Url.Action("Index", "CustomerManagement")">Khách hàng</a></li>
                 <li class="breadcrumb-item"><a href="@Url.Action("Details", "CustomerManagement", new { id = customer?.Id })">@(customer?.Full_name ?? "")</a></li>
-                <li class="breadcrumb-item active">Sản phẩm</li>
+                <li class="breadcrumb-item active">Gói sản phẩm</li>
             </ol>
         </nav>
     </div>
     <div class="d-flex gap-2">
         @if (canAssign)
         {
-            <a href="@Url.Action("AssignProducts", new { customerId = customer?.Id })" class="btn btn-primary">
-                <i class="fas fa-plus me-1"></i>Gán sản phẩm
+            <a href="@Url.Action("AssignPackages", new { customerId = customer?.Id })" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>Gán gói sản phẩm
             </a>
         }
         <a href="@Url.Action("Details", "CustomerManagement", new { id = customer?.Id })" class="btn btn-outline-secondary">
@@ -46,19 +46,19 @@
 
 <div class="table-card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <span><i class="fas fa-list me-2"></i>Danh sách sản phẩm (@Model.Count)</span>
+        <span><i class="fas fa-list me-2"></i>Danh sách gói sản phẩm (@Model.Count)</span>
     </div>
     <div class="card-body p-0">
         @if (!Model.Any())
         {
             <div class="text-center py-5 text-muted">
                 <i class="fas fa-box-open fa-3x mb-3 d-block opacity-50"></i>
-                <p class="mb-2">Chưa có sản phẩm nào được gán</p>
-                <p class="small mb-0">Khách hàng chỉ có thể đặt những sản phẩm đã được gán. Gán sản phẩm để cho phép khách hàng đặt hàng.</p>
+                <p class="mb-2">Chưa có gói sản phẩm nào được gán</p>
+                <p class="small mb-0">Gán gói sản phẩm để cho phép khách hàng đặt hàng theo gói.</p>
                 @if (canAssign)
                 {
-                    <a href="@Url.Action("AssignProducts", new { customerId = customer?.Id })" class="btn btn-primary mt-3">
-                        <i class="fas fa-plus me-1"></i>Gán sản phẩm
+                    <a href="@Url.Action("AssignPackages", new { customerId = customer?.Id })" class="btn btn-primary mt-3">
+                        <i class="fas fa-plus me-1"></i>Gán gói sản phẩm
                     </a>
                 }
             </div>
@@ -70,14 +70,13 @@
                     <thead class="table-light">
                         <tr>
                             <th>STT</th>
-                            <th>Mã SP</th>
-                            <th>Tên sản phẩm</th>
-                            <th>Giá gốc</th>
-                            <th>SL tối đa</th>
+                            <th>Mã gói</th>
+                            <th>Tên gói</th>
+                            <th>Ngày gán</th>
                             <th>Trạng thái</th>
                             @if (canAssign)
                             {
-                                <th style="width: 120px;">Thao tác</th>
+                                <th style="width: 150px;">Thao tác</th>
                             }
                         </tr>
                     </thead>
@@ -87,10 +86,9 @@
                             var item = Model[i];
                             <tr>
                                 <td>@(i + 1)</td>
-                                <td><span class="badge bg-secondary">@item.Product_code</span></td>
-                                <td>@item.Product_name</td>
-                                <td>@item.Original_price.ToString("N0")</td>
-                                <td>@(item.Max_quantity.HasValue ? item.Max_quantity.Value.ToString() : "-")</td>
+                                <td><span class="badge bg-secondary">@item.Package_code</span></td>
+                                <td><strong>@item.Package_name</strong></td>
+                                <td>@item.Created_at.ToString("dd/MM/yyyy")</td>
                                 <td>
                                     @if (item.Is_active)
                                     {
@@ -111,15 +109,21 @@
                                             </button>
                                             <ul class="dropdown-menu dropdown-menu-end">
                                                 <li>
-                                                    <a class="dropdown-item" href="@Url.Action("Edit", new { id = item.Id })">
-                                                        <i class="fas fa-edit me-2 text-primary"></i>Sửa
-                                                    </a>
+                                                    <form method="post" asp-action="ToggleActive">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@item.Id" />
+                                                        <input type="hidden" name="customerId" value="@item.Customer_id" />
+                                                        <button type="submit" class="dropdown-item @(item.Is_active ? "text-warning" : "text-success")">
+                                                            <i class="fas @(item.Is_active ? "fa-ban" : "fa-check") me-2"></i>
+                                                            @(item.Is_active ? "Tạm khóa" : "Kích hoạt")
+                                                        </button>
+                                                    </form>
                                                 </li>
                                                 <li><hr class="dropdown-divider" /></li>
                                                 <li>
                                                     <button type="button" class="dropdown-item text-danger"
-                                                            onclick="confirmDelete(@item.Id, '@item.Product_name')">
-                                                        <i class="fas fa-unlink me-2"></i>Xóa gán
+                                                            onclick="confirmUnassign(@item.Id, '@item.Package_name', @item.Customer_id)">
+                                                        <i class="fas fa-unlink me-2"></i>Hủy gán
                                                     </button>
                                                 </li>
                                             </ul>
@@ -135,23 +139,24 @@
     </div>
 </div>
 
-<!-- Modal xác nhận xóa -->
-<div class="modal fade" id="deleteModal" tabindex="-1">
+<!-- Modal xác nhận hủy gán -->
+<div class="modal fade" id="unassignModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-exclamation-triangle text-warning me-2"></i>Xác nhận xóa gán</h5>
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle text-warning me-2"></i>Xác nhận hủy gán</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>Bạn có chắc chắn muốn xóa sản phẩm "<strong id="deleteProductName"></strong>" khỏi danh sách sản phẩm được phép đặt?</p>
+                <p>Bạn có chắc chắn muốn hủy gán gói "<strong id="unassignPackageName"></strong>" khỏi khách hàng này?</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                <form id="deleteForm" method="post" class="d-inline">
+                <form id="unassignForm" method="post" class="d-inline">
                     @Html.AntiForgeryToken()
+                    <input type="hidden" id="unassignCustomerId" name="customerId" value="" />
                     <button type="submit" class="btn btn-danger">
-                        <i class="fas fa-trash me-1"></i>Xóa gán
+                        <i class="fas fa-trash me-1"></i>Hủy gán
                     </button>
                 </form>
             </div>
@@ -161,10 +166,11 @@
 
 @section Scripts {
 <script>
-    function confirmDelete(id, productName) {
-        document.getElementById('deleteProductName').textContent = productName;
-        document.getElementById('deleteForm').action = '@Url.Action("Delete")/' + id;
-        new bootstrap.Modal(document.getElementById('deleteModal')).show();
+    function confirmUnassign(id, packageName, customerId) {
+        document.getElementById('unassignPackageName').textContent = packageName;
+        document.getElementById('unassignCustomerId').value = customerId;
+        document.getElementById('unassignForm').action = '@Url.Action("Unassign")/' + id;
+        new bootstrap.Modal(document.getElementById('unassignModal')).show();
     }
 </script>
 }

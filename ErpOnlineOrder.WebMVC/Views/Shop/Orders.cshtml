@@ -21,8 +21,6 @@
 
 <section class="product footer-padding">
     <div class="container">
-        @await Html.PartialAsync("_AccountNavbar")
-        
         <div class="row justify-content-center mt-4">
             <div class="col-lg-12">
                 <div class="card shadow-sm border-0">
@@ -91,18 +89,32 @@
                                                     else { <span class="badge bg-secondary">@item.Order_status</span> }
                                                 </td>
                                                 <td class="text-end">
-                                                    <a asp-action="OrderDetail" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                                                        <i class="fas fa-eye"></i> Theo dõi
-                                                    </a>
-                                                    @if (item.Order_status == "WaitingCustomer")
-                                                    {
-                                                        <button type="button" class="btn btn-sm btn-success rounded-pill px-3 ms-1" onclick="approveOrder(@item.Id)">
-                                                            <i class="fas fa-check"></i> Duyệt
+                                                    <div class="dropdown">
+                                                        <button class="btn btn-sm btn-outline-secondary sh-order-action-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                            <i class="fas fa-ellipsis-h"></i>
                                                         </button>
-                                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 ms-1" onclick="rejectOrder(@item.Id)">
-                                                            <i class="fas fa-times"></i> Không duyệt
-                                                        </button>
-                                                    }
+                                                        <ul class="dropdown-menu dropdown-menu-end">
+                                                            <li>
+                                                                <a asp-action="OrderDetail" asp-route-id="@item.Id" class="dropdown-item">
+                                                                    <i class="fas fa-eye me-2 text-primary"></i>Xem chi tiết
+                                                                </a>
+                                                            </li>
+                                                            @if (item.Order_status == "WaitingCustomer")
+                                                            {
+                                                                <li><hr class="dropdown-divider my-1"></li>
+                                                                <li>
+                                                                    <button type="button" class="dropdown-item text-success" onclick="approveOrder(@item.Id)">
+                                                                        <i class="fas fa-check me-2"></i>Duyệt đơn hàng
+                                                                    </button>
+                                                                </li>
+                                                                <li>
+                                                                    <button type="button" class="dropdown-item text-danger" onclick="rejectOrder(@item.Id)">
+                                                                        <i class="fas fa-times me-2"></i>Không duyệt
+                                                                    </button>
+                                                                </li>
+                                                            }
+                                                        </ul>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         }

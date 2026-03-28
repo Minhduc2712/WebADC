@@ -271,6 +271,17 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<Warehouse_export>> GetByExcludedStatusesAsync(params string[] excludeStatuses)
+        {
+            return await GetBaseQuery()
+                .Include(e => e.Warehouse)
+                .Include(e => e.Customer)
+                .Include(e => e.Invoices)
+                .Where(e => !excludeStatuses.Contains(e.Status))
+                .OrderByDescending(e => e.Created_at)
+                .ToListAsync();
+        }
+
         public async Task<IEnumerable<Warehouse_export>> GetChildExportsAsync(int parentExportId)
         {
             return await GetBaseQuery()

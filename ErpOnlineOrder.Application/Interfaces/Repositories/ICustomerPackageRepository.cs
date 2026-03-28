@@ -4,6 +4,9 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
 {
     public interface ICustomerPackageRepository
     {
+        Task<(IEnumerable<Customer_package> Items, int TotalCount)> GetPagedAsync(
+            int page, int pageSize, string? search = null, int? staffUserId = null);
+        Task<IEnumerable<Customer_package>> GetAllAsync(bool includeDetails = false);
         Task<Customer_package?> GetByIdAsync(int id, bool includeDetails = false);
         Task<Customer_package?> GetByCustomerAndPackageAsync(int customerId, int packageId, bool includeDetails = false);
         Task<IEnumerable<Customer_package>> GetByCustomerIdAsync(int customerId, bool includeDetails = false);
