@@ -139,6 +139,13 @@
                                                 </li>
                                                 <li><hr class="dropdown-divider" /></li>
                                                 <li>
+                                                    <a href="@Url.Action("Details", "Package", new { id = cp.Package_id })"
+                                                       class="dropdown-item">
+                                                        <i class="fas fa-boxes me-2"></i>Sửa sản phẩm trong gói
+                                                    </a>
+                                                </li>
+                                                <li><hr class="dropdown-divider" /></li>
+                                                <li>
                                                     <button type="button" class="dropdown-item text-danger"
                                                             onclick="confirmUnassign(@cp.Id, @cp.Customer_id, '@cp.Customer_name', '@cp.Package_name')">
                                                         <i class="fas fa-unlink me-2"></i>Hủy gán

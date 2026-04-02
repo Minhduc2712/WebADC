@@ -723,8 +723,15 @@ namespace ErpOnlineOrder.Application.Services
             int? targetWarehouseId = null;
             if (shouldCreateExport)
             {
-                var tempOrder = new Order { Order_Details = approvedDetails };
-                targetWarehouseId = await ResolveWarehouseForOrderAsync(tempOrder);
+                if (dto.Warehouse_id.HasValue && dto.Warehouse_id.Value > 0)
+                {
+                    targetWarehouseId = dto.Warehouse_id.Value;
+                }
+                else
+                {
+                    var tempOrder = new Order { Order_Details = approvedDetails };
+                    targetWarehouseId = await ResolveWarehouseForOrderAsync(tempOrder);
+                }
                 if (!targetWarehouseId.HasValue)
                     return new ConfirmOrderResultDto { Success = false, Message = "Thao tác thất bại: Không có kho nào đủ tồn kho để đáp ứng số lượng sản phẩm được duyệt. Vui lòng nhập thêm tồn kho trước khi duyệt." };
             }

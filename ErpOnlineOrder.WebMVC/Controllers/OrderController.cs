@@ -19,6 +19,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         private readonly IProductApiClient _productApiClient;
         private readonly IPermissionApiClient _permissionApiClient;
         private readonly IInvoiceApiClient _invoiceApiClient;
+        private readonly IWarehouseApiClient _warehouseApiClient;
         private readonly ILogger<OrderController> _logger;
 
         public OrderController(
@@ -27,6 +28,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             IProductApiClient productApiClient,
             IPermissionApiClient permissionApiClient,
             IInvoiceApiClient invoiceApiClient,
+            IWarehouseApiClient warehouseApiClient,
             ILogger<OrderController> logger)
         {
             _orderApiClient = orderApiClient;
@@ -34,6 +36,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             _productApiClient = productApiClient;
             _permissionApiClient = permissionApiClient;
             _invoiceApiClient = invoiceApiClient;
+            _warehouseApiClient = warehouseApiClient;
             _logger = logger;
         }
 
@@ -74,6 +77,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 }
 
                 await LoadCurrentUserPermissions();
+                ViewBag.Warehouses = (await _warehouseApiClient.GetForSelectAsync()).ToList();
                 return View(order);
             }
             catch (Exception ex)

@@ -47,7 +47,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             {
                 var term = search.Trim();
                 query = query.Where(cp =>
-                    (cp.Customer != null && cp.Customer.Full_name.Contains(term)) ||
+                    (cp.Customer != null && cp.Customer.Full_name != null && cp.Customer.Full_name.Contains(term)) ||
                     (cp.Package != null && (cp.Package.Package_code.Contains(term) || cp.Package.Package_name.Contains(term)))
                 );
             }
@@ -77,8 +77,11 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<Customer_package?> GetByCustomerAndPackageAsync(int customerId, int packageId, bool includeDetails)
         {
-            return await GetBaseQuery(includeDetails)
-                .FirstOrDefaultAsync(cp => cp.Customer_id == customerId && cp.Package_id == packageId);
+            // IgnoreQueryFilters() to also find soft-deleted records (needed for restore-on-reassign logic)
+            var query = _context.CustomerPackages.IgnoreQueryFilters().AsNoTracking();
+            if (includeDetails)
+                query = query.Include(cm => cm.Customer).Include(cm => cm.Package);
+            return await query.FirstOrDefaultAsync(cp => cp.Customer_id == customerId && cp.Package_id == packageId);
         }
 
         public async Task<IEnumerable<Customer_package>> GetByCustomerIdAsync(int customerId, bool includeDetails = false)

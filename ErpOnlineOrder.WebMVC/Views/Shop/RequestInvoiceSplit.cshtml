@@ -1,8 +1,9 @@
 @model ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs.WarehouseExportDto
 @using ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs
 @{
-    ViewData["Title"] = "Yêu cầu tách hóa đơn";
+    ViewData["Title"] = "Yêu cầu xuất hóa đơn";
     Layout = "~/Views/Shared/_ShopLayout.cshtml";
+    var isMultiItem = (Model.Details?.Count ?? 0) > 1;
 }
 
 <section class="blog about-blog">
@@ -12,10 +13,10 @@
             <span class="devider">/</span>
             <span><a asp-action="Exports">Phiếu xuất kho</a></span>
             <span class="devider">/</span>
-            <span>Yêu cầu tách hóa đơn</span>
+            <span>Yêu cầu xuất hóa đơn</span>
         </div>
         <div class="blog-heading about-heading">
-            <h1 class="heading">Yêu cầu tách hóa đơn</h1>
+            <h1 class="heading">Yêu cầu xuất hóa đơn</h1>
         </div>
     </div>
 </section>
@@ -29,15 +30,22 @@
 
         <div class="alert alert-info">
             <i class="fas fa-info-circle me-2"></i>
-            Chọn số lượng cần tách cho từng sản phẩm. Phần còn lại sẽ giữ trong hóa đơn gốc.
-            Phiếu xuất: <strong>@Model.Warehouse_export_code</strong>
+            @if (isMultiItem)
+            {
+                <span>Bạn có thể tách hóa đơn bằng cách nhập số lượng cần tách cho từng sản phẩm, hoặc bấm <strong>Gửi yêu cầu</strong> để tạo hóa đơn cho toàn bộ phiếu xuất.</span>
+            }
+            else
+            {
+                <span>Bấm <strong>Gửi yêu cầu</strong> để yêu cầu xuất hóa đơn cho phiếu xuất kho này.</span>
+            }
+            <br />Phiếu xuất: <strong>@Model.Warehouse_export_code</strong>
         </div>
 
         <form asp-action="RequestInvoiceSplit" asp-route-exportId="@Model.Id" method="post">
             @Html.AntiForgeryToken()
             <div style="border: 1px solid #eee; border-radius: 8px; overflow: hidden; background: #fff;">
                 <div style="background: #f8f8f8; padding: 15px 20px; font-weight: 600;">
-                    Chi tiết sản phẩm - Nhập số lượng cần tách
+                    Chi tiết sản phẩm @(isMultiItem ? "- Nhập số lượng cần tách (tùy chọn)" : "")
                 </div>
                 <div style="padding: 20px;">
                     <table class="table table-bordered">
@@ -45,7 +53,10 @@
                             <tr>
                                 <th>Sản phẩm</th>
                                 <th class="text-center" style="width: 100px;">Số lượng gốc</th>
-                                <th class="text-center" style="width: 140px;">Số lượng tách</th>
+                                @if (isMultiItem)
+                                {
+                                    <th class="text-center" style="width: 140px;">Số lượng tách</th>
+                                }
                                 <th class="text-end">Đơn giá</th>
                             </tr>
                         </thead>
@@ -55,11 +66,14 @@
                                 <tr>
                                     <td>@d.Product_name</td>
                                     <td class="text-center">@d.Quantity_shipped</td>
-                                    <td class="text-center">
-                                        <input type="number" name="qty_@d.Product_id" value="0" min="0" max="@d.Quantity_shipped"
-                                               class="form-control form-control-sm text-center qty-input"
-                                               style="max-width: 80px; margin: 0 auto;" />
-                                    </td>
+                                    @if (isMultiItem)
+                                    {
+                                        <td class="text-center">
+                                            <input type="number" name="qty_@d.Product_id" value="0" min="0" max="@d.Quantity_shipped"
+                                                   class="form-control form-control-sm text-center qty-input"
+                                                   style="max-width: 80px; margin: 0 auto;" />
+                                        </td>
+                                    }
                                     <td class="text-end">@d.Unit_price.ToString("N0")</td>
                                 </tr>
                             }
@@ -69,7 +83,7 @@
                 <div style="padding: 15px 20px; background: #fafafa; display: flex; justify-content: space-between; align-items: center;">
                     <a asp-action="Exports" class="btn btn-outline-secondary">Quay lại</a>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-check me-1"></i>Gửi yêu cầu tách hóa đơn
+                        <i class="fas fa-check me-1"></i>Gửi yêu cầu xuất hóa đơn
                     </button>
                 </div>
             </div>

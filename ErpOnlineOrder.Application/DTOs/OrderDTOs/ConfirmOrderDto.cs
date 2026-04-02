@@ -5,6 +5,7 @@ namespace ErpOnlineOrder.Application.DTOs.OrderDTOs
         public int OrderId { get; set; }
         public int Updated_by { get; set; }
         public string? Notify_method { get; set; } = "email";
+        public int? Warehouse_id { get; set; }
         public List<ConfirmOrderItemDto> Approved_items { get; set; } = new();
     }
 

@@ -35,6 +35,8 @@ namespace ErpOnlineOrder.Application.DTOs.EmailDTOs
         StaffReplacementNotification,
         StaffAssignmentNotification,
         ProductAssignedToCustomer,
+        PackageAssignedToCustomer,
         PasswordReset,
+        InvoiceSentToCustomer,
     }
 }

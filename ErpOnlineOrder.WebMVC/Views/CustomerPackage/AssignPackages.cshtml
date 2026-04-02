@@ -91,7 +91,7 @@
                             <th>Khu vực</th>
                             <th>Mô tả</th>
                             <th style="width: 120px;">Trạng thái</th>
-                            <th style="width: 120px;">Thao tác</th>
+                            <th style="width: 180px;">Thao tác</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -131,6 +131,7 @@
                                     }
                                 </td>
                                 <td>
+                                    <div class="d-flex gap-1 flex-wrap">
                                     @if (!isAssigned && package.Is_active)
                                     {
                                         <form method="post" asp-action="Assign" class="d-inline">
@@ -150,6 +151,11 @@
                                     {
                                         <span class="text-muted small">-</span>
                                     }
+                                    <a href="@Url.Action("Details", "Package", new { id = package.Id })"
+                                       class="btn btn-sm btn-outline-info" title="Sửa sản phẩm trong gói">
+                                        <i class="fas fa-boxes me-1"></i>Sản phẩm
+                                    </a>
+                                    </div>
                                 </td>
                             </tr>
                         }

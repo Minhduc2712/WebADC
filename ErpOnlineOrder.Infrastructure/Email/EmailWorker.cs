@@ -111,9 +111,18 @@ namespace ErpOnlineOrder.Infrastructure.Email
                         msg.PrimaryId!.Value, msg.IdList!, ct);
                     break;
 
+                case EmailActionType.PackageAssignedToCustomer:
+                    await emailService.SendPackageAssignedToCustomerAsync(
+                        msg.PrimaryId!.Value, msg.IdList!, ct);
+                    break;
+
                 case EmailActionType.PasswordReset:
                     await emailService.SendPasswordResetEmailAsync(
                         msg.PrimaryId!.Value, msg.Payload!, ct);
+                    break;
+
+                case EmailActionType.InvoiceSentToCustomer:
+                    await emailService.SendInvoiceToCustomerAsync(msg.PrimaryId!.Value, ct);
                     break;
 
                 default:

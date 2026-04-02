@@ -1,4 +1,5 @@
 using ErpOnlineOrder.Application.Constants;
+using ErpOnlineOrder.Application.DTOs.EmailDTOs;
 using ErpOnlineOrder.Application.DTOs.InvoiceDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
@@ -16,11 +17,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
     {
         private readonly IInvoiceService _invoiceService;
         private readonly ICustomerRepository _customerRepository;
+        private readonly IEmailQueue _emailQueue;
 
-        public InvoiceController(IInvoiceService invoiceService, ICustomerRepository customerRepository)
+        public InvoiceController(IInvoiceService invoiceService, ICustomerRepository customerRepository, IEmailQueue emailQueue)
         {
             _invoiceService = invoiceService;
             _customerRepository = customerRepository;
+            _emailQueue = emailQueue;
         }
 
         [HttpGet]
@@ -201,6 +204,29 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             var paged = await _invoiceService.GetByCustomerIdPagedAsync(customerId, request);
             return Ok(ApiResponse<PagedResult<InvoiceDto>>.Ok(paged));
+        }
+
+        [HttpPost("{id}/send-to-customer")]
+        public async Task<IActionResult> SendToCustomer(int id)
+        {
+            try
+            {
+                var invoice = await _invoiceService.GetByIdAsync(id, TryGetCurrentUserId());
+                if (invoice == null)
+                    return NotFound(ApiResponse<object>.Fail("Không tìm thấy hóa đơn."));
+
+                await _emailQueue.EnqueueAsync(new EmailMessage
+                {
+                    ActionType = EmailActionType.InvoiceSentToCustomer,
+                    PrimaryId = id
+                });
+
+                return Ok(ApiResponse<object>.Ok(null, "Đã gửi hóa đơn cho khách hàng qua email."));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
         }
     }
 }

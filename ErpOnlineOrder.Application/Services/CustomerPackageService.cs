@@ -1,4 +1,5 @@
 using ErpOnlineOrder.Application.DTOs.CustomerPackageDTOs;
+using ErpOnlineOrder.Application.DTOs.EmailDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Domain.Models;
@@ -11,17 +12,20 @@ namespace ErpOnlineOrder.Application.Services
         private readonly IPermissionService _permissionService;
         private readonly IStaffRepository _staffRepository;
         private readonly ICustomerManagementRepository _customerManagementRepository;
+        private readonly IEmailQueue _emailQueue;
 
         public CustomerPackageService(
             ICustomerPackageRepository repo,
             IPermissionService permissionService,
             IStaffRepository staffRepository,
-            ICustomerManagementRepository customerManagementRepository)
+            ICustomerManagementRepository customerManagementRepository,
+            IEmailQueue emailQueue)
         {
             _repo = repo;
             _permissionService = permissionService;
             _staffRepository = staffRepository;
             _customerManagementRepository = customerManagementRepository;
+            _emailQueue = emailQueue;
         }
 
         public async Task<bool> IsUserAllowedForCustomerAsync(int? userId, int customerId)
@@ -100,7 +104,14 @@ namespace ErpOnlineOrder.Application.Services
                 existing.Is_active = dto.Is_active;
                 existing.Updated_by = createdBy;
                 await _repo.UpdateAsync(existing);
-                return ToDto(await _repo.GetByIdAsync(existing.Id, includeDetails: true) ?? existing);
+                var restored = ToDto(await _repo.GetByIdAsync(existing.Id, includeDetails: true) ?? existing);
+                await _emailQueue.EnqueueAsync(new EmailMessage
+                {
+                    ActionType = EmailActionType.PackageAssignedToCustomer,
+                    PrimaryId = dto.Customer_id,
+                    IdList = new List<int> { dto.Package_id }
+                });
+                return restored;
             }
 
             var entity = new Customer_package
@@ -112,7 +123,14 @@ namespace ErpOnlineOrder.Application.Services
                 Updated_by = createdBy
             };
             var created = await _repo.AddAsync(entity);
-            return ToDto(await _repo.GetByIdAsync(created.Id, includeDetails: true) ?? created);
+            var result = ToDto(await _repo.GetByIdAsync(created.Id, includeDetails: true) ?? created);
+            await _emailQueue.EnqueueAsync(new EmailMessage
+            {
+                ActionType = EmailActionType.PackageAssignedToCustomer,
+                PrimaryId = dto.Customer_id,
+                IdList = new List<int> { dto.Package_id }
+            });
+            return result;
         }
 
         public async Task<bool> UnassignPackageFromCustomerAsync(int id, int deletedBy)

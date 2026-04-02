@@ -27,6 +27,7 @@ namespace ErpOnlineOrder.Application.Services
         private readonly ICustomerRepository _customerRepository;
         private readonly IStaffRepository _staffRepository;
         private readonly IProductRepository _productRepository;
+        private readonly IPackageRepository _packageRepository;
         private readonly ILogger<EmailService> _logger;
 
         public EmailService(
@@ -40,6 +41,7 @@ namespace ErpOnlineOrder.Application.Services
             ICustomerRepository customerRepository,
             IStaffRepository staffRepository,
             IProductRepository productRepository,
+            IPackageRepository packageRepository,
             ILogger<EmailService> logger)
         {
             _settingService = settingService;
@@ -52,6 +54,7 @@ namespace ErpOnlineOrder.Application.Services
             _customerRepository = customerRepository;
             _staffRepository = staffRepository;
             _productRepository = productRepository;
+            _packageRepository = packageRepository;
             _logger = logger;
         }
 
@@ -314,6 +317,68 @@ namespace ErpOnlineOrder.Application.Services
             catch (System.Exception ex)
             {
                 _logger.LogError(ex, "Lỗi khi gửi email yêu cầu xuất hóa đơn cho phiếu {ExportId}", exportId);
+            }
+        }
+
+        public async Task SendInvoiceToCustomerAsync(int invoiceId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var invoice = await _invoiceRepository.GetByIdAsync(invoiceId);
+                if (invoice == null) return;
+
+                var customer = await _customerRepository.GetByIdAsync(invoice.Customer_id);
+                if (customer == null) return;
+
+                var smtp = await _settingService.GetSmtpSettingsAsync();
+                if (!IsSmtpValid(smtp)) return;
+
+                var customerEmail = await GetCustomerEmailAsync(invoice.Customer_id, customer);
+                if (string.IsNullOrWhiteSpace(customerEmail)) return;
+
+                var customerName = customer.Full_name ?? customer.Customer_code ?? "-";
+                var subject = $"[Hóa đơn] Hóa đơn {invoice.Invoice_code} từ hệ thống";
+
+                var sb = new StringBuilder();
+                sb.AppendLine("<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>");
+                sb.AppendLine($"<h2 style='color: #1a7f37;'>Hóa đơn #{invoice.Invoice_code}</h2>");
+                sb.AppendLine($"<p>Xin chào <strong>{customerName}</strong>,</p>");
+                sb.AppendLine($"<p>Hệ thống gửi đến bạn hóa đơn <strong>{invoice.Invoice_code}</strong> ngày <strong>{invoice.Invoice_date:dd/MM/yyyy}</strong>.</p>");
+                sb.AppendLine("<table style='width: 100%; border-collapse: collapse; margin: 16px 0;'>");
+                sb.AppendLine("<thead><tr style='background: #f8f8f8;'>");
+                sb.AppendLine("<th style='border: 1px solid #ddd; padding: 8px; text-align: left;'>Sản phẩm</th>");
+                sb.AppendLine("<th style='border: 1px solid #ddd; padding: 8px; text-align: center;'>SL</th>");
+                sb.AppendLine("<th style='border: 1px solid #ddd; padding: 8px; text-align: right;'>Đơn giá</th>");
+                sb.AppendLine("<th style='border: 1px solid #ddd; padding: 8px; text-align: right;'>Thành tiền</th>");
+                sb.AppendLine("</tr></thead><tbody>");
+
+                if (invoice.Invoice_Details != null)
+                {
+                    foreach (var d in invoice.Invoice_Details)
+                    {
+                        var productName = d.Product?.Product_name ?? $"SP #{d.Product_id}";
+                        sb.AppendLine($"<tr>");
+                        sb.AppendLine($"<td style='border: 1px solid #ddd; padding: 8px;'>{productName}</td>");
+                        sb.AppendLine($"<td style='border: 1px solid #ddd; padding: 8px; text-align: center;'>{d.Quantity}</td>");
+                        sb.AppendLine($"<td style='border: 1px solid #ddd; padding: 8px; text-align: right;'>{d.Unit_price:N0}</td>");
+                        sb.AppendLine($"<td style='border: 1px solid #ddd; padding: 8px; text-align: right;'>{d.Total_price:N0}</td>");
+                        sb.AppendLine("</tr>");
+                    }
+                }
+
+                sb.AppendLine("</tbody></table>");
+                sb.AppendLine($"<p><strong>Tổng tiền hàng:</strong> {invoice.Total_amount:N0} VNĐ</p>");
+                sb.AppendLine($"<p><strong>Thuế:</strong> {invoice.Tax_amount:N0} VNĐ</p>");
+                sb.AppendLine($"<p style='font-size: 18px; color: #1a7f37;'><strong>Tổng thanh toán: {(invoice.Total_amount + invoice.Tax_amount):N0} VNĐ</strong></p>");
+                sb.AppendLine("<hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;' />");
+                sb.AppendLine("<p style='color: #888; font-size: 13px;'>Đây là email tự động từ hệ thống. Nếu có thắc mắc, vui lòng liên hệ bộ phận hỗ trợ.</p>");
+                sb.AppendLine("</div>");
+
+                await SendEmailAsync(smtp!, customerEmail, subject, sb.ToString(), cancellationToken);
+            }
+            catch (System.Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi gửi hóa đơn {InvoiceId} cho khách hàng", invoiceId);
             }
         }
 
@@ -1076,6 +1141,80 @@ namespace ErpOnlineOrder.Application.Services
             {
                 await smtp.DisconnectAsync(true, cancellationToken);
             }
+        }
+
+        public async Task SendPackageAssignedToCustomerAsync(int customerId, List<int> packageIds, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (packageIds == null || packageIds.Count == 0) return;
+
+                var customer = await _customerRepository.GetByIdAsync(customerId);
+                if (customer == null) return;
+
+                var smtp = await _settingService.GetSmtpSettingsAsync();
+                if (!IsSmtpValid(smtp)) return;
+
+                var customerEmail = await GetCustomerEmailAsync(customerId, customer);
+                if (string.IsNullOrWhiteSpace(customerEmail)) return;
+
+                var packages = new List<Package>();
+                foreach (var pid in packageIds)
+                {
+                    var pkg = await _packageRepository.GetByIdAsync(pid);
+                    if (pkg != null) packages.Add(pkg);
+                }
+                if (packages.Count == 0) return;
+
+                var subject = packages.Count == 1
+                    ? $"[Thông báo] Bạn vừa được gán gói sản phẩm: {packages[0].Package_name}"
+                    : $"[Thông báo] Bạn vừa được gán {packages.Count} gói sản phẩm";
+
+                var body = BuildPackageAssignedBody(customer, packages);
+                await SendEmailAsync(smtp!, customerEmail, subject, body, cancellationToken);
+            }
+            catch (System.Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi gửi email thông báo gán gói cho khách hàng {CustomerId}", customerId);
+            }
+        }
+
+        private static string BuildPackageAssignedBody(Customer customer, List<Package> packages)
+        {
+            var sb = new StringBuilder();
+            sb.Append("<html><body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>");
+            sb.Append("<div style='background: #0d6efd; padding: 30px; text-align: center;'>");
+            sb.Append("<h1 style='color: white; margin: 0;'>Gói sản phẩm đã được kích hoạt</h1>");
+            sb.Append("</div>");
+            sb.Append("<div style='padding: 30px; background: #f9f9f9;'>");
+            sb.Append($"<p>Xin chào <strong>{WebUtility.HtmlEncode(customer.Full_name ?? customer.Customer_code)}</strong>,</p>");
+            if (packages.Count == 1)
+                sb.Append("<p>Tài khoản của bạn vừa được gán gói sản phẩm sau đây:</p>");
+            else
+                sb.Append($"<p>Tài khoản của bạn vừa được gán <strong>{packages.Count}</strong> gói sản phẩm:</p>");
+            sb.Append("<table style='border-collapse: collapse; width: 100%; margin-top: 15px;'>");
+            sb.Append("<tr style='background: #0d6efd; color: white;'>");
+            sb.Append("<th style='padding: 10px; text-align: left; border: 1px solid #dee2e6;'>Mã gói</th>");
+            sb.Append("<th style='padding: 10px; text-align: left; border: 1px solid #dee2e6;'>Tên gói</th>");
+            sb.Append("<th style='padding: 10px; text-align: left; border: 1px solid #dee2e6;'>Mô tả</th>");
+            sb.Append("</tr>");
+            for (int i = 0; i < packages.Count; i++)
+            {
+                var pkg = packages[i];
+                var rowBg = i % 2 == 0 ? "#ffffff" : "#f8f9fa";
+                sb.Append($"<tr style='background: {rowBg};'>");
+                sb.Append($"<td style='padding: 10px; border: 1px solid #dee2e6;'>{WebUtility.HtmlEncode(pkg.Package_code)}</td>");
+                sb.Append($"<td style='padding: 10px; border: 1px solid #dee2e6;'>{WebUtility.HtmlEncode(pkg.Package_name)}</td>");
+                sb.Append($"<td style='padding: 10px; border: 1px solid #dee2e6;'>{WebUtility.HtmlEncode(pkg.Description ?? "—")}</td>");
+                sb.Append("</tr>");
+            }
+            sb.Append("</table>");
+            sb.Append("<p style='margin-top: 20px;'>Bạn có thể đăng nhập vào hệ thống để xem danh sách sản phẩm có trong gói và bắt đầu đặt hàng.</p>");
+            sb.Append("<hr style='border: 1px solid #ddd; margin: 20px 0;'/>");
+            sb.Append("<p style='color: #888; font-size: 12px;'>Email này được gửi tự động, vui lòng không trả lời.</p>");
+            sb.Append("</div>");
+            sb.Append("</body></html>");
+            return sb.ToString();
         }
 
         public async Task SendPasswordResetEmailAsync(int userId, string resetLink, CancellationToken cancellationToken = default)

@@ -78,11 +78,14 @@
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 10px;">
                                     <span style="padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 500; background: @(statusClass)20; color: @statusClass;">@statusText</span>
-                                    <span style="color: #888; font-size: 13px;">Hóa đơn: @exp.Invoice_code</span>
-                                    @if (exp.Details != null && exp.Details.Count > 1 && exp.Status != "Cancelled")
+                                    @if (!string.IsNullOrEmpty(exp.Invoice_code))
                                     {
-                                        <a asp-action="RequestInvoiceSplit" asp-route-exportId="@exp.Id" class="btn btn-sm btn-outline-primary" title="Yêu cầu tách hóa đơn">
-                                            <i class="fas fa-expand-arrows-alt"></i> Tách hóa đơn
+                                        <span style="color: #888; font-size: 13px;">Hóa đơn: @exp.Invoice_code</span>
+                                    }
+                                    @if (exp.Status != "Cancelled" && string.IsNullOrEmpty(exp.Invoice_code) && exp.Details != null && exp.Details.Any())
+                                    {
+                                        <a asp-action="RequestInvoiceSplit" asp-route-exportId="@exp.Id" class="btn btn-sm btn-outline-primary" title="Yêu cầu xuất hóa đơn">
+                                            <i class="fas fa-file-invoice"></i> Yêu cầu hóa đơn
                                         </a>
                                     }
                                 </div>

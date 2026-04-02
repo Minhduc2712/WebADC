@@ -266,6 +266,28 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequirePermission(PermissionCodes.InvoiceView)]
+        public async Task<IActionResult> SendToCustomer(int id)
+        {
+            try
+            {
+                var (success, error) = await _invoiceApiClient.SendToCustomerAsync(id);
+                if (success)
+                    SetSuccessMessage("Đã gửi hóa đơn cho khách hàng qua email.");
+                else
+                    SetErrorMessage(error ?? "Không thể gửi hóa đơn cho khách hàng.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending invoice to customer");
+                SetErrorMessage(GetDetailedErrorMessage(ex));
+            }
+
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
         private async Task LoadCurrentUserPermissions()
         {
             try

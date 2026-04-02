@@ -144,8 +144,17 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
             if (customerId.HasValue && customerId.Value > 0)
             {
-                query = query.Where(p => p.Customer_Products.Any(cp =>
-                    cp.Customer_id == customerId.Value && cp.Is_active));
+                var packageProductIds = _context.CustomerPackages
+                    .Where(cp => cp.Customer_id == customerId.Value && cp.Is_active && !cp.Is_deleted)
+                    .Join(_context.PackageProducts.Where(pp => pp.Is_active && !pp.Is_deleted),
+                        cp => cp.Package_id,
+                        pp => pp.Package_id,
+                        (cp, pp) => pp.Product_id)
+                    .Distinct();
+
+                query = query.Where(p =>
+                    p.Customer_Products.Any(cp => cp.Customer_id == customerId.Value && cp.Is_active) ||
+                    packageProductIds.Contains(p.Id));
             }
 
             var projected = customerId.HasValue && customerId.Value > 0
@@ -201,8 +210,17 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
             if (customerId.HasValue && customerId.Value > 0)
             {
-                query = query.Where(p => p.Customer_Products.Any(cp =>
-                    cp.Customer_id == customerId.Value && cp.Is_active));
+                var packageProductIds = _context.CustomerPackages
+                    .Where(cp => cp.Customer_id == customerId.Value && cp.Is_active && !cp.Is_deleted)
+                    .Join(_context.PackageProducts.Where(pp => pp.Is_active && !pp.Is_deleted),
+                        cp => cp.Package_id,
+                        pp => pp.Package_id,
+                        (cp, pp) => pp.Product_id)
+                    .Distinct();
+
+                query = query.Where(p =>
+                    p.Customer_Products.Any(cp => cp.Customer_id == customerId.Value && cp.Is_active) ||
+                    packageProductIds.Contains(p.Id));
             }
 
             if (!string.IsNullOrWhiteSpace(request.SearchTerm))
@@ -251,8 +269,17 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
             if (customerId.HasValue && customerId.Value > 0)
             {
-                query = query.Where(p => p.Customer_Products.Any(cp =>
-                    cp.Customer_id == customerId.Value && cp.Is_active));
+                var packageProductIds = _context.CustomerPackages
+                    .Where(cp => cp.Customer_id == customerId.Value && cp.Is_active && !cp.Is_deleted)
+                    .Join(_context.PackageProducts.Where(pp => pp.Is_active && !pp.Is_deleted),
+                        cp => cp.Package_id,
+                        pp => pp.Package_id,
+                        (cp, pp) => pp.Product_id)
+                    .Distinct();
+
+                query = query.Where(p =>
+                    p.Customer_Products.Any(cp => cp.Customer_id == customerId.Value && cp.Is_active) ||
+                    packageProductIds.Contains(p.Id));
             }
 
             var projectedQuery = customerId.HasValue && customerId.Value > 0
@@ -272,8 +299,17 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
             if (customerId.HasValue && customerId.Value > 0)
             {
-                query = query.Where(p => p.Customer_Products.Any(cp =>
-                    cp.Customer_id == customerId.Value && cp.Is_active));
+                var packageProductIds = _context.CustomerPackages
+                    .Where(cp => cp.Customer_id == customerId.Value && cp.Is_active && !cp.Is_deleted)
+                    .Join(_context.PackageProducts.Where(pp => pp.Is_active && !pp.Is_deleted),
+                        cp => cp.Package_id,
+                        pp => pp.Package_id,
+                        (cp, pp) => pp.Product_id)
+                    .Distinct();
+
+                query = query.Where(p =>
+                    p.Customer_Products.Any(cp => cp.Customer_id == customerId.Value && cp.Is_active) ||
+                    packageProductIds.Contains(p.Id));
             }
 
             var categories = await query

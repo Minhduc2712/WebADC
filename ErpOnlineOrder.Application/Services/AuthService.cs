@@ -24,6 +24,8 @@ namespace ErpOnlineOrder.Application.Services
         private readonly ICustomerManagementRepository _customerManagementRepository;
         private readonly IStaffRegionRuleRepository _staffRegionRuleRepository;
         private readonly IEmailQueue _emailQueue;
+        private readonly IPackageRepository _packageRepository;
+        private readonly ICustomerPackageRepository _customerPackageRepository;
 
         public AuthService(
             IUserRepository userRepository,
@@ -32,7 +34,9 @@ namespace ErpOnlineOrder.Application.Services
             IPasswordHasher passwordHasher,
             ICustomerManagementRepository customerManagementRepository,
             IStaffRegionRuleRepository staffRegionRuleRepository,
-            IEmailQueue emailQueue)
+            IEmailQueue emailQueue,
+            IPackageRepository packageRepository,
+            ICustomerPackageRepository customerPackageRepository)
         {
             _userRepository = userRepository;
             _roleRepository = roleRepository;
@@ -41,6 +45,8 @@ namespace ErpOnlineOrder.Application.Services
             _customerManagementRepository = customerManagementRepository;
             _staffRegionRuleRepository = staffRegionRuleRepository;
             _emailQueue = emailQueue;
+            _packageRepository = packageRepository;
+            _customerPackageRepository = customerPackageRepository;
         }
 
         public async Task<bool> RegisterByAdminAsync(RegisterStaffDto dto)
@@ -143,6 +149,17 @@ namespace ErpOnlineOrder.Application.Services
             };
 
             await _userRepository.AddAsync(user);
+
+            // Gửi email thông báo đăng ký cho khách hàng + admin
+            if (user.Customer?.Id > 0)
+            {
+                await _emailQueue.EnqueueAsync(new EmailMessage
+                {
+                    ActionType = EmailActionType.CustomerRegistrationNotification,
+                    PrimaryId = user.Customer.Id
+                });
+            }
+
             return true;
         }
 
@@ -198,7 +215,40 @@ namespace ErpOnlineOrder.Application.Services
 
             await _userRepository.AddAsync(user);
 
-            // Auto-assign managing staff based on pre-configured Staff_region_rules
+            var assignedPackageIds = new List<int>();
+            if (user.Customer?.Id > 0 && dto.Organization.Organization_information_id > 0)
+            {
+                var orgPackages = await _packageRepository.GetByOrganizationAsync(dto.Organization.Organization_information_id);
+                foreach (var package in orgPackages)
+                {
+                    var existingCp = await _customerPackageRepository.GetByCustomerAndPackageAsync(user.Customer.Id, package.Id);
+                    if (existingCp == null)
+                    {
+                        await _customerPackageRepository.AddAsync(new Customer_package
+                        {
+                            Customer_id = user.Customer.Id,
+                            Package_id = package.Id,
+                            Is_active = true,
+                            Created_by = 0,
+                            Created_at = now,
+                            Updated_by = 0,
+                            Updated_at = now,
+                            Is_deleted = false
+                        });
+                        assignedPackageIds.Add(package.Id);
+                    }
+                    else if (existingCp.Is_deleted)
+                    {
+                        existingCp.Is_deleted = false;
+                        existingCp.Is_active = true;
+                        existingCp.Updated_by = 0;
+                        existingCp.Updated_at = now;
+                        await _customerPackageRepository.UpdateAsync(existingCp);
+                        assignedPackageIds.Add(package.Id);
+                    }
+                }
+            }
+
             if (dto.Personal.Province_id.HasValue && user.Customer != null)
             {
                 var rule = await _staffRegionRuleRepository.FindByProvinceAndWardAsync(
@@ -229,6 +279,15 @@ namespace ErpOnlineOrder.Application.Services
                     ActionType = EmailActionType.CustomerRegistrationNotification,
                     PrimaryId = user.Customer.Id
                 });
+
+                // Thông báo gói vừa được gán tự động theo tổ chức
+                if (assignedPackageIds.Count > 0)
+                    await _emailQueue.EnqueueAsync(new EmailMessage
+                    {
+                        ActionType = EmailActionType.PackageAssignedToCustomer,
+                        PrimaryId = user.Customer.Id,
+                        IdList = assignedPackageIds
+                    });
             }
 
             return true;

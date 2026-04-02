@@ -24,5 +24,6 @@ namespace ErpOnlineOrder.WebMVC.Services.Interfaces
         Task<ApiResponse<InvoiceDto>?> CreateFromExportAsync(int exportId, CancellationToken cancellationToken = default);
 
         Task<PagedResult<InvoiceDto>> GetByCustomerIdPagedAsync(int customerId, InvoiceFilterRequest request, CancellationToken cancellationToken = default);
+        Task<(bool Success, string? Error)> SendToCustomerAsync(int invoiceId, CancellationToken cancellationToken = default);
     }
 }

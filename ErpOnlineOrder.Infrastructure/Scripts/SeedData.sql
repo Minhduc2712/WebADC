@@ -532,10 +532,11 @@ IF NOT EXISTS (SELECT 1 FROM Provinces WHERE Province_code = 'AG')
     VALUES ('AG', N'An Giang', @RegionMN, 0, GETDATE(), 0, GETDATE(), 0);
 
 -- Wards
-DECLARE @WProv_HN INT, @WProv_HCM INT, @WProv_DN INT;
+DECLARE @WProv_HN INT, @WProv_HCM INT, @WProv_DN INT, @WProv_HP INT;
 SELECT @WProv_HN  = Id FROM Provinces WHERE Province_code = 'HN';
 SELECT @WProv_HCM = Id FROM Provinces WHERE Province_code = 'HCM';
 SELECT @WProv_DN  = Id FROM Provinces WHERE Province_code = 'DN';
+SELECT @WProv_HP  = Id FROM Provinces WHERE Province_code = 'HP';
 
 -- Hà Nội - Quận Hoàn Kiếm
 IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HN-HK-001')
@@ -568,7 +569,6 @@ IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HN-CG-004')
     INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('HN-CG-004', N'Phường Quan Hoa', @WProv_HN, 0, GETDATE(), 0, GETDATE(), 0);
 
--- Hà Nội - Quận Đống Đa
 IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HN-DD-001')
     INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('HN-DD-001', N'Phường Cát Linh', @WProv_HN, 0, GETDATE(), 0, GETDATE(), 0);
@@ -579,7 +579,6 @@ IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HN-DD-003')
     INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('HN-DD-003', N'Phường Quốc Tử Giám', @WProv_HN, 0, GETDATE(), 0, GETDATE(), 0);
 
--- TP.HCM - Quận 1
 IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HCM-Q1-001')
     INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('HCM-Q1-001', N'Phường Bến Nghé', @WProv_HCM, 0, GETDATE(), 0, GETDATE(), 0);
@@ -596,7 +595,6 @@ IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HCM-Q1-005')
     INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('HCM-Q1-005', N'Phường Cầu Ông Lãnh', @WProv_HCM, 0, GETDATE(), 0, GETDATE(), 0);
 
--- TP.HCM - Quận 3
 IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HCM-Q3-001')
     INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('HCM-Q3-001', N'Phường 1', @WProv_HCM, 0, GETDATE(), 0, GETDATE(), 0);
@@ -607,7 +605,6 @@ IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HCM-Q3-003')
     INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('HCM-Q3-003', N'Phường Võ Thị Sáu', @WProv_HCM, 0, GETDATE(), 0, GETDATE(), 0);
 
--- TP.HCM - Quận 7
 IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HCM-Q7-001')
     INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('HCM-Q7-001', N'Phường Tân Phú', @WProv_HCM, 0, GETDATE(), 0, GETDATE(), 0);
@@ -618,7 +615,6 @@ IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HCM-Q7-003')
     INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('HCM-Q7-003', N'Phường Phú Mỹ', @WProv_HCM, 0, GETDATE(), 0, GETDATE(), 0);
 
--- Đà Nẵng - Quận Hải Châu
 IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'DN-HC-001')
     INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('DN-HC-001', N'Phường Hải Châu I', @WProv_DN, 0, GETDATE(), 0, GETDATE(), 0);
@@ -629,7 +625,6 @@ IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'DN-HC-003')
     INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('DN-HC-003', N'Phường Thạch Thang', @WProv_DN, 0, GETDATE(), 0, GETDATE(), 0);
 
--- Đà Nẵng - Quận Sơn Trà
 IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'DN-ST-001')
     INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('DN-ST-001', N'Phường Mân Thái', @WProv_DN, 0, GETDATE(), 0, GETDATE(), 0);
@@ -637,10 +632,85 @@ IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'DN-ST-002')
     INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('DN-ST-002', N'Phường An Hải Bắc', @WProv_DN, 0, GETDATE(), 0, GETDATE(), 0);
 
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HN-HK-006')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HN-HK-006', N'Phường Hoàn Kiếm', @WProv_HN, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HN-HK-007')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HN-HK-007', N'Phường Cửa Nam', @WProv_HN, 0, GETDATE(), 0, GETDATE(), 0);
+
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HN-BD-001')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HN-BD-001', N'Phường Ba Đình', @WProv_HN, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HN-BD-002')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HN-BD-002', N'Phường Ngọc Hà', @WProv_HN, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HN-BD-003')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HN-BD-003', N'Phường Giảng Võ', @WProv_HN, 0, GETDATE(), 0, GETDATE(), 0);
+
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HN-HBT-001')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HN-HBT-001', N'Phường Hai Bà Trưng', @WProv_HN, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HN-HBT-002')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HN-HBT-002', N'Phường Vĩnh Tuy', @WProv_HN, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HN-HBT-003')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HN-HBT-003', N'Phường Bạch Mai', @WProv_HN, 0, GETDATE(), 0, GETDATE(), 0);
+
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HN-DD-004')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HN-DD-004', N'Phường Đống Đa', @WProv_HN, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HN-DD-005')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HN-DD-005', N'Phường Kim Liên', @WProv_HN, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HN-DD-006')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HN-DD-006', N'Phường Văn Miếu - Quốc Tử Giám', @WProv_HN, 0, GETDATE(), 0, GETDATE(), 0);
+
+-- Hải Phòng
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HP-001')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HP-001', N'Phường Thủy Nguyên', @WProv_HP, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HP-002')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HP-002', N'Phường Thiên Hương', @WProv_HP, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HP-003')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HP-003', N'Phường Hòa Bình', @WProv_HP, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HP-004')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HP-004', N'Phường Nam Triệu', @WProv_HP, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HP-005')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HP-005', N'Phường Bạch Đằng', @WProv_HP, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HP-006')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HP-006', N'Phường Lưu Kiếm', @WProv_HP, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HP-007')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HP-007', N'Phường Lê Ích Mộc', @WProv_HP, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HP-008')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HP-008', N'Phường Hồng Bàng', @WProv_HP, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HP-009')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HP-009', N'Phường Hồng An', @WProv_HP, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HP-010')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HP-010', N'Phường Ngô Quyền', @WProv_HP, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Wards WHERE Ward_code = 'HP-011')
+    INSERT INTO Wards (Ward_code, Ward_name, Province_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('HP-011', N'Phường Gia Viên', @WProv_HP, 0, GETDATE(), 0, GETDATE(), 0);
+
 -- Categories
 IF NOT EXISTS (SELECT 1 FROM Categories WHERE Category_code = 'SACH')
     INSERT INTO Categories (Category_code, Category_name, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('SACH', N'Sách', 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Categories WHERE Category_code = 'SGK-TH')
+    INSERT INTO Categories (Category_code, Category_name, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SGK-TH', N'Sách giáo khoa tiểu học', 0, GETDATE(), 0, GETDATE(), 0);
 
 -- Authors
 IF NOT EXISTS (SELECT 1 FROM Authors WHERE Author_code = 'TG001')
@@ -664,6 +734,9 @@ IF NOT EXISTS (SELECT 1 FROM Authors WHERE Author_code = 'TG006')
 IF NOT EXISTS (SELECT 1 FROM Authors WHERE Author_code = 'TG007')
     INSERT INTO Authors (Author_code, Author_name, Pen_name, Nationality, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('TG007', N'Antoine de Saint-Exupéry', N'Antoine de Saint-Exupéry', N'Pháp', 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Authors WHERE Author_code = 'TG008')
+    INSERT INTO Authors (Author_code, Author_name, Pen_name, Nationality, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('TG008', N'Bộ Giáo dục và Đào tạo', N'Bộ GD&ĐT', N'Việt Nam', 0, GETDATE(), 0, GETDATE(), 0);
 
 -- Publishers
 IF NOT EXISTS (SELECT 1 FROM Publishers WHERE Publisher_code = 'NXB001')
@@ -678,6 +751,9 @@ IF NOT EXISTS (SELECT 1 FROM Publishers WHERE Publisher_code = 'NXB003')
 IF NOT EXISTS (SELECT 1 FROM Publishers WHERE Publisher_code = 'NXB004')
     INSERT INTO Publishers (Publisher_code, Publisher_name, Publisher_address, Publisher_phone, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
     VALUES ('NXB004', N'NXB Hội Nhà Văn', N'Hà Nội', '0244567890', 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Publishers WHERE Publisher_code = 'NXB005')
+    INSERT INTO Publishers (Publisher_code, Publisher_name, Publisher_address, Publisher_phone, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('NXB005', N'NXB Giáo dục Việt Nam', N'Hà Nội', '0245678901', 0, GETDATE(), 0, GETDATE(), 0);
 
 -- CoverTypes
 IF NOT EXISTS (SELECT 1 FROM CoverTypes WHERE Cover_type_code = 'BC')
@@ -738,6 +814,46 @@ IF NOT EXISTS (SELECT 1 FROM SystemSettings WHERE SettingKey = 'SMTP_PASSWORD')
     VALUES ('SMTP_PASSWORD', '', N'Mật khẩu ứng dụng email', 0, GETDATE(), 0, GETDATE(), 0);
 
 PRINT N'  -> SystemSettings OK';
+GO
+
+-- =============================================
+-- 6b. SEED ORGANIZATIONS (Đơn vị / Trường học)
+-- =============================================
+PRINT N'[6b] Seeding Organizations...';
+
+IF NOT EXISTS (SELECT 1 FROM OrganizationInformations WHERE Organization_code = 'DV001')
+    INSERT INTO OrganizationInformations (Organization_code, Organization_name, Address, Tax_number, Recipient_phone, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('DV001', N'Trường Tiểu học Thăng Long', N'Hà Nội', '', '', 0, GETDATE(), 0, GETDATE(), 0);
+
+IF NOT EXISTS (SELECT 1 FROM OrganizationInformations WHERE Organization_code = 'DV002')
+    INSERT INTO OrganizationInformations (Organization_code, Organization_name, Address, Tax_number, Recipient_phone, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('DV002', N'Trường Tiểu học Trưng Vương', N'Hà Nội', '', '', 0, GETDATE(), 0, GETDATE(), 0);
+
+IF NOT EXISTS (SELECT 1 FROM OrganizationInformations WHERE Organization_code = 'DV003')
+    INSERT INTO OrganizationInformations (Organization_code, Organization_name, Address, Tax_number, Recipient_phone, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('DV003', N'Trường Tiểu học Nam Từ Liêm', N'Hà Nội', '', '', 0, GETDATE(), 0, GETDATE(), 0);
+
+IF NOT EXISTS (SELECT 1 FROM OrganizationInformations WHERE Organization_code = 'DV004')
+    INSERT INTO OrganizationInformations (Organization_code, Organization_name, Address, Tax_number, Recipient_phone, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('DV004', N'Trường TH, THCS & THPT Thực Nghiệm', N'Hà Nội', '', '', 0, GETDATE(), 0, GETDATE(), 0);
+
+IF NOT EXISTS (SELECT 1 FROM OrganizationInformations WHERE Organization_code = 'DV005')
+    INSERT INTO OrganizationInformations (Organization_code, Organization_name, Address, Tax_number, Recipient_phone, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('DV005', N'Trường Tiểu học Lý Thường Kiệt', N'Hà Nội', '', '', 0, GETDATE(), 0, GETDATE(), 0);
+
+IF NOT EXISTS (SELECT 1 FROM OrganizationInformations WHERE Organization_code = 'DV006')
+    INSERT INTO OrganizationInformations (Organization_code, Organization_name, Address, Tax_number, Recipient_phone, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('DV006', N'Trường Tiểu học Trung Văn', N'Hà Nội', '', '', 0, GETDATE(), 0, GETDATE(), 0);
+
+IF NOT EXISTS (SELECT 1 FROM OrganizationInformations WHERE Organization_code = 'DV007')
+    INSERT INTO OrganizationInformations (Organization_code, Organization_name, Address, Tax_number, Recipient_phone, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('DV007', N'Trường Tiểu Học Ba Đình', N'Hà Nội', '', '', 0, GETDATE(), 0, GETDATE(), 0);
+
+IF NOT EXISTS (SELECT 1 FROM OrganizationInformations WHERE Organization_code = 'DV008')
+    INSERT INTO OrganizationInformations (Organization_code, Organization_name, Address, Tax_number, Recipient_phone, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('DV008', N'Trường Tiểu học Nam Thành Công', N'Hà Nội', '', '', 0, GETDATE(), 0, GETDATE(), 0);
+
+PRINT N'  -> Organizations OK';
 GO
 
 -- =============================================
@@ -899,6 +1015,434 @@ BEGIN
 END
 
 PRINT N'  -> Sample Products OK';
+GO
+
+-- =============================================
+-- 7b. SEED ELEMENTARY SCHOOL TEXTBOOKS (Sách giáo khoa tiểu học)
+-- =============================================
+PRINT N'[7b] Seeding Elementary School Textbooks...';
+
+DECLARE @NXB_GD INT, @NPP_FA INT, @CAT_SGK INT, @AUTH_BGD INT, @CV_BM INT;
+SELECT @NXB_GD  = Id FROM Publishers  WHERE Publisher_code  = 'NXB005';
+SELECT @NPP_FA  = Id FROM Distributors WHERE Distributor_code = 'NPP001';
+SELECT @CAT_SGK = Id FROM Categories  WHERE Category_code   = 'SGK-TH';
+SELECT @AUTH_BGD= Id FROM Authors     WHERE Author_code     = 'TG008';
+SELECT @CV_BM   = Id FROM CoverTypes  WHERE Cover_type_code = 'BM';
+
+-- SP034: Toán 1 - Kết nối tri thức với cuộc sống
+IF NOT EXISTS (SELECT 1 FROM Products WHERE Product_code = 'SP034')
+BEGIN
+    INSERT INTO Products (Product_code, Product_name, Product_price, Product_description, Tax_rate, Cover_type_id, Publisher_id, Distributor_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SP034', N'Toán 1 - Kết nối tri thức với cuộc sống', 28000, N'Sách giáo khoa Toán lớp 1 bộ Kết nối tri thức với cuộc sống, dành cho học sinh tiểu học.', 5, @CV_BM, @NXB_GD, @NPP_FA, 0, GETDATE(), 0, GETDATE(), 0);
+    DECLARE @P34 INT = SCOPE_IDENTITY();
+    INSERT INTO ProductCategories (Product_id, Category_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P34, @CAT_SGK, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductAuthors    (Product_id, Author_id,   Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P34, @AUTH_BGD, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductImages     (Product_id, Image_url, Is_main, Sort_order, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P34, '/shop/images/homepage-one/category-img/dresses.webp', 1, 0, 0, GETDATE(), 0, GETDATE(), 0);
+END
+
+-- SP035: Tiếng Việt 1 - Tập 1 - Kết nối tri thức
+IF NOT EXISTS (SELECT 1 FROM Products WHERE Product_code = 'SP035')
+BEGIN
+    INSERT INTO Products (Product_code, Product_name, Product_price, Product_description, Tax_rate, Cover_type_id, Publisher_id, Distributor_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SP035', N'Tiếng Việt 1 Tập 1 - Kết nối tri thức với cuộc sống', 22000, N'Sách giáo khoa Tiếng Việt lớp 1 tập 1 bộ Kết nối tri thức.', 5, @CV_BM, @NXB_GD, @NPP_FA, 0, GETDATE(), 0, GETDATE(), 0);
+    DECLARE @P35 INT = SCOPE_IDENTITY();
+    INSERT INTO ProductCategories (Product_id, Category_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P35, @CAT_SGK, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductAuthors    (Product_id, Author_id,   Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P35, @AUTH_BGD, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductImages     (Product_id, Image_url, Is_main, Sort_order, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P35, '/shop/images/homepage-one/category-img/dresses.webp', 1, 0, 0, GETDATE(), 0, GETDATE(), 0);
+END
+
+-- SP036: Tiếng Việt 1 - Tập 2 - Kết nối tri thức
+IF NOT EXISTS (SELECT 1 FROM Products WHERE Product_code = 'SP036')
+BEGIN
+    INSERT INTO Products (Product_code, Product_name, Product_price, Product_description, Tax_rate, Cover_type_id, Publisher_id, Distributor_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SP036', N'Tiếng Việt 1 Tập 2 - Kết nối tri thức với cuộc sống', 22000, N'Sách giáo khoa Tiếng Việt lớp 1 tập 2 bộ Kết nối tri thức.', 5, @CV_BM, @NXB_GD, @NPP_FA, 0, GETDATE(), 0, GETDATE(), 0);
+    DECLARE @P36 INT = SCOPE_IDENTITY();
+    INSERT INTO ProductCategories (Product_id, Category_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P36, @CAT_SGK, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductAuthors    (Product_id, Author_id,   Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P36, @AUTH_BGD, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductImages     (Product_id, Image_url, Is_main, Sort_order, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P36, '/shop/images/homepage-one/category-img/dresses.webp', 1, 0, 0, GETDATE(), 0, GETDATE(), 0);
+END
+
+-- SP037: Tự nhiên và Xã hội 1
+IF NOT EXISTS (SELECT 1 FROM Products WHERE Product_code = 'SP037')
+BEGIN
+    INSERT INTO Products (Product_code, Product_name, Product_price, Product_description, Tax_rate, Cover_type_id, Publisher_id, Distributor_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SP037', N'Tự nhiên và Xã hội 1 - Kết nối tri thức với cuộc sống', 22000, N'Sách giáo khoa Tự nhiên và Xã hội lớp 1 bộ Kết nối tri thức.', 5, @CV_BM, @NXB_GD, @NPP_FA, 0, GETDATE(), 0, GETDATE(), 0);
+    DECLARE @P37 INT = SCOPE_IDENTITY();
+    INSERT INTO ProductCategories (Product_id, Category_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P37, @CAT_SGK, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductAuthors    (Product_id, Author_id,   Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P37, @AUTH_BGD, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductImages     (Product_id, Image_url, Is_main, Sort_order, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P37, '/shop/images/homepage-one/category-img/dresses.webp', 1, 0, 0, GETDATE(), 0, GETDATE(), 0);
+END
+
+-- SP038: Đạo đức 1
+IF NOT EXISTS (SELECT 1 FROM Products WHERE Product_code = 'SP038')
+BEGIN
+    INSERT INTO Products (Product_code, Product_name, Product_price, Product_description, Tax_rate, Cover_type_id, Publisher_id, Distributor_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SP038', N'Đạo đức 1 - Kết nối tri thức với cuộc sống', 18000, N'Sách giáo khoa Đạo đức lớp 1 bộ Kết nối tri thức.', 5, @CV_BM, @NXB_GD, @NPP_FA, 0, GETDATE(), 0, GETDATE(), 0);
+    DECLARE @P38 INT = SCOPE_IDENTITY();
+    INSERT INTO ProductCategories (Product_id, Category_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P38, @CAT_SGK, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductAuthors    (Product_id, Author_id,   Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P38, @AUTH_BGD, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductImages     (Product_id, Image_url, Is_main, Sort_order, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P38, '/shop/images/homepage-one/category-img/dresses.webp', 1, 0, 0, GETDATE(), 0, GETDATE(), 0);
+END
+
+-- SP039: Toán 2 - Kết nối tri thức
+IF NOT EXISTS (SELECT 1 FROM Products WHERE Product_code = 'SP039')
+BEGIN
+    INSERT INTO Products (Product_code, Product_name, Product_price, Product_description, Tax_rate, Cover_type_id, Publisher_id, Distributor_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SP039', N'Toán 2 - Kết nối tri thức với cuộc sống', 29000, N'Sách giáo khoa Toán lớp 2 bộ Kết nối tri thức với cuộc sống.', 5, @CV_BM, @NXB_GD, @NPP_FA, 0, GETDATE(), 0, GETDATE(), 0);
+    DECLARE @P39 INT = SCOPE_IDENTITY();
+    INSERT INTO ProductCategories (Product_id, Category_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P39, @CAT_SGK, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductAuthors    (Product_id, Author_id,   Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P39, @AUTH_BGD, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductImages     (Product_id, Image_url, Is_main, Sort_order, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P39, '/shop/images/homepage-one/category-img/dresses.webp', 1, 0, 0, GETDATE(), 0, GETDATE(), 0);
+END
+
+-- SP040: Tiếng Việt 2 Tập 1
+IF NOT EXISTS (SELECT 1 FROM Products WHERE Product_code = 'SP040')
+BEGIN
+    INSERT INTO Products (Product_code, Product_name, Product_price, Product_description, Tax_rate, Cover_type_id, Publisher_id, Distributor_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SP040', N'Tiếng Việt 2 Tập 1 - Kết nối tri thức với cuộc sống', 24000, N'Sách giáo khoa Tiếng Việt lớp 2 tập 1 bộ Kết nối tri thức.', 5, @CV_BM, @NXB_GD, @NPP_FA, 0, GETDATE(), 0, GETDATE(), 0);
+    DECLARE @P40 INT = SCOPE_IDENTITY();
+    INSERT INTO ProductCategories (Product_id, Category_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P40, @CAT_SGK, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductAuthors    (Product_id, Author_id,   Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P40, @AUTH_BGD, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductImages     (Product_id, Image_url, Is_main, Sort_order, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P40, '/shop/images/homepage-one/category-img/dresses.webp', 1, 0, 0, GETDATE(), 0, GETDATE(), 0);
+END
+
+-- SP041: Tự nhiên và Xã hội 2
+IF NOT EXISTS (SELECT 1 FROM Products WHERE Product_code = 'SP041')
+BEGIN
+    INSERT INTO Products (Product_code, Product_name, Product_price, Product_description, Tax_rate, Cover_type_id, Publisher_id, Distributor_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SP041', N'Tự nhiên và Xã hội 2 - Kết nối tri thức với cuộc sống', 23000, N'Sách giáo khoa Tự nhiên và Xã hội lớp 2 bộ Kết nối tri thức.', 5, @CV_BM, @NXB_GD, @NPP_FA, 0, GETDATE(), 0, GETDATE(), 0);
+    DECLARE @P41 INT = SCOPE_IDENTITY();
+    INSERT INTO ProductCategories (Product_id, Category_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P41, @CAT_SGK, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductAuthors    (Product_id, Author_id,   Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P41, @AUTH_BGD, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductImages     (Product_id, Image_url, Is_main, Sort_order, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P41, '/shop/images/homepage-one/category-img/dresses.webp', 1, 0, 0, GETDATE(), 0, GETDATE(), 0);
+END
+
+-- SP042: Toán 3 - Kết nối tri thức
+IF NOT EXISTS (SELECT 1 FROM Products WHERE Product_code = 'SP042')
+BEGIN
+    INSERT INTO Products (Product_code, Product_name, Product_price, Product_description, Tax_rate, Cover_type_id, Publisher_id, Distributor_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SP042', N'Toán 3 - Kết nối tri thức với cuộc sống', 30000, N'Sách giáo khoa Toán lớp 3 bộ Kết nối tri thức với cuộc sống.', 5, @CV_BM, @NXB_GD, @NPP_FA, 0, GETDATE(), 0, GETDATE(), 0);
+    DECLARE @P42 INT = SCOPE_IDENTITY();
+    INSERT INTO ProductCategories (Product_id, Category_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P42, @CAT_SGK, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductAuthors    (Product_id, Author_id,   Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P42, @AUTH_BGD, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductImages     (Product_id, Image_url, Is_main, Sort_order, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P42, '/shop/images/homepage-one/category-img/dresses.webp', 1, 0, 0, GETDATE(), 0, GETDATE(), 0);
+END
+
+-- SP043: Tiếng Việt 3 Tập 1
+IF NOT EXISTS (SELECT 1 FROM Products WHERE Product_code = 'SP043')
+BEGIN
+    INSERT INTO Products (Product_code, Product_name, Product_price, Product_description, Tax_rate, Cover_type_id, Publisher_id, Distributor_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SP043', N'Tiếng Việt 3 Tập 1 - Kết nối tri thức với cuộc sống', 25000, N'Sách giáo khoa Tiếng Việt lớp 3 tập 1 bộ Kết nối tri thức.', 5, @CV_BM, @NXB_GD, @NPP_FA, 0, GETDATE(), 0, GETDATE(), 0);
+    DECLARE @P43 INT = SCOPE_IDENTITY();
+    INSERT INTO ProductCategories (Product_id, Category_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P43, @CAT_SGK, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductAuthors    (Product_id, Author_id,   Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P43, @AUTH_BGD, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductImages     (Product_id, Image_url, Is_main, Sort_order, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P43, '/shop/images/homepage-one/category-img/dresses.webp', 1, 0, 0, GETDATE(), 0, GETDATE(), 0);
+END
+
+-- SP044: Tự nhiên và Xã hội 3
+IF NOT EXISTS (SELECT 1 FROM Products WHERE Product_code = 'SP044')
+BEGIN
+    INSERT INTO Products (Product_code, Product_name, Product_price, Product_description, Tax_rate, Cover_type_id, Publisher_id, Distributor_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SP044', N'Tự nhiên và Xã hội 3 - Kết nối tri thức với cuộc sống', 24000, N'Sách giáo khoa Tự nhiên và Xã hội lớp 3 bộ Kết nối tri thức.', 5, @CV_BM, @NXB_GD, @NPP_FA, 0, GETDATE(), 0, GETDATE(), 0);
+    DECLARE @P44 INT = SCOPE_IDENTITY();
+    INSERT INTO ProductCategories (Product_id, Category_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P44, @CAT_SGK, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductAuthors    (Product_id, Author_id,   Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P44, @AUTH_BGD, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductImages     (Product_id, Image_url, Is_main, Sort_order, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P44, '/shop/images/homepage-one/category-img/dresses.webp', 1, 0, 0, GETDATE(), 0, GETDATE(), 0);
+END
+
+-- SP045: Toán 4 - Kết nối tri thức
+IF NOT EXISTS (SELECT 1 FROM Products WHERE Product_code = 'SP045')
+BEGIN
+    INSERT INTO Products (Product_code, Product_name, Product_price, Product_description, Tax_rate, Cover_type_id, Publisher_id, Distributor_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SP045', N'Toán 4 - Kết nối tri thức với cuộc sống', 32000, N'Sách giáo khoa Toán lớp 4 bộ Kết nối tri thức với cuộc sống.', 5, @CV_BM, @NXB_GD, @NPP_FA, 0, GETDATE(), 0, GETDATE(), 0);
+    DECLARE @P45 INT = SCOPE_IDENTITY();
+    INSERT INTO ProductCategories (Product_id, Category_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P45, @CAT_SGK, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductAuthors    (Product_id, Author_id,   Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P45, @AUTH_BGD, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductImages     (Product_id, Image_url, Is_main, Sort_order, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P45, '/shop/images/homepage-one/category-img/dresses.webp', 1, 0, 0, GETDATE(), 0, GETDATE(), 0);
+END
+
+-- SP046: Tiếng Việt 4 Tập 1
+IF NOT EXISTS (SELECT 1 FROM Products WHERE Product_code = 'SP046')
+BEGIN
+    INSERT INTO Products (Product_code, Product_name, Product_price, Product_description, Tax_rate, Cover_type_id, Publisher_id, Distributor_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SP046', N'Tiếng Việt 4 Tập 1 - Kết nối tri thức với cuộc sống', 27000, N'Sách giáo khoa Tiếng Việt lớp 4 tập 1 bộ Kết nối tri thức.', 5, @CV_BM, @NXB_GD, @NPP_FA, 0, GETDATE(), 0, GETDATE(), 0);
+    DECLARE @P46 INT = SCOPE_IDENTITY();
+    INSERT INTO ProductCategories (Product_id, Category_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P46, @CAT_SGK, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductAuthors    (Product_id, Author_id,   Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P46, @AUTH_BGD, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductImages     (Product_id, Image_url, Is_main, Sort_order, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P46, '/shop/images/homepage-one/category-img/dresses.webp', 1, 0, 0, GETDATE(), 0, GETDATE(), 0);
+END
+
+-- SP047: Khoa học 4
+IF NOT EXISTS (SELECT 1 FROM Products WHERE Product_code = 'SP047')
+BEGIN
+    INSERT INTO Products (Product_code, Product_name, Product_price, Product_description, Tax_rate, Cover_type_id, Publisher_id, Distributor_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SP047', N'Khoa học 4 - Kết nối tri thức với cuộc sống', 26000, N'Sách giáo khoa Khoa học lớp 4 bộ Kết nối tri thức.', 5, @CV_BM, @NXB_GD, @NPP_FA, 0, GETDATE(), 0, GETDATE(), 0);
+    DECLARE @P47 INT = SCOPE_IDENTITY();
+    INSERT INTO ProductCategories (Product_id, Category_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P47, @CAT_SGK, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductAuthors    (Product_id, Author_id,   Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P47, @AUTH_BGD, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductImages     (Product_id, Image_url, Is_main, Sort_order, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P47, '/shop/images/homepage-one/category-img/dresses.webp', 1, 0, 0, GETDATE(), 0, GETDATE(), 0);
+END
+
+-- SP048: Lịch sử và Địa lý 4
+IF NOT EXISTS (SELECT 1 FROM Products WHERE Product_code = 'SP048')
+BEGIN
+    INSERT INTO Products (Product_code, Product_name, Product_price, Product_description, Tax_rate, Cover_type_id, Publisher_id, Distributor_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SP048', N'Lịch sử và Địa lý 4 - Kết nối tri thức với cuộc sống', 28000, N'Sách giáo khoa Lịch sử và Địa lý lớp 4 bộ Kết nối tri thức.', 5, @CV_BM, @NXB_GD, @NPP_FA, 0, GETDATE(), 0, GETDATE(), 0);
+    DECLARE @P48 INT = SCOPE_IDENTITY();
+    INSERT INTO ProductCategories (Product_id, Category_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P48, @CAT_SGK, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductAuthors    (Product_id, Author_id,   Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P48, @AUTH_BGD, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductImages     (Product_id, Image_url, Is_main, Sort_order, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P48, '/shop/images/homepage-one/category-img/dresses.webp', 1, 0, 0, GETDATE(), 0, GETDATE(), 0);
+END
+
+-- SP049: Toán 5 - Kết nối tri thức
+IF NOT EXISTS (SELECT 1 FROM Products WHERE Product_code = 'SP049')
+BEGIN
+    INSERT INTO Products (Product_code, Product_name, Product_price, Product_description, Tax_rate, Cover_type_id, Publisher_id, Distributor_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SP049', N'Toán 5 - Kết nối tri thức với cuộc sống', 33000, N'Sách giáo khoa Toán lớp 5 bộ Kết nối tri thức với cuộc sống.', 5, @CV_BM, @NXB_GD, @NPP_FA, 0, GETDATE(), 0, GETDATE(), 0);
+    DECLARE @P49 INT = SCOPE_IDENTITY();
+    INSERT INTO ProductCategories (Product_id, Category_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P49, @CAT_SGK, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductAuthors    (Product_id, Author_id,   Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P49, @AUTH_BGD, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductImages     (Product_id, Image_url, Is_main, Sort_order, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P49, '/shop/images/homepage-one/category-img/dresses.webp', 1, 0, 0, GETDATE(), 0, GETDATE(), 0);
+END
+
+-- SP050: Tiếng Việt 5 Tập 1
+IF NOT EXISTS (SELECT 1 FROM Products WHERE Product_code = 'SP050')
+BEGIN
+    INSERT INTO Products (Product_code, Product_name, Product_price, Product_description, Tax_rate, Cover_type_id, Publisher_id, Distributor_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SP050', N'Tiếng Việt 5 Tập 1 - Kết nối tri thức với cuộc sống', 28000, N'Sách giáo khoa Tiếng Việt lớp 5 tập 1 bộ Kết nối tri thức.', 5, @CV_BM, @NXB_GD, @NPP_FA, 0, GETDATE(), 0, GETDATE(), 0);
+    DECLARE @P50 INT = SCOPE_IDENTITY();
+    INSERT INTO ProductCategories (Product_id, Category_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P50, @CAT_SGK, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductAuthors    (Product_id, Author_id,   Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P50, @AUTH_BGD, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductImages     (Product_id, Image_url, Is_main, Sort_order, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P50, '/shop/images/homepage-one/category-img/dresses.webp', 1, 0, 0, GETDATE(), 0, GETDATE(), 0);
+END
+
+-- SP051: Khoa học 5
+IF NOT EXISTS (SELECT 1 FROM Products WHERE Product_code = 'SP051')
+BEGIN
+    INSERT INTO Products (Product_code, Product_name, Product_price, Product_description, Tax_rate, Cover_type_id, Publisher_id, Distributor_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SP051', N'Khoa học 5 - Kết nối tri thức với cuộc sống', 27000, N'Sách giáo khoa Khoa học lớp 5 bộ Kết nối tri thức.', 5, @CV_BM, @NXB_GD, @NPP_FA, 0, GETDATE(), 0, GETDATE(), 0);
+    DECLARE @P51 INT = SCOPE_IDENTITY();
+    INSERT INTO ProductCategories (Product_id, Category_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P51, @CAT_SGK, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductAuthors    (Product_id, Author_id,   Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P51, @AUTH_BGD, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductImages     (Product_id, Image_url, Is_main, Sort_order, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P51, '/shop/images/homepage-one/category-img/dresses.webp', 1, 0, 0, GETDATE(), 0, GETDATE(), 0);
+END
+
+-- SP052: Lịch sử và Địa lý 5
+IF NOT EXISTS (SELECT 1 FROM Products WHERE Product_code = 'SP052')
+BEGIN
+    INSERT INTO Products (Product_code, Product_name, Product_price, Product_description, Tax_rate, Cover_type_id, Publisher_id, Distributor_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SP052', N'Lịch sử và Địa lý 5 - Kết nối tri thức với cuộc sống', 29000, N'Sách giáo khoa Lịch sử và Địa lý lớp 5 bộ Kết nối tri thức.', 5, @CV_BM, @NXB_GD, @NPP_FA, 0, GETDATE(), 0, GETDATE(), 0);
+    DECLARE @P52 INT = SCOPE_IDENTITY();
+    INSERT INTO ProductCategories (Product_id, Category_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P52, @CAT_SGK, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductAuthors    (Product_id, Author_id,   Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P52, @AUTH_BGD, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductImages     (Product_id, Image_url, Is_main, Sort_order, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P52, '/shop/images/homepage-one/category-img/dresses.webp', 1, 0, 0, GETDATE(), 0, GETDATE(), 0);
+END
+
+-- SP053: Mĩ thuật 1
+IF NOT EXISTS (SELECT 1 FROM Products WHERE Product_code = 'SP053')
+BEGIN
+    INSERT INTO Products (Product_code, Product_name, Product_price, Product_description, Tax_rate, Cover_type_id, Publisher_id, Distributor_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SP053', N'Mĩ thuật 1 - Kết nối tri thức với cuộc sống', 19000, N'Sách giáo khoa Mĩ thuật lớp 1 bộ Kết nối tri thức.', 5, @CV_BM, @NXB_GD, @NPP_FA, 0, GETDATE(), 0, GETDATE(), 0);
+    DECLARE @P53 INT = SCOPE_IDENTITY();
+    INSERT INTO ProductCategories (Product_id, Category_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P53, @CAT_SGK, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductAuthors    (Product_id, Author_id,   Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P53, @AUTH_BGD, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductImages     (Product_id, Image_url, Is_main, Sort_order, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P53, '/shop/images/homepage-one/category-img/dresses.webp', 1, 0, 0, GETDATE(), 0, GETDATE(), 0);
+END
+
+-- SP054: Âm nhạc 1
+IF NOT EXISTS (SELECT 1 FROM Products WHERE Product_code = 'SP054')
+BEGIN
+    INSERT INTO Products (Product_code, Product_name, Product_price, Product_description, Tax_rate, Cover_type_id, Publisher_id, Distributor_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES ('SP054', N'Âm nhạc 1 - Kết nối tri thức với cuộc sống', 18000, N'Sách giáo khoa Âm nhạc lớp 1 bộ Kết nối tri thức.', 5, @CV_BM, @NXB_GD, @NPP_FA, 0, GETDATE(), 0, GETDATE(), 0);
+    DECLARE @P54 INT = SCOPE_IDENTITY();
+    INSERT INTO ProductCategories (Product_id, Category_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P54, @CAT_SGK, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductAuthors    (Product_id, Author_id,   Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P54, @AUTH_BGD, 0, GETDATE(), 0, GETDATE(), 0);
+    INSERT INTO ProductImages     (Product_id, Image_url, Is_main, Sort_order, Created_by, Created_at, Updated_by, Updated_at, Is_deleted) VALUES (@P54, '/shop/images/homepage-one/category-img/dresses.webp', 1, 0, 0, GETDATE(), 0, GETDATE(), 0);
+END
+
+PRINT N'  -> Elementary School Textbooks OK';
+GO
+
+-- =============================================
+-- 7c. SEED STOCK (Tồn kho)
+-- =============================================
+PRINT N'[7c] Seeding Stocks...';
+
+DECLARE @KHO01 INT, @KHO02 INT;
+SELECT @KHO01 = Id FROM Warehouses WHERE Warehouse_code = 'KHO01';
+SELECT @KHO02 = Id FROM Warehouses WHERE Warehouse_code = 'KHO02';
+
+-- Hàm tiện ích: chèn stock nếu chưa có
+-- (dùng EXISTS theo cặp Warehouse_id + Product_id vì không có unique constraint tên)
+
+-- === Sách văn học (SP001 – SP009) · KHO01 & KHO02 ===
+DECLARE @SP001 INT, @SP002 INT, @SP003 INT, @SP004 INT, @SP005 INT;
+DECLARE @SP006 INT, @SP007 INT, @SP008 INT, @SP009 INT;
+SELECT @SP001 = Id FROM Products WHERE Product_code = 'SP001';
+SELECT @SP002 = Id FROM Products WHERE Product_code = 'SP002';
+SELECT @SP003 = Id FROM Products WHERE Product_code = 'SP003';
+SELECT @SP004 = Id FROM Products WHERE Product_code = 'SP004';
+SELECT @SP005 = Id FROM Products WHERE Product_code = 'SP005';
+SELECT @SP006 = Id FROM Products WHERE Product_code = 'SP006';
+SELECT @SP007 = Id FROM Products WHERE Product_code = 'SP007';
+SELECT @SP008 = Id FROM Products WHERE Product_code = 'SP008';
+SELECT @SP009 = Id FROM Products WHERE Product_code = 'SP009';
+
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP001 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (120, @KHO01, @SP001, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO02 AND Product_id = @SP001 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (80, @KHO02, @SP001, 0, GETDATE(), 0, GETDATE(), 0);
+
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP002 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (95, @KHO01, @SP002, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO02 AND Product_id = @SP002 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (60, @KHO02, @SP002, 0, GETDATE(), 0, GETDATE(), 0);
+
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP003 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (75, @KHO01, @SP003, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO02 AND Product_id = @SP003 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (50, @KHO02, @SP003, 0, GETDATE(), 0, GETDATE(), 0);
+
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP004 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (110, @KHO01, @SP004, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO02 AND Product_id = @SP004 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (70, @KHO02, @SP004, 0, GETDATE(), 0, GETDATE(), 0);
+
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP005 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (85, @KHO01, @SP005, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO02 AND Product_id = @SP005 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (55, @KHO02, @SP005, 0, GETDATE(), 0, GETDATE(), 0);
+
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP006 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (60, @KHO01, @SP006, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO02 AND Product_id = @SP006 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (40, @KHO02, @SP006, 0, GETDATE(), 0, GETDATE(), 0);
+
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP007 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (45, @KHO01, @SP007, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO02 AND Product_id = @SP007 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (30, @KHO02, @SP007, 0, GETDATE(), 0, GETDATE(), 0);
+
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP008 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (100, @KHO01, @SP008, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO02 AND Product_id = @SP008 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (65, @KHO02, @SP008, 0, GETDATE(), 0, GETDATE(), 0);
+
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP009 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (55, @KHO01, @SP009, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO02 AND Product_id = @SP009 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (35, @KHO02, @SP009, 0, GETDATE(), 0, GETDATE(), 0);
+
+-- === Sách giáo khoa tiểu học (SP034 – SP054) · chủ yếu ở KHO01 (Hà Nội) ===
+DECLARE @SP034 INT, @SP035 INT, @SP036 INT, @SP037 INT, @SP038 INT, @SP039 INT, @SP040 INT;
+DECLARE @SP041 INT, @SP042 INT, @SP043 INT, @SP044 INT, @SP045 INT, @SP046 INT, @SP047 INT;
+DECLARE @SP048 INT, @SP049 INT, @SP050 INT, @SP051 INT, @SP052 INT, @SP053 INT, @SP054 INT;
+
+SELECT @SP034 = Id FROM Products WHERE Product_code = 'SP034';
+SELECT @SP035 = Id FROM Products WHERE Product_code = 'SP035';
+SELECT @SP036 = Id FROM Products WHERE Product_code = 'SP036';
+SELECT @SP037 = Id FROM Products WHERE Product_code = 'SP037';
+SELECT @SP038 = Id FROM Products WHERE Product_code = 'SP038';
+SELECT @SP039 = Id FROM Products WHERE Product_code = 'SP039';
+SELECT @SP040 = Id FROM Products WHERE Product_code = 'SP040';
+SELECT @SP041 = Id FROM Products WHERE Product_code = 'SP041';
+SELECT @SP042 = Id FROM Products WHERE Product_code = 'SP042';
+SELECT @SP043 = Id FROM Products WHERE Product_code = 'SP043';
+SELECT @SP044 = Id FROM Products WHERE Product_code = 'SP044';
+SELECT @SP045 = Id FROM Products WHERE Product_code = 'SP045';
+SELECT @SP046 = Id FROM Products WHERE Product_code = 'SP046';
+SELECT @SP047 = Id FROM Products WHERE Product_code = 'SP047';
+SELECT @SP048 = Id FROM Products WHERE Product_code = 'SP048';
+SELECT @SP049 = Id FROM Products WHERE Product_code = 'SP049';
+SELECT @SP050 = Id FROM Products WHERE Product_code = 'SP050';
+SELECT @SP051 = Id FROM Products WHERE Product_code = 'SP051';
+SELECT @SP052 = Id FROM Products WHERE Product_code = 'SP052';
+SELECT @SP053 = Id FROM Products WHERE Product_code = 'SP053';
+SELECT @SP054 = Id FROM Products WHERE Product_code = 'SP054';
+
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP034 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (500, @KHO01, @SP034, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP035 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (500, @KHO01, @SP035, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP036 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (450, @KHO01, @SP036, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP037 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (450, @KHO01, @SP037, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP038 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (400, @KHO01, @SP038, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP039 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (400, @KHO01, @SP039, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP040 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (380, @KHO01, @SP040, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP041 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (380, @KHO01, @SP041, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP042 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (360, @KHO01, @SP042, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP043 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (360, @KHO01, @SP043, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP044 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (340, @KHO01, @SP044, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP045 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (340, @KHO01, @SP045, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP046 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (320, @KHO01, @SP046, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP047 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (320, @KHO01, @SP047, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP048 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (300, @KHO01, @SP048, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP049 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (300, @KHO01, @SP049, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP050 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (280, @KHO01, @SP050, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP051 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (280, @KHO01, @SP051, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP052 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (260, @KHO01, @SP052, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP053 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (260, @KHO01, @SP053, 0, GETDATE(), 0, GETDATE(), 0);
+IF NOT EXISTS (SELECT 1 FROM Stocks WHERE Warehouse_id = @KHO01 AND Product_id = @SP054 AND Is_deleted = 0)
+    INSERT INTO Stocks (Quantity, Warehouse_id, Product_id, Created_by, Created_at, Updated_by, Updated_at, Is_deleted)
+    VALUES (240, @KHO01, @SP054, 0, GETDATE(), 0, GETDATE(), 0);
+
+PRINT N'  -> Stocks OK';
 GO
 
 -- =============================================

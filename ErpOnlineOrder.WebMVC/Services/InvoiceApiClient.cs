@@ -123,6 +123,11 @@ namespace ErpOnlineOrder.WebMVC.Services
             return await GetAsync<PagedResult<InvoiceDto>>(path, cancellationToken) ?? new PagedResult<InvoiceDto> { Items = new List<InvoiceDto>(), Page = request.Page, PageSize = request.PageSize, TotalCount = 0 };
         }
 
+        public async Task<(bool Success, string? Error)> SendToCustomerAsync(int invoiceId, CancellationToken cancellationToken = default)
+        {
+            return await PostWithoutReturnAsync($"invoice/{invoiceId}/send-to-customer", cancellationToken);
+        }
+
         
     }
 }

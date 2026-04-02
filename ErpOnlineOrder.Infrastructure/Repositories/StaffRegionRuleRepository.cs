@@ -55,24 +55,19 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<Staff_region_rule?> FindByProvinceAndWardAsync(int provinceId, int? wardId)
         {
-            var baseQuery = GetBaseQuery()
-                .Where(r => r.Province_id == provinceId);
+            var rules = await GetBaseQuery()
+                .Where(r => r.Province_id == provinceId)
+                .ToListAsync();
 
             if (!wardId.HasValue)
-                return await baseQuery
-                    .Where(r => r.Ward_ids == null || r.Ward_ids.Count == 0)
-                    .FirstOrDefaultAsync();
+                return rules.FirstOrDefault(r => r.Ward_ids == null || r.Ward_ids.Count == 0);
 
             // Ưu tiên: rule có chứa đúng ward này
-            var exact = await baseQuery
-                .Where(r => r.Ward_ids != null && r.Ward_ids.Contains(wardId.Value))
-                .FirstOrDefaultAsync();
+            var exact = rules.FirstOrDefault(r => r.Ward_ids != null && r.Ward_ids.Contains(wardId.Value));
             if (exact != null) return exact;
 
             // Fallback: rule toàn tỉnh
-            return await baseQuery
-                .Where(r => r.Ward_ids == null || r.Ward_ids.Count == 0)
-                .FirstOrDefaultAsync();
+            return rules.FirstOrDefault(r => r.Ward_ids == null || r.Ward_ids.Count == 0);
         }
 
         public async Task<bool> ExistsByStaffAndProvinceAsync(int staffId, int provinceId, int? excludeId = null)

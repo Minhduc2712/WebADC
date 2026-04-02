@@ -78,24 +78,55 @@
                             @Html.DropDownListFor(m => m.Distributor_id, ViewBag.Distributors as SelectList, "-- Chọn NPP --", new { @class = "form-select" })
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Danh mục</label>
-                            <select name="categoryIds" class="form-select" multiple size="4">
-                                @foreach (var cat in ViewBag.Categories as MultiSelectList)
-                                {
-                                    <option value="@cat.Value">@cat.Text</option>
-                                }
-                            </select>
-                            <small class="text-muted">Giữ Ctrl để chọn nhiều</small>
+                            <label class="form-label fw-semibold">Danh mục</label>
+                            <div class="multi-picker" id="picker-category">
+                                <div class="picker-badges" id="badges-category">
+                                    <span class="picker-placeholder text-muted small">Chưa chọn danh mục nào</span>
+                                </div>
+                                <div class="input-group input-group-sm mt-1">
+                                    <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                                    <input type="text" class="form-control picker-search" placeholder="Tìm danh mục..." data-target="list-category">
+                                </div>
+                                <div class="picker-list border rounded mt-1" id="list-category">
+                                    @foreach (var cat in ViewBag.Categories as MultiSelectList)
+                                    {
+                                        <label class="picker-item d-flex align-items-center gap-2 px-2 py-1">
+                                            <input type="checkbox" name="categoryIds" value="@cat.Value"
+                                                   class="form-check-input picker-check"
+                                                   data-label="@cat.Text"
+                                                   data-badges="badges-category"
+                                                   data-placeholder="picker-placeholder-category" />
+                                            <span class="small">@cat.Text</span>
+                                        </label>
+                                    }
+                                </div>
+                            </div>
                         </div>
+
                         <div class="mb-3">
-                            <label class="form-label">Tác giả</label>
-                            <select name="authorIds" class="form-select" multiple size="4">
-                                @foreach (var auth in ViewBag.Authors as MultiSelectList)
-                                {
-                                    <option value="@auth.Value">@auth.Text</option>
-                                }
-                            </select>
-                            <small class="text-muted">Giữ Ctrl để chọn nhiều</small>
+                            <label class="form-label fw-semibold">Tác giả</label>
+                            <div class="multi-picker" id="picker-author">
+                                <div class="picker-badges" id="badges-author">
+                                    <span class="picker-placeholder text-muted small">Chưa chọn tác giả nào</span>
+                                </div>
+                                <div class="input-group input-group-sm mt-1">
+                                    <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                                    <input type="text" class="form-control picker-search" placeholder="Tìm tác giả..." data-target="list-author">
+                                </div>
+                                <div class="picker-list border rounded mt-1" id="list-author">
+                                    @foreach (var auth in ViewBag.Authors as MultiSelectList)
+                                    {
+                                        <label class="picker-item d-flex align-items-center gap-2 px-2 py-1">
+                                            <input type="checkbox" name="authorIds" value="@auth.Value"
+                                                   class="form-check-input picker-check"
+                                                   data-label="@auth.Text"
+                                                   data-badges="badges-author"
+                                                   data-placeholder="picker-placeholder-author" />
+                                            <span class="small">@auth.Text</span>
+                                        </label>
+                                    }
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -116,3 +147,113 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }
+
+@section Styles {
+<style>
+    .multi-picker .picker-badges {
+        min-height: 36px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        padding: 4px 6px;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        background: #f8f9fa;
+    }
+    .picker-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: #0d6efd;
+        color: #fff;
+        font-size: 0.75rem;
+        padding: 2px 8px;
+        border-radius: 20px;
+        white-space: nowrap;
+    }
+    .picker-badge .remove-badge {
+        cursor: pointer;
+        font-size: 0.85rem;
+        line-height: 1;
+        opacity: 0.8;
+    }
+    .picker-badge .remove-badge:hover { opacity: 1; }
+    .picker-list {
+        max-height: 180px;
+        overflow-y: auto;
+        background: #fff;
+    }
+    .picker-item {
+        cursor: pointer;
+        transition: background 0.1s;
+        border-radius: 4px;
+        margin: 1px 4px;
+    }
+    .picker-item:hover { background: #f0f4ff; }
+    .picker-item input[type=checkbox] { cursor: pointer; }
+    .picker-search:focus { box-shadow: none; }
+</style>
+}
+
+<script>
+(function () {
+    function updateBadges(checkbox) {
+        var badgesId = checkbox.dataset.badges;
+        var container = document.getElementById(badgesId);
+        var placeholder = container.querySelector('.picker-placeholder');
+
+        var checked = document.querySelectorAll(
+            'input.picker-check[data-badges="' + badgesId + '"]:checked'
+        );
+
+        // Remove all existing badges (keep placeholder)
+        container.querySelectorAll('.picker-badge').forEach(function (b) { b.remove(); });
+
+        if (checked.length === 0) {
+            if (placeholder) placeholder.style.display = '';
+        } else {
+            if (placeholder) placeholder.style.display = 'none';
+            checked.forEach(function (cb) {
+                var badge = document.createElement('span');
+                badge.className = 'picker-badge';
+                badge.innerHTML =
+                    '<span>' + cb.dataset.label + '</span>' +
+                    '<span class="remove-badge" data-val="' + cb.value + '" data-badges="' + badgesId + '">&times;</span>';
+                container.appendChild(badge);
+            });
+        }
+    }
+
+    // Checkbox change
+    document.addEventListener('change', function (e) {
+        if (e.target.classList.contains('picker-check')) {
+            updateBadges(e.target);
+        }
+    });
+
+    // Remove badge → uncheck
+    document.addEventListener('click', function (e) {
+        if (e.target.classList.contains('remove-badge')) {
+            var val = e.target.dataset.val;
+            var badgesId = e.target.dataset.badges;
+            var cb = document.querySelector(
+                'input.picker-check[data-badges="' + badgesId + '"][value="' + val + '"]'
+            );
+            if (cb) { cb.checked = false; updateBadges(cb); }
+        }
+    });
+
+    // Live search filter
+    document.addEventListener('input', function (e) {
+        if (e.target.classList.contains('picker-search')) {
+            var q = e.target.value.toLowerCase();
+            var listId = e.target.dataset.target;
+            var list = document.getElementById(listId);
+            list.querySelectorAll('.picker-item').forEach(function (item) {
+                var text = item.querySelector('span').textContent.toLowerCase();
+                item.style.display = text.includes(q) ? '' : 'none';
+            });
+        }
+    });
+})();
+</script>
