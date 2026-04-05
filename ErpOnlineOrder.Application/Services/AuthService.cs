@@ -26,6 +26,7 @@ namespace ErpOnlineOrder.Application.Services
         private readonly IEmailQueue _emailQueue;
         private readonly IPackageRepository _packageRepository;
         private readonly ICustomerPackageRepository _customerPackageRepository;
+        private readonly IOrganizationRepository _organizationRepository;
 
         public AuthService(
             IUserRepository userRepository,
@@ -36,7 +37,8 @@ namespace ErpOnlineOrder.Application.Services
             IStaffRegionRuleRepository staffRegionRuleRepository,
             IEmailQueue emailQueue,
             IPackageRepository packageRepository,
-            ICustomerPackageRepository customerPackageRepository)
+            ICustomerPackageRepository customerPackageRepository,
+            IOrganizationRepository organizationRepository)
         {
             _userRepository = userRepository;
             _roleRepository = roleRepository;
@@ -47,6 +49,7 @@ namespace ErpOnlineOrder.Application.Services
             _emailQueue = emailQueue;
             _packageRepository = packageRepository;
             _customerPackageRepository = customerPackageRepository;
+            _organizationRepository = organizationRepository;
         }
 
         public async Task<bool> RegisterByAdminAsync(RegisterStaffDto dto)
@@ -180,6 +183,35 @@ namespace ErpOnlineOrder.Application.Services
                 throw new Exception($"Cấu hình lỗi: '{roleName}' không tồn tại trong Database.");
 
             var now = DateTime.UtcNow;
+
+            // Xử lý đơn vị: tạo mới nếu khách hàng tự khai báo
+            var orgId = dto.Organization.Organization_information_id;
+            if (dto.Organization.IsNewOrganization)
+            {
+                var orgCode = dto.Organization.New_Organization_code!.Trim();
+                if (await _organizationRepository.ExistsByCodeAsync(orgCode))
+                    throw new Exception($"Mã đơn vị '{orgCode}' đã tồn tại");
+
+                var taxNumber = dto.Organization.New_Tax_number?.Trim();
+                if (!string.IsNullOrEmpty(taxNumber) && await _organizationRepository.ExistsByTaxNumberAsync(taxNumber))
+                    throw new Exception($"Mã số thuế '{taxNumber}' đã tồn tại");
+
+                var newOrg = new Organization_information
+                {
+                    Organization_code = orgCode,
+                    Organization_name = dto.Organization.New_Organization_name!.Trim(),
+                    Address = dto.Organization.New_Address?.Trim() ?? string.Empty,
+                    Tax_number = taxNumber ?? string.Empty,
+                    Created_at = now,
+                    Created_by = 0,
+                    Updated_at = now,
+                    Updated_by = 0,
+                    Is_deleted = false
+                };
+                await _organizationRepository.AddAsync(newOrg);
+                orgId = newOrg.Id;
+            }
+
             var user = new User
             {
                 Username = username,
@@ -204,7 +236,7 @@ namespace ErpOnlineOrder.Application.Services
                     Recipient_name = dto.Personal.Recipient_name,
                     Recipient_phone = dto.Personal.Recipient_phone ?? string.Empty,
                     Recipient_address = dto.Personal.Recipient_address,
-                    Organization_information_id = dto.Organization.Organization_information_id,
+                    Organization_information_id = orgId,
                     Created_at = now,
                     Created_by = 0,
                     Updated_at = now,
@@ -216,9 +248,9 @@ namespace ErpOnlineOrder.Application.Services
             await _userRepository.AddAsync(user);
 
             var assignedPackageIds = new List<int>();
-            if (user.Customer?.Id > 0 && dto.Organization.Organization_information_id > 0)
+            if (user.Customer?.Id > 0 && orgId > 0)
             {
-                var orgPackages = await _packageRepository.GetByOrganizationAsync(dto.Organization.Organization_information_id);
+                var orgPackages = await _packageRepository.GetByOrganizationAsync(orgId);
                 foreach (var package in orgPackages)
                 {
                     var existingCp = await _customerPackageRepository.GetByCustomerAndPackageAsync(user.Customer.Id, package.Id);

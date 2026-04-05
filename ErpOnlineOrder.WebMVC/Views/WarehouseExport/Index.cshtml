@@ -167,6 +167,8 @@
                             var deliveryText = ErpOnlineOrder.Domain.Constants.DeliveryStatuses.ToDisplayText(export.Delivery_status);
                             
                             var paddingLeft = export.IndentLevel * 20;
+                            var allowedExport = ExportStatuses.AllowedTransitions.TryGetValue(export.Status, out var et) ? et : Array.Empty<string>();
+                            var allowedDelivery = DeliveryStatuses.AllowedTransitions.TryGetValue(export.Delivery_status, out var dt) ? dt : Array.Empty<string>();
                             
                             <tr class="@(export.Status == "Split" ? "table-light text-muted" : "")">
                                 <td style="padding-left: @(paddingLeft + 8)px;">
@@ -186,50 +188,8 @@
                                 <td>@export.Export_date.ToString("dd/MM/yyyy")</td>
                                 <td>@(export.Arrival_date?.ToString("dd/MM/yyyy") ?? "-")</td>
                                 <td class="text-center"><span class="badge bg-primary">@export.Total_quantity</span></td>
-                                <td>
-                                    @{
-                                        var allowedExport = ExportStatuses.AllowedTransitions.TryGetValue(export.Status, out var et) ? et : Array.Empty<string>();
-                                    }
-                                    <span class="badge @statusClass">@statusText</span>
-                                    @if (allowedExport.Length > 0)
-                                    {
-                                        <form asp-action="UpdateStatus" method="post" class="mt-1" style="min-width:140px" onsubmit="return confirm('Xác nhận chuyển trạng thái?');">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="id" value="@export.Id" />
-                                            <div class="input-group input-group-sm">
-                                                <select name="status" class="form-select form-select-sm">
-                                                    @foreach (var ns in allowedExport)
-                                                    {
-                                                        <option value="@ns">@ExportStatuses.ToDisplayText(ns)</option>
-                                                    }
-                                                </select>
-                                                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-sync-alt"></i></button>
-                                            </div>
-                                        </form>
-                                    }
-                                </td>
-                                <td>
-                                    @{
-                                        var allowedDelivery = DeliveryStatuses.AllowedTransitions.TryGetValue(export.Delivery_status, out var dt) ? dt : Array.Empty<string>();
-                                    }
-                                    <span class="badge @deliveryClass">@deliveryText</span>
-                                    @if (allowedDelivery.Length > 0 && export.Status != ExportStatuses.Cancelled)
-                                    {
-                                        <form asp-action="UpdateDeliveryStatus" method="post" class="mt-1" style="min-width:140px" onsubmit="return confirm('Xác nhận chuyển trạng thái giao hàng?');">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="id" value="@export.Id" />
-                                            <div class="input-group input-group-sm">
-                                                <select name="status" class="form-select form-select-sm">
-                                                    @foreach (var ns in allowedDelivery)
-                                                    {
-                                                        <option value="@ns">@DeliveryStatuses.ToDisplayText(ns)</option>
-                                                    }
-                                                </select>
-                                                <button type="submit" class="btn btn-info btn-sm"><i class="fas fa-sync-alt"></i></button>
-                                            </div>
-                                        </form>
-                                    }
-                                </td>
+                                <td><span class="badge @statusClass">@statusText</span></td>
+                                <td><span class="badge @deliveryClass">@deliveryText</span></td>
                                 <td>
                                     <div class="dropdown">
                                         <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
@@ -267,6 +227,68 @@
                                                         <i class="fas fa-expand-arrows-alt me-2 text-info"></i>Tách phiếu
                                                     </a>
                                                 </li>
+                                            }
+                                            @if (export.Status == "Split")
+                                            {
+                                                <li><hr class="dropdown-divider" /></li>
+                                                <li>
+                                                    <form asp-action="UndoSplit" asp-route-id="@export.Id" method="post" onsubmit="return confirm('Hoàn tác tách phiếu xuất kho?');"
+>
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="dropdown-item">
+                                                            <i class="fas fa-undo me-2 text-warning"></i>Hoàn tác tách
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            }
+                                            @if (export.Warehouse_export_code.StartsWith("EXP-M-"))
+                                            {
+                                                <li><hr class="dropdown-divider" /></li>
+                                                <li>
+                                                    <form asp-action="UndoMerge" asp-route-id="@export.Id" method="post" onsubmit="return confirm('Hoàn tác gộp phiếu xuất kho?');"
+>
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="dropdown-item">
+                                                            <i class="fas fa-undo me-2 text-warning"></i>Hoàn tác gộp
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            }
+                                            @if (allowedExport.Length > 0)
+                                            {
+                                                <li><hr class="dropdown-divider" /></li>
+                                                <li><span class="dropdown-header"><i class="fas fa-sync-alt me-1"></i>Đổi trạng thái phiếu</span></li>
+                                                @foreach (var ns in allowedExport)
+                                                {
+                                                    <li>
+                                                        <form asp-action="UpdateStatus" method="post" onsubmit="return confirm('Xác nhận chuyển trạng thái?');">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="id" value="@export.Id" />
+                                                            <input type="hidden" name="status" value="@ns" />
+                                                            <button type="submit" class="dropdown-item">
+                                                                <i class="fas fa-arrow-right me-2 text-primary"></i>@ExportStatuses.ToDisplayText(ns)
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                }
+                                            }
+                                            @if (allowedDelivery.Length > 0 && export.Status != ExportStatuses.Cancelled)
+                                            {
+                                                <li><hr class="dropdown-divider" /></li>
+                                                <li><span class="dropdown-header"><i class="fas fa-truck me-1"></i>Đổi trạng thái giao hàng</span></li>
+                                                @foreach (var ns in allowedDelivery)
+                                                {
+                                                    <li>
+                                                        <form asp-action="UpdateDeliveryStatus" method="post" onsubmit="return confirm('Xác nhận chuyển trạng thái giao hàng?');">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="id" value="@export.Id" />
+                                                            <input type="hidden" name="status" value="@ns" />
+                                                            <button type="submit" class="dropdown-item">
+                                                                <i class="fas fa-arrow-right me-2 text-info"></i>@DeliveryStatuses.ToDisplayText(ns)
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                }
                                             }
                                         </ul>
                                     </div>

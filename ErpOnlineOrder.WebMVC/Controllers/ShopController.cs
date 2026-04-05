@@ -10,6 +10,7 @@ using ErpOnlineOrder.WebMVC.Extensions;
 using ErpOnlineOrder.WebMVC.Attributes;
 using ErpOnlineOrder.WebMVC.Services;
 using ErpOnlineOrder.WebMVC.Services.Interfaces;
+using ErpOnlineOrder.WebMVC.Models;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
@@ -66,7 +67,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             return RedirectToAction(nameof(Products));
         }
 
-        public async Task<IActionResult> Products(string? search, string? category, string? sort, int page = 1, int pageSize = 12)
+        public async Task<IActionResult> Products(string? search, List<string>? categories, List<string>? publishers, List<string>? authors, decimal? priceMin, decimal? priceMax, string? sort, int page = 1, int pageSize = 12)
         {
             try
             {
@@ -76,18 +77,33 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     Page = page,
                     PageSize = pageSize,
                     SearchTerm = search,
-                    Category = category,
-                    Sort = sort
+                    Categories = categories,
+                    Publishers = publishers,
+                    Authors = authors,
+                    Sort = sort,
+                    PriceMin = priceMin,
+                    PriceMax = priceMax
                 };
 
-                var paged = await _productApiClient.GetProductsForShopPagedAsync(customerId, request);
-                var categories = await _productApiClient.GetCategoriesForShopAsync(customerId);
+                var pagedTask = _productApiClient.GetProductsForShopPagedAsync(customerId, request);
+                var categoriesTask = _productApiClient.GetCategoriesForShopAsync(customerId);
+                var publishersTask = _productApiClient.GetPublishersForShopAsync(customerId);
+                var authorsTask = _productApiClient.GetAuthorsForShopAsync(customerId);
+                await Task.WhenAll(pagedTask, categoriesTask, publishersTask, authorsTask);
+
+                var paged = await pagedTask;
 
                 ViewBag.Search = search;
-                ViewBag.Category = category;
+                ViewBag.SelectedCategories = categories ?? new List<string>();
+                ViewBag.SelectedPublishers = publishers ?? new List<string>();
+                ViewBag.SelectedAuthors = authors ?? new List<string>();
                 ViewBag.Sort = sort;
                 ViewBag.PageSize = pageSize;
-                ViewData["Categories"] = categories.ToList();
+                ViewBag.PriceMin = priceMin;
+                ViewBag.PriceMax = priceMax;
+                ViewData["Categories"] = (await categoriesTask).ToList();
+                ViewData["Publishers"] = (await publishersTask).ToList();
+                ViewData["Authors"] = (await authorsTask).ToList();
                 ViewBag.TotalCount = paged.TotalCount;
                 ViewBag.PaginationAction = "Products";
 
@@ -105,17 +121,9 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             try
             {
                 var customerId = await GetCurrentCustomerIdAsync();
-                var product = await _productApiClient.GetByIdAsync(id);
+                var product = await _productApiClient.GetProductForShopAsync(id, customerId);
                 if (product == null)
                     return NotFound();
-
-                // Khách hàng chỉ xem được sản phẩm đã được gán
-                if (customerId.HasValue)
-                {
-                    var hasAccess = await _productApiClient.IsProductAssignedToCustomerAsync(id, customerId.Value);
-                    if (!hasAccess)
-                        return NotFound();
-                }
 
                 var relatedProducts = await _productApiClient.GetRelatedProductsForShopAsync(id, customerId, 4);
                 ViewData["RelatedProducts"] = relatedProducts.ToList();
@@ -296,18 +304,29 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 }
 
                 var org = await _customerApiClient.GetOrganizationByCustomerIdAsync(customer.Id);
-                var shippingAddress = !string.IsNullOrWhiteSpace(org?.Recipient_address)
-                    ? org.Recipient_address
-                    : !string.IsNullOrWhiteSpace(org?.Organization_address)
-                        ? org.Organization_address
-                        : request.ShippingAddress;
+                // Ưu tiên địa chỉ người dùng nhập trực tiếp, fallback về địa chỉ org
+                var shippingAddress = !string.IsNullOrWhiteSpace(request.ShippingAddress)
+                    ? request.ShippingAddress
+                    : !string.IsNullOrWhiteSpace(org?.Recipient_address)
+                        ? org.Recipient_address
+                        : org?.Organization_address;
+
+                var recipientInfo = string.Empty;
+                if (!string.IsNullOrWhiteSpace(request.RecipientName) || !string.IsNullOrWhiteSpace(request.RecipientPhone))
+                {
+                    recipientInfo = $"Người nhận: {request.RecipientName} - {request.RecipientPhone}".Trim(' ', '-');
+                    if (!string.IsNullOrWhiteSpace(request.RecipientEmail))
+                        recipientInfo += $" - {request.RecipientEmail}";
+                }
+
+                var fullNote = string.Join("\n", new[] { recipientInfo, request.Note }.Where(s => !string.IsNullOrWhiteSpace(s)));
 
                 var createOrderDto = new CreateOrderDto
                 {
                     Order_date = DateTime.Now,
                     Customer_id = customer.Id,
                     Shipping_address = shippingAddress,
-                    note = request.Note,
+                    note = fullNote,
                     Created_by = userId,
                     Order_details = request.Items.Select(item => new OrderDetailDto
                     {
@@ -556,7 +575,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
             if (hasInvalidQuantity)
             {
-                return View(export);
+                return RedirectToAction(nameof(RequestInvoiceSplit), new { exportId });
             }
 
             var requestDto = new CustomerInvoiceRequestDto
@@ -583,7 +602,178 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 TempData["Error"] = "Không thể xử lý yêu cầu tách hóa đơn lúc này. Vui lòng thử lại sau.";
             }
 
-            return View(export);
+            return RedirectToAction(nameof(RequestInvoiceSplit), new { exportId });
+        }
+
+        /// <summary>Tổng hợp số lượng đã giao và yêu cầu hóa đơn (toàn bộ hoặc theo đơn hàng).</summary>
+        [HttpGet]
+        public async Task<IActionResult> RequestInvoiceByOrder(int? orderId = null)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == 0)
+                return RedirectToAction("Login", "Auth");
+
+            var customer = await _customerApiClient.GetByUserIdAsync(userId);
+            if (customer == null)
+                return NotFound();
+
+            try
+            {
+                var allExports = await _warehouseExportApiClient.GetByCustomerIdAsync(customer.Id);
+
+                var completedExports = allExports
+                    .Where(e => (orderId == null || e.Order_id == orderId)
+                             && e.Status == ExportStatuses.Completed
+                             && string.IsNullOrEmpty(e.Invoice_code)
+                             && e.Details != null && e.Details.Any())
+                    .ToList();
+
+                if (!completedExports.Any())
+                {
+                    TempData["Error"] = "Không tìm thấy phiếu xuất kho nào đã hoàn thành, hoặc tất cả đã được xuất hóa đơn.";
+                    return RedirectToAction(nameof(Exports));
+                }
+
+                var aggregated = completedExports
+                    .SelectMany(e => e.Details)
+                    .GroupBy(d => d.Product_id)
+                    .Select(g => new AggregatedExportItemViewModel
+                    {
+                        ProductId = g.Key,
+                        ProductName = g.First().Product_name,
+                        ProductCode = g.First().Product_code,
+                        TotalQuantity = g.Sum(d => d.Quantity_shipped),
+                        UnitPrice = g.First().Unit_price,
+                        TotalPrice = g.Sum(d => d.Total_price)
+                    })
+                    .ToList();
+
+                var viewModel = new InvoiceByOrderViewModel
+                {
+                    OrderId = orderId ?? 0,
+                    OrderCode = orderId.HasValue ? completedExports.First().Order_code : null,
+                    ExportCount = completedExports.Count,
+                    ExportIds = completedExports.Select(e => e.Id).ToList(),
+                    AggregatedItems = aggregated,
+                    TotalAmount = aggregated.Sum(a => a.TotalPrice)
+                };
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading exports for invoice request");
+                return NotFound();
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RequestInvoiceByOrder(int? orderId, IFormCollection form)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == 0)
+                return RedirectToAction("Login", "Auth");
+
+            var customer = await _customerApiClient.GetByUserIdAsync(userId);
+            if (customer == null)
+                return NotFound();
+
+            try
+            {
+                var allExports = await _warehouseExportApiClient.GetByCustomerIdAsync(customer.Id);
+
+                var completedExports = allExports
+                    .Where(e => (orderId == null || e.Order_id == orderId)
+                             && e.Status == ExportStatuses.Completed
+                             && string.IsNullOrEmpty(e.Invoice_code)
+                             && e.Details != null && e.Details.Any())
+                    .ToList();
+
+                if (!completedExports.Any())
+                {
+                    TempData["Error"] = "Không còn phiếu xuất kho nào cần xuất hóa đơn.";
+                    return RedirectToAction(nameof(Exports));
+                }
+
+                // Tổng SL đã giao theo product_id
+                var maxQty = completedExports
+                    .SelectMany(e => e.Details)
+                    .GroupBy(d => d.Product_id)
+                    .ToDictionary(g => g.Key, g => g.Sum(d => d.Quantity_shipped));
+
+                // Đọc SL khách chọn từ form
+                var requestedQty = new Dictionary<int, int>();
+                foreach (var productId in maxQty.Keys)
+                {
+                    var key = $"qty_{productId}";
+                    if (form.TryGetValue(key, out var val) && int.TryParse(val, out var qty) && qty > 0)
+                    {
+                        if (qty > maxQty[productId])
+                        {
+                            TempData["Error"] = $"Số lượng yêu cầu vượt quá số lượng đã giao.";
+                            return RedirectToAction(nameof(RequestInvoiceByOrder), orderId.HasValue ? new { orderId } : null);
+                        }
+                        requestedQty[productId] = qty;
+                    }
+                }
+
+                if (!requestedQty.Any())
+                {
+                    TempData["Error"] = "Vui lòng nhập số lượng ít nhất một sản phẩm cần xuất hóa đơn.";
+                    return RedirectToAction(nameof(RequestInvoiceByOrder), orderId.HasValue ? new { orderId } : null);
+                }
+
+                // Phân bổ SL theo FIFO qua các phiếu xuất kho
+                var remaining = new Dictionary<int, int>(requestedQty);
+                var note = form["note"].ToString();
+                bool anySuccess = false;
+                string? lastError = null;
+
+                foreach (var export in completedExports)
+                {
+                    var items = new List<CustomerInvoiceSplitItemDto>();
+                    foreach (var detail in export.Details)
+                    {
+                        if (remaining.TryGetValue(detail.Product_id, out var rem) && rem > 0)
+                        {
+                            var take = Math.Min(rem, detail.Quantity_shipped);
+                            items.Add(new CustomerInvoiceSplitItemDto { ProductId = detail.Product_id, Quantity = take });
+                            remaining[detail.Product_id] -= take;
+                        }
+                    }
+
+                    if (!items.Any()) continue;
+
+                    var requestDto = new CustomerInvoiceRequestDto
+                    {
+                        WarehouseExportId = export.Id,
+                        Note = string.IsNullOrWhiteSpace(note) ? "Khách hàng yêu cầu xuất hóa đơn" : note,
+                        SplitParts = new List<CustomerInvoiceSplitPartDto>
+                        {
+                            new CustomerInvoiceSplitPartDto { Items = items }
+                        }
+                    };
+
+                    var (data, error) = await _invoiceApiClient.CustomerRequestInvoiceAsync(requestDto);
+                    if (data != null && data.Any())
+                        anySuccess = true;
+                    else
+                        lastError = error;
+                }
+
+                if (anySuccess)
+                    TempData["Success"] = "Đã gửi yêu cầu xuất hóa đơn thành công!";
+                else
+                    TempData["Error"] = lastError ?? "Không thể gửi yêu cầu xuất hóa đơn. Vui lòng kiểm tra lại.";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error requesting invoice for order {OrderId}", orderId);
+                TempData["Error"] = "Không thể xử lý yêu cầu lúc này. Vui lòng thử lại sau.";
+            }
+
+            return RedirectToAction(nameof(Exports));
         }
 
         public IActionResult Account()
@@ -608,7 +798,13 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         public async Task<IActionResult> ChangePassword(ChangePasswordDto model)
         {
             if (!ModelState.IsValid)
-                return View(model);
+            {
+                TempData["Error"] = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .FirstOrDefault(m => !string.IsNullOrEmpty(m)) ?? "Thông tin không hợp lệ. Vui lòng kiểm tra lại.";
+                return RedirectToAction(nameof(ChangePassword));
+            }
 
             try
             {
@@ -621,22 +817,22 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return RedirectToAction(nameof(ChangePassword));
                 }
 
-                ModelState.AddModelError("", errorMessage ?? "Không thể đổi mật khẩu. Vui lòng kiểm tra mật khẩu hiện tại và mật khẩu mới.");
+                TempData["Error"] = errorMessage ?? "Không thể đổi mật khẩu. Vui lòng kiểm tra mật khẩu hiện tại và mật khẩu mới.";
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error changing password for user");
-                ModelState.AddModelError("", "Không thể đổi mật khẩu lúc này. Vui lòng thử lại sau.");
+                TempData["Error"] = "Không thể đổi mật khẩu lúc này. Vui lòng thử lại sau.";
             }
 
-            return View(model);
+            return RedirectToAction(nameof(ChangePassword));
         }
 
         #endregion
 
         /// <summary>Khách hàng chỉnh sửa thông tin đơn vị (tổ chức).</summary>
         [HttpGet]
-        public async Task<IActionResult> UpdateOrganization()
+        public async Task<IActionResult> UpdateOrganization(bool returnToCheckout = false)
         {
             var customerId = await GetCurrentCustomerIdAsync();
             if (!customerId.HasValue)
@@ -644,6 +840,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
             var organizations = await _organizationApiClient.GetAllAsync();
             ViewBag.Organizations = organizations.OrderBy(o => o.Organization_name).ToList();
+            ViewBag.ReturnToCheckout = returnToCheckout;
 
             var org = await _customerApiClient.GetOrganizationByCustomerIdAsync(customerId.Value);
             var model = new UpdateOrganizationByCustomerDto
@@ -659,7 +856,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateOrganization(UpdateOrganizationByCustomerDto model)
+        public async Task<IActionResult> UpdateOrganization(UpdateOrganizationByCustomerDto model, bool returnToCheckout = false)
         {
             var customerId = await GetCurrentCustomerIdAsync();
             if (!customerId.HasValue)
@@ -669,9 +866,11 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
             if (!ModelState.IsValid)
             {
-                var organizations = await _organizationApiClient.GetAllAsync();
-                ViewBag.Organizations = organizations.OrderBy(o => o.Organization_name).ToList();
-                return View(model);
+                TempData["Error"] = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .FirstOrDefault(m => !string.IsNullOrEmpty(m)) ?? "Thông tin không hợp lệ. Vui lòng kiểm tra lại.";
+                return RedirectToAction(nameof(UpdateOrganization), new { returnToCheckout });
             }
 
             try
@@ -680,18 +879,19 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 if (result)
                 {
                     SetSuccessMessage("Cập nhật thông tin đơn vị thành công.");
+                    if (returnToCheckout)
+                        return RedirectToAction(nameof(Checkout));
                     return RedirectToAction(nameof(UpdateOrganization));
                 }
+                TempData["Error"] = "Không thể cập nhật thông tin đơn vị. Vui lòng kiểm tra dữ liệu và thử lại.";
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating organization for customer {CustomerId}", customerId);
-                ModelState.AddModelError("", "Không thể cập nhật thông tin đơn vị. Vui lòng kiểm tra dữ liệu và thử lại.");
+                TempData["Error"] = "Không thể cập nhật thông tin đơn vị. Vui lòng kiểm tra dữ liệu và thử lại.";
             }
 
-            var orgs = await _organizationApiClient.GetAllAsync();
-            ViewBag.Organizations = orgs.OrderBy(o => o.Organization_name).ToList();
-            return View(model);
+            return RedirectToAction(nameof(UpdateOrganization), new { returnToCheckout });
         }
 
         public IActionResult Info(string slug)
@@ -724,6 +924,9 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         public List<CartItemRequest> Items { get; set; } = new();
         public string? Note { get; set; }
         public string? ShippingAddress { get; set; }
+        public string? RecipientName { get; set; }
+        public string? RecipientPhone { get; set; }
+        public string? RecipientEmail { get; set; }
     }
 
     public class CartItemRequest

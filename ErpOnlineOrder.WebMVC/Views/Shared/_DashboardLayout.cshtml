@@ -583,7 +583,7 @@
                 }
             }
             
-            @* QUẢN LÝ XUẤT KHO - Phiếu xuất kho *@
+            @* QUẢN LÝ XUẤT KHO - Tạm ẩn, hệ thống chưa yêu cầu
             @if (Context.Session.HasPermission("WAREHOUSE_EXPORT_VIEW"))
             {
                 <li class="menu-title">QUẢN LÝ XUẤT KHO</li>
@@ -594,6 +594,7 @@
             {
                 <li><a href="@Url.Action("Index", "Stock")" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Stock" ? "active" : "")"><i class="fas fa-boxes"></i> Tồn kho</a></li>
             }
+            *@
             
             @* NHÂN SỰ - Hiển thị nếu có quyền STAFF_VIEW *@
             @if (Context.Session.HasPermission("STAFF_VIEW"))
@@ -606,7 +607,7 @@
             @{
                 var controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
             }
-            @if (Context.Session.HasAnyPermission("CATEGORY_VIEW", "DISTRIBUTOR_VIEW", "REGION_VIEW", "PROVINCE_VIEW", "WAREHOUSE_VIEW", "PACKAGE_VIEW"))
+            @if (Context.Session.HasAnyPermission("CATEGORY_VIEW", "DISTRIBUTOR_VIEW", "REGION_VIEW", "PROVINCE_VIEW", "PACKAGE_VIEW"))
             {
                 <li class="menu-title">DANH MỤC CHUNG</li>
                 @if (Context.Session.HasPermission("CATEGORY_VIEW"))
@@ -637,10 +638,12 @@
                 {
                     <li><a href="@Url.Action("Index", "Distributor")" class="@(controller == "Distributor" ? "active" : "")"><i class="fas fa-truck"></i> Nhà phân phối</a></li>
                 }
+                @* Tạm ẩn kho hàng, hệ thống chưa yêu cầu
                 @if (Context.Session.HasPermission("WAREHOUSE_VIEW"))
                 {
                     <li><a href="@Url.Action("Index", "Warehouse")" class="@(controller == "Warehouse" ? "active" : "")"><i class="fas fa-warehouse"></i> Kho hàng</a></li>
                 }
+                *@
                 @if (Context.Session.HasPermission("PACKAGE_VIEW"))
                 {
                     <li><a href="@Url.Action("Index", "Package")" class="@(controller == "Package" ? "active" : "")"><i class="fas fa-cube"></i> Gói sản phẩm</a></li>

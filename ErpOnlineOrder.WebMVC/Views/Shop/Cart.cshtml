@@ -117,7 +117,7 @@
                 '<td class="table-wrapper"><div class="table-wrapper-center">' +
                 '<div class="quantity">' +
                 '<span class="minus" onclick="updateQuantity(' + index + ', ' + (item.quantity - 1) + ')">-</span>' +
-                '<span class="number">' + item.quantity + '</span>' +
+                '<input type="number" min="1" class="number" value="' + item.quantity + '" style="width:52px;text-align:center;border:1px solid #ddd;border-radius:4px;font-size:1.3rem;padding:2px 4px;" onchange="updateQuantity(' + index + ', parseInt(this.value)||1)" onclick="this.select()">' +
                 '<span class="plus" onclick="updateQuantity(' + index + ', ' + (item.quantity + 1) + ')">+</span>' +
                 '</div></div></td>' +
                 '<td class="table-wrapper wrapper-total"><div class="table-wrapper-center"><h5 class="heading">' + itemTotal.toLocaleString() + '</h5></div></td>' +

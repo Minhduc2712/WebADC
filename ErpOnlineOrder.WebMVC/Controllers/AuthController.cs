@@ -65,7 +65,13 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         public async Task<IActionResult> Login(LoginUserDto model, string? returnUrl = null)
         {
             if (!ModelState.IsValid)
-                return View(model);
+            {
+                TempData["Error"] = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .FirstOrDefault(m => !string.IsNullOrEmpty(m)) ?? "Thông tin không hợp lệ.";
+                return RedirectToAction(nameof(Login), new { returnUrl });
+            }
 
             try
             {
@@ -91,15 +97,15 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                     return RedirectToReturnUrl(returnUrl);
                 }
 
-                ModelState.AddModelError("", "Tên đăng nhập hoặc mật khẩu không đúng.");
+                TempData["Error"] = "Tên đăng nhập hoặc mật khẩu không đúng.";
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Login failed for {Identifier}", model.Identifier);
-                ModelState.AddModelError("", ex.Message);
+                TempData["Error"] = ex.Message;
             }
 
-            return View(model);
+            return RedirectToAction(nameof(Login), new { returnUrl });
         }
 
         #endregion
@@ -271,6 +277,8 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 ModelState.AddModelError("", ex.Message);
             }
 
+            var orgsForError = await _organizationApiClient.GetAllAsync();
+            ViewBag.Organizations = orgsForError.OrderBy(o => o.Organization_name).ToList();
             return View(model);
         }
 

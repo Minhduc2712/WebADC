@@ -145,6 +145,20 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             return Ok(ApiResponse<IEnumerable<string>>.Ok(categories));
         }
 
+        [HttpGet("shop/publishers")]
+        public async Task<IActionResult> GetPublishersForShop([FromQuery] int? customerId)
+        {
+            var publishers = await _productService.GetPublishersForShopAsync(customerId);
+            return Ok(ApiResponse<IEnumerable<string>>.Ok(publishers));
+        }
+
+        [HttpGet("shop/authors")]
+        public async Task<IActionResult> GetAuthorsForShop([FromQuery] int? customerId)
+        {
+            var authors = await _productService.GetAuthorsForShopAsync(customerId);
+            return Ok(ApiResponse<IEnumerable<string>>.Ok(authors));
+        }
+
         [HttpGet("{productId}/check-assigned")]
         public async Task<IActionResult> CheckAssigned(int productId, [FromQuery] int customerId)
         {
@@ -160,6 +174,14 @@ namespace ErpOnlineOrder.WebAPI.Controllers
 
             var related = await _productService.GetRelatedProductsForShopAsync(productId, product.Categories, customerId, limit);
             return Ok(ApiResponse<IEnumerable<ProductDTO>>.Ok(related));
+        }
+
+        [HttpGet("shop/{productId}/detail")]
+        public async Task<IActionResult> GetProductForShop(int productId, [FromQuery] int? customerId)
+        {
+            var product = await _productService.GetByIdAsync(productId);
+            if (product == null) return NotFound(ApiResponse<ProductDTO>.Fail("Không tìm thấy sản phẩm."));
+            return Ok(ApiResponse<ProductDTO>.Ok(product));
         }
     }
 }

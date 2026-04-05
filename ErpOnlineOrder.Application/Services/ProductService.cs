@@ -161,6 +161,16 @@ namespace ErpOnlineOrder.Application.Services
             return await _productRepository.GetCategoriesForShopAsync(customerId);
         }
 
+        public async Task<IEnumerable<string>> GetPublishersForShopAsync(int? customerId)
+        {
+            return await _productRepository.GetPublishersForShopAsync(customerId);
+        }
+
+        public async Task<IEnumerable<string>> GetAuthorsForShopAsync(int? customerId)
+        {
+            return await _productRepository.GetAuthorsForShopAsync(customerId);
+        }
+
         public async Task<bool> IsProductAssignedToCustomerAsync(int productId, int customerId)
         {
             return await _customerProductRepository.ExistsAsync(customerId, productId);

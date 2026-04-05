@@ -157,6 +157,7 @@
                         {
                             var statusClass = ErpOnlineOrder.Domain.Constants.InvoiceStatuses.ToCssClass(invoice.Status);
                             var statusText = ErpOnlineOrder.Domain.Constants.InvoiceStatuses.ToDisplayText(invoice.Status);
+                            var allowed = InvoiceStatuses.AllowedTransitions.TryGetValue(invoice.Status, out var t) ? t : Array.Empty<string>();
                             <tr>
                                 <td>
                                     <span class="badge bg-secondary">@invoice.Invoice_code</span>
@@ -170,28 +171,7 @@
                                 <td class="text-end">@invoice.Total_amount.ToString("N0")</td>
                                 <td class="text-end">@invoice.Tax_amount.ToString("N0")</td>
                                 <td class="text-end fw-bold text-success">@invoice.Grand_total.ToString("N0")</td>
-                                <td>
-                                    @{
-                                        var allowed = InvoiceStatuses.AllowedTransitions.TryGetValue(invoice.Status, out var t) ? t : Array.Empty<string>();
-                                    }
-                                    <span class="badge @statusClass">@statusText</span>
-                                    @if (allowed.Length > 0)
-                                    {
-                                        <form asp-action="UpdateStatus" method="post" class="mt-1" style="min-width:140px" onsubmit="return confirm('Xác nhận chuyển trạng thái?');">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="id" value="@invoice.Id" />
-                                            <div class="input-group input-group-sm">
-                                                <select name="status" class="form-select form-select-sm">
-                                                    @foreach (var ns in allowed)
-                                                    {
-                                                        <option value="@ns">@InvoiceStatuses.ToDisplayText(ns)</option>
-                                                    }
-                                                </select>
-                                                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-sync-alt"></i></button>
-                                            </div>
-                                        </form>
-                                    }
-                                </td>
+                                <td><span class="badge @statusClass">@statusText</span></td>
                                 <td>
                                     <div class="dropdown">
                                         <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
@@ -204,6 +184,45 @@
                                                     <i class="fas fa-eye me-2 text-primary"></i>Xem chi tiết
                                                 </a>
                                             </li>
+                                            @if (invoice.Status != "Cancelled")
+                                            {
+                                                <li>
+                                                    <form asp-action="SendToCustomer" method="post" onsubmit="return confirm('Gửi hóa đơn này cho khách hàng qua email?');"
+>
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@invoice.Id" />
+                                                        <button type="submit" class="dropdown-item">
+                                                            <i class="fas fa-envelope me-2 text-primary"></i>Gửi cho khách hàng
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            }
+                                            @if (invoice.Status == "Split")
+                                            {
+                                                <li>
+                                                    <form asp-action="UndoSplit" method="post" onsubmit="return confirm('Hoàn tác tách hóa đơn?');"
+>
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="parentInvoiceId" value="@invoice.Id" />
+                                                        <button type="submit" class="dropdown-item">
+                                                            <i class="fas fa-undo me-2 text-warning"></i>Hoàn tác tách
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            }
+                                            @if (invoice.Invoice_code.StartsWith("INV-M-"))
+                                            {
+                                                <li>
+                                                    <form asp-action="UndoMerge" method="post" onsubmit="return confirm('Hoàn tác gộp hóa đơn?');"
+>
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="mergedInvoiceId" value="@invoice.Id" />
+                                                        <button type="submit" class="dropdown-item">
+                                                            <i class="fas fa-undo me-2 text-warning"></i>Hoàn tác gộp
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            }
                                             @if (invoice.Status != "Completed" && invoice.Status != "Cancelled" && invoice.Status != "Merged" && (invoice.Details?.Count > 1 || invoice.Details?.Any(d => d.Quantity > 1) == true))
                                             {
                                                 <li><hr class="dropdown-divider" /></li>
@@ -212,6 +231,24 @@
                                                         <i class="fas fa-expand-arrows-alt me-2 text-info"></i>Tách hóa đơn
                                                     </a>
                                                 </li>
+                                            }
+                                            @if (allowed.Length > 0)
+                                            {
+                                                <li><hr class="dropdown-divider" /></li>
+                                                <li><span class="dropdown-header"><i class="fas fa-sync-alt me-1"></i>Đổi trạng thái</span></li>
+                                                @foreach (var ns in allowed)
+                                                {
+                                                    <li>
+                                                        <form asp-action="UpdateStatus" method="post" onsubmit="return confirm('Xác nhận chuyển trạng thái?');">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="id" value="@invoice.Id" />
+                                                            <input type="hidden" name="status" value="@ns" />
+                                                            <button type="submit" class="dropdown-item">
+                                                                <i class="fas fa-arrow-right me-2 text-primary"></i>@InvoiceStatuses.ToDisplayText(ns)
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                }
                                             }
                                         </ul>
                                     </div>

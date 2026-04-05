@@ -54,11 +54,43 @@ namespace ErpOnlineOrder.Application.DTOs.AuthDTOs
         public int? Ward_id { get; set; }
     }
 
-    public class RegisterCustomerOrganizationStepDto
+    public class RegisterCustomerOrganizationStepDto : IValidatableObject
     {
-        [Required(ErrorMessage = "Vui lòng chọn đơn vị")]
-        [Range(1, int.MaxValue, ErrorMessage = "Vui lòng chọn đơn vị hợp lệ")]
+        /// <summary>true = khách hàng tự khai báo đơn vị mới; false = chọn đơn vị có sẵn</summary>
+        public bool IsNewOrganization { get; set; }
+
+        /// <summary>ID đơn vị có sẵn (dùng khi IsNewOrganization = false)</summary>
         public int Organization_information_id { get; set; }
+
+        // --- Các trường khai báo đơn vị mới (dùng khi IsNewOrganization = true) ---
+
+        [StringLength(50, ErrorMessage = "Mã đơn vị không được quá 50 ký tự")]
+        public string? New_Organization_code { get; set; }
+
+        [StringLength(200, ErrorMessage = "Tên đơn vị không được quá 200 ký tự")]
+        public string? New_Organization_name { get; set; }
+
+        [StringLength(300, ErrorMessage = "Địa chỉ không được quá 300 ký tự")]
+        public string? New_Address { get; set; }
+
+        [StringLength(20, ErrorMessage = "Mã số thuế không được quá 20 ký tự")]
+        public string? New_Tax_number { get; set; }
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (IsNewOrganization)
+            {
+                if (string.IsNullOrWhiteSpace(New_Organization_name))
+                    yield return new ValidationResult("Vui lòng nhập tên đơn vị", new[] { nameof(New_Organization_name) });
+                if (string.IsNullOrWhiteSpace(New_Organization_code))
+                    yield return new ValidationResult("Vui lòng nhập mã đơn vị", new[] { nameof(New_Organization_code) });
+            }
+            else
+            {
+                if (Organization_information_id <= 0)
+                    yield return new ValidationResult("Vui lòng chọn đơn vị hợp lệ", new[] { nameof(Organization_information_id) });
+            }
+        }
     }
 
     public class FinalizeCustomerRegistrationDto

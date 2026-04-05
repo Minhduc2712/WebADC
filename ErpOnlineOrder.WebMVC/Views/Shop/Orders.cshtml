@@ -25,13 +25,26 @@
             <div class="col-lg-12">
                 <div class="card shadow-sm border-0">
                     <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h5 class="fw-bold mb-0">Quản lý đơn hàng</h5>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <a asp-action="Account" class="btn btn-sm btn-outline-secondary" title="Quay lại trang tài khoản">
+                                    <i class="fas fa-arrow-left me-1"></i> Tài khoản
+                                </a>
+                                <h5 class="fw-bold mb-0">Quản lý đơn hàng</h5>
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center"
+                                        style="width:22px;height:22px;padding:0;border-radius:50%;font-size:13px;font-weight:600;"
+                                        data-bs-toggle="collapse" data-bs-target="#statusGuide"
+                                        title="Xem hướng dẫn ý nghĩa các trạng thái đơn hàng">?
+                                </button>
+                            </div>
                             <form method="get" class="d-flex gap-2">
                                 <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
                                     <option value="">Tất cả trạng thái</option>
                                     <option value="Pending" selected="@(ViewBag.Status == "Pending")">Chờ xử lý</option>
+                                    <option value="WaitingCustomer" selected="@(ViewBag.Status == "WaitingCustomer")">⚠ Cần xác nhận</option>
                                     <option value="Approved" selected="@(ViewBag.Status == "Approved")">Đã duyệt</option>
+                                    <option value="Exporting" selected="@(ViewBag.Status == "Exporting")">Đang xuất kho</option>
                                     <option value="Completed" selected="@(ViewBag.Status == "Completed")">Hoàn thành</option>
                                     <option value="Cancelled" selected="@(ViewBag.Status == "Cancelled")">Đã hủy</option>
                                     <option value="Split" selected="@(ViewBag.Status == "Split")">Đã tách</option>
@@ -39,15 +52,57 @@
                             </form>
                         </div>
 
+                        <!-- Bảng hướng dẫn trạng thái (ẩn/hiện khi bấm ?) -->
+                        <div class="collapse mb-3" id="statusGuide">
+                            <div class="card card-body border-0 py-3" style="background:#f8f9fa;">
+                                <p class="fw-bold mb-2" style="font-size:13px;"><i class="fas fa-question-circle text-primary me-1"></i> Ý nghĩa các trạng thái đơn hàng:</p>
+                                <div class="row g-2" style="font-size:13px;">
+                                    <div class="col-md-6">
+                                        <span class="badge bg-warning text-dark me-1">Chờ xử lý</span>
+                                        Đơn vừa đặt, đang chờ nhân viên xem xét.
+                                    </div>
+                                    <div class="col-md-6">
+                                        <span class="badge text-dark me-1" style="background:#ff9800;">⚠ Cần xác nhận</span>
+                                        Nhân viên đã điều chỉnh đơn — <u>bạn cần đồng ý hoặc từ chối</u>.
+                                    </div>
+                                    <div class="col-md-6">
+                                        <span class="badge bg-primary me-1">Đã duyệt</span>
+                                        Đơn đã được nhân viên duyệt, đang chuẩn bị hàng.
+                                    </div>
+                                    <div class="col-md-6">
+                                        <span class="badge bg-info text-dark me-1">Đang xuất kho</span>
+                                        Hàng đang được chuẩn bị và sắp giao.
+                                    </div>
+                                    <div class="col-md-6">
+                                        <span class="badge bg-success me-1">Hoàn thành</span>
+                                        Đơn hàng đã được giao thành công.
+                                    </div>
+                                    <div class="col-md-6">
+                                        <span class="badge bg-danger me-1">Đã hủy</span>
+                                        Đơn hàng đã bị hủy, không còn hiệu lực.
+                                    </div>
+                                    <div class="col-md-6">
+                                        <span class="badge bg-secondary me-1">Đã tách</span>
+                                        Đơn gốc đã được tách ra thành nhiều đơn nhỏ hơn.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="table-responsive">
-                            <table class="table table-hover align-middle">
+                            <table class="table table-hover align-middle" style="font-size:15px;">
                                 <thead class="table-light">
-                                    <tr>
+                                    <tr style="font-size:13px;">
                                         <th>Mã đơn</th>
                                         <th>Ngày đặt</th>
                                         <th class="text-end">Tổng tiền</th>
-                                        <th class="text-center">Trạng thái</th>
-                                        <th class="text-end">Thao tác</th>
+                                        <th class="text-center">
+                                            Trạng thái
+                                            <i class="fas fa-question-circle text-muted ms-1" style="font-size:11px;cursor:pointer;"
+                                               data-bs-toggle="collapse" data-bs-target="#statusGuide"
+                                               title="Bấm để xem ý nghĩa các trạng thái"></i>
+                                        </th>
+                                        <th class="text-center" style="width:60px;">Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -64,36 +119,98 @@
                                                     @if (isChild)
                                                     {
                                                         <span class="text-muted me-1">|_</span>
-                                                        <a asp-action="OrderDetail" asp-route-id="@item.Id" class="text-decoration-none text-secondary fw-bold" title="Đơn con tách từ đơn gốc">
+                                                        <a asp-action="OrderDetail" asp-route-id="@item.Id" class="text-decoration-none text-secondary fw-semibold" title="Đơn con tách từ đơn gốc">
                                                             #@item.Order_code
                                                         </a>
-                                                        <span class="badge bg-info ms-2" style="font-size: 0.7em;">Đơn tách</span>
+                                                        <span class="badge bg-info ms-2" style="font-size:11px;">Đơn tách</span>
                                                     }
                                                     else
                                                     {
-                                                        <a asp-action="OrderDetail" asp-route-id="@item.Id" class="text-decoration-none fw-bold text-dark">
+                                                        <a asp-action="OrderDetail" asp-route-id="@item.Id" class="text-decoration-none fw-semibold text-dark">
                                                             #@item.Order_code
                                                         </a>
                                                     }
                                                 </td>
                                                 <td>@item.Order_date.ToString("dd/MM/yyyy HH:mm")</td>
-                                                <td class="text-end"><strong class="text-danger">@item.Total_price.ToString("N0") đ</strong></td>
+                                                <td class="text-end fw-semibold text-danger">@item.Total_price.ToString("N0") đ</td>
                                                 <td class="text-center">
-                                                    @if(item.Order_status == "Pending") { <span class="badge bg-warning text-dark">Chờ xử lý</span> }
-                                                    else if(item.Order_status == "Exporting") { <span class="badge bg-primary">Xuất kho</span> }
-                                                    else if(item.Order_status == "Approved") { <span class="badge bg-primary">Đã duyệt</span> }
-                                                    else if(item.Order_status == "Completed") { <span class="badge bg-success">Hoàn thành</span> }
-                                                    else if(item.Order_status == "Cancelled") { <span class="badge bg-danger">Đã hủy</span> }
-                                                    else if(item.Order_status == "WaitingCustomer") { <span class="badge bg-warning text-dark">Chờ xác nhận</span> }
-                                                    else if(item.Order_status == "Split") { <span class="badge bg-secondary">Đã tách</span> }
-                                                    else { <span class="badge bg-secondary">@item.Order_status</span> }
+                                                    @if (item.Order_status == "Pending")
+                                                    {
+                                                        <span class="badge bg-warning text-dark"
+                                                              style="font-size:12px;padding:5px 10px;"
+                                                              data-bs-toggle="tooltip"
+                                                              title="Đơn hàng đang chờ nhân viên xem xét và xử lý">
+                                                            Chờ xử lý <i class="fas fa-question-circle ms-1 opacity-75"></i>
+                                                        </span>
+                                                    }
+                                                    else if (item.Order_status == "WaitingCustomer")
+                                                    {
+                                                        <span class="badge text-dark"
+                                                              style="background:#ff9800;font-size:12px;padding:5px 10px;"
+                                                              data-bs-toggle="tooltip"
+                                                              title="Nhân viên đã điều chỉnh đơn hàng — bạn cần xác nhận Đồng ý hoặc Từ chối để tiếp tục">
+                                                            <i class="fas fa-bell me-1"></i>Cần xác nhận <i class="fas fa-question-circle ms-1 opacity-75"></i>
+                                                        </span>
+                                                    }
+                                                    else if (item.Order_status == "Exporting")
+                                                    {
+                                                        <span class="badge bg-info text-dark"
+                                                              style="font-size:12px;padding:5px 10px;"
+                                                              data-bs-toggle="tooltip"
+                                                              title="Hàng đang được chuẩn bị và sắp được giao đến bạn">
+                                                            Đang xuất kho <i class="fas fa-question-circle ms-1 opacity-75"></i>
+                                                        </span>
+                                                    }
+                                                    else if (item.Order_status == "Approved")
+                                                    {
+                                                        <span class="badge bg-primary"
+                                                              style="font-size:12px;padding:5px 10px;"
+                                                              data-bs-toggle="tooltip"
+                                                              title="Đơn hàng đã được duyệt, đang chờ xuất kho">
+                                                            Đã duyệt <i class="fas fa-question-circle ms-1 opacity-75"></i>
+                                                        </span>
+                                                    }
+                                                    else if (item.Order_status == "Completed")
+                                                    {
+                                                        <span class="badge bg-success"
+                                                              style="font-size:12px;padding:5px 10px;"
+                                                              data-bs-toggle="tooltip"
+                                                              title="Đơn hàng đã hoàn tất — hàng đã được giao thành công">
+                                                            Hoàn thành <i class="fas fa-question-circle ms-1 opacity-75"></i>
+                                                        </span>
+                                                    }
+                                                    else if (item.Order_status == "Cancelled")
+                                                    {
+                                                        <span class="badge bg-danger"
+                                                              style="font-size:12px;padding:5px 10px;"
+                                                              data-bs-toggle="tooltip"
+                                                              title="Đơn hàng đã bị hủy và không còn hiệu lực">
+                                                            Đã hủy <i class="fas fa-question-circle ms-1 opacity-75"></i>
+                                                        </span>
+                                                    }
+                                                    else if (item.Order_status == "Split")
+                                                    {
+                                                        <span class="badge bg-secondary"
+                                                              style="font-size:12px;padding:5px 10px;"
+                                                              data-bs-toggle="tooltip"
+                                                              title="Đơn hàng gốc đã được tách thành các đơn nhỏ hơn — xem bên dưới">
+                                                            Đã tách <i class="fas fa-question-circle ms-1 opacity-75"></i>
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-secondary" style="font-size:12px;padding:5px 10px;">@item.Order_status</span>
+                                                    }
                                                 </td>
-                                                <td class="text-end">
+                                                <td class="text-center">
                                                     <div class="dropdown">
-                                                        <button class="btn btn-sm btn-outline-secondary sh-order-action-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        <button class="btn btn-sm btn-outline-secondary" type="button"
+                                                                data-bs-toggle="dropdown" data-bs-strategy="fixed" data-bs-offset="0,4"
+                                                                aria-expanded="false" title="Xem thao tác"
+                                                                style="font-size:12px;padding:3px 8px;">
                                                             <i class="fas fa-ellipsis-h"></i>
                                                         </button>
-                                                        <ul class="dropdown-menu dropdown-menu-end">
+                                                        <ul class="dropdown-menu dropdown-menu-end" style="font-size:13px;">
                                                             <li>
                                                                 <a asp-action="OrderDetail" asp-route-id="@item.Id" class="dropdown-item">
                                                                     <i class="fas fa-eye me-2 text-primary"></i>Xem chi tiết
@@ -103,13 +220,20 @@
                                                             {
                                                                 <li><hr class="dropdown-divider my-1"></li>
                                                                 <li>
-                                                                    <button type="button" class="dropdown-item text-success" onclick="approveOrder(@item.Id)">
-                                                                        <i class="fas fa-check me-2"></i>Duyệt đơn hàng
+                                                                    <span class="dropdown-item-text text-muted" style="font-size:11px;padding:2px 16px;">
+                                                                        <i class="fas fa-info-circle me-1"></i>Nhân viên đã điều chỉnh đơn — cần xác nhận
+                                                                    </span>
+                                                                </li>
+                                                                <li>
+                                                                    <button type="button" class="dropdown-item text-success" onclick="approveOrder(@item.Id)"
+                                                                            title="Đồng ý tiếp nhận đơn hàng đã điều chỉnh — hệ thống sẽ tiến hành giao hàng">
+                                                                        <i class="fas fa-check me-2"></i>Đồng ý nhận hàng
                                                                     </button>
                                                                 </li>
                                                                 <li>
-                                                                    <button type="button" class="dropdown-item text-danger" onclick="rejectOrder(@item.Id)">
-                                                                        <i class="fas fa-times me-2"></i>Không duyệt
+                                                                    <button type="button" class="dropdown-item text-danger" onclick="rejectOrder(@item.Id)"
+                                                                            title="Từ chối điều chỉnh — đơn hàng sẽ trở lại trạng thái Chờ xử lý">
+                                                                        <i class="fas fa-times me-2"></i>Từ chối
                                                                     </button>
                                                                 </li>
                                                             }
@@ -117,6 +241,22 @@
                                                     </div>
                                                 </td>
                                             </tr>
+                                            @if (item.Order_status == "WaitingCustomer")
+                                            {
+                                                <tr style="background:#fffbee;">
+                                                    <td colspan="5" class="py-2 px-4" style="border-top: 2px dashed #ff9800 !important;">
+                                                        <div class="d-flex align-items-start gap-2" style="font-size:13px; color:#7a5c00;">
+                                                            <i class="fas fa-exclamation-circle mt-1" style="color:#ff9800; flex-shrink:0;"></i>
+                                                            <span>
+                                                                <strong>Cần xác nhận của bạn:</strong>
+                                                                Nhân viên đã điều chỉnh phân bổ đơn hàng này.
+                                                                Chọn <strong class="text-success">Đồng ý</strong> để tiến hành giao hàng,
+                                                                hoặc <strong class="text-danger">Từ chối</strong> để đơn về lại trạng thái Chờ xử lý.
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
                                         }
                                     }
                                     else
@@ -198,8 +338,19 @@
         }
     }
 
+    // Khởi tạo Bootstrap Tooltip cho toàn trang
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+            new bootstrap.Tooltip(el, { trigger: 'hover' });
+        });
+    });
+
     function approveOrder(id) {
-        if (confirm('Bạn xác nhận đồng ý nhận phần đơn hàng có sẵn này?')) {
+        if (confirm(
+            '✅ Xác nhận đồng ý đơn hàng?\n\n' +
+            'Bạn đồng ý tiếp nhận đơn hàng đã được điều chỉnh.\n' +
+            'Hệ thống sẽ tiếp tục xử lý và chuẩn bị giao hàng cho bạn.'
+        )) {
             handlePost('@Url.Action("CustomerApproveOrder", "Shop")?id=' + id)
             .then(data => {
                 if (data.success) location.reload();
@@ -209,7 +360,11 @@
     }
 
     function rejectOrder(id) {
-        if (confirm('Bạn không đồng ý nhận phần đơn hàng này? Hệ thống sẽ hoàn tác và đưa đơn hàng gốc về trạng thái Chờ xử lý.')) {
+        if (confirm(
+            '❌ Xác nhận từ chối đơn hàng?\n\n' +
+            'Bạn không đồng ý với điều chỉnh này.\n' +
+            'Hệ thống sẽ hoàn tác và đưa đơn hàng về trạng thái Chờ xử lý.'
+        )) {
             handlePost('@Url.Action("CustomerRejectOrder", "Shop")?id=' + id)
             .then(data => {
                 if (data.success) location.reload();

@@ -10,7 +10,7 @@ using ErpOnlineOrder.WebMVC.Services.Interfaces;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
-    [RequirePermission(PermissionCodes.WarehouseExportView)]
+    // [RequirePermission(PermissionCodes.WarehouseExportView)]
     public class WarehouseExportController : BaseController
     {
         private readonly IWarehouseExportApiClient _warehouseExportApiClient;
@@ -75,7 +75,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         }
 
         [HttpGet]
-        [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
+        // [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
         public async Task<IActionResult> Edit(int id)
         {
             try
@@ -118,7 +118,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
+        // [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
         public async Task<IActionResult> Edit(int id, UpdateWarehouseExportDto model)
         {
             try
@@ -148,7 +148,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
+        // [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
         public async Task<IActionResult> Confirm(int id)
         {
             try
@@ -171,7 +171,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
+        // [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
         public async Task<IActionResult> Cancel(int id)
         {
             try
@@ -194,7 +194,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
+        // [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
         public async Task<IActionResult> UpdateDeliveryStatus(int id, string status)
         {
             try
@@ -217,7 +217,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequirePermission(PermissionCodes.WarehouseExportDelete)]
+        // [RequirePermission(PermissionCodes.WarehouseExportDelete)]
         public async Task<IActionResult> Delete(int id)
         {
             try
@@ -239,7 +239,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         }
 
         [HttpGet]
-        [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
+        // [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
         public async Task<IActionResult> Split(int id)
         {
             try
@@ -263,7 +263,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
+        // [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
         public async Task<IActionResult> Split(SplitWarehouseExportDto dto)
         {
             try
@@ -285,7 +285,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         }
 
         [HttpGet]
-        [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
+        // [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
         public async Task<IActionResult> Merge()
         {
             try
@@ -303,7 +303,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
+        // [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
         public async Task<IActionResult> Merge(MergeWarehouseExportsDto dto)
         {
             try
@@ -326,7 +326,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
+        // [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
         public async Task<IActionResult> UndoSplit(int id)
         {
             try
@@ -347,7 +347,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
+        // [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
         public async Task<IActionResult> UndoMerge(int id)
         {
             try
@@ -366,7 +366,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        [RequirePermission(PermissionCodes.WarehouseExportView)]
+        // [RequirePermission(PermissionCodes.WarehouseExportView)]
         [HttpGet]
         public async Task<IActionResult> ExportExcel(string? status)
         {
@@ -391,7 +391,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
+        // [RequirePermission(PermissionCodes.WarehouseExportUpdate)]
         public async Task<IActionResult> UpdateStatus(int id, string status)
         {
             try

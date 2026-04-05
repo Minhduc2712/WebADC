@@ -30,11 +30,12 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             try
             {
                 var smtp = await _settingApiClient.GetSmtpSettingsAsync();
-                var allSettings = await _settingApiClient.GetAllSettingsAsync();
+                var allSettings = (await _settingApiClient.GetAllSettingsAsync())?.ToList();
                 var model = new SettingIndexViewModel
                 {
                     Smtp = smtp ?? new SmtpSettingsDto(),
-                    AllSettings = allSettings ?? new List<SystemSettingDto>()
+                    AllSettings = allSettings ?? new List<SystemSettingDto>(),
+                    WarehouseEmailSetting = allSettings?.FirstOrDefault(s => s.SettingKey == "WAREHOUSE_NOTIFY_EMAIL")
                 };
                 return View(model);
             }
@@ -150,6 +151,27 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             ViewBag.SettingId = id;
             ViewBag.SettingKey = setting?.SettingKey ?? "";
             return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequirePermission(PermissionCodes.SettingsUpdate)]
+        public async Task<IActionResult> SaveWarehouseSettings(string email, int? settingId)
+        {
+            try
+            {
+                if (settingId.HasValue)
+                    await _settingApiClient.UpdateSettingAsync(settingId.Value, new UpdateSettingDto { SettingValue = email ?? "", Description = "Email nhận thông báo xuất kho" });
+                else
+                    await _settingApiClient.CreateSettingAsync(new CreateSettingDto { SettingKey = "WAREHOUSE_NOTIFY_EMAIL", SettingValue = email ?? "", Description = "Email nhận thông báo xuất kho" });
+                SetSuccessMessage("Đã lưu cấu hình kho thành công!");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi lưu cài đặt kho");
+                SetErrorMessage(GetDetailedErrorMessage(ex));
+            }
+            return RedirectToAction(nameof(Index));
         }
 
         private async Task LoadCurrentUserPermissions()

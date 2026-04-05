@@ -139,24 +139,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<IEnumerable<ProductDTO>> GetProductsForShopAsync(int? customerId, ProductForShopFilterRequest request)
         {
-            var query = GetBaseQuery()
-                .AsQueryable();
-
-            if (customerId.HasValue && customerId.Value > 0)
-            {
-                var packageProductIds = _context.CustomerPackages
-                    .Where(cp => cp.Customer_id == customerId.Value && cp.Is_active && !cp.Is_deleted)
-                    .Join(_context.PackageProducts.Where(pp => pp.Is_active && !pp.Is_deleted),
-                        cp => cp.Package_id,
-                        pp => pp.Package_id,
-                        (cp, pp) => pp.Product_id)
-                    .Distinct();
-
-                query = query.Where(p =>
-                    p.Customer_Products.Any(cp => cp.Customer_id == customerId.Value && cp.Is_active) ||
-                    packageProductIds.Contains(p.Id));
-            }
-
+            var query = BuildShopBaseQuery(customerId);
             var projected = customerId.HasValue && customerId.Value > 0
                 ? ProjectToProductDtoWithCustomer(query, customerId.Value)
                 : ProjectToProductDto(query);
@@ -234,20 +217,39 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                     p.Product_Authors.Any(pa => pa.Author != null && pa.Author.Author_name != null && pa.Author.Author_name.ToLower().Contains(search)));
             }
 
-            if (!string.IsNullOrWhiteSpace(request.Category))
+            if (request.Categories != null && request.Categories.Count > 0)
             {
-                var cat = request.Category.Trim();
+                var cats = request.Categories;
                 query = query.Where(p => p.Product_Categories.Any(pc =>
-                    pc.Category != null && pc.Category.Category_name == cat));
+                    pc.Category != null && cats.Contains(pc.Category.Category_name!)));
             }
+
+            if (request.Publishers != null && request.Publishers.Count > 0)
+            {
+                var pubs = request.Publishers;
+                query = query.Where(p => p.Publisher != null && pubs.Contains(p.Publisher.Publisher_name!));
+            }
+
+            if (request.Authors != null && request.Authors.Count > 0)
+            {
+                var auths = request.Authors;
+                query = query.Where(p => p.Product_Authors.Any(pa =>
+                    pa.Author != null && auths.Contains(pa.Author.Author_name!)));
+            }
+
+            if (request.PriceMin.HasValue)
+                query = query.Where(p => p.Product_price >= request.PriceMin.Value);
+
+            if (request.PriceMax.HasValue)
+                query = query.Where(p => p.Product_price <= request.PriceMax.Value);
 
             query = request.Sort switch
             {
-                "price_asc" => query.OrderBy(p => p.Product_price),
+                "price_asc"  => query.OrderBy(p => p.Product_price),
                 "price_desc" => query.OrderByDescending(p => p.Product_price),
-                "name_asc" => query.OrderBy(p => p.Product_name ?? ""),
-                "newest" => query.OrderByDescending(p => p.Id),
-                _ => query.OrderByDescending(p => p.Id)
+                "name_asc"   => query.OrderBy(p => p.Product_name ?? ""),
+                "newest"     => query.OrderByDescending(p => p.Id),
+                _            => query.OrderByDescending(p => p.Id)
             };
 
             var projectedQuery = customerId.HasValue && customerId.Value > 0
@@ -294,24 +296,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
 
         public async Task<IEnumerable<string>> GetCategoriesForShopAsync(int? customerId)
         {
-            var query = GetBaseQuery()
-                .AsQueryable();
-
-            if (customerId.HasValue && customerId.Value > 0)
-            {
-                var packageProductIds = _context.CustomerPackages
-                    .Where(cp => cp.Customer_id == customerId.Value && cp.Is_active && !cp.Is_deleted)
-                    .Join(_context.PackageProducts.Where(pp => pp.Is_active && !pp.Is_deleted),
-                        cp => cp.Package_id,
-                        pp => pp.Package_id,
-                        (cp, pp) => pp.Product_id)
-                    .Distinct();
-
-                query = query.Where(p =>
-                    p.Customer_Products.Any(cp => cp.Customer_id == customerId.Value && cp.Is_active) ||
-                    packageProductIds.Contains(p.Id));
-            }
-
+            var query = BuildShopBaseQuery(customerId);
             var categories = await query
                 .SelectMany(p => p.Product_Categories)
                 .Where(pc => pc.Category != null)
@@ -320,8 +305,49 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 .Distinct()
                 .OrderBy(c => c)
                 .ToListAsync();
-
             return categories!;
+        }
+
+        public async Task<IEnumerable<string>> GetPublishersForShopAsync(int? customerId)
+        {
+            var query = BuildShopBaseQuery(customerId);
+            return await query
+                .Where(p => p.Publisher != null && p.Publisher.Publisher_name != null)
+                .Select(p => p.Publisher!.Publisher_name!)
+                .Where(n => !string.IsNullOrEmpty(n))
+                .Distinct()
+                .OrderBy(n => n)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<string>> GetAuthorsForShopAsync(int? customerId)
+        {
+            var query = BuildShopBaseQuery(customerId);
+            return await query
+                .SelectMany(p => p.Product_Authors)
+                .Where(pa => pa.Author != null && pa.Author.Author_name != null)
+                .Select(pa => pa.Author!.Author_name!)
+                .Where(n => !string.IsNullOrEmpty(n))
+                .Distinct()
+                .OrderBy(n => n)
+                .ToListAsync();
+        }
+
+        private IQueryable<Product> BuildShopBaseQuery(int? customerId)
+        {
+            var query = GetBaseQuery().AsQueryable();
+            if (customerId.HasValue && customerId.Value > 0)
+            {
+                var packageProductIds = _context.CustomerPackages
+                    .Where(cp => cp.Customer_id == customerId.Value && cp.Is_active && !cp.Is_deleted)
+                    .Join(_context.PackageProducts.Where(pp => pp.Is_active && !pp.Is_deleted),
+                        cp => cp.Package_id, pp => pp.Package_id, (cp, pp) => pp.Product_id)
+                    .Distinct();
+                query = query.Where(p =>
+                    p.Customer_Products.Any(cp => cp.Customer_id == customerId.Value && cp.Is_active) ||
+                    packageProductIds.Contains(p.Id));
+            }
+            return query;
         }
 
         public async Task<IEnumerable<ProductDTO>> GetAllAsync()
