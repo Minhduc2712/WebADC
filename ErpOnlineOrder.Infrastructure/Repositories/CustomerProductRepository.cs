@@ -64,6 +64,7 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                     Original_price = cp.Product != null ? cp.Product.Product_price : 0,
                     Max_quantity = cp.Max_quantity,
                     Is_active = cp.Is_active,
+                    Is_Excluded = cp.Is_Excluded,
                     Created_at = cp.Created_at
                 })
                 .ToListAsync();
@@ -183,6 +184,14 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
             return await _context.CustomerProducts
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(cp => cp.Customer_id == customerId && cp.Product_id == productId);
+        }
+
+        public async Task<IEnumerable<int>> GetExcludedProductIdsByCustomerAsync(int customerId)
+        {
+            return await _context.CustomerProducts
+                .Where(cp => cp.Customer_id == customerId && cp.Is_Excluded && cp.Is_active && !cp.Is_deleted)
+                .Select(cp => cp.Product_id)
+                .ToListAsync();
         }
     }
 }

@@ -338,41 +338,77 @@ namespace ErpOnlineOrder.Application.Services
 
                 var customerName = customer.Full_name ?? customer.Customer_code ?? "-";
                 var subject = $"[Hóa đơn] Hóa đơn {invoice.Invoice_code} từ hệ thống";
+                var grandTotal = invoice.Total_amount + invoice.Tax_amount;
 
                 var sb = new StringBuilder();
-                sb.AppendLine("<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>");
-                sb.AppendLine($"<h2 style='color: #1a7f37;'>Hóa đơn #{invoice.Invoice_code}</h2>");
-                sb.AppendLine($"<p>Xin chào <strong>{customerName}</strong>,</p>");
-                sb.AppendLine($"<p>Hệ thống gửi đến bạn hóa đơn <strong>{invoice.Invoice_code}</strong> ngày <strong>{invoice.Invoice_date:dd/MM/yyyy}</strong>.</p>");
-                sb.AppendLine("<table style='width: 100%; border-collapse: collapse; margin: 16px 0;'>");
-                sb.AppendLine("<thead><tr style='background: #f8f8f8;'>");
-                sb.AppendLine("<th style='border: 1px solid #ddd; padding: 8px; text-align: left;'>Sản phẩm</th>");
-                sb.AppendLine("<th style='border: 1px solid #ddd; padding: 8px; text-align: center;'>SL</th>");
-                sb.AppendLine("<th style='border: 1px solid #ddd; padding: 8px; text-align: right;'>Đơn giá</th>");
-                sb.AppendLine("<th style='border: 1px solid #ddd; padding: 8px; text-align: right;'>Thành tiền</th>");
+                sb.AppendLine("<!DOCTYPE html><html lang='vi'><head><meta charset='utf-8'/></head><body>");
+                sb.AppendLine("<div style='font-family: Times New Roman, serif; max-width: 800px; margin: 0 auto; color: #000; font-size: 12pt; line-height: 1.5;'>");
+
+                // Header
+                sb.AppendLine("<div style='text-align: center; margin-bottom: 16px;'>");
+                sb.AppendLine("<h1 style='font-size: 20pt; margin: 0; text-transform: uppercase;'>HÓA ĐƠN BÁN HÀNG</h1>");
+                sb.AppendLine($"<div style='font-style: italic; margin-top: 4px;'>Ngày {invoice.Invoice_date:dd} tháng {invoice.Invoice_date:MM} năm {invoice.Invoice_date:yyyy}</div>");
+                sb.AppendLine($"<div style='font-size: 13pt; font-weight: bold; margin-top: 4px;'>Số: {invoice.Invoice_code}</div>");
+                sb.AppendLine("</div>");
+
+                // Greeting
+                sb.AppendLine($"<p>Kính gửi <strong>{customerName}</strong>,</p>");
+                sb.AppendLine($"<p>Hệ thống gửi đến Quý khách hóa đơn <strong>{invoice.Invoice_code}</strong>. Quý khách có thể in hóa đơn này để lưu trữ.</p>");
+
+                // Info section
+                sb.AppendLine("<table style='width: 100%; margin-bottom: 12px;' cellpadding='4' cellspacing='0'>");
+                sb.AppendLine($"<tr><td style='font-weight: bold; width: 140px;'>Khách hàng:</td><td>{customerName}</td></tr>");
+                sb.AppendLine($"<tr><td style='font-weight: bold;'>Ngày lập:</td><td>{invoice.Invoice_date:dd/MM/yyyy}</td></tr>");
+                sb.AppendLine("</table>");
+
+                // Detail table
+                sb.AppendLine("<table style='width: 100%; border-collapse: collapse; margin: 12px 0;'>");
+                sb.AppendLine("<thead><tr style='background: #f0f0f0;'>");
+                sb.AppendLine("<th style='border: 1px solid #000; padding: 6px 8px; text-align: center; width: 40px;'>STT</th>");
+                sb.AppendLine("<th style='border: 1px solid #000; padding: 6px 8px; text-align: left;'>Tên sản phẩm</th>");
+                sb.AppendLine("<th style='border: 1px solid #000; padding: 6px 8px; text-align: center; width: 70px;'>SL</th>");
+                sb.AppendLine("<th style='border: 1px solid #000; padding: 6px 8px; text-align: right; width: 100px;'>Đơn giá</th>");
+                sb.AppendLine("<th style='border: 1px solid #000; padding: 6px 8px; text-align: center; width: 70px;'>Thuế (%)</th>");
+                sb.AppendLine("<th style='border: 1px solid #000; padding: 6px 8px; text-align: right; width: 110px;'>Thành tiền</th>");
                 sb.AppendLine("</tr></thead><tbody>");
 
                 if (invoice.Invoice_Details != null)
                 {
+                    var stt = 1;
                     foreach (var d in invoice.Invoice_Details)
                     {
                         var productName = d.Product?.Product_name ?? $"SP #{d.Product_id}";
-                        sb.AppendLine($"<tr>");
-                        sb.AppendLine($"<td style='border: 1px solid #ddd; padding: 8px;'>{productName}</td>");
-                        sb.AppendLine($"<td style='border: 1px solid #ddd; padding: 8px; text-align: center;'>{d.Quantity}</td>");
-                        sb.AppendLine($"<td style='border: 1px solid #ddd; padding: 8px; text-align: right;'>{d.Unit_price:N0}</td>");
-                        sb.AppendLine($"<td style='border: 1px solid #ddd; padding: 8px; text-align: right;'>{d.Total_price:N0}</td>");
+                        sb.AppendLine("<tr>");
+                        sb.AppendLine($"<td style='border: 1px solid #000; padding: 6px 8px; text-align: center;'>{stt}</td>");
+                        sb.AppendLine($"<td style='border: 1px solid #000; padding: 6px 8px;'>{productName}</td>");
+                        sb.AppendLine($"<td style='border: 1px solid #000; padding: 6px 8px; text-align: center;'>{d.Quantity}</td>");
+                        sb.AppendLine($"<td style='border: 1px solid #000; padding: 6px 8px; text-align: right;'>{d.Unit_price:N0}</td>");
+                        sb.AppendLine($"<td style='border: 1px solid #000; padding: 6px 8px; text-align: center;'>{d.Tax_rate:N1}</td>");
+                        sb.AppendLine($"<td style='border: 1px solid #000; padding: 6px 8px; text-align: right;'>{d.Total_price:N0}</td>");
                         sb.AppendLine("</tr>");
+                        stt++;
                     }
                 }
 
                 sb.AppendLine("</tbody></table>");
-                sb.AppendLine($"<p><strong>Tổng tiền hàng:</strong> {invoice.Total_amount:N0} VNĐ</p>");
-                sb.AppendLine($"<p><strong>Thuế:</strong> {invoice.Tax_amount:N0} VNĐ</p>");
-                sb.AppendLine($"<p style='font-size: 18px; color: #1a7f37;'><strong>Tổng thanh toán: {(invoice.Total_amount + invoice.Tax_amount):N0} VNĐ</strong></p>");
-                sb.AppendLine("<hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;' />");
-                sb.AppendLine("<p style='color: #888; font-size: 13px;'>Đây là email tự động từ hệ thống. Nếu có thắc mắc, vui lòng liên hệ bộ phận hỗ trợ.</p>");
-                sb.AppendLine("</div>");
+
+                // Totals
+                sb.AppendLine("<table style='width: 100%; margin-top: 8px;' cellpadding='4' cellspacing='0'>");
+                sb.AppendLine($"<tr><td style='text-align: right; font-weight: bold;'>Tổng tiền hàng:</td><td style='text-align: right; width: 150px; font-weight: bold;'>{invoice.Total_amount:N0} VNĐ</td></tr>");
+                sb.AppendLine($"<tr><td style='text-align: right; font-weight: bold;'>Tiền thuế:</td><td style='text-align: right; font-weight: bold;'>{invoice.Tax_amount:N0} VNĐ</td></tr>");
+                sb.AppendLine($"<tr><td style='text-align: right; font-weight: bold; font-size: 14pt; border-top: 2px solid #000; padding-top: 6px;'>Tổng thanh toán:</td><td style='text-align: right; font-weight: bold; font-size: 14pt; border-top: 2px solid #000; padding-top: 6px;'>{grandTotal:N0} VNĐ</td></tr>");
+                sb.AppendLine("</table>");
+
+                // Signature section
+                sb.AppendLine("<table style='width: 100%; margin-top: 40px; text-align: center;' cellpadding='0' cellspacing='0'>");
+                sb.AppendLine("<tr>");
+                sb.AppendLine("<td style='width: 50%;'><strong>Người mua hàng</strong><br/><em style='font-size: 10pt;'>(Ký, ghi rõ họ tên)</em></td>");
+                sb.AppendLine("<td style='width: 50%;'><strong>Người bán hàng</strong><br/><em style='font-size: 10pt;'>(Ký, đóng dấu, ghi rõ họ tên)</em></td>");
+                sb.AppendLine("</tr></table>");
+
+                sb.AppendLine("<hr style='border: none; border-top: 1px solid #ccc; margin: 30px 0 12px;' />");
+                sb.AppendLine("<p style='color: #888; font-size: 11px; font-style: italic;'>Đây là email tự động từ hệ thống. Quý khách có thể in email này để lưu trữ. Nếu có thắc mắc, vui lòng liên hệ bộ phận hỗ trợ.</p>");
+                sb.AppendLine("</div></body></html>");
 
                 await SendEmailAsync(smtp!, customerEmail, subject, sb.ToString(), cancellationToken);
             }

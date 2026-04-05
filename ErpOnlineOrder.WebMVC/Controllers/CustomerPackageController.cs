@@ -13,6 +13,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         private readonly ICustomerPackageApiClient _customerPackageApiClient;
         private readonly ICustomerApiClient _customerApiClient;
         private readonly IPackageApiClient _packageApiClient;
+        private readonly ICustomerProductApiClient _customerProductApiClient;
         private readonly IPermissionApiClient _permissionApiClient;
         private readonly ICustomerManagementApiClient _customerManagementApiClient;
         private readonly ILogger<CustomerPackageController> _logger;
@@ -21,6 +22,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             ICustomerPackageApiClient customerPackageApiClient,
             ICustomerApiClient customerApiClient,
             IPackageApiClient packageApiClient,
+            ICustomerProductApiClient customerProductApiClient,
             IPermissionApiClient permissionApiClient,
             ICustomerManagementApiClient customerManagementApiClient,
             ILogger<CustomerPackageController> logger)
@@ -28,6 +30,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             _customerPackageApiClient = customerPackageApiClient;
             _customerApiClient = customerApiClient;
             _packageApiClient = packageApiClient;
+            _customerProductApiClient = customerProductApiClient;
             _permissionApiClient = permissionApiClient;
             _customerManagementApiClient = customerManagementApiClient;
             _logger = logger;
@@ -214,6 +217,124 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
             var permissions = await _permissionApiClient.GetUserPermissionCodesAsync(userId);
             return permissions?.Contains(permissionCode) ?? false;
+        }
+
+        public async Task<IActionResult> CustomerPackageProducts(int id)
+        {
+            try
+            {
+                var cp = await _customerPackageApiClient.GetByIdAsync(id);
+                if (cp == null)
+                {
+                    SetErrorMessage("Không tìm thấy bản ghi khách hàng - gói.");
+                    return RedirectToAction("Index");
+                }
+
+                // Guard: kiểm tra nhân viên có quyền quản lý khách hàng này không
+                var roles = HttpContext.Session.GetString("Roles") ?? "";
+                if (!roles.Contains("ROLE_ADMIN"))
+                {
+                    var assignments = await _customerManagementApiClient.GetByCustomerAsync(cp.Customer_id);
+                    int currentUserId = GetCurrentUserId();
+                    if (!assignments.Any(a => a.Staff?.User_id == currentUserId))
+                    {
+                        SetErrorMessage("Bạn không có quyền quản lý sản phẩm gói của khách hàng này.");
+                        return RedirectToAction("Index");
+                    }
+                }
+
+                var customer = await _customerApiClient.GetByIdAsync(cp.Customer_id);
+                var package = await _packageApiClient.GetByIdAsync(cp.Package_id);
+                if (package == null)
+                {
+                    SetErrorMessage("Không tìm thấy gói sản phẩm.");
+                    return RedirectToAction("Index");
+                }
+
+                var excludedProductIds = await _customerProductApiClient.GetExcludedProductIdsAsync(cp.Customer_id);
+
+                ViewBag.Customer = customer;
+                ViewBag.CustomerPackage = cp;
+                ViewBag.ExcludedProductIds = excludedProductIds.ToHashSet();
+                ViewBag.CanAssign = await HasPermissionAsync(PermissionCodes.CustomerProductAssign);
+
+                return View(package);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi tải sản phẩm gói cho CustomerPackage {Id}", id);
+                SetErrorMessage(GetDetailedErrorMessage(ex));
+                return RedirectToAction("Index");
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequirePermission(PermissionCodes.CustomerProductAssign)]
+        public async Task<IActionResult> ExcludeProduct(int customerPackageId, int customerId, int productId)
+        {
+            try
+            {
+                if (customerPackageId <= 0 || customerId <= 0 || productId <= 0)
+                {
+                    SetErrorMessage("Dữ liệu không hợp lệ.");
+                    return RedirectToAction("Index");
+                }
+
+                // Kiểm tra customerPackageId tồn tại và customerId khớp
+                var cp = await _customerPackageApiClient.GetByIdAsync(customerPackageId);
+                if (cp == null || cp.Customer_id != customerId)
+                {
+                    SetErrorMessage("Bản ghi khách hàng - gói không hợp lệ.");
+                    return RedirectToAction("Index");
+                }
+
+                var (success, error) = await _customerProductApiClient.ExcludeProductAsync(customerId, productId);
+                if (success)
+                    SetSuccessMessage("Đã loại bỏ sản phẩm khỏi gói của khách hàng.");
+                else
+                    SetErrorMessage(error ?? "Không thể loại bỏ sản phẩm.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi loại bỏ sản phẩm {ProductId} cho khách hàng {CustomerId}", productId, customerId);
+                SetErrorMessage(GetDetailedErrorMessage(ex));
+            }
+            return RedirectToAction("CustomerPackageProducts", new { id = customerPackageId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [RequirePermission(PermissionCodes.CustomerProductAssign)]
+        public async Task<IActionResult> UnexcludeProduct(int customerPackageId, int customerId, int productId)
+        {
+            try
+            {
+                if (customerPackageId <= 0 || customerId <= 0 || productId <= 0)
+                {
+                    SetErrorMessage("Dữ liệu không hợp lệ.");
+                    return RedirectToAction("Index");
+                }
+
+                var cp = await _customerPackageApiClient.GetByIdAsync(customerPackageId);
+                if (cp == null || cp.Customer_id != customerId)
+                {
+                    SetErrorMessage("Bản ghi khách hàng - gói không hợp lệ.");
+                    return RedirectToAction("Index");
+                }
+
+                var (success, error) = await _customerProductApiClient.UnexcludeProductAsync(customerId, productId);
+                if (success)
+                    SetSuccessMessage("Đã khôi phục sản phẩm trong gói của khách hàng.");
+                else
+                    SetErrorMessage(error ?? "Không thể khôi phục sản phẩm.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi khôi phục sản phẩm {ProductId} cho khách hàng {CustomerId}", productId, customerId);
+                SetErrorMessage(GetDetailedErrorMessage(ex));
+            }
+            return RedirectToAction("CustomerPackageProducts", new { id = customerPackageId });
         }
     }
 }

@@ -22,6 +22,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
         Task<Customer_product?> GetWithFiltersAsync(int customerId, int productId);
         Task<IEnumerable<Customer_product>> GetAllByProductIdsAsync(int customerId, IEnumerable<int> productIds);
         Task UpdateRangeAsync(IEnumerable<Customer_product> customerProducts);
+        Task<IEnumerable<int>> GetExcludedProductIdsByCustomerAsync(int customerId);
     }
 
 

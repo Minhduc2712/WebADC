@@ -42,13 +42,17 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<CustomerProductDto?> AddProductToCustomerAsync(CreateCustomerProductDto dto, int createdBy)
         {
+            if (dto == null || dto.Customer_id <= 0 || dto.Product_id <= 0)
+                return null;
+
             var existing = await _customerProductRepository.GetWithFiltersAsync(dto.Customer_id, dto.Product_id);
 
             if (existing != null)
             {
                 bool wasDeleted = existing.Is_deleted;
                 existing.Is_active = dto.Is_active;
-                existing.Is_deleted = false; 
+                existing.Is_deleted = false;
+                existing.Is_Excluded = false;
                 existing.Max_quantity = dto.Max_quantity;
                 existing.Updated_by = createdBy;
 
@@ -91,8 +95,11 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<bool> AssignProductsToCustomerAsync(AssignProductsToCustomerDto dto, int createdBy)
         {
-            var requestedProductIds = dto.Product_ids.Distinct().ToList();
-            if (requestedProductIds.Count == 0)
+            if (dto == null || dto.Customer_id <= 0)
+                return false;
+
+            var requestedProductIds = dto.Product_ids?.Distinct().ToList();
+            if (requestedProductIds == null || requestedProductIds.Count == 0 || requestedProductIds.Any(id => id <= 0))
             {
                 return false;
             }
@@ -108,10 +115,11 @@ namespace ErpOnlineOrder.Application.Services
             {
                 if (existingMap.TryGetValue(productId, out var existing))
                 {
-                    if (existing.Is_deleted)
+                    if (existing.Is_deleted || existing.Is_Excluded)
                     {
                         existing.Is_deleted = false;
                         existing.Is_active = true;
+                        existing.Is_Excluded = false;
                         existing.Updated_by = createdBy;
                         toRestore.Add(existing);
                     }
@@ -162,6 +170,8 @@ namespace ErpOnlineOrder.Application.Services
 
         public async Task<bool> UpdateCustomerProductAsync(UpdateCustomerProductDto dto, int updatedBy)
         {
+            if (dto == null || dto.Id <= 0) return false;
+
             var customerProduct = await _customerProductRepository.GetByIdBasicAsync(dto.Id);
             if (customerProduct == null)
             {
@@ -215,5 +225,61 @@ namespace ErpOnlineOrder.Application.Services
             return customerProducts.Select(EntityMappers.ToCustomerProductDto);
         }
 
+        public async Task<bool> ExcludeProductForCustomerAsync(int customerId, int productId, int updatedBy)
+        {
+            if (customerId <= 0 || productId <= 0) return false;
+
+            // Kiểm tra sản phẩm có thuộc gói nào của khách hàng không
+            var packageProductIds = await _customerPackageRepository.GetProductIdsByCustomerIdAsync(customerId);
+            if (!packageProductIds.Contains(productId))
+                return false;
+
+            var existing = await _customerProductRepository.GetWithFiltersAsync(customerId, productId);
+            if (existing != null)
+            {
+                existing.Is_Excluded = true;
+                existing.Is_active = true;
+                existing.Is_deleted = false;
+                existing.Updated_by = updatedBy;
+                await _customerProductRepository.UpdateAsync(existing);
+                return true;
+            }
+
+            var entity = new Customer_product
+            {
+                Customer_id = customerId,
+                Product_id = productId,
+                Is_Excluded = true,
+                Is_active = true,
+                Is_deleted = false,
+                Created_by = updatedBy,
+                Updated_by = updatedBy
+            };
+            await _customerProductRepository.AddAsync(entity);
+            return true;
+        }
+
+        public async Task<bool> UnexcludeProductForCustomerAsync(int customerId, int productId, int updatedBy)
+        {
+            if (customerId <= 0 || productId <= 0) return false;
+
+            // Kiểm tra sản phẩm có thuộc gói của khách hàng không
+            var packageProductIds = await _customerPackageRepository.GetProductIdsByCustomerIdAsync(customerId);
+            if (!packageProductIds.Contains(productId))
+                return false;
+
+            var existing = await _customerProductRepository.GetWithFiltersAsync(customerId, productId);
+            if (existing == null || !existing.Is_Excluded) return false;
+
+            existing.Is_Excluded = false;
+            existing.Updated_by = updatedBy;
+            await _customerProductRepository.UpdateAsync(existing);
+            return true;
+        }
+
+        public async Task<IEnumerable<int>> GetExcludedProductIdsByCustomerAsync(int customerId)
+        {
+            return await _customerProductRepository.GetExcludedProductIdsByCustomerAsync(customerId);
+        }
     }
 }

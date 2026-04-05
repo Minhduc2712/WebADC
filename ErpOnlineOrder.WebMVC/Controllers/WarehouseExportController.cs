@@ -411,6 +411,29 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
+        [HttpGet]
+        [RequirePermission(PermissionCodes.WarehouseExportView)]
+        public async Task<IActionResult> PrintExport(int id)
+        {
+            try
+            {
+                var export = await _warehouseExportApiClient.GetByIdAsync(id);
+                if (export == null)
+                {
+                    SetErrorMessage("Không tìm thấy phiếu xuất kho.");
+                    return RedirectToAction(nameof(Index));
+                }
+
+                return View(export);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading print export {ExportId}", id);
+                SetErrorMessage(GetDetailedErrorMessage(ex));
+                return RedirectToAction(nameof(Details), new { id });
+            }
+        }
+
         private async Task LoadCurrentUserPermissions()
         {
             try

@@ -44,5 +44,20 @@ namespace ErpOnlineOrder.WebMVC.Services
         {
             return await DeleteAsync($"customerproduct/{id}", cancellationToken);
         }
+
+        public async Task<(bool Success, string? Error)> ExcludeProductAsync(int customerId, int productId, CancellationToken cancellationToken = default)
+        {
+            return await PostWithoutReturnAsync($"customerproduct/exclude/{customerId}/{productId}", new { }, cancellationToken);
+        }
+
+        public async Task<(bool Success, string? Error)> UnexcludeProductAsync(int customerId, int productId, CancellationToken cancellationToken = default)
+        {
+            return await PostWithoutReturnAsync($"customerproduct/unexclude/{customerId}/{productId}", new { }, cancellationToken);
+        }
+
+        public async Task<IEnumerable<int>> GetExcludedProductIdsAsync(int customerId, CancellationToken cancellationToken = default)
+        {
+            return await GetAsync<IEnumerable<int>>($"customerproduct/excluded/{customerId}", cancellationToken) ?? new List<int>();
+        }
     }
 }

@@ -13,6 +13,8 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
         Task<bool> RemoveProductFromCustomerAsync(int id, int deletedBy);
         Task<bool> CanCustomerOrderProductAsync(int customerId, int productId);
         Task<IEnumerable<CustomerProductDto>> GetAllAsync();
-
+        Task<bool> ExcludeProductForCustomerAsync(int customerId, int productId, int updatedBy);
+        Task<bool> UnexcludeProductForCustomerAsync(int customerId, int productId, int updatedBy);
+        Task<IEnumerable<int>> GetExcludedProductIdsByCustomerAsync(int customerId);
     }
 }

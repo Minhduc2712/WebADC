@@ -1,0 +1,185 @@
+@model ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs.WarehouseExportDto
+@using ErpOnlineOrder.Domain.Constants
+@{
+    Layout = null;
+    ViewData["Title"] = "In phiếu xuất kho - " + Model.Warehouse_export_code;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.5; color: #000; margin: 0; padding: 20px; }
+        .export-page { max-width: 800px; margin: 0 auto; }
+        .header-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .company-info { flex: 1; }
+        .company-info .company-name { font-weight: bold; font-size: 13pt; }
+        .export-meta { text-align: right; flex: 1; }
+        .export-title { text-align: center; margin: 16px 0 4px; }
+        .export-title h1 { font-size: 20pt; margin: 0; text-transform: uppercase; }
+        .export-title .sub { font-size: 11pt; font-style: italic; margin-top: 2px; }
+        .export-title .code { font-size: 13pt; font-weight: bold; margin-top: 4px; }
+        .info-section { margin: 16px 0; }
+        .info-section .row { display: flex; margin-bottom: 4px; }
+        .info-section .label { font-weight: bold; min-width: 180px; }
+        table.detail-table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+        table.detail-table th, table.detail-table td { border: 1px solid #000; padding: 6px 8px; }
+        table.detail-table th { background: #f0f0f0; font-weight: bold; text-align: center; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .total-section { margin-top: 8px; }
+        .total-section .row { display: flex; justify-content: flex-end; margin-bottom: 4px; }
+        .total-section .label { min-width: 180px; text-align: right; padding-right: 12px; }
+        .total-section .value { min-width: 150px; text-align: right; font-weight: bold; }
+        .total-section .grand-total { font-size: 14pt; border-top: 2px solid #000; padding-top: 4px; }
+        .signature-section { display: flex; justify-content: space-between; margin-top: 40px; text-align: center; }
+        .signature-section .sig-block { width: 180px; }
+        .signature-section .sig-title { font-weight: bold; }
+        .signature-section .sig-name { margin-top: 60px; }
+        .print-date { text-align: right; font-style: italic; font-size: 11pt; margin-top: 16px; }
+        .status-badge { display: inline-block; padding: 2px 10px; border: 1px solid #000; font-size: 10pt; font-weight: bold; }
+        .no-print { margin-top: 24px; text-align: center; }
+        @@media print {
+            body { margin: 0; padding: 10mm; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="export-page">
+        <div class="header-row">
+            <div class="company-info">
+                <div class="company-name">@(ViewBag.CompanyName ?? "CÔNG TY")</div>
+                <div>@(ViewBag.CompanyAddress ?? "")</div>
+                <div>@(ViewBag.CompanyPhone ?? "")</div>
+            </div>
+            <div class="export-meta">
+                <div class="status-badge">@ExportStatuses.ToDisplayText(Model.Status)</div>
+            </div>
+        </div>
+
+        <div class="export-title">
+            <h1>PHIẾU XUẤT KHO</h1>
+            <div class="sub">Ngày @Model.Export_date.ToString("dd") tháng @Model.Export_date.ToString("MM") năm @Model.Export_date.ToString("yyyy")</div>
+            <div class="code">Số: @Model.Warehouse_export_code</div>
+        </div>
+
+        <div class="info-section">
+            <div class="row">
+                <span class="label">Khách hàng:</span>
+                <span>@Model.Customer_name</span>
+            </div>
+            <div class="row">
+                <span class="label">Kho xuất:</span>
+                <span>@Model.Warehouse_name</span>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.Invoice_code))
+            {
+                <div class="row">
+                    <span class="label">Hóa đơn liên quan:</span>
+                    <span>@Model.Invoice_code</span>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(Model.Order_code))
+            {
+                <div class="row">
+                    <span class="label">Đơn hàng:</span>
+                    <span>@Model.Order_code</span>
+                </div>
+            }
+            @if (Model.Arrival_date.HasValue)
+            {
+                <div class="row">
+                    <span class="label">Ngày vận chuyển đến:</span>
+                    <span>@Model.Arrival_date.Value.ToString("dd/MM/yyyy")</span>
+                </div>
+            }
+            <div class="row">
+                <span class="label">Nhân viên phụ trách:</span>
+                <span>@Model.Staff_name</span>
+            </div>
+            @if (Model.Parent_export_code != null)
+            {
+                <div class="row">
+                    <span class="label">Tách từ phiếu:</span>
+                    <span>@Model.Parent_export_code</span>
+                </div>
+            }
+        </div>
+
+        <table class="detail-table">
+            <thead>
+                <tr>
+                    <th style="width: 40px;">STT</th>
+                    <th style="width: 100px;">Mã SP</th>
+                    <th>Tên sản phẩm</th>
+                    <th class="text-center" style="width: 80px;">SL xuất</th>
+                    <th class="text-right" style="width: 110px;">Đơn giá</th>
+                    <th class="text-right" style="width: 120px;">Thành tiền</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Details != null)
+                {
+                    var stt = 1;
+                    @foreach (var d in Model.Details)
+                    {
+                        <tr>
+                            <td class="text-center">@stt</td>
+                            <td>@d.Product_code</td>
+                            <td>@d.Product_name</td>
+                            <td class="text-center">@d.Quantity_shipped</td>
+                            <td class="text-right">@d.Unit_price.ToString("N0")</td>
+                            <td class="text-right">@d.Total_price.ToString("N0")</td>
+                        </tr>
+                        stt++;
+                    }
+                }
+            </tbody>
+        </table>
+
+        <div class="total-section">
+            <div class="row">
+                <span class="label">Tổng số lượng:</span>
+                <span class="value">@Model.Total_quantity</span>
+            </div>
+            <div class="row grand-total">
+                <span class="label">Tổng giá trị:</span>
+                <span class="value">@Model.Total_amount.ToString("N0") VNĐ</span>
+            </div>
+        </div>
+
+        <div class="signature-section">
+            <div class="sig-block">
+                <div class="sig-title">Người nhận</div>
+                <div style="font-style: italic; font-size: 10pt;">(Ký, ghi rõ họ tên)</div>
+                <div class="sig-name">&nbsp;</div>
+            </div>
+            <div class="sig-block">
+                <div class="sig-title">Thủ kho</div>
+                <div style="font-style: italic; font-size: 10pt;">(Ký, ghi rõ họ tên)</div>
+                <div class="sig-name">&nbsp;</div>
+            </div>
+            <div class="sig-block">
+                <div class="sig-title">Giám đốc</div>
+                <div style="font-style: italic; font-size: 10pt;">(Ký, đóng dấu)</div>
+                <div class="sig-name">&nbsp;</div>
+            </div>
+        </div>
+
+        <div class="print-date">
+            Ngày in: @DateTime.Now.ToString("dd/MM/yyyy HH:mm")
+        </div>
+    </div>
+
+    <div class="no-print">
+        <button type="button" onclick="window.print()" style="padding: 10px 24px; font-size: 14px; cursor: pointer; background: #1a7f37; color: white; border: none; border-radius: 6px;">
+            <i class="fas fa-print"></i> In phiếu xuất kho
+        </button>
+        <a href="@Url.Action("Details", new { id = Model.Id })" style="margin-left: 12px; padding: 10px 24px; font-size: 14px; display: inline-block; background: #666; color: white; text-decoration: none; border-radius: 6px;">Quay lại</a>
+    </div>
+</body>
+</html>

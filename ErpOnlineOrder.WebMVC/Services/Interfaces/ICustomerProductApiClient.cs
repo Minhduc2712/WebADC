@@ -11,5 +11,8 @@ namespace ErpOnlineOrder.WebMVC.Services.Interfaces
         Task<(bool Success, string? Error)> AssignProductsAsync(AssignProductsToCustomerDto dto, CancellationToken cancellationToken = default);
         Task<(bool Success, string? Error)> UpdateAsync(int id, UpdateCustomerProductDto dto, CancellationToken cancellationToken = default);
         Task<(bool Success, string? Error)> DeleteAsync(int id, CancellationToken cancellationToken = default);
+        Task<(bool Success, string? Error)> ExcludeProductAsync(int customerId, int productId, CancellationToken cancellationToken = default);
+        Task<(bool Success, string? Error)> UnexcludeProductAsync(int customerId, int productId, CancellationToken cancellationToken = default);
+        Task<IEnumerable<int>> GetExcludedProductIdsAsync(int customerId, CancellationToken cancellationToken = default);
     }
 }

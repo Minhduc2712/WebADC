@@ -266,6 +266,29 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
+        [HttpGet]
+        [RequirePermission(PermissionCodes.InvoiceView)]
+        public async Task<IActionResult> PrintInvoice(int id)
+        {
+            try
+            {
+                var invoice = await _invoiceApiClient.GetByIdAsync(id);
+                if (invoice == null)
+                {
+                    SetErrorMessage("Không tìm thấy hóa đơn.");
+                    return RedirectToAction(nameof(Index));
+                }
+
+                return View(invoice);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading print invoice {InvoiceId}", id);
+                SetErrorMessage(GetDetailedErrorMessage(ex));
+                return RedirectToAction(nameof(Details), new { id });
+            }
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequirePermission(PermissionCodes.InvoiceView)]

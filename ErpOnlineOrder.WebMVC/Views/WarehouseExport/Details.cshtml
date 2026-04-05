@@ -68,6 +68,12 @@
                 </button>
             </form>
         }
+        @if (Model.Status != ExportStatuses.Cancelled)
+        {
+            <a href="@Url.Action("PrintExport", new { id = Model.Id })" class="btn btn-success me-2" target="_blank" title="In phiếu xuất kho">
+                <i class="fas fa-print me-1"></i>In phiếu
+            </a>
+        }
         <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left me-1"></i>Quay lại
         </a>

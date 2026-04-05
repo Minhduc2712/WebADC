@@ -38,6 +38,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         #region Login
 
         [HttpGet]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public async Task<IActionResult> Login(string? returnUrl = null)
         {
             if (await TryAutoLoginFromCookie())
