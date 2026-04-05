@@ -73,13 +73,28 @@ namespace ErpOnlineOrder.WebMVC.Services
             return await GetByteArrayAsync(path, cancellationToken);
         }
 
+        public async Task<ProductDTO?> GetProductForShopAsync(int productId, int? customerId, CancellationToken cancellationToken = default)
+        {
+            var path = customerId.HasValue
+                ? $"product/shop/{productId}/detail?customerId={customerId.Value}"
+                : $"product/shop/{productId}/detail";
+            return await GetAsync<ProductDTO>(path, cancellationToken);
+        }
+
         public async Task<PagedResult<ProductDTO>> GetProductsForShopPagedAsync(int? customerId, ProductForShopFilterRequest request, CancellationToken cancellationToken = default)
         {
             var query = new List<string> { $"page={request.Page}", $"pageSize={request.PageSize}" };
             if (customerId.HasValue) query.Add($"customerId={customerId.Value}");
             if (!string.IsNullOrEmpty(request.SearchTerm)) query.Add($"searchTerm={Uri.EscapeDataString(request.SearchTerm)}");
-            if (!string.IsNullOrEmpty(request.Category)) query.Add($"category={Uri.EscapeDataString(request.Category)}");
             if (!string.IsNullOrEmpty(request.Sort)) query.Add($"sort={Uri.EscapeDataString(request.Sort)}");
+            foreach (var cat in request.Categories ?? Enumerable.Empty<string>())
+                query.Add($"categories={Uri.EscapeDataString(cat)}");
+            foreach (var pub in request.Publishers ?? Enumerable.Empty<string>())
+                query.Add($"publishers={Uri.EscapeDataString(pub)}");
+            foreach (var auth in request.Authors ?? Enumerable.Empty<string>())
+                query.Add($"authors={Uri.EscapeDataString(auth)}");
+            if (request.PriceMin.HasValue) query.Add($"priceMin={request.PriceMin.Value}");
+            if (request.PriceMax.HasValue) query.Add($"priceMax={request.PriceMax.Value}");
             var path = "product/shop?" + string.Join("&", query);
             return await GetAsync<PagedResult<ProductDTO>>(path, cancellationToken) ?? new PagedResult<ProductDTO> { Items = new List<ProductDTO>(), Page = request.Page, PageSize = request.PageSize, TotalCount = 0 };
         }
@@ -87,6 +102,18 @@ namespace ErpOnlineOrder.WebMVC.Services
         public async Task<IEnumerable<string>> GetCategoriesForShopAsync(int? customerId, CancellationToken cancellationToken = default)
         {
             var path = customerId.HasValue ? $"product/shop/categories?customerId={customerId.Value}" : "product/shop/categories";
+            return await GetAsync<IEnumerable<string>>(path, cancellationToken) ?? Array.Empty<string>();
+        }
+
+        public async Task<IEnumerable<string>> GetPublishersForShopAsync(int? customerId, CancellationToken cancellationToken = default)
+        {
+            var path = customerId.HasValue ? $"product/shop/publishers?customerId={customerId.Value}" : "product/shop/publishers";
+            return await GetAsync<IEnumerable<string>>(path, cancellationToken) ?? Array.Empty<string>();
+        }
+
+        public async Task<IEnumerable<string>> GetAuthorsForShopAsync(int? customerId, CancellationToken cancellationToken = default)
+        {
+            var path = customerId.HasValue ? $"product/shop/authors?customerId={customerId.Value}" : "product/shop/authors";
             return await GetAsync<IEnumerable<string>>(path, cancellationToken) ?? Array.Empty<string>();
         }
 

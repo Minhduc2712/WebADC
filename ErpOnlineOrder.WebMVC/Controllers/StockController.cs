@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
-    [RequirePermission(PermissionCodes.StockView)]
+    // [RequirePermission(PermissionCodes.StockView)]
     public class StockController : BaseController
     {
         private readonly IStockApiClient _stockApiClient;
@@ -48,7 +48,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             }
         }
 
-        [RequirePermission(PermissionCodes.StockUpdate)]
+        // [RequirePermission(PermissionCodes.StockUpdate)]
         public async Task<IActionResult> Create()
         {
             try
@@ -71,7 +71,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequirePermission(PermissionCodes.StockUpdate)]
+        // [RequirePermission(PermissionCodes.StockUpdate)]
         public async Task<IActionResult> Create(CreateStockDto model)
         {
             try
@@ -107,7 +107,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             return View(model);
         }
 
-        [RequirePermission(PermissionCodes.StockUpdate)]
+        // [RequirePermission(PermissionCodes.StockUpdate)]
         public async Task<IActionResult> Edit(int id)
         {
             try
@@ -138,7 +138,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequirePermission(PermissionCodes.StockUpdate)]
+        // [RequirePermission(PermissionCodes.StockUpdate)]
         public async Task<IActionResult> Edit(int id, UpdateStockDto model)
         {
             try

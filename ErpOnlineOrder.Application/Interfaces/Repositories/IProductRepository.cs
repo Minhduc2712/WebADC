@@ -20,6 +20,8 @@ namespace ErpOnlineOrder.Application.Interfaces.Repositories
         Task<IEnumerable<ProductDTO>> GetProductsForShopAsync(int? customerId, ProductForShopFilterRequest request);
         Task<IEnumerable<ProductDTO>> GetRelatedProductsForShopAsync(int productId, IEnumerable<string> categoryNames, int? customerId, int limit = 4);
         Task<IEnumerable<string>> GetCategoriesForShopAsync(int? customerId);
+        Task<IEnumerable<string>> GetPublishersForShopAsync(int? customerId);
+        Task<IEnumerable<string>> GetAuthorsForShopAsync(int? customerId);
         Task<IEnumerable<ProductDTO>> GetAllAsync();
         Task<IEnumerable<ProductDTO>> SearchAsync(string? name, string? author, string? publisher);
         Task<IEnumerable<ProductDTO>> SearchByAllAsync(string? searchString);

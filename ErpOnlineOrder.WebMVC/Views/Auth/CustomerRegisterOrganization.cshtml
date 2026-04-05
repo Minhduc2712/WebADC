@@ -27,20 +27,83 @@
         <form asp-controller="Auth" asp-action="CustomerRegisterOrganization" method="post">
             @Html.AntiForgeryToken()
 
+            <!-- Toggle chọn đơn vị có sẵn / khai báo đơn vị mới -->
             <div class="mb-3">
-                <label asp-for="Organization_information_id" class="form-label fw-semibold">
+                <label class="form-label fw-semibold">
                     <i class="fas fa-building me-1"></i> Đơn vị <span class="text-danger">*</span>
                 </label>
-                <select asp-for="Organization_information_id" class="form-select">
-                    <option value="">-- Chọn đơn vị --</option>
-                    @foreach (var org in organizations)
-                    {
-                        <option value="@org.Id" selected="@(Model.Organization_information_id == org.Id)">
-                            @org.Organization_name (@org.Organization_code)
-                        </option>
-                    }
-                </select>
-                <span asp-validation-for="Organization_information_id" class="text-danger small"></span>
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="orgMode" id="orgModeExisting" value="existing"
+                           @(Model.IsNewOrganization ? "" : "checked")>
+                    <label class="btn btn-outline-primary" for="orgModeExisting">
+                        <i class="fas fa-list me-1"></i> Chọn đơn vị có sẵn
+                    </label>
+                    <input type="radio" class="btn-check" name="orgMode" id="orgModeNew" value="new"
+                           @(Model.IsNewOrganization ? "checked" : "")>
+                    <label class="btn btn-outline-primary" for="orgModeNew">
+                        <i class="fas fa-plus me-1"></i> Khai báo đơn vị mới
+                    </label>
+                </div>
+                <input type="hidden" asp-for="IsNewOrganization" id="IsNewOrganization" />
+            </div>
+
+            <!-- Panel chọn đơn vị có sẵn -->
+            <div id="existingOrgPanel" class="@(Model.IsNewOrganization ? "d-none" : "")">
+                <div class="mb-3">
+                    <label asp-for="Organization_information_id" class="form-label">
+                        Chọn đơn vị
+                    </label>
+                    <input type="text" id="orgSearchInput" class="form-control mb-2"
+                           placeholder="Tìm đơn vị theo tên hoặc mã..." autocomplete="off" />
+                    <select asp-for="Organization_information_id" class="form-select" id="orgSelect">
+                        <option value="0">-- Chọn đơn vị --</option>
+                        @foreach (var org in organizations)
+                        {
+                            <option value="@org.Id"
+                                    data-search="@(org.Organization_name.ToLower()) @(org.Organization_code.ToLower())"
+                                    selected="@(Model.Organization_information_id == org.Id)">
+                                @org.Organization_name (@org.Organization_code)
+                            </option>
+                        }
+                    </select>
+                    <span asp-validation-for="Organization_information_id" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <!-- Panel khai báo đơn vị mới -->
+            <div id="newOrgPanel" class="@(Model.IsNewOrganization ? "" : "d-none")">
+                <div class="mb-3">
+                    <label asp-for="New_Organization_code" class="form-label">
+                        Mã đơn vị <span class="text-danger">*</span>
+                    </label>
+                    <input asp-for="New_Organization_code" class="form-control" placeholder="VD: DV001"
+                           id="orgCodeInput" autocomplete="off" />
+                    <div id="orgCodeFeedback" class="small mt-1"></div>
+                    <span asp-validation-for="New_Organization_code" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="New_Organization_name" class="form-label">
+                        Tên đơn vị <span class="text-danger">*</span>
+                    </label>
+                    <input asp-for="New_Organization_name" class="form-control" placeholder="VD: Công ty TNHH ABC" />
+                    <span asp-validation-for="New_Organization_name" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="New_Address" class="form-label">
+                        Địa chỉ đơn vị
+                    </label>
+                    <input asp-for="New_Address" class="form-control" placeholder="Địa chỉ đơn vị" />
+                    <span asp-validation-for="New_Address" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="New_Tax_number" class="form-label">
+                        Mã số thuế
+                    </label>
+                    <input asp-for="New_Tax_number" class="form-control" placeholder="Mã số thuế"
+                           id="taxNumberInput" autocomplete="off" />
+                    <div id="taxNumberFeedback" class="small mt-1"></div>
+                    <span asp-validation-for="New_Tax_number" class="text-danger small"></span>
+                </div>
             </div>
 
             <div class="d-flex gap-2">
@@ -57,4 +120,110 @@
 
 @section Scripts {
     @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var radios = document.querySelectorAll('input[name="orgMode"]');
+            var hiddenField = document.getElementById('IsNewOrganization');
+            var existingPanel = document.getElementById('existingOrgPanel');
+            var newPanel = document.getElementById('newOrgPanel');
+
+            function togglePanels() {
+                var isNew = document.getElementById('orgModeNew').checked;
+                hiddenField.value = isNew ? 'true' : 'false';
+
+                if (isNew) {
+                    existingPanel.classList.add('d-none');
+                    newPanel.classList.remove('d-none');
+                } else {
+                    existingPanel.classList.remove('d-none');
+                    newPanel.classList.add('d-none');
+                }
+            }
+
+            radios.forEach(function (radio) {
+                radio.addEventListener('change', togglePanels);
+            });
+
+            // --- Lọc danh sách đơn vị theo từ khóa ---
+            var searchInput = document.getElementById('orgSearchInput');
+            var orgSelect = document.getElementById('orgSelect');
+            if (searchInput && orgSelect) {
+                searchInput.addEventListener('input', function () {
+                    var keyword = this.value.toLowerCase().trim();
+                    var options = orgSelect.querySelectorAll('option');
+                    options.forEach(function (opt) {
+                        if (!opt.value || opt.value === '0') return;
+                        var text = (opt.getAttribute('data-search') || opt.textContent).toLowerCase();
+                        opt.style.display = (!keyword || text.includes(keyword)) ? '' : 'none';
+                    });
+                    // Nếu option đang chọn bị ẩn thì reset
+                    var selected = orgSelect.options[orgSelect.selectedIndex];
+                    if (selected && selected.style.display === 'none') {
+                        orgSelect.value = '0';
+                    }
+                });
+            }
+
+            // --- Kiểm tra mã đơn vị realtime ---
+            var orgCodeInput = document.getElementById('orgCodeInput');
+            var orgCodeFeedback = document.getElementById('orgCodeFeedback');
+            var orgCodeTimer = null;
+            if (orgCodeInput && orgCodeFeedback) {
+                orgCodeInput.addEventListener('input', function () {
+                    clearTimeout(orgCodeTimer);
+                    var val = this.value.trim();
+                    orgCodeFeedback.textContent = '';
+                    orgCodeFeedback.className = 'small mt-1';
+                    if (!val) return;
+                    orgCodeTimer = setTimeout(function () {
+                        fetch('/api/auth/check-org-code?code=' + encodeURIComponent(val))
+                            .then(function (r) { return r.json(); })
+                            .then(function (res) {
+                                if (res && res.data && res.data.exists) {
+                                    orgCodeFeedback.textContent = 'Mã đơn vị này đã tồn tại.';
+                                    orgCodeFeedback.className = 'small mt-1 text-danger';
+                                    orgCodeInput.classList.add('is-invalid');
+                                } else {
+                                    orgCodeFeedback.textContent = 'Mã đơn vị hợp lệ.';
+                                    orgCodeFeedback.className = 'small mt-1 text-success';
+                                    orgCodeInput.classList.remove('is-invalid');
+                                }
+                            })
+                            .catch(function () {});
+                    }, 500);
+                });
+            }
+
+            // --- Kiểm tra mã số thuế realtime ---
+            var taxInput = document.getElementById('taxNumberInput');
+            var taxFeedback = document.getElementById('taxNumberFeedback');
+            var taxTimer = null;
+            if (taxInput && taxFeedback) {
+                taxInput.addEventListener('input', function () {
+                    clearTimeout(taxTimer);
+                    var val = this.value.trim();
+                    taxFeedback.textContent = '';
+                    taxFeedback.className = 'small mt-1';
+                    if (!val) return;
+                    taxTimer = setTimeout(function () {
+                        fetch('/api/auth/check-tax?taxNumber=' + encodeURIComponent(val))
+                            .then(function (r) { return r.json(); })
+                            .then(function (res) {
+                                if (res && res.data && res.data.exists) {
+                                    taxFeedback.textContent = 'Mã số thuế này đã được đăng ký.';
+                                    taxFeedback.className = 'small mt-1 text-danger';
+                                    taxInput.classList.add('is-invalid');
+                                } else {
+                                    taxFeedback.textContent = 'Mã số thuế hợp lệ.';
+                                    taxFeedback.className = 'small mt-1 text-success';
+                                    taxInput.classList.remove('is-invalid');
+                                }
+                            })
+                            .catch(function () {});
+                    }, 500);
+                });
+            }
+        });
+    </script>
 }

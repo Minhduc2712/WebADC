@@ -8,7 +8,8 @@ using ErpOnlineOrder.WebMVC.Services.Interfaces;
 
 namespace ErpOnlineOrder.WebMVC.Controllers
 {
-    [RequirePermission(PermissionCodes.WarehouseView)]
+    // TODO: Tạm comment permission - hệ thống chưa yêu cầu chức năng kho
+    // [RequirePermission(PermissionCodes.WarehouseView)]
     public class WarehouseController : BaseController
     {
         private readonly IWarehouseApiClient _warehouseApiClient;
@@ -50,7 +51,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             }
         }
 
-        [RequirePermission(PermissionCodes.WarehouseCreate)]
+        // [RequirePermission(PermissionCodes.WarehouseCreate)]
         public async Task<IActionResult> Create()
         {
             try
@@ -69,7 +70,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequirePermission(PermissionCodes.WarehouseCreate)]
+        // [RequirePermission(PermissionCodes.WarehouseCreate)]
         public async Task<IActionResult> Create(CreateWarehouseDto model)
         {
             try
@@ -99,7 +100,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             return View(model);
         }
 
-        [RequirePermission(PermissionCodes.WarehouseUpdate)]
+        // [RequirePermission(PermissionCodes.WarehouseUpdate)]
         public async Task<IActionResult> Edit(int id)
         {
             try
@@ -134,7 +135,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequirePermission(PermissionCodes.WarehouseUpdate)]
+        // [RequirePermission(PermissionCodes.WarehouseUpdate)]
         public async Task<IActionResult> Edit(int id, UpdateWarehouseDto model)
         {
             try
@@ -169,7 +170,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequirePermission(PermissionCodes.WarehouseDelete)]
+        // [RequirePermission(PermissionCodes.WarehouseDelete)]
         public async Task<IActionResult> Delete(int id)
         {
             try

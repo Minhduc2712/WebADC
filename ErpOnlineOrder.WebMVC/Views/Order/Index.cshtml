@@ -131,12 +131,39 @@
                                                     <i class="fas fa-eye me-2 text-primary"></i>Xem chi tiết
                                                 </a>
                                             </li>
+                                            <li>
+                                                <a class="dropdown-item" asp-action="PrintOrder" asp-route-id="@item.Id" target="_blank">
+                                                    <i class="fas fa-print me-2 text-secondary"></i>In đơn
+                                                </a>
+                                            </li>
                                             @if (ViewBag.CanUpdate == true && item.Order_status == "Pending")
                                             {
                                                 <li>
                                                     <a class="dropdown-item" asp-action="Edit" asp-route-id="@item.Id">
                                                         <i class="fas fa-edit me-2 text-warning"></i>Sửa
                                                     </a>
+                                                </li>
+                                            }
+                                            @if (ViewBag.CanApprove == true && item.Order_status == "Pending")
+                                            {
+                                                <li><hr class="dropdown-divider" /></li>
+                                                <li>
+                                                    <button type="button" class="dropdown-item text-success"
+                                                            onclick="openApproveModal(@item.Id, '@item.Order_code')">
+                                                        <i class="fas fa-check me-2"></i>Duyệt đơn
+                                                    </button>
+                                                </li>
+                                            }
+                                            @if (ViewBag.CanReject == true && item.Order_status == "Pending")
+                                            {
+                                                <li>
+                                                    <form asp-action="Cancel" asp-route-id="@item.Id" method="post"
+                                                          onsubmit="return confirm('Hủy đơn hàng #@item.Order_code?');">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="dropdown-item text-danger">
+                                                            <i class="fas fa-times me-2"></i>Hủy đơn
+                                                        </button>
+                                                    </form>
                                                 </li>
                                             }
                                             @if (ViewBag.CanDelete == true && item.Order_status == "Pending")
@@ -175,3 +202,111 @@
         }
     </div>
 </div>
+
+<!-- Modal duyệt đơn hàng -->
+<div class="modal fade" id="approveModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-check-circle text-success me-2"></i>Duyệt đơn hàng <span id="approveOrderCode" class="badge bg-secondary ms-1"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="approveForm" method="post">
+                <div class="modal-body">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="approveOrderId" name="id" />
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Chọn sản phẩm cần duyệt</label>
+                        <div class="table-responsive border rounded">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width:56px;">Chọn</th>
+                                        <th>Sản phẩm</th>
+                                        <th style="width:130px;">SL đặt</th>
+                                        <th style="width:150px;">SL duyệt</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="approveItemsBody">
+                                    <tr><td colspan="4" class="text-center text-muted py-3"><i class="fas fa-spinner fa-spin me-2"></i>Đang tải...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="form-text">Phần sản phẩm không duyệt sẽ được tách sang đơn hàng con (trạng thái chờ xử lý).</div>
+                    </div>
+                    @*
+                    // TODO: Bỏ tạm phần chọn kho - hiện tại hệ thống chưa yêu cầu
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Chọn kho xuất</label>
+                        <select class="form-select" name="Warehouse_id" id="warehouseSelect">
+                            <option value="">-- Tự động chọn kho --</option>
+                            @if (ViewBag.Warehouses != null)
+                            {
+                                foreach (var wh in (List<ErpOnlineOrder.Application.DTOs.WarehouseDTOs.WarehouseSelectDto>)ViewBag.Warehouses)
+                                {
+                                    <option value="@wh.Id">@wh.Warehouse_name</option>
+                                }
+                            }
+                        </select>
+                        <div class="form-text">Nếu không chọn, hệ thống sẽ tự động chọn kho có đủ tồn kho.</div>
+                    </div>
+                    *@
+                    <div>
+                        <label class="form-label fw-semibold">Hình thức gửi cho khách hàng</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="Notify_method" id="notifyEmail" value="email" checked>
+                            <label class="form-check-label" for="notifyEmail">Gửi qua email</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="Notify_method" id="notifyDownload" value="download">
+                            <label class="form-check-label" for="notifyDownload">Tải xuống file CSV</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-success">Xác nhận duyệt</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const approveModal = new bootstrap.Modal(document.getElementById('approveModal'));
+
+    function openApproveModal(id, orderCode) {
+        document.getElementById('approveOrderCode').textContent = orderCode;
+        document.getElementById('approveOrderId').value = id;
+        document.getElementById('approveForm').action = '@Url.Action("Confirm")/' + id;
+        document.getElementById('approveItemsBody').innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3"><i class="fas fa-spinner fa-spin me-2"></i>Đang tải...</td></tr>';
+        approveModal.show();
+
+        fetch('@Url.Action("GetConfirmItems")/' + id)
+            .then(r => r.json())
+            .then(data => {
+                if (!data.items || !data.items.length) {
+                    document.getElementById('approveItemsBody').innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">Không có sản phẩm để duyệt.</td></tr>';
+                    return;
+                }
+                const rows = data.items.map((item, index) => `
+                    <tr>
+                        <td>
+                            <input class="form-check-input" type="checkbox" name="Approved_items[${index}].Is_selected" value="true" checked />
+                            <input type="hidden" name="Approved_items[${index}].Product_id" value="${item.product_id}" />
+                        </td>
+                        <td>${item.product_name}</td>
+                        <td>${item.quantity}</td>
+                        <td>
+                            <input type="number" class="form-control form-control-sm" min="1" max="${item.quantity}" value="${item.quantity}" name="Approved_items[${index}].Quantity" required />
+                        </td>
+                    </tr>`).join('');
+                document.getElementById('approveItemsBody').innerHTML = rows;
+            })
+            .catch(() => {
+                document.getElementById('approveItemsBody').innerHTML = '<tr><td colspan="4" class="text-center text-danger py-3">Lỗi khi tải dữ liệu.</td></tr>';
+            });
+    }
+</script>
+}

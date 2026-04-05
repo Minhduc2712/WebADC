@@ -133,20 +133,6 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             }
         }
 
-        [HttpPost("register-customer")]
-        public async Task<IActionResult> RegisterCustomer([FromBody] RegisterCustomerDto model)
-        {
-            try
-            {
-                var result = await _authService.RegisterByCustomerAsync(model);
-                return Ok(ApiResponse<object>.Ok(null, "Đăng ký thành công"));
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ApiResponse<object>.Fail(ex.Message));
-            }
-        }
-
         [HttpPost("register-customer-finalize")]
         public async Task<IActionResult> RegisterCustomerFinalize([FromBody] FinalizeCustomerRegistrationDto model)
         {
@@ -316,6 +302,23 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             try
             {
                 var exists = await _customerRepository.ExistsByPhoneAsync(phone);
+                return Ok(ApiResponse<object>.Ok(new { exists }));
+            }
+            catch (Exception)
+            {
+                return Ok(ApiResponse<object>.Ok(new { exists = false }));
+            }
+        }
+
+        [HttpGet("check-org-code")]
+        public async Task<IActionResult> CheckOrgCode([FromQuery] string code)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(code))
+                    return Ok(ApiResponse<object>.Ok(new { exists = false }));
+
+                var exists = await _organizationRepository.ExistsByCodeAsync(code.Trim());
                 return Ok(ApiResponse<object>.Ok(new { exists }));
             }
             catch (Exception)

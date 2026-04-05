@@ -1,0 +1,170 @@
+@model ErpOnlineOrder.WebMVC.Models.InvoiceByOrderViewModel
+@{
+    ViewData["Title"] = "Yêu cầu xuất hóa đơn";
+    Layout = "~/Views/Shared/_ShopLayout.cshtml";
+}
+
+<section class="blog about-blog">
+    <div class="container">
+        <div class="blog-bradcrum">
+            <span><a asp-action="Products">Sản phẩm</a></span>
+            <span class="devider">/</span>
+            <span><a asp-action="Exports">Phiếu xuất kho</a></span>
+            <span class="devider">/</span>
+            <span>Yêu cầu hóa đơn</span>
+        </div>
+        <div class="blog-heading about-heading">
+            <h1 class="heading">Yêu cầu xuất hóa đơn</h1>
+        </div>
+    </div>
+</section>
+
+<section class="product footer-padding">
+    <div class="container">
+        @if (TempData["Error"] is string err)
+        {
+            <div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>@err</div>
+        }
+
+        <div class="alert alert-info" style="font-size: 0.92rem;">
+            <i class="fas fa-info-circle me-2"></i>
+            @if (Model.OrderId > 0)
+            {
+                <text>Đơn hàng <strong>@Model.OrderCode</strong> có <strong>@Model.ExportCount</strong> phiếu xuất kho đã giao thành công.</text>
+            }
+            else
+            {
+                <text>Bạn có <strong>@Model.ExportCount</strong> phiếu xuất kho đã giao thành công (toàn bộ đơn hàng).</text>
+            }
+            Nhập số lượng cần xuất hóa đơn cho từng sản phẩm (tối đa bằng số đã giao). Để chọn toàn bộ, bấm <strong>Chọn tất cả</strong>.
+        </div>
+
+        <form asp-action="RequestInvoiceByOrder" method="post" id="invoiceForm">
+            @if (Model.OrderId > 0)
+            {
+                <input type="hidden" name="orderId" value="@Model.OrderId" />
+            }
+            @Html.AntiForgeryToken()
+            <div style="border: 1px solid #eee; border-radius: 8px; overflow: hidden; background: #fff;">
+                <div style="background: #f8f8f8; padding: 15px 20px; display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-weight: 600; font-size: 15px;">
+                        <i class="fas fa-boxes me-2" style="color: #1a7f37;"></i>
+                        @(Model.OrderId > 0 ? $"Chọn số lượng xuất hóa đơn — đơn hàng {Model.OrderCode}" : "Chọn số lượng xuất hóa đơn — toàn bộ phiếu xuất kho")
+                    </span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnSelectAll">
+                        <i class="fas fa-check-double me-1"></i>Chọn tất cả
+                    </button>
+                </div>
+                <div style="padding: 20px;">
+                    <table class="table table-bordered mb-0" style="font-size: 15px;">
+                        <thead style="font-size: 13px; background: #f8f9fa;">
+                            <tr>
+                                <th>Sản phẩm</th>
+                                <th class="text-center" style="width: 130px;">SL đã giao</th>
+                                <th class="text-center" style="width: 150px;">SL xuất hóa đơn</th>
+                                <th class="text-end" style="width: 130px;">Đơn giá</th>
+                                <th class="text-end" style="width: 160px;">Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.AggregatedItems)
+                            {
+                                <tr data-unit-price="@item.UnitPrice">
+                                    <td>
+                                        @item.ProductName
+                                        @if (!string.IsNullOrEmpty(item.ProductCode))
+                                        {
+                                            <span style="color: #888; font-size: 12px; margin-left: 6px;">(@item.ProductCode)</span>
+                                        }
+                                    </td>
+                                    <td class="text-center" style="color: #555;">@item.TotalQuantity</td>
+                                    <td class="text-center">
+                                        <input type="number"
+                                               name="qty_@item.ProductId"
+                                               value="@item.TotalQuantity"
+                                               min="0"
+                                               max="@item.TotalQuantity"
+                                               class="form-control form-control-sm text-center qty-input"
+                                               style="max-width: 90px; margin: 0 auto;"
+                                               data-max="@item.TotalQuantity"
+                                               data-price="@item.UnitPrice.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)" />
+                                    </td>
+                                    <td class="text-end">@item.UnitPrice.ToString("N0")</td>
+                                    <td class="text-end fw-semibold row-total" style="color: #c0392b;">
+                                        @item.TotalPrice.ToString("N0")
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr style="background: #f8f9fa;">
+                                <td colspan="4" class="text-end fw-bold">Tổng cộng:</td>
+                                <td class="text-end fw-bold" id="grandTotal" style="font-size: 18px; color: #1a7f37;">
+                                    @Model.TotalAmount.ToString("N0") VNĐ
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div style="padding: 15px 20px; background: #fafafa; border-top: 1px solid #eee;">
+                    <div class="mb-3">
+                        <label class="form-label" style="font-size: 0.88rem; color: #666;">Ghi chú (tùy chọn)</label>
+                        <textarea name="note" class="form-control form-control-sm" rows="2"
+                                  placeholder="Ghi chú thêm cho yêu cầu hóa đơn..."
+                                  style="font-size: 0.9rem;"></textarea>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a asp-action="Exports" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Quay lại
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-check me-1"></i>Gửi yêu cầu xuất hóa đơn
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</section>
+
+<script>
+    (function () {
+        function formatVnd(num) {
+            return num.toLocaleString('vi-VN') + ' VNĐ';
+        }
+
+        function recalc() {
+            var grand = 0;
+            document.querySelectorAll('.qty-input').forEach(function (input) {
+                var qty = parseInt(input.value) || 0;
+                var price = parseFloat(input.dataset.price) || 0;
+                var max = parseInt(input.dataset.max) || 0;
+
+                // clamp
+                if (qty < 0) { input.value = 0; qty = 0; }
+                if (qty > max) { input.value = max; qty = max; }
+
+                var rowTotal = qty * price;
+                grand += rowTotal;
+
+                var cell = input.closest('tr').querySelector('.row-total');
+                if (cell) cell.textContent = rowTotal.toLocaleString('vi-VN');
+            });
+            var grandEl = document.getElementById('grandTotal');
+            if (grandEl) grandEl.textContent = formatVnd(grand);
+        }
+
+        document.querySelectorAll('.qty-input').forEach(function (input) {
+            input.addEventListener('input', recalc);
+            input.addEventListener('change', recalc);
+        });
+
+        document.getElementById('btnSelectAll').addEventListener('click', function () {
+            document.querySelectorAll('.qty-input').forEach(function (input) {
+                input.value = input.dataset.max;
+            });
+            recalc();
+        });
+    })();
+</script>

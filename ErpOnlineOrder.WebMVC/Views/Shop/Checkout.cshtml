@@ -49,20 +49,19 @@
                             <div class="checkout-info-card mb-3">
                                 <div class="checkout-info-card-header">
                                     <span>Người nhận</span>
-                                    <a asp-controller="Shop" asp-action="UpdateOrganization" class="checkout-info-edit-link">Cập nhật</a>
                                 </div>
-                                <div class="checkout-info-card-body">
-                                    <div class="checkout-info-row">
-                                        <span class="checkout-info-label">Họ và tên</span>
-                                        <span class="checkout-info-value">@(string.IsNullOrWhiteSpace(recipientName) ? "—" : recipientName)</span>
+                                <div class="checkout-info-card-body" style="padding: 12px 16px;">
+                                    <div class="mb-3">
+                                        <label class="d-block mb-1" style="font-size:0.82rem;color:#6b7280;">Họ và tên <span class="text-danger">*</span></label>
+                                        <input type="text" id="recipientName" class="form-control checkout-input" value="@recipientName" placeholder="Nhập họ và tên người nhận">
                                     </div>
-                                    <div class="checkout-info-row">
-                                        <span class="checkout-info-label">Số điện thoại</span>
-                                        <span class="checkout-info-value">@(string.IsNullOrWhiteSpace(customerPhone) ? "—" : customerPhone)</span>
+                                    <div class="mb-3">
+                                        <label class="d-block mb-1" style="font-size:0.82rem;color:#6b7280;">Số điện thoại <span class="text-danger">*</span></label>
+                                        <input type="tel" id="recipientPhone" class="form-control checkout-input" value="@customerPhone" placeholder="Nhập số điện thoại">
                                     </div>
-                                    <div class="checkout-info-row">
-                                        <span class="checkout-info-label">Email</span>
-                                        <span class="checkout-info-value">@(string.IsNullOrWhiteSpace(customerEmail) ? "—" : customerEmail)</span>
+                                    <div>
+                                        <label class="d-block mb-1" style="font-size:0.82rem;color:#6b7280;">Email</label>
+                                        <input type="email" id="recipientEmail" class="form-control checkout-input" value="@customerEmail" placeholder="Nhập email">
                                     </div>
                                 </div>
                             </div>
@@ -71,7 +70,7 @@
                             <div class="checkout-info-card mb-3">
                                 <div class="checkout-info-card-header">
                                     <span>Đơn vị</span>
-                                    <a asp-action="UpdateOrganization" class="checkout-info-edit-link">Cập nhật</a>
+                                    <a asp-action="UpdateOrganization" asp-route-returnToCheckout="true" class="checkout-info-edit-link">Cập nhật</a>
                                 </div>
                                 <div class="checkout-info-card-body">
                                     <div class="checkout-info-row">
@@ -87,10 +86,10 @@
 
                             <!-- Địa chỉ nhận hàng (editable) -->
                             <div class="review-form">
-                                <h6 class="wrapper-heading" style="font-size:1rem;">Địa chỉ nhận hàng</h6>
+                                <h6 class="wrapper-heading" style="font-size:0.85rem;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.4px;">Địa chỉ nhận hàng</h6>
                                 <div class="review-form-name address-form">
-                                    <label for="address" class="form-label">Địa chỉ <span class="text-danger">*</span></label>
-                                    <input type="text" id="address" class="form-control" value="@orgShippingAddress" placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố">
+                                    <label for="address" class="form-label" style="font-size:0.82rem;color:#6b7280;">Địa chỉ <span class="text-danger">*</span></label>
+                                    <input type="text" id="address" class="form-control form-control-sm" value="@orgShippingAddress" placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố" style="font-size:0.88rem;">
                                 </div>
                                 @if (!hasOrgShippingAddress)
                                 {
@@ -106,8 +105,8 @@
                                     </div>
                                 }
                                 <div class="review-form-name address-form mt-2">
-                                    <label for="note" class="form-label">Ghi chú đơn hàng</label>
-                                    <textarea id="note" class="form-control" rows="3" placeholder="Ghi chú thêm cho đơn hàng (nếu có)..."></textarea>
+                                    <label for="note" class="form-label" style="font-size:0.82rem;color:#6b7280;">Ghi chú đơn hàng</label>
+                                    <textarea id="note" class="form-control form-control-sm" rows="3" placeholder="Ghi chú thêm cho đơn hàng (nếu có)..." style="font-size:0.88rem;"></textarea>
                                 </div>
                             </div>
                         </div>
@@ -177,11 +176,11 @@
         padding: 10px 16px;
         border-bottom: 1px solid #e5e7eb;
         font-weight: 600;
-        font-size: 0.92rem;
+        font-size: 1rem;
         color: #374151;
     }
     .checkout-info-edit-link {
-        font-size: 0.8rem;
+        font-size: 0.85rem;
         font-weight: 400;
         color: #6b7280;
         text-decoration: none;
@@ -196,7 +195,7 @@
     .checkout-info-row {
         display: flex;
         align-items: baseline;
-        padding: 8px 16px;
+        padding: 10px 16px;
         border-bottom: 1px solid #f3f4f6;
         gap: 12px;
     }
@@ -205,14 +204,36 @@
     }
     .checkout-info-label {
         min-width: 120px;
-        font-size: 0.82rem;
+        font-size: 0.88rem;
         color: #9ca3af;
         flex-shrink: 0;
     }
     .checkout-info-value {
-        font-size: 0.9rem;
+        font-size: 1.05rem;
+        font-weight: 500;
         color: #111827;
         word-break: break-word;
+    }
+    /* Input nhận được: ô gọn, chữ to, dễ đọc */
+    .checkout-input {
+        font-size: 1.05rem !important;
+        padding: 6px 12px !important;
+        height: auto !important;
+        line-height: 1.5 !important;
+        color: #111827 !important;
+    }
+    .checkout-input::placeholder {
+        font-size: 0.92rem;
+        color: #adb5bd;
+    }
+    .col-lg-6 .account-section.billing-section .order-summery .wrapper-heading {
+        font-size: 0.88rem !important;
+    }
+    .col-lg-6 .account-section.billing-section .order-summery .subtotal.total .wrapper-heading {
+        font-size: 1rem !important;
+    }
+    .col-lg-6 .account-section.billing-section .order-summery .paragraph {
+        font-size: 0.82rem;
     }
 </style>
 <script>
@@ -249,6 +270,20 @@
             return;
         }
 
+        var recipientNameVal = (document.getElementById('recipientName')?.value || '').trim();
+        if (!recipientNameVal) {
+            showToast('Vui lòng nhập tên người nhận.', 'error');
+            document.getElementById('recipientName')?.focus();
+            return;
+        }
+
+        var recipientPhoneVal = (document.getElementById('recipientPhone')?.value || '').trim();
+        if (!recipientPhoneVal) {
+            showToast('Vui lòng nhập số điện thoại người nhận.', 'error');
+            document.getElementById('recipientPhone')?.focus();
+            return;
+        }
+
         var shippingAddressInput = document.getElementById('address');
         var shippingAddress = shippingAddressInput ? shippingAddressInput.value.trim() : '';
         if (!shippingAddress) {
@@ -279,7 +314,10 @@
                 };
             }),
             note: document.getElementById('note') ? document.getElementById('note').value : '',
-            shippingAddress: shippingAddress
+            shippingAddress: shippingAddress,
+            recipientName: recipientNameVal,
+            recipientPhone: recipientPhoneVal,
+            recipientEmail: (document.getElementById('recipientEmail')?.value || '').trim()
         };
 
         fetch('@Url.Action("PlaceOrder", "Shop")', {

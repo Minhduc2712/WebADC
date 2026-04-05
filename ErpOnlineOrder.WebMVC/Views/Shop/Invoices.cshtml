@@ -19,6 +19,12 @@
 
 <section class="product footer-padding">
     <div class="container">
+        <div class="mb-3">
+            <a asp-action="Account" class="btn btn-sm btn-outline-secondary" title="Quay lại trang tài khoản">
+                <i class="fas fa-arrow-left me-1"></i> Quay lại tài khoản
+            </a>
+        </div>
+
         @if (ViewData["ErrorMessage"] is string err)
         {
             <div class="alert alert-warning text-center">@err</div>

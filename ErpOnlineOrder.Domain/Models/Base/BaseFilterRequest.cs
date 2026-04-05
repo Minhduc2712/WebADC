@@ -50,9 +50,12 @@ public class StaffFilterRequest : BasePaginationRequest
     public bool? IsActive { get; set; }
 }
 
-// Product cho Shop (khách hàng) – category theo tên, sort
 public class ProductForShopFilterRequest : BasePaginationRequest
 {
-    public string? Category { get; set; }
+    public List<string>? Categories { get; set; }
+    public List<string>? Publishers { get; set; }
+    public List<string>? Authors { get; set; }
     public string? Sort { get; set; }
+    public decimal? PriceMin { get; set; }
+    public decimal? PriceMax { get; set; }
 }

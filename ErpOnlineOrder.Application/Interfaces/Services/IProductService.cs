@@ -21,6 +21,8 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
         Task<PagedResult<ProductDTO>> GetProductsForShopPagedAsync(int? customerId, ProductForShopFilterRequest request);
         Task<IEnumerable<ProductDTO>> GetRelatedProductsForShopAsync(int productId, IEnumerable<string> categoryNames, int? customerId, int limit = 4);
         Task<IEnumerable<string>> GetCategoriesForShopAsync(int? customerId);
+        Task<IEnumerable<string>> GetPublishersForShopAsync(int? customerId);
+        Task<IEnumerable<string>> GetAuthorsForShopAsync(int? customerId);
         Task<bool> IsProductAssignedToCustomerAsync(int productId, int customerId);
         Task<ProductDTO> CreateProductAsync(CreateProductDto dto, int createdBy);
         Task<bool> UpdateProductAsync(int id, UpdateProductDto dto, int updatedBy);

@@ -6,5 +6,6 @@ namespace ErpOnlineOrder.Application.DTOs.SettingsDTOs
     {
         public SmtpSettingsDto Smtp { get; set; } = new();
         public IEnumerable<SystemSettingDto> AllSettings { get; set; } = new List<SystemSettingDto>();
+        public SystemSettingDto? WarehouseEmailSetting { get; set; }
     }
 }

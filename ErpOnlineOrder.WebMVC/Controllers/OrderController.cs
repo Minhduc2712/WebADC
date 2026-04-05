@@ -55,6 +55,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 ViewBag.PageSize = pageSize;
                 ViewBag.Search = search;
                 await LoadCurrentUserPermissions();
+                ViewBag.Warehouses = (await _warehouseApiClient.GetForSelectAsync()).ToList();
                 return View(result);
             }
             catch (Exception ex)
