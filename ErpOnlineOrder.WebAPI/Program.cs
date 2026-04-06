@@ -9,8 +9,12 @@ using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Infrastructure.Repositories;
 using ErpOnlineOrder.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// QuestPDF community license (free for open-source / commercial under 1M USD revenue)
+QuestPDF.Settings.License = LicenseType.Community;
 
 // Add services to the container.
 builder.Services.AddControllers()
@@ -125,6 +129,7 @@ builder.Services.AddScoped<IWarehouseService, WarehouseService>();
 builder.Services.AddScoped<IStockService, StockService>();
 builder.Services.AddScoped<ISettingService, SettingService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IPrintService, PrintService>();
 
 builder.Services.AddSingleton<IEmailQueue, EmailQueue>();
 builder.Services.AddHostedService<EmailWorker>();

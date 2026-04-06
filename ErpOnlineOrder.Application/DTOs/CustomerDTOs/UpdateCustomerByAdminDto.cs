@@ -7,5 +7,7 @@ namespace ErpOnlineOrder.Application.DTOs.CustomerDTOs
         public string Full_name { get; set; } = null!;
         public string Phone_number { get; set; } = null!;
         public string Address { get; set; } = null!;
+        public int? Province_id { get; set; }
+        public int? Ward_id { get; set; }
     }
 }

@@ -19,6 +19,7 @@ namespace ErpOnlineOrder.WebMVC.Services.Interfaces
         Task<(List<InvoiceDto>? Data, string? Error)> CustomerRequestInvoiceAsync(CustomerInvoiceRequestDto dto, CancellationToken cancellationToken = default);
         // Task<CreateInvoiceFromOrderResultDto?> CreateFromOrderAsync(int orderId, CancellationToken cancellationToken = default);
         Task<byte[]> ExportToExcelAsync(string? status = null, CancellationToken cancellationToken = default);
+        Task<byte[]> DownloadDocumentAsync(int id, string format = "pdf", string template = "standard", CancellationToken cancellationToken = default);
         Task<(bool Success, string? Error)> UpdateStatusAsync(int id, string status, CancellationToken cancellationToken = default);
     
         Task<ApiResponse<InvoiceDto>?> CreateFromExportAsync(int exportId, CancellationToken cancellationToken = default);

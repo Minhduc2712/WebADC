@@ -4,11 +4,12 @@ using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.Services;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.DTOs;
+using ErpOnlineOrder.Application.DTOs.EmailDTOs;
 using ErpOnlineOrder.Application.Mappers;
 using ErpOnlineOrder.Application.DTOs.CustomerDTOs;
 using ErpOnlineOrder.Application.DTOs.OrganizationDTOs;
-using ErpOnlineOrder.Application.DTOs.CustomerDTOs;
 using ErpOnlineOrder.Domain.Models;
+using System.Net;
 
 namespace ErpOnlineOrder.WebAPI.Controllers
 {
@@ -20,13 +21,15 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         private readonly IPermissionService _permissionService;
         private readonly IOrganizationService _organizationService;
         private readonly ICustomerRepository _customerRepository;
+        private readonly IEmailQueue _emailQueue;
 
-        public CustomerController(ICustomerService customerService, IPermissionService permissionService, IOrganizationService organizationService, ICustomerRepository customerRepository)
+        public CustomerController(ICustomerService customerService, IPermissionService permissionService, IOrganizationService organizationService, ICustomerRepository customerRepository, IEmailQueue emailQueue)
         {
             _customerService = customerService;
             _permissionService = permissionService;
             _organizationService = organizationService;
             _customerRepository = customerRepository;
+            _emailQueue = emailQueue;
         }
 
         [HttpGet("for-select")]
@@ -179,6 +182,45 @@ namespace ErpOnlineOrder.WebAPI.Controllers
             if (result)
                 return Ok(ApiResponse<bool>.Ok(true, "Cập nhật thành công."));
             return BadRequest(ApiResponse<bool>.Fail("Không thể cập nhật thông tin đơn vị."));
+        }
+
+        [HttpPost("{customerId}/org-update-request")]
+        public async Task<IActionResult> RequestOrgUpdate(int customerId, [FromBody] CustomerOrgUpdateRequestDto dto)
+        {
+            var customer = await _customerRepository.GetByIdBasicAsync(customerId);
+            if (customer == null)
+                return NotFound(ApiResponse<object>.Fail("Không tìm thấy khách hàng."));
+
+            var sb = new System.Text.StringBuilder();
+            sb.Append("<table style='width:100%; border-collapse:collapse;'>");
+            sb.Append("<thead><tr style='background:#1a7f37; color:white;'>");
+            sb.Append("<th style='padding:10px; border:1px solid #ddd; text-align:left;'>Trường</th>");
+            sb.Append("<th style='padding:10px; border:1px solid #ddd; text-align:left;'>Giá trị yêu cầu</th>");
+            sb.Append("</tr></thead><tbody>");
+            AddRow(sb, "Tên đơn vị", dto.Organization_name);
+            AddRow(sb, "Mã đơn vị", dto.Organization_code);
+            AddRow(sb, "Mã số thuế", dto.Tax_number);
+            AddRow(sb, "Địa chỉ", dto.Address);
+            AddRow(sb, "Ghi chú", dto.Note);
+            sb.Append("</tbody></table>");
+
+            await _emailQueue.EnqueueAsync(new EmailMessage
+            {
+                ActionType = EmailActionType.OrgUpdateRequestNotification,
+                PrimaryId = customerId,
+                Payload = sb.ToString()
+            });
+
+            return Ok(ApiResponse<object>.Ok(null, "Yêu cầu đã được gửi thành công. Chúng tôi sẽ liên hệ với bạn sớm nhất."));
+        }
+
+        private static void AddRow(System.Text.StringBuilder sb, string label, string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return;
+            sb.Append("<tr>");
+            sb.Append($"<td style='padding:10px; border:1px solid #ddd; font-weight:600;'>{WebUtility.HtmlEncode(label)}</td>");
+            sb.Append($"<td style='padding:10px; border:1px solid #ddd;'>{WebUtility.HtmlEncode(value)}</td>");
+            sb.Append("</tr>");
         }
     }
 }

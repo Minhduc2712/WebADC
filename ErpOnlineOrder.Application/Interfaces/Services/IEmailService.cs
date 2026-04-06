@@ -24,6 +24,9 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
         Task SendPackageAssignedToCustomerAsync(int customerId, List<int> packageIds, CancellationToken cancellationToken = default);
         Task SendPasswordResetEmailAsync(int userId, string resetLink, CancellationToken cancellationToken = default);
         Task SendInvoiceToCustomerAsync(int invoiceId, CancellationToken cancellationToken = default);
+        Task SendOrgUpdateRequestAsync(int customerId, string requestPayload, CancellationToken cancellationToken = default);
+        Task SendExportCancelledNotificationCustomerAsync(int exportId, CancellationToken cancellationToken = default);
+        Task SendAdminPasswordResetNotificationAsync(int userId, CancellationToken cancellationToken = default);
 
 
         //    Task SendOrderConfirmationAsync(string toEmail, string subject, string body);

@@ -14,11 +14,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
     {
         private readonly IWarehouseExportService _exportService;
         private readonly ICustomerRepository _customerRepository;
+        private readonly IPrintService _printService;
 
-        public WarehouseExportController(IWarehouseExportService exportService, ICustomerRepository customerRepository)
+        public WarehouseExportController(IWarehouseExportService exportService, ICustomerRepository customerRepository, IPrintService printService)
         {
             _exportService = exportService;
             _customerRepository = customerRepository;
+            _printService = printService;
         }
 
         #region CRUD cơ bản
@@ -272,6 +274,32 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         }
 
         #endregion
+
+        [HttpGet("{id}/download")]
+        public async Task<IActionResult> DownloadDocument(int id, [FromQuery] string format = "pdf", [FromQuery] string template = "standard")
+        {
+            try
+            {
+                var (bytes, contentType, fileName) = await _printService.PrintWarehouseExportAsync(id, TryGetCurrentUserId() ?? 0, format, template);
+                return File(bytes, contentType, fileName);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResponse<object>.Fail(ex.Message));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+        }
+
+        [HttpGet("print-templates")]
+        public IActionResult GetPrintTemplates()
+        {
+            var templates = _printService.GetExportTemplates()
+                .Select(t => new { t.Name, t.DisplayName });
+            return Ok(ApiResponse<object>.Ok(templates));
+        }
 
         [HttpGet("customer/{customerId}/paged")]
         public async Task<IActionResult> GetByCustomerIdPaged(int customerId, [FromQuery] WarehouseExportFilterRequest request)

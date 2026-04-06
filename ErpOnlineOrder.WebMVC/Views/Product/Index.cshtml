@@ -71,12 +71,20 @@
 <div class="table-card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <span><i class="fas fa-box me-2"></i>Danh sách sản phẩm (@(Model?.TotalCount ?? 0) sản phẩm)</span>
-        @if (Context.Session.HasPermission("PRODUCT_EXPORT"))
-        {
-            <a href="@Url.Action("Export", new { search = ViewBag.Search })" class="btn btn-sm btn-success">
-                <i class="fas fa-file-excel me-1"></i>Xuất Excel
-            </a>
-        }
+        <div class="d-flex gap-2">
+            @if (Context.Session.HasPermission("PRODUCT_IMPORT"))
+            {
+                <a href="@Url.Action("Import")" class="btn btn-sm btn-info text-white">
+                    <i class="fas fa-file-import me-1"></i>Nhập Excel
+                </a>
+            }
+            @if (Context.Session.HasPermission("PRODUCT_EXPORT"))
+            {
+                <a href="@Url.Action("Export", new { search = ViewBag.Search })" class="btn btn-sm btn-success">
+                    <i class="fas fa-file-excel me-1"></i>Xuất Excel
+                </a>
+            }
+        </div>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">

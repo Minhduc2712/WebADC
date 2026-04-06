@@ -27,7 +27,7 @@
                     <div class="card-body p-4">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <div class="d-flex align-items-center gap-2">
-                                <a asp-action="Account" class="btn btn-sm btn-outline-secondary" title="Quay lại trang tài khoản">
+                                <a asp-action="Account" class="btn btn-sm btn-outline-secondary" style="background: #546e7a; color: #fff; border: none;" title="Quay lại trang tài khoản">
                                     <i class="fas fa-arrow-left me-1"></i> Tài khoản
                                 </a>
                                 <h5 class="fw-bold mb-0">Quản lý đơn hàng</h5>
@@ -204,36 +204,43 @@
                                                 </td>
                                                 <td class="text-center">
                                                     <div class="dropdown">
-                                                        <button class="btn btn-sm btn-outline-secondary" type="button"
-                                                                data-bs-toggle="dropdown" data-bs-strategy="fixed" data-bs-offset="0,4"
-                                                                aria-expanded="false" title="Xem thao tác"
-                                                                style="font-size:12px;padding:3px 8px;">
-                                                            <i class="fas fa-ellipsis-h"></i>
+                                                        <button class="btn btn-sm" type="button"
+                                                                data-bs-toggle="dropdown" aria-expanded="false"
+                                                                style="background:none;border:none;font-size:20px;line-height:1;color:#555;padding:2px 8px;letter-spacing:1px;">
+                                                            &#x22EF;
                                                         </button>
-                                                        <ul class="dropdown-menu dropdown-menu-end" style="font-size:13px;">
+                                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="font-size:13px;min-width:170px;border-radius:10px;padding:6px 0;border:1px solid #e0e0e0;">
                                                             <li>
-                                                                <a asp-action="OrderDetail" asp-route-id="@item.Id" class="dropdown-item">
-                                                                    <i class="fas fa-eye me-2 text-primary"></i>Xem chi tiết
+                                                                <a class="dropdown-item d-flex align-items-center gap-2 py-2 px-3"
+                                                                   asp-action="OrderDetail" asp-route-id="@item.Id"
+                                                                   style="color:#1565c0;font-weight:500;border-radius:6px;margin:1px 4px;">
+                                                                    <span style="width:22px;height:22px;border-radius:50%;background:#e3f0ff;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                                                        <i class="fas fa-eye" style="font-size:10px;"></i>
+                                                                    </span>
+                                                                    Xem chi tiết
                                                                 </a>
                                                             </li>
                                                             @if (item.Order_status == "WaitingCustomer")
                                                             {
-                                                                <li><hr class="dropdown-divider my-1"></li>
+                                                                <li><hr class="dropdown-divider my-1 mx-3" /></li>
                                                                 <li>
-                                                                    <span class="dropdown-item-text text-muted" style="font-size:11px;padding:2px 16px;">
-                                                                        <i class="fas fa-info-circle me-1"></i>Nhân viên đã điều chỉnh đơn — cần xác nhận
-                                                                    </span>
-                                                                </li>
-                                                                <li>
-                                                                    <button type="button" class="dropdown-item text-success" onclick="approveOrder(@item.Id)"
-                                                                            title="Đồng ý tiếp nhận đơn hàng đã điều chỉnh — hệ thống sẽ tiến hành giao hàng">
-                                                                        <i class="fas fa-check me-2"></i>Đồng ý nhận hàng
+                                                                    <button class="dropdown-item d-flex align-items-center gap-2 py-2 px-3" type="button"
+                                                                            onclick="approveOrder(@item.Id)"
+                                                                            style="color:#1b5e20;font-weight:500;border-radius:6px;margin:1px 4px;background:none;border:none;width:calc(100% - 8px);">
+                                                                        <span style="width:22px;height:22px;border-radius:50%;background:#e8f5e9;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                                                            <i class="fas fa-check" style="font-size:10px;color:#2e7d32;"></i>
+                                                                        </span>
+                                                                        Đồng ý
                                                                     </button>
                                                                 </li>
                                                                 <li>
-                                                                    <button type="button" class="dropdown-item text-danger" onclick="rejectOrder(@item.Id)"
-                                                                            title="Từ chối điều chỉnh — đơn hàng sẽ trở lại trạng thái Chờ xử lý">
-                                                                        <i class="fas fa-times me-2"></i>Từ chối
+                                                                    <button class="dropdown-item d-flex align-items-center gap-2 py-2 px-3" type="button"
+                                                                            onclick="rejectOrder(@item.Id)"
+                                                                            style="color:#b71c1c;font-weight:500;border-radius:6px;margin:1px 4px;background:none;border:none;width:calc(100% - 8px);">
+                                                                        <span style="width:22px;height:22px;border-radius:50%;background:#fef2f2;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                                                            <i class="fas fa-times" style="font-size:10px;color:#c62828;"></i>
+                                                                        </span>
+                                                                        Từ chối
                                                                     </button>
                                                                 </li>
                                                             }

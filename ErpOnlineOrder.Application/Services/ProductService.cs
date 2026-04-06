@@ -19,15 +19,24 @@ namespace ErpOnlineOrder.Application.Services
         private readonly IProductRepository _productRepository;
         private readonly ICustomerProductRepository _customerProductRepository;
         private readonly IPermissionService _permissionService;
+        private readonly IAuthorRepository _authorRepository;
+        private readonly IPublisherRepository _publisherRepository;
+        private readonly ICategoryRepository _categoryRepository;
 
         public ProductService(
             IProductRepository productRepository,
             ICustomerProductRepository customerProductRepository,
-            IPermissionService permissionService)
+            IPermissionService permissionService,
+            IAuthorRepository authorRepository,
+            IPublisherRepository publisherRepository,
+            ICategoryRepository categoryRepository)
         {
             _productRepository = productRepository;
             _customerProductRepository = customerProductRepository;
             _permissionService = permissionService;
+            _authorRepository = authorRepository;
+            _publisherRepository = publisherRepository;
+            _categoryRepository = categoryRepository;
         }
 
         public async Task<ProductDTO?> GetByIdAsync(int id, int? userId = null)
@@ -326,6 +335,213 @@ namespace ErpOnlineOrder.Application.Services
             using var stream = new MemoryStream();
             workbook.SaveAs(stream, false);
             return stream.ToArray();
+        }
+
+        public async Task<byte[]> GetImportTemplateAsync()
+        {
+            using var workbook = new XLWorkbook();
+            var ws = workbook.Worksheets.Add("Sản phẩm");
+
+            // Header row
+            ws.Cell(1, 1).Value = "Mã SP (*)";
+            ws.Cell(1, 2).Value = "Tên sản phẩm (*)";
+            ws.Cell(1, 3).Value = "Tác giả";
+            ws.Cell(1, 4).Value = "Nhà xuất bản";
+            ws.Cell(1, 5).Value = "Giá (*)";
+            ws.Cell(1, 6).Value = "Danh mục";
+            ws.Cell(1, 7).Value = "Thuế suất (%)";
+            ws.Cell(1, 8).Value = "Mô tả";
+            ws.Cell(1, 9).Value = "Link ảnh";
+
+            var headerRange = ws.Range(1, 1, 1, 9);
+            headerRange.Style.Font.Bold = true;
+            headerRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#1a7f37");
+            headerRange.Style.Font.FontColor = XLColor.White;
+
+            // Sample row
+            ws.Cell(2, 1).Value = "SP001";
+            ws.Cell(2, 2).Value = "Tên sách ví dụ";
+            ws.Cell(2, 3).Value = "Tác giả A, Tác giả B";
+            ws.Cell(2, 4).Value = "NXB Giáo dục";
+            ws.Cell(2, 5).Value = 150000;
+            ws.Cell(2, 6).Value = "Văn học, Giáo dục";
+            ws.Cell(2, 7).Value = 0;
+            ws.Cell(2, 8).Value = "Mô tả sản phẩm...";
+            ws.Cell(2, 9).Value = "https://...";
+
+            ws.Row(2).Style.Fill.BackgroundColor = XLColor.FromHtml("#f0fff4");
+
+            // Ghi chú
+            var noteCell = ws.Cell(4, 1);
+            noteCell.Value = "Ghi chú: (*) bắt buộc. Tác giả và Danh mục nhập nhiều giá trị, phân cách bằng dấu phẩy. Nếu chưa tồn tại sẽ được tạo tự động.";
+            noteCell.Style.Font.Italic = true;
+            noteCell.Style.Font.FontColor = XLColor.Gray;
+            ws.Range(4, 1, 4, 9).Merge();
+
+            ws.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream, false);
+            return stream.ToArray();
+        }
+
+        public async Task<ImportProductResultDto> ImportProductsFromExcelAsync(Stream excelStream, int createdBy)
+        {
+            var result = new ImportProductResultDto();
+            using var workbook = new XLWorkbook(excelStream);
+            var ws = workbook.Worksheet(1);
+            var lastRow = ws.LastRowUsed()?.RowNumber() ?? 1;
+
+            for (int rowNum = 2; rowNum <= lastRow; rowNum++)
+            {
+                result.TotalRows++;
+                var row = ws.Row(rowNum);
+
+                var productCode = row.Cell(1).GetString().Trim();
+                var productName = row.Cell(2).GetString().Trim();
+                var authorsRaw = row.Cell(3).GetString().Trim();
+                var publisherName = row.Cell(4).GetString().Trim();
+                var priceRaw = row.Cell(5).GetValue<string>().Trim();
+                var categoriesRaw = row.Cell(6).GetString().Trim();
+                var taxRateRaw = row.Cell(7).GetString().Trim();
+                var description = row.Cell(8).GetString().Trim();
+                var link = row.Cell(9).GetString().Trim();
+
+                // Bỏ qua hàng trống
+                if (string.IsNullOrWhiteSpace(productCode) && string.IsNullOrWhiteSpace(productName))
+                {
+                    result.TotalRows--;
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(productCode))
+                {
+                    result.Errors.Add(new ImportProductRowError { Row = rowNum, ProductCode = "", Message = "Thiếu Mã SP" });
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(productName))
+                {
+                    result.Errors.Add(new ImportProductRowError { Row = rowNum, ProductCode = productCode, Message = "Thiếu Tên sản phẩm" });
+                    continue;
+                }
+
+                if (!decimal.TryParse(priceRaw.Replace(",", "").Replace(".", ""), out var price) || price < 0)
+                {
+                    result.Errors.Add(new ImportProductRowError { Row = rowNum, ProductCode = productCode, Message = "Giá không hợp lệ" });
+                    continue;
+                }
+
+                // Kiểm tra mã đã tồn tại
+                if (await _productRepository.ExistsByCodeAsync(productCode))
+                {
+                    result.Errors.Add(new ImportProductRowError { Row = rowNum, ProductCode = productCode, Message = "Mã SP đã tồn tại, bỏ qua" });
+                    result.Skipped++;
+                    continue;
+                }
+
+                // Tìm hoặc tạo nhà xuất bản
+                int? publisherId = null;
+                if (!string.IsNullOrWhiteSpace(publisherName))
+                {
+                    var pub = await _publisherRepository.GetByNameAsync(publisherName);
+                    if (pub == null)
+                    {
+                        pub = await _publisherRepository.AddAsync(new Publisher
+                        {
+                            Publisher_name = publisherName,
+                            Publisher_code = "PUB_" + System.Guid.NewGuid().ToString("N")[..6].ToUpper(),
+                            Created_by = createdBy,
+                            Updated_by = createdBy,
+                            Created_at = DateTime.UtcNow,
+                            Updated_at = DateTime.UtcNow
+                        });
+                    }
+                    publisherId = pub.Id;
+                }
+
+                // Tìm hoặc tạo tác giả
+                var authorIds = new List<int>();
+                foreach (var aName in authorsRaw.Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries))
+                {
+                    var author = await _authorRepository.GetByNameAsync(aName);
+                    if (author == null)
+                    {
+                        author = await _authorRepository.AddAsync(new Author
+                        {
+                            Author_name = aName,
+                            Author_code = "AUTH_" + System.Guid.NewGuid().ToString("N")[..6].ToUpper(),
+                            Created_by = createdBy,
+                            Updated_by = createdBy,
+                            Created_at = DateTime.UtcNow,
+                            Updated_at = DateTime.UtcNow
+                        });
+                    }
+                    authorIds.Add(author.Id);
+                }
+
+                // Tìm hoặc tạo danh mục
+                var categoryIds = new List<int>();
+                foreach (var cName in categoriesRaw.Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries))
+                {
+                    var cat = await _categoryRepository.GetByNameAsync(cName);
+                    if (cat == null)
+                    {
+                        await _categoryRepository.AddAsync(new Category
+                        {
+                            Category_name = cName,
+                            Category_code = "CAT_" + System.Guid.NewGuid().ToString("N")[..6].ToUpper(),
+                            Created_by = createdBy,
+                            Updated_by = createdBy,
+                            Created_at = DateTime.UtcNow,
+                            Updated_at = DateTime.UtcNow
+                        });
+                        cat = await _categoryRepository.GetByNameAsync(cName);
+                    }
+                    if (cat != null) categoryIds.Add(cat.Id);
+                }
+
+                decimal.TryParse(taxRateRaw, out var taxRate);
+                var now = DateTime.UtcNow;
+
+                var product = new Product
+                {
+                    Product_code = productCode,
+                    Product_name = productName,
+                    Product_price = price,
+                    Product_description = string.IsNullOrWhiteSpace(description) ? null : description,
+                    Product_link = string.IsNullOrWhiteSpace(link) ? null : link,
+                    Tax_rate = taxRate,
+                    Publisher_id = publisherId,
+                    Created_by = createdBy,
+                    Updated_by = createdBy,
+                    Created_at = now,
+                    Updated_at = now,
+                    Product_Authors = authorIds.Select(aid => new Product_author
+                    {
+                        Author_id = aid,
+                        Created_by = createdBy,
+                        Updated_by = createdBy,
+                        Created_at = now,
+                        Updated_at = now,
+                        Is_deleted = false
+                    }).ToList(),
+                    Product_Categories = categoryIds.Select(cid => new Product_category
+                    {
+                        Category_id = cid,
+                        Created_by = createdBy,
+                        Updated_by = createdBy,
+                        Created_at = now,
+                        Updated_at = now,
+                        Is_deleted = false
+                    }).ToList()
+                };
+
+                await _productRepository.AddAsync(product);
+                result.Succeeded++;
+            }
+
+            return result;
         }
 
     }

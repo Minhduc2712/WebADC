@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using ErpOnlineOrder.Application.DTOs.AuthDTOs;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
+using ErpOnlineOrder.Application.Interfaces.Security;
 using ErpOnlineOrder.Domain.Models;
 
 namespace ErpOnlineOrder.Application.Services
@@ -11,10 +12,12 @@ namespace ErpOnlineOrder.Application.Services
     public class UserRegistrationService : IUserRegistrationService
     {
         private readonly IUserRepository _userRepository;
+        private readonly IPasswordHasher _passwordHasher;
 
-        public UserRegistrationService(IUserRepository userRepository)
+        public UserRegistrationService(IUserRepository userRepository, IPasswordHasher passwordHasher)
         {
             _userRepository = userRepository;
+            _passwordHasher = passwordHasher;
         }
 
         public async Task<bool> RegisterAsync(RegisterCustomerDto dto)
@@ -26,7 +29,7 @@ namespace ErpOnlineOrder.Application.Services
             {
                 Username = dto.Username,
                 Email = dto.Email,
-                Password = dto.Password, 
+                Password = _passwordHasher.Hash(dto.Password),
                 Is_active = true,
                 Created_at = DateTime.UtcNow,
                 Updated_at = DateTime.UtcNow,

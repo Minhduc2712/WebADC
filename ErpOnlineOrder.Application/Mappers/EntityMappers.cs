@@ -472,7 +472,11 @@ namespace ErpOnlineOrder.Application.Mappers
                     .Where(ur => !ur.Is_deleted && ur.Role != null && !ur.Role.Is_deleted)
                     .Select(ur => ur.Role!.Role_name ?? "")
                     .ToList(),
-                Created_at = user.Created_at
+                Created_at = user.Created_at,
+                Province_id = user.Staff?.Province_id,
+                Province_name = user.Staff?.Province?.Province_name,
+                Ward_id = user.Staff?.Ward_id,
+                Ward_name = user.Staff?.Ward?.Ward_name
             };
         }
 

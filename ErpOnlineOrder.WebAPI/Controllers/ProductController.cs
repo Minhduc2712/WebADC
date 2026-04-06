@@ -117,11 +117,28 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         public async Task<IActionResult> ImportProducts(IFormFile file)
         {
             if (file == null || file.Length == 0)
-            {
                 return BadRequest(ApiResponse<object>.Fail("File không hợp lệ"));
-            }
-            return Ok(ApiResponse<object>.Ok(new { fileName = file.FileName, size = file.Length }, "Import successful"));
+
+            var allowedExtensions = new[] { ".xlsx", ".xls" };
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!allowedExtensions.Contains(ext))
+                return BadRequest(ApiResponse<object>.Fail("Chỉ chấp nhận file Excel (.xlsx, .xls)"));
+
+            var userId = HttpContext.Session.GetInt32("UserId") ?? 1;
+            using var stream = file.OpenReadStream();
+            var result = await _productService.ImportProductsFromExcelAsync(stream, userId);
+            return Ok(ApiResponse<object>.Ok(result, $"Nhập thành công {result.Succeeded}/{result.TotalRows} dòng"));
         }
+
+        [HttpGet("import/template")]
+        [RequirePermission(PermissionCodes.ProductImport)]
+        public async Task<IActionResult> DownloadImportTemplate()
+        {
+            var bytes = await _productService.GetImportTemplateAsync();
+            return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "MauImportSanPham.xlsx");
+        }
+
         [HttpGet("export")]
         [RequirePermission(PermissionCodes.ProductExport)]
         public async Task<IActionResult> ExportProducts([FromQuery] string? search)

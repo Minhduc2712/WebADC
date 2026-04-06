@@ -18,6 +18,10 @@ namespace ErpOnlineOrder.Application.DTOs
         public string? Recipient_address { get; set; }
         public int Organization_information_id { get; set; }
         public string Organization_name { get; set; } = string.Empty;
+        public int? Province_id { get; set; }
+        public string? Province_name { get; set; }
+        public int? Ward_id { get; set; }
+        public string? Ward_name { get; set; }
         public DateTime Created_at { get; set; }
         public DateTime Updated_at { get; set; }
         public bool Is_deleted { get; set; }

@@ -22,6 +22,7 @@ namespace ErpOnlineOrder.WebMVC.Services.Interfaces
         Task<bool> UndoMergeAsync(int id, CancellationToken cancellationToken = default);
         Task<bool> HasExportForInvoiceAsync(int invoiceId, CancellationToken cancellationToken = default);
         Task<byte[]> ExportToExcelAsync(string? status = null, CancellationToken cancellationToken = default);
+        Task<byte[]> DownloadDocumentAsync(int id, string format = "pdf", string template = "standard", CancellationToken cancellationToken = default);
         Task<(bool Success, string? Error)> UpdateStatusAsync(int id, string status, CancellationToken cancellationToken = default);
         Task<PagedResult<WarehouseExportDto>> GetByCustomerIdPagedAsync(int customerId, WarehouseExportFilterRequest request, CancellationToken cancellationToken = default);
     }

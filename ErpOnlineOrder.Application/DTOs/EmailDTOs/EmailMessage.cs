@@ -38,5 +38,8 @@ namespace ErpOnlineOrder.Application.DTOs.EmailDTOs
         PackageAssignedToCustomer,
         PasswordReset,
         InvoiceSentToCustomer,
+        OrgUpdateRequestNotification,
+        ExportCancelledNotificationCustomer,
+        AdminPasswordResetNotification,
     }
 }

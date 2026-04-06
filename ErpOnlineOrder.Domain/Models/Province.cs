@@ -29,6 +29,10 @@ namespace ErpOnlineOrder.Domain.Models
 
         public virtual ICollection<Customer_management> Customer_managements { get; set; } = new List<Customer_management>();
 
+        public virtual ICollection<Staff> Staffs { get; set; } = new List<Staff>();
+
+        public virtual ICollection<Customer> Customers { get; set; } = new List<Customer>();
+
         public virtual ICollection<Ward> Wards { get; set; } = new List<Ward>();
     }
 }

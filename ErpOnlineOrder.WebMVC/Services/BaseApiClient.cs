@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
 using ErpOnlineOrder.Application.DTOs;
+using Microsoft.AspNetCore.Http;
 
 namespace ErpOnlineOrder.WebMVC.Services
 {
@@ -139,6 +140,18 @@ namespace ErpOnlineOrder.WebMVC.Services
             {
                 return (default, "Định dạng JSON từ máy chủ không hợp lệ.");
             }
+        }
+
+        protected async Task<(T? Data, string? ErrorMessage)> PostFileAsync<T>(string url, IFormFile file, CancellationToken cancellationToken = default)
+        {
+            using var formContent = new MultipartFormDataContent();
+            using var fileStream = file.OpenReadStream();
+            var streamContent = new StreamContent(fileStream);
+            streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+            formContent.Add(streamContent, "file", file.FileName);
+
+            var response = await _httpClient.PostAsync(url, formContent, cancellationToken);
+            return await HandleResponseWithDataAsync<T>(response, cancellationToken);
         }
     }
 }

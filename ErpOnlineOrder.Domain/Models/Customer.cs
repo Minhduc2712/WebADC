@@ -23,6 +23,12 @@ namespace ErpOnlineOrder.Domain.Models
         public int User_id { get; set; }
         [ForeignKey("User_id")]
         public virtual User? User { get; set; } = null!;
+        public int? Province_id { get; set; }
+        [ForeignKey("Province_id")]
+        public virtual Province? Province { get; set; }
+        public int? Ward_id { get; set; }
+        [ForeignKey("Ward_id")]
+        public virtual Ward? Ward { get; set; }
         [Required]
         public int Organization_information_id { get; set; }
         [ForeignKey("Organization_information_id")]

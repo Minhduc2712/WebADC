@@ -89,6 +89,16 @@
         localStorage.setItem('shopCart', JSON.stringify(cart));
     }
 
+    // SVG tĩnh cho nút xóa (không chứa dữ liệu người dùng)
+    var DELETE_SVG = '<svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9.7 0.3C9.3 -0.1 8.7 -0.1 8.3 0.3L5 3.6L1.7 0.3C1.3 -0.1 0.7 -0.1 0.3 0.3C-0.1 0.7 -0.1 1.3 0.3 1.7L3.6 5L0.3 8.3C-0.1 8.7 -0.1 9.3 0.3 9.7C0.7 10.1 1.3 10.1 1.7 9.7L5 6.4L8.3 9.7C8.7 10.1 9.3 10.1 9.7 9.7C10.1 9.3 10.1 8.7 9.7 8.3L6.4 5L9.7 1.7C10.1 1.3 10.1 0.7 9.7 0.3Z" fill="#AAAAAA"></path></svg>';
+    var FALLBACK_IMG = '/shop/images/homepage-one/product-img/product-img-1.webp';
+
+    function safeImgSrc(src) {
+        // Chỉ cho phép đường dẫn tương đối (bắt đầu bằng /) để tránh javascript: hoặc data: URI độc hại
+        if (typeof src === 'string' && /^\/[^/]/.test(src)) return src;
+        return FALLBACK_IMG;
+    }
+
     function renderCart() {
         var cart = getCart();
         if (cart.length === 0) {
@@ -101,34 +111,113 @@
         document.getElementById('cartWithItems').style.display = 'block';
 
         var tbody = document.getElementById('cartTableBody');
-        var html = '';
-        var total = 0;
+        tbody.innerHTML = ''; // xóa hàng cũ (không có dữ liệu người dùng)
 
         cart.forEach(function(item, index) {
             var itemTotal = item.price * item.quantity;
-            total += itemTotal;
-            html += '<tr class="table-row ticket-row">' +
-                '<td class="table-wrapper wrapper-product">' +
-                '<div class="wrapper">' +
-                '<div class="wrapper-img"><img src="' + (item.image || '/shop/images/homepage-one/product-img/product-img-1.webp') + '" alt="img"></div>' +
-                '<div class="wrapper-content"><h5 class="heading">' + item.name + '</h5></div>' +
-                '</div></td>' +
-                '<td class="table-wrapper"><div class="table-wrapper-center"><h5 class="heading">' + item.priceText + '</h5></div></td>' +
-                '<td class="table-wrapper"><div class="table-wrapper-center">' +
-                '<div class="quantity">' +
-                '<span class="minus" onclick="updateQuantity(' + index + ', ' + (item.quantity - 1) + ')">-</span>' +
-                '<input type="number" min="1" class="number" value="' + item.quantity + '" style="width:52px;text-align:center;border:1px solid #ddd;border-radius:4px;font-size:1.3rem;padding:2px 4px;" onchange="updateQuantity(' + index + ', parseInt(this.value)||1)" onclick="this.select()">' +
-                '<span class="plus" onclick="updateQuantity(' + index + ', ' + (item.quantity + 1) + ')">+</span>' +
-                '</div></div></td>' +
-                '<td class="table-wrapper wrapper-total"><div class="table-wrapper-center"><h5 class="heading">' + itemTotal.toLocaleString() + '</h5></div></td>' +
-                '<td class="table-wrapper"><div class="table-wrapper-center">' +
-                '<span style="cursor:pointer;" onclick="removeFromCart(' + index + ')">' +
-                '<svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">' +
-                '<path d="M9.7 0.3C9.3 -0.1 8.7 -0.1 8.3 0.3L5 3.6L1.7 0.3C1.3 -0.1 0.7 -0.1 0.3 0.3C-0.1 0.7 -0.1 1.3 0.3 1.7L3.6 5L0.3 8.3C-0.1 8.7 -0.1 9.3 0.3 9.7C0.7 10.1 1.3 10.1 1.7 9.7L5 6.4L8.3 9.7C8.7 10.1 9.3 10.1 9.7 9.7C10.1 9.3 10.1 8.7 9.7 8.3L6.4 5L9.7 1.7C10.1 1.3 10.1 0.7 9.7 0.3Z" fill="#AAAAAA"></path>' +
-                '</svg></span></div></td></tr>';
-        });
 
-        tbody.innerHTML = html;
+            var tr = document.createElement('tr');
+            tr.className = 'table-row ticket-row';
+
+            // Cột 1: Ảnh + tên sản phẩm
+            var td1 = document.createElement('td');
+            td1.className = 'table-wrapper wrapper-product';
+            var wrapper = document.createElement('div');
+            wrapper.className = 'wrapper';
+            var wrapperImg = document.createElement('div');
+            wrapperImg.className = 'wrapper-img';
+            var img = document.createElement('img');
+            img.src = safeImgSrc(item.image);  // URL đã được kiểm tra
+            img.alt = 'img';
+            wrapperImg.appendChild(img);
+            var wrapperContent = document.createElement('div');
+            wrapperContent.className = 'wrapper-content';
+            var h5Name = document.createElement('h5');
+            h5Name.className = 'heading';
+            h5Name.textContent = item.name;  // textContent tự escape HTML
+            wrapperContent.appendChild(h5Name);
+            wrapper.appendChild(wrapperImg);
+            wrapper.appendChild(wrapperContent);
+            td1.appendChild(wrapper);
+
+            // Cột 2: Giá
+            var td2 = document.createElement('td');
+            td2.className = 'table-wrapper';
+            var center2 = document.createElement('div');
+            center2.className = 'table-wrapper-center';
+            var h5Price = document.createElement('h5');
+            h5Price.className = 'heading';
+            h5Price.textContent = item.priceText;  // textContent tự escape HTML
+            center2.appendChild(h5Price);
+            td2.appendChild(center2);
+
+            // Cột 3: Số lượng
+            var td3 = document.createElement('td');
+            td3.className = 'table-wrapper';
+            var center3 = document.createElement('div');
+            center3.className = 'table-wrapper-center';
+            var quantityDiv = document.createElement('div');
+            quantityDiv.className = 'quantity';
+            var minus = document.createElement('span');
+            minus.className = 'minus';
+            minus.textContent = '-';
+            minus.addEventListener('click', (function(i, q) {
+                return function() { updateQuantity(i, q - 1); };
+            })(index, item.quantity));
+            var input = document.createElement('input');
+            input.type = 'number';
+            input.min = '1';
+            input.className = 'number';
+            input.value = item.quantity;
+            input.style.cssText = 'width:52px;text-align:center;border:1px solid #ddd;border-radius:4px;font-size:1.3rem;padding:2px 4px;';
+            input.addEventListener('change', (function(i) {
+                return function() { updateQuantity(i, parseInt(this.value) || 1); };
+            })(index));
+            input.addEventListener('click', function() { this.select(); });
+            var plus = document.createElement('span');
+            plus.className = 'plus';
+            plus.textContent = '+';
+            plus.addEventListener('click', (function(i, q) {
+                return function() { updateQuantity(i, q + 1); };
+            })(index, item.quantity));
+            quantityDiv.appendChild(minus);
+            quantityDiv.appendChild(input);
+            quantityDiv.appendChild(plus);
+            center3.appendChild(quantityDiv);
+            td3.appendChild(center3);
+
+            // Cột 4: Tổng tiền (số nguyên, an toàn)
+            var td4 = document.createElement('td');
+            td4.className = 'table-wrapper wrapper-total';
+            var center4 = document.createElement('div');
+            center4.className = 'table-wrapper-center';
+            var h5Total = document.createElement('h5');
+            h5Total.className = 'heading';
+            h5Total.textContent = itemTotal.toLocaleString();
+            center4.appendChild(h5Total);
+            td4.appendChild(center4);
+
+            // Cột 5: Nút xóa (SVG tĩnh, không có dữ liệu người dùng)
+            var td5 = document.createElement('td');
+            td5.className = 'table-wrapper';
+            var center5 = document.createElement('div');
+            center5.className = 'table-wrapper-center';
+            var deleteSpan = document.createElement('span');
+            deleteSpan.style.cursor = 'pointer';
+            deleteSpan.innerHTML = DELETE_SVG;  // SVG tĩnh, không chứa dữ liệu người dùng
+            deleteSpan.addEventListener('click', (function(i) {
+                return function() { removeFromCart(i); };
+            })(index));
+            center5.appendChild(deleteSpan);
+            td5.appendChild(center5);
+
+            tr.appendChild(td1);
+            tr.appendChild(td2);
+            tr.appendChild(td3);
+            tr.appendChild(td4);
+            tr.appendChild(td5);
+            tbody.appendChild(tr);
+        });
     }
 
     function updateQuantity(index, qty) {

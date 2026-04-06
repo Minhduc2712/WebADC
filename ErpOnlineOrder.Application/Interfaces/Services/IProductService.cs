@@ -28,5 +28,7 @@ namespace ErpOnlineOrder.Application.Interfaces.Services
         Task<bool> UpdateProductAsync(int id, UpdateProductDto dto, int updatedBy);
         Task<bool> DeleteProductAsync(int id);
         Task<byte[]> ExportProductsToExcelAsync(string? search = null);
+        Task<ImportProductResultDto> ImportProductsFromExcelAsync(Stream excelStream, int createdBy);
+        Task<byte[]> GetImportTemplateAsync();
     }
 }

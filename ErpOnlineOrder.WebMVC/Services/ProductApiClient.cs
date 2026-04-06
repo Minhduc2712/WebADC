@@ -73,6 +73,16 @@ namespace ErpOnlineOrder.WebMVC.Services
             return await GetByteArrayAsync(path, cancellationToken);
         }
 
+        public async Task<(ImportProductResultDto? Data, string? Error)> ImportProductsAsync(IFormFile file, CancellationToken cancellationToken = default)
+        {
+            return await PostFileAsync<ImportProductResultDto>("product/import", file, cancellationToken);
+        }
+
+        public async Task<byte[]> DownloadImportTemplateAsync(CancellationToken cancellationToken = default)
+        {
+            return await GetByteArrayAsync("product/import/template", cancellationToken);
+        }
+
         public async Task<ProductDTO?> GetProductForShopAsync(int productId, int? customerId, CancellationToken cancellationToken = default)
         {
             var path = customerId.HasValue

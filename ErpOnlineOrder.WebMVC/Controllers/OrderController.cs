@@ -107,6 +107,32 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             return View("~/Views/Shop/PrintOrder.cshtml", order);
         }
 
+        [HttpGet]
+        public async Task<IActionResult> DownloadDocument(int id, string format = "pdf", string template = "standard")
+        {
+            var userId = GetCurrentUserId();
+            if (userId == 0)
+                return RedirectToAction("Login", "Auth");
+            try
+            {
+                var bytes = await _orderApiClient.DownloadDocumentAsync(id, format, template);
+                var contentType = format.ToLower() switch
+                {
+                    "pdf" => "application/pdf",
+                    "docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    _ => "application/xml"
+                };
+                var ext = format.ToLower() == "docx" ? "docx" : format.ToLower() == "pdf" ? "pdf" : "xml";
+                return File(bytes, contentType, $"donhang-{id}.{ext}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error downloading order {OrderId} format {Format}", id, format);
+                SetErrorMessage(GetDetailedErrorMessage(ex));
+                return RedirectToAction(nameof(PrintOrder), new { id });
+            }
+        }
+
         [RequirePermission(PermissionCodes.OrderCreate)]
         public IActionResult Create() => RedirectToAction(nameof(Index));
 

@@ -78,6 +78,8 @@ namespace ErpOnlineOrder.Application.Services
                 Phone_number = dto.Phone_number,
                 Address = dto.Address,
                 User_id = dto.User_id,
+                Province_id = dto.Province_id,
+                Ward_id = dto.Ward_id,
                 Created_by = createdBy,
                 Updated_by = createdBy,
                 Created_at = DateTime.UtcNow,
@@ -97,6 +99,15 @@ namespace ErpOnlineOrder.Application.Services
             existing.Full_name = dto.Full_name;
             existing.Phone_number = dto.Phone_number;
             existing.Address = dto.Address;
+            if (dto.Province_id.HasValue)
+            {
+                existing.Province_id = dto.Province_id.Value;
+                existing.Ward_id = null; // reset ward khi đổi tỉnh
+            }
+            if (dto.Ward_id.HasValue)
+            {
+                existing.Ward_id = dto.Ward_id.Value;
+            }
             existing.Updated_by = updatedBy;
             existing.Updated_at = DateTime.UtcNow;
             await _customerRepository.UpdateAsync(existing);
@@ -118,6 +129,15 @@ namespace ErpOnlineOrder.Application.Services
             existingCustomer.Full_name = updateCustomerDto.Full_name;
             existingCustomer.Phone_number = updateCustomerDto.Phone_number;
             existingCustomer.Address = updateCustomerDto.Address;
+            if (updateCustomerDto.Province_id.HasValue)
+            {
+                existingCustomer.Province_id = updateCustomerDto.Province_id.Value;
+                existingCustomer.Ward_id = null;
+            }
+            if (updateCustomerDto.Ward_id.HasValue)
+            {
+                existingCustomer.Ward_id = updateCustomerDto.Ward_id.Value;
+            }
             existingCustomer.Updated_at = DateTime.UtcNow;
             existingCustomer.Updated_by = userId;
             if (updateCustomerDto.Customer_email != null)

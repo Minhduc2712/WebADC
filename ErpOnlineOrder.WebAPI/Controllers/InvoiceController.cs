@@ -18,12 +18,14 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         private readonly IInvoiceService _invoiceService;
         private readonly ICustomerRepository _customerRepository;
         private readonly IEmailQueue _emailQueue;
+        private readonly IPrintService _printService;
 
-        public InvoiceController(IInvoiceService invoiceService, ICustomerRepository customerRepository, IEmailQueue emailQueue)
+        public InvoiceController(IInvoiceService invoiceService, ICustomerRepository customerRepository, IEmailQueue emailQueue, IPrintService printService)
         {
             _invoiceService = invoiceService;
             _customerRepository = customerRepository;
             _emailQueue = emailQueue;
+            _printService = printService;
         }
 
         [HttpGet]
@@ -204,6 +206,32 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             var paged = await _invoiceService.GetByCustomerIdPagedAsync(customerId, request);
             return Ok(ApiResponse<PagedResult<InvoiceDto>>.Ok(paged));
+        }
+
+        [HttpGet("{id}/download")]
+        public async Task<IActionResult> DownloadDocument(int id, [FromQuery] string format = "pdf", [FromQuery] string template = "standard")
+        {
+            try
+            {
+                var (bytes, contentType, fileName) = await _printService.PrintInvoiceAsync(id, TryGetCurrentUserId() ?? 0, format, template);
+                return File(bytes, contentType, fileName);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResponse<object>.Fail(ex.Message));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+        }
+
+        [HttpGet("print-templates")]
+        public IActionResult GetPrintTemplates()
+        {
+            var templates = _printService.GetInvoiceTemplates()
+                .Select(t => new { t.Name, t.DisplayName });
+            return Ok(ApiResponse<object>.Ok(templates));
         }
 
         [HttpPost("{id}/send-to-customer")]

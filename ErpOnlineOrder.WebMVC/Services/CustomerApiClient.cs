@@ -66,5 +66,10 @@ namespace ErpOnlineOrder.WebMVC.Services
             var (success, _) = await PutAsync("customer/organization", model, cancellationToken);
             return success;
         }
+
+        public async Task<(bool Success, string? ErrorMessage)> RequestOrgUpdateAsync(int customerId, CustomerOrgUpdateRequestDto dto, CancellationToken cancellationToken = default)
+        {
+            return await PostWithoutReturnAsync($"customer/{customerId}/org-update-request", dto, cancellationToken);
+        }
     }
 }

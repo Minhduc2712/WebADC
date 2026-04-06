@@ -16,5 +16,6 @@ namespace ErpOnlineOrder.WebMVC.Services.Interfaces
         Task<CustomerDTO?> GetByUserIdAsync(int userId, CancellationToken cancellationToken = default);
         Task<CustomerOrganizationViewDto?> GetOrganizationByCustomerIdAsync(int customerId, CancellationToken cancellationToken = default);
         Task<bool> UpdateOrganizationAsync(UpdateOrganizationByCustomerDto model, CancellationToken cancellationToken = default);
+        Task<(bool Success, string? ErrorMessage)> RequestOrgUpdateAsync(int customerId, CustomerOrgUpdateRequestDto dto, CancellationToken cancellationToken = default);
     }
 }

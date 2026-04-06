@@ -30,11 +30,11 @@
             <i class="fas fa-info-circle me-2"></i>
             @if (Model.OrderId > 0)
             {
-                <text>Đơn hàng <strong>@Model.OrderCode</strong> có <strong>@Model.ExportCount</strong> phiếu xuất kho đã giao thành công.</text>
+                <span>Đơn hàng <strong>@Model.OrderCode</strong> có <strong>@Model.ExportCount</strong> phiếu xuất kho đã giao thành công.</span>
             }
             else
             {
-                <text>Bạn có <strong>@Model.ExportCount</strong> phiếu xuất kho đã giao thành công (toàn bộ đơn hàng).</text>
+                <span>Bạn có <strong>@Model.ExportCount</strong> phiếu xuất kho đã giao thành công (toàn bộ đơn hàng).</span>
             }
             Nhập số lượng cần xuất hóa đơn cho từng sản phẩm (tối đa bằng số đã giao). Để chọn toàn bộ, bấm <strong>Chọn tất cả</strong>.
         </div>
@@ -115,7 +115,7 @@
                                   style="font-size: 0.9rem;"></textarea>
                     </div>
                     <div class="d-flex justify-content-between align-items-center">
-                        <a asp-action="Exports" class="btn btn-outline-secondary">
+                        <a asp-action="Exports" class="btn btn-outline-secondary" style="background: #546e7a; color: #fff; border: none;">
                             <i class="fas fa-arrow-left me-1"></i>Quay lại
                         </a>
                         <button type="submit" class="btn btn-primary">

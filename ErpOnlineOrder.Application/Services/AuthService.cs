@@ -237,6 +237,8 @@ namespace ErpOnlineOrder.Application.Services
                     Recipient_phone = dto.Personal.Recipient_phone ?? string.Empty,
                     Recipient_address = dto.Personal.Recipient_address,
                     Organization_information_id = orgId,
+                    Province_id = dto.Personal.Province_id,
+                    Ward_id = dto.Personal.Ward_id,
                     Created_at = now,
                     Created_by = 0,
                     Updated_at = now,

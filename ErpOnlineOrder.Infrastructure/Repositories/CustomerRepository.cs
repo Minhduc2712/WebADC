@@ -129,9 +129,15 @@ namespace ErpOnlineOrder.Infrastructure.Repositories
                 {
                     Id = c.Id,
                     Customer_code = c.Customer_code,
-                    Full_name = c.Full_name,
-                    Phone_number = c.Phone_number,
-                    
+                    Full_name = c.Full_name ?? string.Empty,
+                    Phone_number = c.Phone_number ?? string.Empty,
+                    Address = c.Address ?? string.Empty,
+                    Organization_information_id = c.Organization_information_id,
+                    Organization_name = c.Organization_information != null ? c.Organization_information.Organization_name : string.Empty,
+                    Province_id = c.Province_id,
+                    Province_name = c.Province != null ? c.Province.Province_name : null,
+                    Ward_id = c.Ward_id,
+                    Ward_name = c.Ward != null ? c.Ward.Ward_name : null,
                     Username = c.User != null ? c.User.Username : null
                 });
 

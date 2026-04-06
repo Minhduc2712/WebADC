@@ -47,10 +47,14 @@ namespace ErpOnlineOrder.Application.DTOs.AuthDTOs
 
         public string? Recipient_address { get; set; }
 
-        /// <summary>Tỉnh/thành phố — dùng để tự động gán cán bộ phụ trách</summary>
+        /// <summary>Tỉnh/thành phố — bắt buộc chọn khi đăng ký</summary>
+        [Required(ErrorMessage = "Vui lòng chọn tỉnh/thành phố")]
+        [Range(1, int.MaxValue, ErrorMessage = "Vui lòng chọn tỉnh/thành phố")]
         public int? Province_id { get; set; }
 
-        /// <summary>Phường/xã — kết hợp với Province_id để tự động gán cán bộ phụ trách chính xác hơn</summary>
+        /// <summary>Phường/xã — bắt buộc chọn khi đăng ký</summary>
+        [Required(ErrorMessage = "Vui lòng chọn phường/xã")]
+        [Range(1, int.MaxValue, ErrorMessage = "Vui lòng chọn phường/xã")]
         public int? Ward_id { get; set; }
     }
 

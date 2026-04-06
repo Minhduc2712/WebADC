@@ -110,7 +110,10 @@
         <button type="button" onclick="window.print()" style="padding: 10px 24px; font-size: 14px; cursor: pointer; background: #1a7f37; color: white; border: none; border-radius: 6px;">
             <i class="fas fa-print"></i> In đơn
         </button>
-        <a href="@Url.Action("Orders")" style="margin-left: 12px; padding: 10px 24px; font-size: 14px; display: inline-block; background: #666; color: white; text-decoration: none; border-radius: 6px;">Quay lại</a>
+        <a href="@Url.Action("DownloadDocument", "Order", new { id = Model.Id, format = "pdf", template = "standard" })" style="margin-left: 12px; padding: 10px 18px; font-size: 14px; display: inline-block; background: #c0392b; color: white; text-decoration: none; border-radius: 6px;"><i class="fas fa-file-pdf"></i> PDF</a>
+        <a href="@Url.Action("DownloadDocument", "Order", new { id = Model.Id, format = "docx", template = "standard" })" style="margin-left: 4px; padding: 10px 18px; font-size: 14px; display: inline-block; background: #2980b9; color: white; text-decoration: none; border-radius: 6px;"><i class="fas fa-file-word"></i> DOCX</a>
+        <a href="@Url.Action("DownloadDocument", "Order", new { id = Model.Id, format = "xml", template = "standard" })" style="margin-left: 4px; padding: 10px 18px; font-size: 14px; display: inline-block; background: #e67e22; color: white; text-decoration: none; border-radius: 6px;"><i class="fas fa-file-code"></i> XML</a>
+        <a href="@Url.Action("Orders")" style="margin-left: 12px; padding: 10px 24px; font-size: 14px; display: inline-block; background: #546e7a; color: white; text-decoration: none; border-radius: 6px;">Quay lại</a>
     </div>
 
     <script>

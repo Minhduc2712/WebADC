@@ -4,6 +4,7 @@ using ErpOnlineOrder.Application.DTOs.OrderDTOs;
 using ErpOnlineOrder.Application.DTOs.WarehouseExportDTOs;
 using ErpOnlineOrder.Application.DTOs.InvoiceDTOs;
 using ErpOnlineOrder.Application.DTOs.CustomerDTOs;
+using ErpOnlineOrder.Application.DTOs.OrganizationDTOs;
 using ErpOnlineOrder.Application.DTOs.AuthDTOs;
 using ErpOnlineOrder.Domain.Constants;
 using ErpOnlineOrder.WebMVC.Extensions;
@@ -284,6 +285,15 @@ namespace ErpOnlineOrder.WebMVC.Controllers
         [HttpPost]
         public async Task<IActionResult> PlaceOrder([FromBody] PlaceOrderRequest request)
         {
+            if (!ModelState.IsValid)
+            {
+                var firstError = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .FirstOrDefault(m => !string.IsNullOrEmpty(m)) ?? "Dữ liệu đặt hàng không hợp lệ.";
+                return Json(new { success = false, message = firstError });
+            }
+
             try
             {
                 var userId = GetCurrentUserId();
@@ -533,7 +543,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             if (customer == null)
                 return NotFound();
 
-            WarehouseExportDto export;
+            WarehouseExportDto? export = null;
             try
             {
                 export = await _warehouseExportApiClient.GetByIdAsync(exportId);
@@ -581,7 +591,7 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             var requestDto = new CustomerInvoiceRequestDto
             {
                 WarehouseExportId = export.Id,
-                Note = form["note"].ToString() ?? "Khách hàng yêu cầu xuất hóa đơn",
+                Note = (form["note"].ToString() is { Length: > 0 } n ? n[..Math.Min(n.Length, 500)] : "Khách hàng yêu cầu xuất hóa đơn"),
                 // Nếu khách có nhập SL thì tách part, nếu không hệ thống sẽ tạo 1 hóa đơn tổng
                 SplitParts = items.Count > 0 ? new List<CustomerInvoiceSplitPartDto> { new CustomerInvoiceSplitPartDto { Items = items } } : null
             };
@@ -726,7 +736,8 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
                 // Phân bổ SL theo FIFO qua các phiếu xuất kho
                 var remaining = new Dictionary<int, int>(requestedQty);
-                var note = form["note"].ToString();
+                var noteRaw = form["note"].ToString();
+                var note = noteRaw.Length > 500 ? noteRaw[..500] : noteRaw;
                 bool anySuccess = false;
                 string? lastError = null;
 
@@ -851,6 +862,13 @@ namespace ErpOnlineOrder.WebMVC.Controllers
                 Recipient_phone = org?.Recipient_phone ?? "",
                 Recipient_address = org?.Recipient_address
             };
+
+            if ((org?.Organization_information_id ?? 0) > 0)
+            {
+                var currentOrg = await _organizationApiClient.GetByIdAsync(org!.Organization_information_id);
+                ViewBag.CurrentOrg = currentOrg;
+            }
+
             return View(model);
         }
 
@@ -894,6 +912,82 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             return RedirectToAction(nameof(UpdateOrganization), new { returnToCheckout });
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateOrgInfo(UpdateOrganizationDto model, bool returnToCheckout = false)
+        {
+            var customerId = await GetCurrentCustomerIdAsync();
+            if (!customerId.HasValue)
+                return RedirectToAction("Login", "Auth");
+
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .FirstOrDefault(m => !string.IsNullOrEmpty(m)) ?? "Thông tin không hợp lệ.";
+                return RedirectToAction(nameof(UpdateOrganization), new { returnToCheckout });
+            }
+
+            try
+            {
+                var (success, errorMsg) = await _organizationApiClient.UpdateAsync(model.Id, model);
+                if (success)
+                {
+                    SetSuccessMessage("Cập nhật thông tin đơn vị thành công.");
+                    if (returnToCheckout)
+                        return RedirectToAction(nameof(Checkout));
+                    return RedirectToAction(nameof(UpdateOrganization));
+                }
+                TempData["Error"] = errorMsg ?? "Không thể cập nhật thông tin đơn vị. Vui lòng thử lại.";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating organization info {OrgId}", model.Id);
+                TempData["Error"] = "Không thể cập nhật thông tin đơn vị. Vui lòng thử lại.";
+            }
+
+            return RedirectToAction(nameof(UpdateOrganization), new { returnToCheckout });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RequestOrgUpdate(CustomerOrgUpdateRequestDto model, bool returnToCheckout = false)
+        {
+            var customerId = await GetCurrentCustomerIdAsync();
+            if (!customerId.HasValue)
+                return RedirectToAction("Login", "Auth");
+
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .FirstOrDefault(m => !string.IsNullOrEmpty(m)) ?? "Thông tin không hợp lệ.";
+                return RedirectToAction(nameof(UpdateOrganization), new { returnToCheckout });
+            }
+
+            model.Customer_id = customerId.Value;
+
+            try
+            {
+                var (success, errorMsg) = await _customerApiClient.RequestOrgUpdateAsync(customerId.Value, model);
+                if (success)
+                {
+                    SetSuccessMessage("Yêu cầu chỉnh sửa đã được gửi thành công. Chúng tôi sẽ liên hệ với bạn sớm nhất.");
+                    return RedirectToAction(nameof(UpdateOrganization), new { returnToCheckout });
+                }
+                TempData["Error"] = errorMsg ?? "Không thể gửi yêu cầu. Vui lòng thử lại.";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending org update request for customer {CustomerId}", customerId);
+                TempData["Error"] = "Không thể gửi yêu cầu. Vui lòng thử lại.";
+            }
+
+            return RedirectToAction(nameof(UpdateOrganization), new { returnToCheckout });
+        }
+
         public IActionResult Info(string slug)
         {
             ViewBag.Slug = slug ?? "gioi-thieu";
@@ -921,18 +1015,35 @@ namespace ErpOnlineOrder.WebMVC.Controllers
 
     public class PlaceOrderRequest
     {
+        [System.ComponentModel.DataAnnotations.MinLength(1, ErrorMessage = "Giỏ hàng trống.")]
         public List<CartItemRequest> Items { get; set; } = new();
+
+        [System.ComponentModel.DataAnnotations.StringLength(1000, ErrorMessage = "Ghi chú không được vượt quá 1000 ký tự.")]
         public string? Note { get; set; }
+
+        [System.ComponentModel.DataAnnotations.StringLength(500, ErrorMessage = "Địa chỉ giao hàng không được vượt quá 500 ký tự.")]
         public string? ShippingAddress { get; set; }
+
+        [System.ComponentModel.DataAnnotations.StringLength(100, ErrorMessage = "Tên người nhận không được vượt quá 100 ký tự.")]
         public string? RecipientName { get; set; }
+
+        [System.ComponentModel.DataAnnotations.StringLength(20, ErrorMessage = "Số điện thoại không được vượt quá 20 ký tự.")]
         public string? RecipientPhone { get; set; }
+
+        [System.ComponentModel.DataAnnotations.StringLength(200, ErrorMessage = "Email không được vượt quá 200 ký tự.")]
+        [System.ComponentModel.DataAnnotations.EmailAddress(ErrorMessage = "Email không hợp lệ.")]
         public string? RecipientEmail { get; set; }
     }
 
     public class CartItemRequest
     {
+        [System.ComponentModel.DataAnnotations.Range(1, int.MaxValue, ErrorMessage = "Mã sản phẩm không hợp lệ.")]
         public int ProductId { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Range(1, 10000, ErrorMessage = "Số lượng phải từ 1 đến 10000.")]
         public int Quantity { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Range(0, double.MaxValue, ErrorMessage = "Đơn giá không được âm.")]
         public decimal Price { get; set; }
     }
 }

@@ -28,5 +28,9 @@ namespace ErpOnlineOrder.Application.DTOs.CustomerDTOs
 
         [EmailAddress(ErrorMessage = "Email không hợp lệ")]
         public string Customer_email { get; set; } = null!;
+
+        public int? Province_id { get; set; }
+
+        public int? Ward_id { get; set; }
     }
 }

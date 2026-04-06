@@ -547,6 +547,12 @@ body {
     color: #9ca3af;
     margin: 0;
 }
+.sh-account-card--colored .sh-account-card-body h3 {
+    color: #fff !important;
+}
+.sh-account-card--colored .sh-account-card-body p {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
 .sh-account-card-arrow {
     color: #d1d5db;
     font-size: 12px;

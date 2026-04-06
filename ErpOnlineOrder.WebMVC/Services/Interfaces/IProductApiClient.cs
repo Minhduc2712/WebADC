@@ -1,6 +1,7 @@
 using ErpOnlineOrder.Application.DTOs;
 using ErpOnlineOrder.Application.DTOs.ProductDTOs;
 using ErpOnlineOrder.Domain.Models;
+using Microsoft.AspNetCore.Http;
 
 namespace ErpOnlineOrder.WebMVC.Services.Interfaces
 {
@@ -16,6 +17,8 @@ namespace ErpOnlineOrder.WebMVC.Services.Interfaces
         Task<(bool Success, string? Error)> UpdateAsync(int id, UpdateProductDto dto, CancellationToken cancellationToken = default);
         Task<(bool Success, string? Error)> DeleteAsync(int id, CancellationToken cancellationToken = default);
         Task<byte[]> ExportToExcelAsync(string? search = null, CancellationToken cancellationToken = default);
+        Task<(ImportProductResultDto? Data, string? Error)> ImportProductsAsync(IFormFile file, CancellationToken cancellationToken = default);
+        Task<byte[]> DownloadImportTemplateAsync(CancellationToken cancellationToken = default);
         Task<PagedResult<ProductDTO>> GetProductsForShopPagedAsync(int? customerId, ProductForShopFilterRequest request, CancellationToken cancellationToken = default);    Task<ProductDTO?> GetProductForShopAsync(int productId, int? customerId, CancellationToken cancellationToken = default);        Task<IEnumerable<string>> GetCategoriesForShopAsync(int? customerId, CancellationToken cancellationToken = default);
         Task<IEnumerable<string>> GetPublishersForShopAsync(int? customerId, CancellationToken cancellationToken = default);
         Task<IEnumerable<string>> GetAuthorsForShopAsync(int? customerId, CancellationToken cancellationToken = default);

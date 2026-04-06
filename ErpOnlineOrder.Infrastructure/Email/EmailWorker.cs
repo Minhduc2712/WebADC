@@ -125,6 +125,19 @@ namespace ErpOnlineOrder.Infrastructure.Email
                     await emailService.SendInvoiceToCustomerAsync(msg.PrimaryId!.Value, ct);
                     break;
 
+                case EmailActionType.OrgUpdateRequestNotification:
+                    await emailService.SendOrgUpdateRequestAsync(
+                        msg.PrimaryId!.Value, msg.Payload!, ct);
+                    break;
+
+                case EmailActionType.ExportCancelledNotificationCustomer:
+                    await emailService.SendExportCancelledNotificationCustomerAsync(msg.PrimaryId!.Value, ct);
+                    break;
+
+                case EmailActionType.AdminPasswordResetNotification:
+                    await emailService.SendAdminPasswordResetNotificationAsync(msg.PrimaryId!.Value, ct);
+                    break;
+
                 default:
                     _logger.LogWarning("EmailWorker: không nhận ra ActionType {ActionType}", msg.ActionType);
                     break;

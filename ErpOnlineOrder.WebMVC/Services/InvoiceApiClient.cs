@@ -115,6 +115,11 @@ namespace ErpOnlineOrder.WebMVC.Services
             return await GetByteArrayAsync(path, cancellationToken);
         }
 
+        public async Task<byte[]> DownloadDocumentAsync(int id, string format = "pdf", string template = "standard", CancellationToken cancellationToken = default)
+        {
+            return await GetByteArrayAsync($"invoice/{id}/download?format={Uri.EscapeDataString(format)}&template={Uri.EscapeDataString(template)}", cancellationToken);
+        }
+
         public async Task<PagedResult<InvoiceDto>> GetByCustomerIdPagedAsync(int customerId, InvoiceFilterRequest request, CancellationToken cancellationToken = default)
         {
             var query = new List<string> { $"page={request.Page}", $"pageSize={request.PageSize}" };

@@ -2,19 +2,67 @@
 @using ErpOnlineOrder.Application.DTOs.OrderDTOs
 @model OrderDTO
 @{
-    ViewData["Title"] = "Theo dõi đơn hàng #" + Model.Order_code;
+    ViewData["Title"] = "Chi tiết đơn hàng #" + Model.Order_code;
     Layout = "~/Views/Shared/_ShopLayout.cshtml";
 
-    // Xác định trạng thái để render Timeline
     var status = Model.Order_status ?? "Pending";
     var isCancelled = status == "Cancelled" || status == "Rejected";
     var isPending = status == "Pending";
     var isApproved = status == "Approved" || status == "Confirmed";
     var isCompleted = status == "Completed";
-    
+    var statusVi = status switch
+    {
+        "Pending" => "Chờ xử lý",
+        "WaitingCustomer" => "Cần xác nhận",
+        "Approved" => "Đã duyệt",
+        "Confirmed" => "Đã xác nhận",
+        "Exporting" => "Đang xuất kho",
+        "Completed" => "Hoàn thành",
+        "Cancelled" => "Đã hủy",
+        "Rejected" => "Đã từ chối",
+        "Split" => "Đã tách",
+        _ => status
+    };
+    var statusColor = status switch
+    {
+        "Pending" => "#e07b00",
+        "WaitingCustomer" => "#b45309",
+        "Approved" or "Confirmed" => "#1565c0",
+        "Exporting" => "#00838f",
+        "Completed" => "#2e7d32",
+        "Cancelled" or "Rejected" => "#b71c1c",
+        "Split" => "#546e7a",
+        _ => "#546e7a"
+    };
+    var statusIcon = status switch
+    {
+        "Pending" => "fa-clock",
+        "WaitingCustomer" => "fa-bell",
+        "Approved" or "Confirmed" => "fa-thumbs-up",
+        "Exporting" => "fa-truck",
+        "Completed" => "fa-check-double",
+        "Cancelled" or "Rejected" => "fa-times-circle",
+        "Split" => "fa-cut",
+        _ => "fa-info-circle"
+    };
     int step = 1;
     if (isApproved) step = 2;
+    if (status == "Exporting") step = 3;
     if (isCompleted) step = 4;
+    // Pre-compute timeline circle/label styles (no quotes in values = safe in style attributes)
+    var s1c = step >= 1 ? "background:#1a7f37;border:3px solid #1a7f37;" : "background:#e9ecef;border:3px solid #dee2e6;";
+    var s1i = step >= 1 ? "#fff" : "#adb5bd";
+    var s1l = step >= 1 ? "font-weight:700;color:#2e7d32;" : "color:#adb5bd;";
+    var s2c = step >= 2 ? "background:#1a7f37;border:3px solid #1a7f37;" : "background:#e9ecef;border:3px solid #dee2e6;";
+    var s2i = step >= 2 ? "#fff" : "#adb5bd";
+    var s2l = step >= 2 ? "font-weight:700;color:#2e7d32;" : "color:#adb5bd;";
+    var s3c = step >= 3 ? "background:#1a7f37;border:3px solid #1a7f37;" : "background:#e9ecef;border:3px solid #dee2e6;";
+    var s3i = step >= 3 ? "#fff" : "#adb5bd";
+    var s3l = step >= 3 ? "font-weight:700;color:#2e7d32;" : "color:#adb5bd;";
+    var s4c = step >= 4 ? "background:#1a7f37;border:3px solid #1a7f37;" : "background:#e9ecef;border:3px solid #dee2e6;";
+    var s4i = step >= 4 ? "#fff" : "#adb5bd";
+    var s4l = step >= 4 ? "font-weight:700;color:#2e7d32;" : "color:#adb5bd;";
+    var progressPct = step switch { 1 => "0%", 2 => "33%", 3 => "66%", _ => "100%" };
 }
 
 <section class="blog about-blog">
@@ -36,53 +84,65 @@
     <div class="container">
         <div class="row">
             <div class="col-lg-12 mb-4">
-                <div class="card shadow-sm border-0">
-                    <div class="card-body p-4">
-                        <h5 class="fw-bold mb-4">Trạng thái đơn hàng: <span class="text-primary">@status</span></h5>
-                        @if (isCancelled)
-                        {
-                            <div class="alert alert-danger">
-                                <i class="fas fa-times-circle me-2"></i> Đơn hàng này đã bị hủy.
-                            </div>
-                        }
-                        else
-                        {
-                            <!-- Thanh Timeline Tracking -->
-                            <div class="position-relative mx-4 mt-5 mb-4">
-                                <div class="progress" style="height: 4px;">
-                                    <div class="progress-bar bg-success" role="progressbar" 
-                                         style="width: @(step == 1 ? "25%" : (step == 2 ? "50%" : (step == 3 ? "75%" : "100%")))" 
-                                         aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
-                                </div>
-                                <div class="d-flex justify-content-between position-absolute w-100" style="top: -12px;">
-                                    <div class="text-center" style="width: 20px;">
-                                        <div class="rounded-circle d-flex align-items-center justify-content-center border border-2 border-white @(step >= 1 ? "bg-success text-white" : "bg-light text-muted")" style="width: 28px; height: 28px;">
-                                            <i class="fas fa-file-invoice" style="font-size: 12px;"></i>
-                                        </div>
-                                        <small class="mt-2 d-block fw-bold position-absolute" style="transform: translateX(-35%);">Chờ xử lý</small>
-                                    </div>
-                                    <div class="text-center" style="width: 20px;">
-                                        <div class="rounded-circle d-flex align-items-center justify-content-center border border-2 border-white @(step >= 2 ? "bg-success text-white" : "bg-light text-muted")" style="width: 28px; height: 28px;">
-                                            <i class="fas fa-box-open" style="font-size: 12px;"></i>
-                                        </div>
-                                        <small class="mt-2 d-block fw-bold position-absolute" style="transform: translateX(-35%);">Đã xác nhận</small>
-                                    </div>
-                                    <div class="text-center" style="width: 20px;">
-                                        <div class="rounded-circle d-flex align-items-center justify-content-center border border-2 border-white @(step >= 3 ? "bg-success text-white" : "bg-light text-muted")" style="width: 28px; height: 28px;">
-                                            <i class="fas fa-shipping-fast" style="font-size: 12px;"></i>
-                                        </div>
-                                        <small class="mt-2 d-block fw-bold position-absolute" style="transform: translateX(-35%);">Đang giao hàng</small>
-                                    </div>
-                                    <div class="text-center" style="width: 20px;">
-                                        <div class="rounded-circle d-flex align-items-center justify-content-center border border-2 border-white @(step >= 4 ? "bg-success text-white" : "bg-light text-muted")" style="width: 28px; height: 28px;">
-                                            <i class="fas fa-check-circle" style="font-size: 12px;"></i>
-                                        </div>
-                                        <small class="mt-2 d-block fw-bold position-absolute" style="transform: translateX(-40%);">Đã hoàn thành</small>
-                                    </div>
-                                </div>
-                            </div>
-                        }
+                <div class="card shadow-sm border-0" style="overflow: hidden; border-radius: 12px;">
+                    <div style="background: @statusColor; padding: 18px 28px; display: flex; align-items: center; gap: 16px;">
+                        <div style="width: 44px; height: 44px; background: rgba(255,255,255,0.18); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <i class="fas @statusIcon" style="color: white; font-size: 1.15rem;"></i>
+                        </div>
+                        <div>
+                            <div style="color: rgba(255,255,255,0.75); font-size: 11px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 2px;">Trạng thái đơn hàng</div>
+                            <div style="color: white; font-size: 1.2rem; font-weight: 700;">@statusVi</div>
+                        </div>
+                        <div class="ms-auto">
+                            <span style="background: rgba(255,255,255,0.18); color: white; padding: 5px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;">#@Model.Order_code</span>
+                        </div>
                     </div>
+                    @if (isCancelled)
+                    {
+                        <div class="p-4">
+                            <div class="d-flex align-items-center gap-3 p-3 rounded" style="background: #fef2f2; border: 1.5px solid #fecaca;">
+                                <i class="fas fa-times-circle" style="color: #b71c1c; font-size: 1.5rem; flex-shrink: 0;"></i>
+                                <div>
+                                    <div style="font-weight: 700; color: #7f1d1d; margin-bottom: 3px;">Đơn hàng đã bị hủy</div>
+                                    <div style="color: #991b1b; font-size: 0.9rem;">Đơn hàng này không còn hiệu lực và sẽ không được xử lý thêm.</div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="padding: 28px 40px 24px; position: relative;">
+                            <div style="position: absolute; top: 48px; left: calc(12.5% + 20px); right: calc(12.5% + 20px); height: 3px; background: #e9ecef;">
+                                <div style="height: 100%; background: #1a7f37; width: @progressPct;"></div>
+                            </div>
+                            <div class="d-flex justify-content-around">
+                                <div class="d-flex flex-column align-items-center" style="position: relative; z-index: 1;">
+                                    <div style="@s1c width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                                        <i class="fas fa-file-invoice" style="color:@s1i;font-size:14px;"></i>
+                                    </div>
+                                    <div style="margin-top:10px;font-size:12px;text-align:center;@s1l">Đặt hàng</div>
+                                </div>
+                                <div class="d-flex flex-column align-items-center" style="position: relative; z-index: 1;">
+                                    <div style="@s2c width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                                        <i class="fas fa-check" style="color:@s2i;font-size:14px;"></i>
+                                    </div>
+                                    <div style="margin-top:10px;font-size:12px;text-align:center;@s2l">Xác nhận</div>
+                                </div>
+                                <div class="d-flex flex-column align-items-center" style="position: relative; z-index: 1;">
+                                    <div style="@s3c width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                                        <i class="fas fa-truck" style="color:@s3i;font-size:14px;"></i>
+                                    </div>
+                                    <div style="margin-top:10px;font-size:12px;text-align:center;@s3l">Giao hàng</div>
+                                </div>
+                                <div class="d-flex flex-column align-items-center" style="position: relative; z-index: 1;">
+                                    <div style="@s4c width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                                        <i class="fas fa-check-double" style="color:@s4i;font-size:14px;"></i>
+                                    </div>
+                                    <div style="margin-top:10px;font-size:12px;text-align:center;@s4l">Hoàn thành</div>
+                                </div>
+                            </div>
+                        </div>
+                    }
                 </div>
             </div>
 
@@ -130,35 +190,44 @@
             </div>
 
             <div class="col-lg-4">
-                <div class="card shadow-sm border-0 mb-4">
-                    <div class="card-body p-4">
-                        <p class="text-muted mb-3" style="font-size:12px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;">Thông tin đơn hàng</p>
-                        <div class="mb-3 p-3 rounded" style="background:#f8f9fa;">
-                            <div class="text-muted mb-1" style="font-size:12px;"><i class="fas fa-calendar-alt me-1"></i> Ngày đặt</div>
-                            <div class="fw-semibold" style="font-size:17px;">@Model.Order_date.ToString("dd/MM/yyyy HH:mm")</div>
+                <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px; overflow: hidden;">
+                    <div style="background: #1a7f37; padding: 14px 20px;">
+                        <div style="color: white; font-weight: 700; font-size: 0.95rem;">
+                            <i class="fas fa-info-circle me-2"></i>Thông tin đơn hàng
                         </div>
-                        <div class="mb-3 p-3 rounded" style="background:#f8f9fa;">
-                            <div class="text-muted mb-1" style="font-size:12px;"><i class="fas fa-map-marker-alt me-1"></i> Địa chỉ nhận hàng</div>
-                            <div class="fw-semibold" style="font-size:17px;">@(string.IsNullOrEmpty(Model.Shipping_address) ? "Không có" : Model.Shipping_address)</div>
+                    </div>
+                    <div class="p-4">
+                        <div class="mb-3" style="border-left: 3px solid #1a7f37; padding-left: 12px;">
+                            <div style="font-size: 11px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;">Ngày đặt</div>
+                            <div style="font-size: 14px; font-weight: 600; color: #222;">
+                                <i class="fas fa-calendar-alt me-1 text-muted" style="font-size: 12px;"></i>@Model.Order_date.ToString("dd/MM/yyyy HH:mm")
+                            </div>
                         </div>
-                        <div class="mb-3 p-3 rounded" style="background:#f8f9fa;">
-                            <div class="text-muted mb-1" style="font-size:12px;"><i class="fas fa-sticky-note me-1"></i> Ghi chú</div>
-                            <div class="fw-semibold" style="font-size:17px;">@(string.IsNullOrEmpty(Model.note) ? "Không có" : Model.note)</div>
+                        <div class="mb-3" style="border-left: 3px solid #1a7f37; padding-left: 12px;">
+                            <div style="font-size: 11px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;">Địa chỉ nhận hàng</div>
+                            <div style="font-size: 14px; font-weight: 500; color: #333;">
+                                <i class="fas fa-map-marker-alt me-1 text-muted" style="font-size: 12px;"></i>@(string.IsNullOrEmpty(Model.Shipping_address) ? "Chưa có" : Model.Shipping_address)
+                            </div>
                         </div>
-                        
-                        <hr class="my-4">
-                        
+                        @if (!string.IsNullOrEmpty(Model.note))
+                        {
+                            <div class="mb-3" style="border-left: 3px solid #ff9800; padding-left: 12px;">
+                                <div style="font-size: 11px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;">Ghi chú</div>
+                                <div style="font-size: 13px; color: #555; font-style: italic;">@Model.note</div>
+                            </div>
+                        }
+                        <hr style="border-color: #f0f0f0; margin: 18px 0;" />
                         <div class="d-grid gap-2">
-                            <a asp-action="Orders" class="btn btn-outline-secondary">
-                                <i class="fas fa-arrow-left me-2"></i> Quay lại đơn hàng
+                            <a asp-action="Orders" style="padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 14px; background: #546e7a; color: #fff; text-decoration: none; text-align: center; display: block;">
+                                <i class="fas fa-arrow-left me-2"></i>Quay lại đơn hàng
                             </a>
-                            <a asp-action="PrintOrder" asp-route-id="@Model.Id" class="btn btn-outline-primary" target="_blank">
-                                <i class="fas fa-print me-2"></i> In đơn hàng
+                            <a asp-action="PrintOrder" asp-route-id="@Model.Id" target="_blank" style="padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 14px; background: #1565c0; color: #fff; text-decoration: none; text-align: center; display: block;">
+                                <i class="fas fa-print me-2"></i>In đơn hàng
                             </a>
                             @if (isPending)
                             {
-                                <button class="btn btn-outline-danger" onclick="cancelOrder(@Model.Id)">
-                                    <i class="fas fa-times me-2"></i> Hủy đơn hàng
+                                <button onclick="cancelOrder(@Model.Id)" style="padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 14px; background: none; border: 2px solid #dc3545; color: #dc3545; cursor: pointer; width: 100%;">
+                                    <i class="fas fa-times me-2"></i>Hủy đơn hàng
                                 </button>
                             }
                         </div>

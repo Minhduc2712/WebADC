@@ -12,6 +12,10 @@ namespace ErpOnlineOrder.Application.DTOs.AdminDTOs
         public bool Is_active { get; set; }
         public List<string> Roles { get; set; } = new();
         public DateTime Created_at { get; set; }
+        public int? Province_id { get; set; }
+        public string? Province_name { get; set; }
+        public int? Ward_id { get; set; }
+        public string? Ward_name { get; set; }
         public bool AllowUpdate { get; set; }
         public bool AllowDelete { get; set; }
         public bool AllowAssign { get; set; }

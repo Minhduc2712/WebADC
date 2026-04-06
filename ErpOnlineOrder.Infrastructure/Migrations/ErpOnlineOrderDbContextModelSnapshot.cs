@@ -197,10 +197,24 @@ namespace ErpOnlineOrder.Infrastructure.Migrations
                         .HasColumnType("int")
                         .HasColumnName("User_id");
 
+                    b.Property<int?>("Province_id")
+                        .HasColumnType("int")
+                        .HasColumnName("Province_id");
+
+                    b.Property<int?>("Ward_id")
+                        .HasColumnType("int")
+                        .HasColumnName("Ward_id");
+
                     b.HasKey("Id");
 
                     b.HasIndex("User_id")
                         .IsUnique();
+
+                    b.HasIndex("Province_id")
+                        .HasDatabaseName("IX_Customers_Province_id");
+
+                    b.HasIndex("Ward_id")
+                        .HasDatabaseName("IX_Customers_Ward_id");
 
                     b.ToTable("Customers", (string)null);
                 });
@@ -677,6 +691,10 @@ namespace ErpOnlineOrder.Infrastructure.Migrations
 
                     b.HasIndex("Customer_id");
 
+                    b.HasIndex("Organization_code")
+                        .IsUnique()
+                        .HasDatabaseName("IX_OrganizationInformations_Organization_code");
+
                     b.ToTable("OrganizationInformations", (string)null);
                 });
 
@@ -788,6 +806,10 @@ namespace ErpOnlineOrder.Infrastructure.Migrations
                     b.HasIndex("Distributor_id");
 
                     b.HasIndex("Publisher_id");
+
+                    b.HasIndex("Product_code")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Products_Product_code");
 
                     b.ToTable("Products", (string)null);
                 });
@@ -1163,10 +1185,24 @@ namespace ErpOnlineOrder.Infrastructure.Migrations
                         .HasColumnType("int")
                         .HasColumnName("User_id");
 
+                    b.Property<int?>("Province_id")
+                        .HasColumnType("int")
+                        .HasColumnName("Province_id");
+
+                    b.Property<int?>("Ward_id")
+                        .HasColumnType("int")
+                        .HasColumnName("Ward_id");
+
                     b.HasKey("Id");
 
                     b.HasIndex("User_id")
                         .IsUnique();
+
+                    b.HasIndex("Province_id")
+                        .HasDatabaseName("IX_Staffs_Province_id");
+
+                    b.HasIndex("Ward_id")
+                        .HasDatabaseName("IX_Staffs_Ward_id");
 
                     b.ToTable("Staffs", (string)null);
                 });
@@ -1361,6 +1397,14 @@ namespace ErpOnlineOrder.Infrastructure.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Username")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Users_Username");
+
+                    b.HasIndex("Email")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Users_Email");
 
                     b.ToTable("Users", (string)null);
                 });
@@ -1698,7 +1742,21 @@ namespace ErpOnlineOrder.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("ErpOnlineOrder.Domain.Models.Province", "Province")
+                        .WithMany("Customers")
+                        .HasForeignKey("Province_id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ErpOnlineOrder.Domain.Models.Ward", "Ward")
+                        .WithMany("Customers")
+                        .HasForeignKey("Ward_id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("User");
+
+                    b.Navigation("Province");
+
+                    b.Navigation("Ward");
                 });
 
             modelBuilder.Entity("ErpOnlineOrder.Domain.Models.Customer_management", b =>
@@ -1987,7 +2045,21 @@ namespace ErpOnlineOrder.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("ErpOnlineOrder.Domain.Models.Province", "Province")
+                        .WithMany("Staffs")
+                        .HasForeignKey("Province_id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ErpOnlineOrder.Domain.Models.Ward", "Ward")
+                        .WithMany("Staffs")
+                        .HasForeignKey("Ward_id")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("User");
+
+                    b.Navigation("Province");
+
+                    b.Navigation("Ward");
                 });
 
             modelBuilder.Entity("ErpOnlineOrder.Domain.Models.Staff_region_rule", b =>
@@ -2242,6 +2314,10 @@ namespace ErpOnlineOrder.Infrastructure.Migrations
                 {
                     b.Navigation("Customer_managements");
 
+                    b.Navigation("Staffs");
+
+                    b.Navigation("Customers");
+
                     b.Navigation("Wards");
                 });
 
@@ -2285,6 +2361,10 @@ namespace ErpOnlineOrder.Infrastructure.Migrations
             modelBuilder.Entity("ErpOnlineOrder.Domain.Models.Ward", b =>
                 {
                     b.Navigation("Customer_managements");
+
+                    b.Navigation("Staffs");
+
+                    b.Navigation("Customers");
                 });
 
             modelBuilder.Entity("ErpOnlineOrder.Domain.Models.Warehouse", b =>

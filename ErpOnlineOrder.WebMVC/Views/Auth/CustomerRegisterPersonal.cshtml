@@ -47,7 +47,7 @@
 
             <div class="mb-3">
                 <label asp-for="Province_id" class="form-label fw-semibold">
-                    <i class="fas fa-map-marker-alt me-1 text-danger"></i>Tỉnh/Thành phố <span class="text-muted small">(tùy chọn)</span>
+                    <i class="fas fa-map-marker-alt me-1 text-danger"></i>Tỉnh/Thành phố <span class="text-danger">*</span>
                 </label>
                 <select asp-for="Province_id" class="form-select" id="regProvinceSelect">
                     <option value="">-- Chọn tỉnh/thành phố --</option>
@@ -56,16 +56,17 @@
                         <option value="@p.Id" selected="@(Model.Province_id == p.Id)">@p.Province_name</option>
                     }
                 </select>
-                <div class="form-text">Chọn địa bàn để được gán cán bộ phụ trách tự động</div>
+                <span asp-validation-for="Province_id" class="text-danger small"></span>
             </div>
 
             <div class="mb-3">
                 <label asp-for="Ward_id" class="form-label fw-semibold">
-                    <i class="fas fa-map-pin me-1 text-info"></i>Phường/Xã <span class="text-muted small">(tùy chọn)</span>
+                    <i class="fas fa-map-pin me-1 text-info"></i>Phường/Xã <span class="text-danger">*</span>
                 </label>
                 <select asp-for="Ward_id" class="form-select" id="regWardSelect">
-                    <option value="">-- Chọn phường/xã (hoặc bỏ trống nếu toàn tỉnh) --</option>
+                    <option value="">-- Chọn phường/xã --</option>
                 </select>
+                <span asp-validation-for="Ward_id" class="text-danger small"></span>
             </div>
 
             <hr class="my-3" />
@@ -119,13 +120,13 @@
             var wardSelect = document.getElementById('regWardSelect');
             wardSelect.innerHTML = '<option value="">-- Đang tải... --</option>';
             if (!provinceId) {
-                wardSelect.innerHTML = '<option value="">-- Chọn phường/xã (hoặc bỏ trống nếu toàn tỉnh) --</option>';
+                wardSelect.innerHTML = '<option value="">-- Chọn phường/xã --</option>';
                 return;
             }
             fetch('/Auth/GetWardsByProvince?provinceId=' + provinceId)
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
-                    wardSelect.innerHTML = '<option value="">-- Chọn phường/xã (hoặc bỏ trống nếu toàn tỉnh) --</option>';
+                    wardSelect.innerHTML = '<option value="">-- Chọn phường/xã --</option>';
                     data.forEach(function (w) {
                         var opt = document.createElement('option');
                         opt.value = w.id;
@@ -135,7 +136,7 @@
                     });
                 })
                 .catch(function () {
-                    wardSelect.innerHTML = '<option value="">-- Chọn phường/xã (hoặc bỏ trống nếu toàn tỉnh) --</option>';
+                    wardSelect.innerHTML = '<option value="">-- Chọn phường/xã --</option>';
                 });
         }
     </script>

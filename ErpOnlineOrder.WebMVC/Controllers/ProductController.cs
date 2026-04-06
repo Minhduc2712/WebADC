@@ -252,6 +252,55 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             }
         }
 
+        [RequirePermission(PermissionCodes.ProductImport)]
+        [HttpGet]
+        public IActionResult Import() => View();
+
+        [RequirePermission(PermissionCodes.ProductImport)]
+        [HttpPost]
+        public async Task<IActionResult> Import(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                SetErrorMessage("Vui lòng chọn file Excel để nhập.");
+                return View();
+            }
+            try
+            {
+                var (result, error) = await _productApiClient.ImportProductsAsync(file);
+                if (error != null)
+                {
+                    SetErrorMessage(error);
+                    return View();
+                }
+                ViewBag.Result = result;
+                return View();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error importing products");
+                SetErrorFromException(ex);
+                return View();
+            }
+        }
+
+        [RequirePermission(PermissionCodes.ProductImport)]
+        [HttpGet]
+        public async Task<IActionResult> DownloadImportTemplate()
+        {
+            try
+            {
+                var bytes = await _productApiClient.DownloadImportTemplateAsync();
+                return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "MauImportSanPham.xlsx");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error downloading import template");
+                SetErrorFromException(ex);
+                return RedirectToAction(nameof(Import));
+            }
+        }
+
         private async Task LoadDropdownsAsync(Product? product = null)
         {
             var categories = await _categoryApiClient.GetAllAsync();

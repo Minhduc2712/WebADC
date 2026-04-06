@@ -1,4 +1,5 @@
 using ErpOnlineOrder.Application.DTOs.AdminDTOs;
+using ErpOnlineOrder.Application.DTOs.EmailDTOs;
 using ErpOnlineOrder.Application.Interfaces.Repositories;
 using ErpOnlineOrder.Application.Interfaces.Services;
 using ErpOnlineOrder.Application.Mappers;
@@ -15,6 +16,7 @@ namespace ErpOnlineOrder.Application.Services
         private readonly IOrderRepository _orderRepository;
         private readonly IRolePermissionRepository _rolePermissionRepository;
         private readonly IPermissionService _permissionService;
+        private readonly IEmailQueue _emailQueue;
 
         public AdminService(
             IUserRepository userRepository,
@@ -22,7 +24,8 @@ namespace ErpOnlineOrder.Application.Services
             ICustomerRepository customerRepository,
             IOrderRepository orderRepository,
             IRolePermissionRepository rolePermissionRepository,
-            IPermissionService permissionService)
+            IPermissionService permissionService,
+            IEmailQueue emailQueue)
         {
             _userRepository = userRepository;
             _roleRepository = roleRepository;
@@ -30,6 +33,7 @@ namespace ErpOnlineOrder.Application.Services
             _orderRepository = orderRepository;
             _rolePermissionRepository = rolePermissionRepository;
             _permissionService = permissionService;
+            _emailQueue = emailQueue;
         }
 
         public async Task<IEnumerable<StaffAccountDto>> GetAllStaffAsync(int? currentUserId = null)
@@ -105,6 +109,8 @@ namespace ErpOnlineOrder.Application.Services
                     Staff_code = $"STAFF-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 6).ToUpper()}",
                     Full_name = dto.Full_name,
                     Phone_number = dto.Phone_number,
+                    Province_id = dto.Province_id,
+                    Ward_id = dto.Ward_id,
                     Created_by = createdBy,
                     Updated_by = createdBy,
                     Created_at = now,
@@ -163,6 +169,17 @@ namespace ErpOnlineOrder.Application.Services
             if (dto.Phone_number != null)
             {
                 user.Staff.Phone_number = dto.Phone_number;
+            }
+
+            if (dto.Province_id.HasValue)
+            {
+                user.Staff.Province_id = dto.Province_id.Value;
+                user.Staff.Ward_id = null; // reset ward khi đổi tỉnh
+            }
+
+            if (dto.Ward_id.HasValue)
+            {
+                user.Staff.Ward_id = dto.Ward_id.Value;
             }
 
             user.Updated_by = updatedBy;
@@ -230,6 +247,13 @@ namespace ErpOnlineOrder.Application.Services
             user.Updated_at = DateTime.UtcNow;
 
             await _userRepository.UpdateAsync(user);
+
+            await _emailQueue.EnqueueAsync(new EmailMessage
+            {
+                ActionType = EmailActionType.AdminPasswordResetNotification,
+                PrimaryId = dto.User_id
+            });
+
             return true;
         }
 

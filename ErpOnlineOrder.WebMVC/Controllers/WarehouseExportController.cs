@@ -434,6 +434,30 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             }
         }
 
+        [HttpGet]
+        [RequirePermission(PermissionCodes.WarehouseExportView)]
+        public async Task<IActionResult> DownloadDocument(int id, string format = "pdf", string template = "standard")
+        {
+            try
+            {
+                var bytes = await _warehouseExportApiClient.DownloadDocumentAsync(id, format, template);
+                var contentType = format.ToLower() switch
+                {
+                    "pdf" => "application/pdf",
+                    "docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    _ => "application/xml"
+                };
+                var ext = format.ToLower() == "docx" ? "docx" : format.ToLower() == "pdf" ? "pdf" : "xml";
+                return File(bytes, contentType, $"phieuxuatkho-{id}.{ext}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error downloading export {ExportId} format {Format}", id, format);
+                SetErrorMessage(GetDetailedErrorMessage(ex));
+                return RedirectToAction(nameof(PrintExport), new { id });
+            }
+        }
+
         private async Task LoadCurrentUserPermissions()
         {
             try

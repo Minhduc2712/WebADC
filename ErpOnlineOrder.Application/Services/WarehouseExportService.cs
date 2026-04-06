@@ -334,6 +334,12 @@ namespace ErpOnlineOrder.Application.Services
             // Sync: hủy phiếu xuất kho → kiểm tra hủy hóa đơn
             await SyncStatusToInvoiceAsync(export, ExportStatuses.Cancelled, userId);
 
+            await _emailQueue.EnqueueAsync(new EmailMessage
+            {
+                ActionType = EmailActionType.ExportCancelledNotificationCustomer,
+                PrimaryId = export.Id
+            });
+
             return true;
         }
 

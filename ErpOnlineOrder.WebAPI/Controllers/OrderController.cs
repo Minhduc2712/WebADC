@@ -13,11 +13,13 @@ namespace ErpOnlineOrder.WebAPI.Controllers
     {
         private readonly IOrderService _orderService;
         private readonly ICustomerRepository _customerRepository;
+        private readonly IPrintService _printService;
 
-        public OrderController(IOrderService orderService, ICustomerRepository customerRepository)
+        public OrderController(IOrderService orderService, ICustomerRepository customerRepository, IPrintService printService)
         {
             _orderService = orderService;
             _customerRepository = customerRepository;
+            _printService = printService;
         }
 
         [HttpGet]
@@ -234,6 +236,32 @@ namespace ErpOnlineOrder.WebAPI.Controllers
         {
             var orders = await _orderService.GetOrdersByStatusAsync(status, TryGetCurrentUserId());
             return Ok(ApiResponse<object>.Ok(orders));
+        }
+
+        [HttpGet("{id}/download")]
+        public async Task<IActionResult> DownloadDocument(int id, [FromQuery] string format = "pdf", [FromQuery] string template = "standard")
+        {
+            try
+            {
+                var (bytes, contentType, fileName) = await _printService.PrintOrderAsync(id, TryGetCurrentUserId() ?? 0, format, template);
+                return File(bytes, contentType, fileName);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResponse<object>.Fail(ex.Message));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message));
+            }
+        }
+
+        [HttpGet("print-templates")]
+        public IActionResult GetPrintTemplates()
+        {
+            var templates = _printService.GetOrderTemplates()
+                .Select(t => new { t.Name, t.DisplayName });
+            return Ok(ApiResponse<object>.Ok(templates));
         }
 
         [HttpDelete("pending/{id}")]

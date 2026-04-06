@@ -289,6 +289,30 @@ namespace ErpOnlineOrder.WebMVC.Controllers
             }
         }
 
+        [HttpGet]
+        [RequirePermission(PermissionCodes.InvoiceView)]
+        public async Task<IActionResult> DownloadDocument(int id, string format = "pdf", string template = "standard")
+        {
+            try
+            {
+                var bytes = await _invoiceApiClient.DownloadDocumentAsync(id, format, template);
+                var contentType = format.ToLower() switch
+                {
+                    "pdf" => "application/pdf",
+                    "docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    _ => "application/xml"
+                };
+                var ext = format.ToLower() == "docx" ? "docx" : format.ToLower() == "pdf" ? "pdf" : "xml";
+                return File(bytes, contentType, $"hoadon-{id}.{ext}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error downloading invoice {InvoiceId} format {Format}", id, format);
+                SetErrorMessage(GetDetailedErrorMessage(ex));
+                return RedirectToAction(nameof(PrintInvoice), new { id });
+            }
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         [RequirePermission(PermissionCodes.InvoiceView)]

@@ -30,6 +30,16 @@ namespace ErpOnlineOrder.Domain.Models
         [ForeignKey("User_id")]
         public virtual User? User { get; set; }
 
+        public int? Province_id { get; set; }
+
+        [ForeignKey("Province_id")]
+        public virtual Province? Province { get; set; }
+
+        public int? Ward_id { get; set; }
+
+        [ForeignKey("Ward_id")]
+        public virtual Ward? Ward { get; set; }
+
         public virtual ICollection<Customer_management> Customer_managements { get; set; } = new List<Customer_management>();
 
         // Một nhân viên có thể tạo nhiều hóa đơn

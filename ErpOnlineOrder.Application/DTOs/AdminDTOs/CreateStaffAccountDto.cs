@@ -33,5 +33,9 @@ namespace ErpOnlineOrder.Application.DTOs.AdminDTOs
         public string? Phone_number { get; set; }
 
         public List<int>? Role_ids { get; set; }
+
+        public int? Province_id { get; set; }
+
+        public int? Ward_id { get; set; }
     }
 }

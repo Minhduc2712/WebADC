@@ -19,6 +19,7 @@ namespace ErpOnlineOrder.WebMVC.Services.Interfaces
         Task<bool> CancelOrderAsync(int id, CancellationToken cancellationToken = default);
         Task<bool> DeletePendingOrderAsync(int id, CancellationToken cancellationToken = default);
         Task<byte[]> ExportOrdersToExcelAsync(CancellationToken cancellationToken = default);
+        Task<byte[]> DownloadDocumentAsync(int id, string format = "pdf", string template = "standard", CancellationToken cancellationToken = default);
         Task<PagedResult<OrderDTO>> GetOrdersByCustomerPagedAsync(int customerId, OrderFilterRequest request, CancellationToken cancellationToken = default);
         Task<IEnumerable<OrderDTO>> GetOrdersByCustomerAsync(int customerId, CancellationToken cancellationToken = default);
         Task<IEnumerable<OrderDTO>> GetMyOrdersAsync(CancellationToken cancellationToken = default);

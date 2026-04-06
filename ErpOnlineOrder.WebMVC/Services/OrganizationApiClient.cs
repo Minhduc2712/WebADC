@@ -18,5 +18,10 @@ namespace ErpOnlineOrder.WebMVC.Services
         {
             return await GetAsync<OrganizationDTO>($"organization/{id}", cancellationToken);
         }
+
+        public async Task<(bool Success, string? ErrorMessage)> UpdateAsync(int id, UpdateOrganizationDto dto, CancellationToken cancellationToken = default)
+        {
+            return await PutAsync($"organization/{id}", dto, cancellationToken);
+        }
     }
 }
