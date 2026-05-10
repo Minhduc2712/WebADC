@@ -46,7 +46,7 @@ Hệ thống quản lý đặt hàng/ERP với Web API và giao diện Web MVC. 
    - `ErpOnlineOrder.WebMVC/appsettings.json`
 2. (Tùy chọn) Cấu hình base URL API cho MVC:
    - Thêm `ApiSettings:BaseUrl` trong `ErpOnlineOrder.WebMVC/appsettings.json`
-   - Khuyến nghị dùng HTTPS (ví dụ `https://localhost:5051/api/` nếu cấu hình HTTPS). Fallback mặc định trong code là `http://localhost:5051/api/`.
+   - Nên dùng HTTPS (ví dụ `https://localhost:5051/api/` nếu cấu hình HTTPS). HTTP chỉ nên dùng cho local dev; production cần cấu hình HTTPS.
 
 ### 3) Database
 
